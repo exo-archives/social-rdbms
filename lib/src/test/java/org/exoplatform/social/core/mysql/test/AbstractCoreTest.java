@@ -27,7 +27,6 @@ import java.sql.Statement;
 import java.util.Arrays;
 import java.util.List;
 
-import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 
 import org.apache.commons.lang.ArrayUtils;
@@ -37,9 +36,6 @@ import org.exoplatform.component.test.ConfigurationUnit;
 import org.exoplatform.component.test.ConfiguredBy;
 import org.exoplatform.component.test.ContainerScope;
 import org.exoplatform.container.ExoContainerContext;
-import org.exoplatform.container.PortalContainer;
-import org.exoplatform.services.jcr.RepositoryService;
-import org.exoplatform.services.jcr.core.ManageableRepository;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 import org.exoplatform.services.organization.OrganizationService;
@@ -60,8 +56,7 @@ import org.exoplatform.social.core.space.spi.SpaceService;
   @ConfigurationUnit(scope = ContainerScope.PORTAL, path = "conf/exo.portal.component.identity-configuration.xml"),
   @ConfigurationUnit(scope = ContainerScope.PORTAL, path = "conf/standalone/exo.social.component.core.test.configuration.xml"),
   @ConfigurationUnit(scope = ContainerScope.PORTAL, path = "conf/standalone/exo.social.test.jcr-configuration.xml"),
-  @ConfigurationUnit(scope = ContainerScope.PORTAL, path = "conf/standalone/exo.social.test.portal-configuration.xml"),
-  @ConfigurationUnit(scope = ContainerScope.PORTAL, path = "conf/dbscript/mysqlDB_script_test.sql")
+  @ConfigurationUnit(scope = ContainerScope.PORTAL, path = "conf/standalone/exo.social.test.portal-configuration.xml")
 })
 public abstract class AbstractCoreTest extends BaseExoTestCase {
   private final Log LOG = ExoLogger.getLogger(AbstractCoreTest.class);
@@ -81,6 +76,9 @@ public abstract class AbstractCoreTest extends BaseExoTestCase {
   }
 
   private void initDB() {
+    // clear if existing.
+    cleanDB();
+    //
     String mysqlScriptFilePath = "conf/mysqlDB_script_test.sql";
     String s = new String();
     StringBuffer sb = new StringBuffer();
@@ -98,7 +96,7 @@ public abstract class AbstractCoreTest extends BaseExoTestCase {
 
       String[] inst = sb.toString().split(";");
 
-      Connection con = DriverManager.getConnection("jdbc:mysql://localhost:3306", "root", "exo");
+      Connection con = DriverManager.getConnection("jdbc:mysql://localhost:3306", "root", "root");
       Statement stmt = con.createStatement();
 
       for (int i = 0; i < inst.length; i++) {
@@ -108,7 +106,7 @@ public abstract class AbstractCoreTest extends BaseExoTestCase {
       }
 
     } catch (Exception e) {
-      LOG.info("Failed in executing mysql script.");
+      LOG.error("Failed in executing mysql script.", e);
     }
   }
 
@@ -117,17 +115,16 @@ public abstract class AbstractCoreTest extends BaseExoTestCase {
     //
     end();
     
-    cleanDB();
+   // cleanDB();
   }
   
   private void cleanDB() {
     String sql = "DROP DATABASE social_test";
     try {
-      Connection con = dbConnect.getDBConnection();
+      Connection con = DriverManager.getConnection("jdbc:mysql://localhost:3306", "root", "root");
       Statement stmt = con.createStatement();
       stmt.executeUpdate(sql);
     } catch (Exception e) {
-      
     }
   }
 

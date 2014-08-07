@@ -33,6 +33,9 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.UUID;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -44,6 +47,8 @@ import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.Validate;
 import org.chromattic.api.ChromatticException;
+import org.exoplatform.commons.utils.CommonsUtils;
+import org.exoplatform.container.ExoContainer;
 import org.exoplatform.container.PortalContainer;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
@@ -69,11 +74,13 @@ import org.exoplatform.social.core.storage.api.ActivityStreamStorage;
 import org.exoplatform.social.core.storage.api.IdentityStorage;
 import org.exoplatform.social.core.storage.api.RelationshipStorage;
 import org.exoplatform.social.core.storage.api.SpaceStorage;
+import org.exoplatform.social.core.storage.cache.CachedActivityStorage;
 import org.exoplatform.social.core.storage.cache.model.key.ActivityType;
 import org.exoplatform.social.core.storage.exception.NodeNotFoundException;
 import org.exoplatform.social.core.storage.impl.ActivityBuilderWhere;
 import org.exoplatform.social.core.storage.impl.ActivityStorageImpl;
 import org.exoplatform.social.core.storage.impl.StorageUtils;
+import org.picocontainer.Startable;
 
 /**
  * Created by The eXo Platform SAS
@@ -81,7 +88,7 @@ import org.exoplatform.social.core.storage.impl.StorageUtils;
  *          quangnh2@exoplatform.com
  * Dec 12, 2013  
  */
-public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
+public class ActivityMysqlStorageImpl extends ActivityStorageImpl implements Startable {
 
   private static final Pattern MENTION_PATTERN = Pattern.compile("@([^\\s]+)|@([^\\s]+)$");
   public static final Pattern USER_NAME_VALIDATOR_REGEX = Pattern.compile("^[\\p{L}][\\p{L}._\\-\\d]+$");
@@ -122,6 +129,60 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
     this.spaceStorage = spaceStorage;
     this.dbConnect = dbConnect;
     this.activityProcessors = new TreeSet<ActivityProcessor>(processorComparator());
+  }
+  
+  private ScheduledExecutorService scheduledExecutor;
+  @Override
+  public void start() {
+    
+    removeExistingActivityImpl();
+//    try {
+//      scheduledExecutor = Executors.newSingleThreadScheduledExecutor();
+//      scheduledExecutor.scheduleWithFixedDelay(new Runnable() {
+//        
+//        @Override
+//        public void run() {
+//          removeExistingActivityImpl();
+//        }
+//      }, 500, 5000, TimeUnit.MILLISECONDS);
+//    } catch (Exception e) {
+//     e.printStackTrace();
+//    }
+  }
+  
+  @Override
+  public void stop() {};
+  
+  private void removeExistingActivityImpl() {
+    try {
+      ExoContainer container = PortalContainer.getInstance();
+      List storages = container.getComponentInstancesOfType(ActivityStorageImpl.class);
+
+      for (Object impl : storages) {
+        LOG.info("Class: " + impl.getClass().getName());
+        if (impl instanceof org.exoplatform.social.core.storage.synchronization.SynchronizedActivityStorage) {
+          container.unregisterComponentByInstance(impl);
+          //ActivityManagerImpl
+          //CachedActivityStorage
+          
+          LOG.info("\nDone remove container : " + impl.getClass().getName());
+          break;
+        }
+      }
+      ActivityStorageImpl activityStorageImpl = (ActivityStorageImpl)container.getComponentInstanceOfType(ActivityStorageImpl.class);
+      
+      CachedActivityStorage cachedActivityStorage = (CachedActivityStorage)container.getComponentInstanceOfType(CachedActivityStorage.class);
+      cachedActivityStorage.setActivityStorageImpl(activityStorageImpl);
+      storages = container.getComponentInstancesOfType(ActivityStorageImpl.class);
+      LOG.info("Size of ActivityStorageImpl  : " + storages.size() + "\n");
+      LOG.info("Size current ActivityStorageImpl  : " + activityStorageImpl.getClass().getName() + "\n");
+    } catch (Exception e) {
+      LOG.error("Failed to remove ActivityStorageImpl ", e);
+    } finally {
+      if (scheduledExecutor != null && !scheduledExecutor.isShutdown()) {
+        scheduledExecutor.shutdownNow();
+      }
+    }
   }
   
   @Override

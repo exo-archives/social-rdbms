@@ -25,7 +25,7 @@
    
   <component>
     <key>org.exoplatform.social.core.mysql.storage.ActivityMysqlStorageImpl</key>
-    <type>org.exoplatform.social.core.mysql.storage.ActivityMysqlStorageImpl</type>
+    <type>org.exoplatform.social.core.mysql.storage.SynchronizedActivityMysqlStorage</type>
   </component>
   <component>
     <key>org.exoplatform.social.core.mysql.MysqlDBConnect</key>

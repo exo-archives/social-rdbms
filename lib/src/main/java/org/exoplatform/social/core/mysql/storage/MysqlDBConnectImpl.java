@@ -34,11 +34,11 @@ import org.exoplatform.social.core.storage.impl.AbstractStorage;
 public class MysqlDBConnectImpl extends AbstractStorage implements MysqlDBConnect {
   static final String JDBC_DRIVER = "com.mysql.jdbc.Driver";
 
-  static final String DB_URL = "jdbc:mysql://localhost:3306/social_test";
+  static final String DB_URL = "jdbc:mysql://localhost:3306/social";
 
   static final String USER = "root";
 
-  static final String PASS = "exo";
+  static final String PASS = "root";
 
   private static final Log LOG = ExoLogger.getLogger(MysqlDBConnectImpl.class);
 

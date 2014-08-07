@@ -23,17 +23,17 @@ import org.exoplatform.social.core.activity.model.ExoSocialActivity;
 import org.exoplatform.social.core.activity.model.ExoSocialActivityImpl;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvider;
-import org.exoplatform.social.core.mysql.storage.ActivityMysqlStorageImpl;
 import org.exoplatform.social.core.mysql.test.AbstractCoreTest;
 import org.exoplatform.social.core.storage.api.ActivityStorage;
 import org.exoplatform.social.core.storage.api.IdentityStorage;
+import org.exoplatform.social.core.storage.impl.ActivityStorageImpl;
 
 public class ActivityMysqlStorageImplTestCase extends AbstractCoreTest {
   
   private IdentityStorage identityStorage;
   private ActivityStorage activityStorage;
   
-  private ActivityMysqlStorageImpl mysqlStorage;
+  private ActivityStorageImpl mysqlStorage;
   
   private List<ExoSocialActivity> tearDownActivityList;
 
@@ -46,11 +46,12 @@ public class ActivityMysqlStorageImplTestCase extends AbstractCoreTest {
   @Override
   protected void setUp() throws Exception {
     super.setUp();
-    identityStorage = (IdentityStorage) getContainer().getComponentInstanceOfType(IdentityStorage.class);
-    activityStorage = (ActivityStorage) getContainer().getComponentInstanceOfType(ActivityStorage.class);
-    mysqlStorage = (ActivityMysqlStorageImpl) getContainer().getComponentInstanceOfType(ActivityMysqlStorageImpl.class);
-    assertNotNull("identityManager must not be null", identityStorage);
-    assertNotNull("activityStorage must not be null", activityStorage);
+    identityStorage = getComponent(IdentityStorage.class);
+    activityStorage = getComponent(ActivityStorage.class);
+    mysqlStorage = getComponent(ActivityStorageImpl.class);
+    
+    assertNotNull(identityStorage);
+    assertNotNull(activityStorage);
     rootIdentity = new Identity(OrganizationIdentityProvider.NAME, "root");
     johnIdentity = new Identity(OrganizationIdentityProvider.NAME, "john");
     maryIdentity = new Identity(OrganizationIdentityProvider.NAME, "mary");
@@ -61,14 +62,19 @@ public class ActivityMysqlStorageImplTestCase extends AbstractCoreTest {
     identityStorage.saveIdentity(maryIdentity);
     identityStorage.saveIdentity(demoIdentity);
 
-    assertNotNull("rootIdentity.getId() must not be null", rootIdentity.getId());
-    assertNotNull("johnIdentity.getId() must not be null", johnIdentity.getId());
-    assertNotNull("maryIdentity.getId() must not be null", maryIdentity.getId());
-    assertNotNull("demoIdentity.getId() must not be null", demoIdentity.getId());
+    assertNotNull(rootIdentity.getId());
+    assertNotNull(johnIdentity.getId());
+    assertNotNull(maryIdentity.getId());
+    assertNotNull(demoIdentity.getId());
 
     tearDownActivityList = new ArrayList<ExoSocialActivity>();
   }
 
+  private <T> T getComponent(Class<T> clazz) {
+    Object o = getContainer().getComponentInstanceOfType(clazz);
+    return clazz.cast(o);
+  }
+  
   @Override
   protected void tearDown() throws Exception {
     for (ExoSocialActivity activity : tearDownActivityList) {
