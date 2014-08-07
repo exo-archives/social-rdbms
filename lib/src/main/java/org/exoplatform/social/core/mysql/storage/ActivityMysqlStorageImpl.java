@@ -1475,7 +1475,7 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
   }
 
   
-	private ExoSocialActivity getComment(String id){
+	public ExoSocialActivity getComment(String id){
     Connection dbConnection = null;
     PreparedStatement preparedStatement = null;
     ResultSet rs = null;

@@ -29,12 +29,4 @@
   <packaging>jar</packaging>
   <name>Social Activity MySQL Addon - Config</name>
   <description>Social Activity MySQL Addon - Extension Configuration JAR</description>
-  
-  <dependencies>
-    <dependency>
-      <groupId>org.gatein.portal</groupId>
-      <artifactId>exo.portal.component.portal</artifactId>
-    </dependency>
-  </dependencies>
-    
 </project>
