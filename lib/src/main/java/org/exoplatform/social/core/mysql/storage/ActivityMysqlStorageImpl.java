@@ -2111,8 +2111,48 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
   
 	@Override
 	public int getNumberOfComments(ExoSocialActivity existingActivity) {
-		// TODO Auto-generated method stub
-		return 0;
+	  Connection dbConnection = null;
+    PreparedStatement preparedStatement = null;
+    ResultSet rs = null;
+
+    StringBuilder sql = new StringBuilder();
+    sql.append("select count(*) numberOfComment ")
+       .append(" from comment where activityId = ?");
+
+    try {
+      dbConnection = abstractMysqlStorage.getJNDIConnection();
+      preparedStatement = dbConnection.prepareStatement(sql.toString());
+      preparedStatement.setString(1, existingActivity.getId());
+
+      rs = preparedStatement.executeQuery();
+      while (rs.next()) {
+        return rs.getInt(1);
+      }
+
+    } catch (SQLException e) {
+
+      LOG.error("error in comments look up:", e.getMessage());
+      return 0;
+
+    } finally {
+      try {
+        if (rs != null) {
+          rs.close();
+        }
+
+        if (preparedStatement != null) {
+          preparedStatement.close();
+        }
+
+        if (dbConnection != null) {
+          dbConnection.close();
+        }
+      } catch (SQLException e) {
+        LOG.error("Cannot close statement or connection:", e.getMessage());
+      }
+    }
+    
+    return 0;
 	}
 
 	@Override
