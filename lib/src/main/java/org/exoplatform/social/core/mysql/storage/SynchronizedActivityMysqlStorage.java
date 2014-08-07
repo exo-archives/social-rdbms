@@ -25,6 +25,7 @@ import org.exoplatform.social.core.ActivityProcessor;
 import org.exoplatform.social.core.activity.filter.ActivityUpdateFilter;
 import org.exoplatform.social.core.activity.model.ExoSocialActivity;
 import org.exoplatform.social.core.identity.model.Identity;
+import org.exoplatform.social.core.mysql.MysqlDBConnect;
 import org.exoplatform.social.core.storage.ActivityStorageException;
 import org.exoplatform.social.core.storage.api.ActivityStreamStorage;
 import org.exoplatform.social.core.storage.api.IdentityStorage;
@@ -36,8 +37,10 @@ public class SynchronizedActivityMysqlStorage extends ActivityMysqlStorageImpl {
 
   public SynchronizedActivityMysqlStorage(
       RelationshipStorage relationshipStorage, IdentityStorage identityStorage,
-      SpaceStorage spaceStorage, ActivityStreamStorage streamStorage) {
-    super(relationshipStorage, identityStorage, spaceStorage, streamStorage);
+      SpaceStorage spaceStorage, ActivityStreamStorage streamStorage, MysqlDBConnect dbConnect) {
+    
+    
+    super(relationshipStorage, identityStorage, spaceStorage, streamStorage, dbConnect);
   }
 
   /**

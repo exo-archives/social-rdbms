@@ -57,6 +57,7 @@ import org.exoplatform.social.core.activity.model.ExoSocialActivityImpl;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvider;
 import org.exoplatform.social.core.identity.provider.SpaceIdentityProvider;
+import org.exoplatform.social.core.mysql.MysqlDBConnect;
 import org.exoplatform.social.core.mysql.model.StreamItem;
 import org.exoplatform.social.core.mysql.model.StreamItemImpl;
 import org.exoplatform.social.core.relationship.model.Relationship;
@@ -105,20 +106,21 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
   private final IdentityStorage identityStorage;
   private final SpaceStorage spaceStorage;
   private ActivityStorage activityStorage;
-  private AbstractMysqlStorage abstractMysqlStorage;
+  private MysqlDBConnect dbConnect;
   
   private static final Log LOG = ExoLogger.getLogger(ActivityMysqlStorageImpl.class);
   
   public ActivityMysqlStorageImpl(final RelationshipStorage relationshipStorage,
                                   final IdentityStorage identityStorage,
                                   final SpaceStorage spaceStorage,
-                                  final ActivityStreamStorage streamStorage) {
+                                  final ActivityStreamStorage streamStorage,
+                                  MysqlDBConnect dbConnect) {
 
     super(relationshipStorage, identityStorage, spaceStorage, streamStorage);
     this.relationshipStorage = relationshipStorage;
     this.identityStorage = identityStorage;
     this.spaceStorage = spaceStorage;
-    this.abstractMysqlStorage = new AbstractMysqlStorage();
+    this.dbConnect = dbConnect;
     this.activityProcessors = new TreeSet<ActivityProcessor>(processorComparator());
   }
   
@@ -148,7 +150,7 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
     ExoSocialActivity activity = new ExoSocialActivityImpl();
 
     try {
-      dbConnection = abstractMysqlStorage.getJNDIConnection();
+      dbConnection = dbConnect.getDBConnection();
       preparedStatement = dbConnection.prepareStatement(getActivitySQL.toString());
       preparedStatement.setString(1, activityId);
 
@@ -294,7 +296,7 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
     
     List<ExoSocialActivity> list = new ArrayList<ExoSocialActivity>();
     try {
-      dbConnection = abstractMysqlStorage.getJNDIConnection();
+      dbConnection = dbConnect.getDBConnection();
       preparedStatement = dbConnection.prepareStatement(getActivitySQL.toString());
       preparedStatement.setString(1, owner.getId());
       preparedStatement.setString(2, "%"+ViewerType.COMMENTER.getType()+"%");
@@ -369,7 +371,7 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
 
     List<ExoSocialActivity> list = new ArrayList<ExoSocialActivity>();
     try {
-      dbConnection = abstractMysqlStorage.getJNDIConnection();
+      dbConnection = dbConnect.getDBConnection();
       preparedStatement = dbConnection.prepareStatement(getActivitySQL.toString());
       preparedStatement.setString(1, "%" + ViewerType.COMMENTER.getType() + "%");
       preparedStatement.setString(2, "%" + ViewerType.LIKER.getType() + "%");
@@ -457,7 +459,7 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
     long commentMillis = (comment.getPostedTime() != null ? comment.getPostedTime() : currentMillis);
 
     try {
-      dbConnection = abstractMysqlStorage.getJNDIConnection();
+      dbConnection = dbConnect.getDBConnection();
 
       // insert comment
       preparedStatement = dbConnection.prepareStatement(insertTableSQL.toString());
@@ -632,7 +634,7 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
                   .append(" where _id = ?");
     
     try {
-      dbConnection = abstractMysqlStorage.getJNDIConnection();
+      dbConnection = dbConnect.getDBConnection();
       preparedStatement = dbConnection.prepareStatement(insertTableSQL.toString());
       preparedStatement.setString(1, viewerTypes);
       preparedStatement.setString(2, viewerId);
@@ -680,7 +682,7 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
     StreamItem item = null;
 
     try {
-      dbConnection = abstractMysqlStorage.getJNDIConnection();
+      dbConnection = dbConnect.getDBConnection();
       preparedStatement = dbConnection.prepareStatement(getActivitySQL.toString());
       preparedStatement.setString(1, activityId);
       preparedStatement.setString(2, viewerId);
@@ -815,7 +817,7 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
                   .append("VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
     
     try {
-      dbConnection = abstractMysqlStorage.getJNDIConnection();
+      dbConnection = dbConnect.getDBConnection();
       preparedStatement = dbConnection.prepareStatement(insertTableSQL.toString());
  
       activity.setId(UUID.randomUUID().toString());
@@ -954,7 +956,7 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
                   .append("VALUES (?,?,?,?,?,?,?,?,?)");
     
     try {
-      dbConnection = abstractMysqlStorage.getJNDIConnection();
+      dbConnection = dbConnect.getDBConnection();
       preparedStatement = dbConnection.prepareStatement(insertTableSQL.toString());
       preparedStatement.setString(1, UUID.randomUUID().toString());
       preparedStatement.setString(2, activityId);
@@ -998,6 +1000,9 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
     String[] orginLikers = dbActivity.getLikeIdentityIds();
     
     long currentMillis = System.currentTimeMillis();
+    if (activity.getTitle() != null) {
+      dbActivity.setTitle(activity.getTitle());
+    }
     dbActivity.setUpdated(currentMillis);
     dbActivity.setLikeIdentityIds(activity.getLikeIdentityIds());
     
@@ -1012,7 +1017,7 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
                   .append(" where _id = ?");
     
     try {
-      dbConnection = abstractMysqlStorage.getJNDIConnection();
+      dbConnection = dbConnect.getDBConnection();
       preparedStatement = dbConnection.prepareStatement(sql.toString());
  
       int index = fillPreparedStatementFromActivity(null, dbActivity, preparedStatement, 1);
@@ -1140,7 +1145,7 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
                   .append(" where activityId = ?");
     
     try {
-      dbConnection = abstractMysqlStorage.getJNDIConnection();
+      dbConnection = dbConnect.getDBConnection();
       preparedStatement = dbConnection.prepareStatement(sql.toString());
       preparedStatement.setLong(1, time);
       preparedStatement.setString(2, activityId);
@@ -1187,7 +1192,7 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
     StringBuilder sql = new StringBuilder("delete from activity where _id = ?");
 
     try {
-      dbConnection = abstractMysqlStorage.getJNDIConnection();
+      dbConnection = dbConnect.getDBConnection();
 
       // insert comment
       preparedStatement = dbConnection.prepareStatement(sql.toString());
@@ -1229,7 +1234,7 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
     StringBuilder sql = new StringBuilder("delete from comment where activityId = ?");
 
     try {
-      dbConnection = abstractMysqlStorage.getJNDIConnection();
+      dbConnection = dbConnect.getDBConnection();
 
       // insert comment
       preparedStatement = dbConnection.prepareStatement(sql.toString());
@@ -1268,7 +1273,7 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
     StringBuilder sql = new StringBuilder("delete from stream_item where activityId = ?");
 
     try {
-      dbConnection = abstractMysqlStorage.getJNDIConnection();
+      dbConnection = dbConnect.getDBConnection();
 
       // insert comment
       preparedStatement = dbConnection.prepareStatement(sql.toString());
@@ -1359,7 +1364,7 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
     StringBuilder sql = new StringBuilder("delete from stream_item where _id = ?");
 
     try {
-      dbConnection = abstractMysqlStorage.getJNDIConnection();
+      dbConnection = dbConnect.getDBConnection();
 
       // insert comment
       preparedStatement = dbConnection.prepareStatement(sql.toString());
@@ -1404,7 +1409,7 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
 
     List<StreamItem> list = new ArrayList<StreamItem>();
     try {
-      dbConnection = abstractMysqlStorage.getJNDIConnection();
+      dbConnection = dbConnect.getDBConnection();
       preparedStatement = dbConnection.prepareStatement(getActivitySQL.toString());
       preparedStatement.setString(1, activityId);
 
@@ -1482,7 +1487,7 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
                   .append(" from comment where _id = ?");
 
     try {
-      dbConnection = abstractMysqlStorage.getJNDIConnection();
+      dbConnection = dbConnect.getDBConnection();
       preparedStatement = dbConnection.prepareStatement(sql.toString());
       preparedStatement.setString(1, id);
 
@@ -1530,7 +1535,7 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
     StringBuilder sql = new StringBuilder("delete from comment where _id = ?");
 
     try {
-      dbConnection = abstractMysqlStorage.getJNDIConnection();
+      dbConnection = dbConnect.getDBConnection();
 
       // insert comment
       preparedStatement = dbConnection.prepareStatement(sql.toString());
@@ -1679,7 +1684,7 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
     List<ExoSocialActivity> result = new LinkedList<ExoSocialActivity>();
     
     try {
-      dbConnection = abstractMysqlStorage.getJNDIConnection();
+      dbConnection = dbConnect.getDBConnection();
       preparedStatement = dbConnection.prepareStatement(sql.toString());
       preparedStatement.setString(1, ownerIdentity.getId());
       
@@ -1826,7 +1831,7 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
     
     List<ExoSocialActivity> list = new ArrayList<ExoSocialActivity>();
     try {
-      dbConnection = abstractMysqlStorage.getJNDIConnection();
+      dbConnection = dbConnect.getDBConnection();
       preparedStatement = dbConnection.prepareStatement(getActivitySQL.toString());
       preparedStatement.setString(1, ownerIdentity.getId());
       
@@ -1943,7 +1948,7 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
     
     List<ExoSocialActivity> list = new ArrayList<ExoSocialActivity>();
     try {
-      dbConnection = abstractMysqlStorage.getJNDIConnection();
+      dbConnection = dbConnect.getDBConnection();
       preparedStatement = dbConnection.prepareStatement(getActivitySQL.toString());
       
       if (sinceTime > 0) {
@@ -2046,7 +2051,7 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
                   .append(" from comment where activityId = ?");
 
     try {
-      dbConnection = abstractMysqlStorage.getJNDIConnection();
+      dbConnection = dbConnect.getDBConnection();
       preparedStatement = dbConnection.prepareStatement(sql.toString());
       preparedStatement.setString(1, existingActivity.getId());
 
@@ -2120,7 +2125,7 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
        .append(" from comment where activityId = ?");
 
     try {
-      dbConnection = abstractMysqlStorage.getJNDIConnection();
+      dbConnection = dbConnect.getDBConnection();
       preparedStatement = dbConnection.prepareStatement(sql.toString());
       preparedStatement.setString(1, existingActivity.getId());
 
@@ -2251,7 +2256,7 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
     int count = 0;
     
     try {
-      dbConnection = abstractMysqlStorage.getJNDIConnection();
+      dbConnection = dbConnect.getDBConnection();
       preparedStatement = dbConnection.prepareStatement(sql);
       
       int index = 1;
@@ -2325,7 +2330,7 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
     
     List<ExoSocialActivity> list = new ArrayList<ExoSocialActivity>();
     try {
-      dbConnection = abstractMysqlStorage.getJNDIConnection();
+      dbConnection = dbConnect.getDBConnection();
       preparedStatement = dbConnection.prepareStatement(getActivitySQL.toString());
       preparedStatement.setString(1, spaceIdentity.getRemoteId());
       

@@ -17,6 +17,13 @@
 
 package org.exoplatform.social.core.mysql.test;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.net.URL;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.Statement;
 import java.util.Arrays;
 import java.util.List;
 
@@ -37,6 +44,7 @@ import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 import org.exoplatform.services.organization.OrganizationService;
 import org.exoplatform.services.organization.User;
+import org.exoplatform.social.core.mysql.MysqlDBConnect;
 import org.exoplatform.social.core.space.SpaceException;
 import org.exoplatform.social.core.space.SpaceUtils;
 import org.exoplatform.social.core.space.model.Space;
@@ -52,11 +60,13 @@ import org.exoplatform.social.core.space.spi.SpaceService;
   @ConfigurationUnit(scope = ContainerScope.PORTAL, path = "conf/exo.portal.component.identity-configuration.xml"),
   @ConfigurationUnit(scope = ContainerScope.PORTAL, path = "conf/standalone/exo.social.component.core.test.configuration.xml"),
   @ConfigurationUnit(scope = ContainerScope.PORTAL, path = "conf/standalone/exo.social.test.jcr-configuration.xml"),
-  @ConfigurationUnit(scope = ContainerScope.PORTAL, path = "conf/standalone/exo.social.test.portal-configuration.xml")
+  @ConfigurationUnit(scope = ContainerScope.PORTAL, path = "conf/standalone/exo.social.test.portal-configuration.xml"),
+  @ConfigurationUnit(scope = ContainerScope.PORTAL, path = "conf/dbscript/mysqlDB_script_test.sql")
 })
 public abstract class AbstractCoreTest extends BaseExoTestCase {
   private final Log LOG = ExoLogger.getLogger(AbstractCoreTest.class);
   protected SpaceService spaceService;
+  protected MysqlDBConnect dbConnect;
   protected Session session;
   
   @Override
@@ -65,24 +75,65 @@ public abstract class AbstractCoreTest extends BaseExoTestCase {
     begin();
     
     spaceService = (SpaceService) getContainer().getComponentInstanceOfType(SpaceService.class);
+    dbConnect = (MysqlDBConnect) getContainer().getComponentInstanceOfType(MysqlDBConnect.class);
+    
+    initDB();
+  }
+
+  private void initDB() {
+    String mysqlScriptFilePath = "conf/mysqlDB_script_test.sql";
+    String s = new String();
+    StringBuffer sb = new StringBuffer();
+
+    try {
+      URL path = AbstractCoreTest.class.getClassLoader().getResource(mysqlScriptFilePath);
+      FileReader fr = new FileReader(new File(path.getPath()));
+
+      BufferedReader br = new BufferedReader(fr);
+
+      while ((s = br.readLine()) != null) {
+        sb.append(s);
+      }
+      br.close();
+
+      String[] inst = sb.toString().split(";");
+
+      Connection con = DriverManager.getConnection("jdbc:mysql://localhost:3306", "root", "exo");
+      Statement stmt = con.createStatement();
+
+      for (int i = 0; i < inst.length; i++) {
+        if (!inst[i].trim().equals("")) {
+          stmt.executeUpdate(inst[i]);
+        }
+      }
+
+    } catch (Exception e) {
+      LOG.info("Failed in executing mysql script.");
+    }
   }
 
   @Override
   protected void tearDown() throws Exception {
     //
     end();
+    
+    cleanDB();
   }
   
+  private void cleanDB() {
+    String sql = "DROP DATABASE social_test";
+    try {
+      Connection con = dbConnect.getDBConnection();
+      Statement stmt = con.createStatement();
+      stmt.executeUpdate(sql);
+    } catch (Exception e) {
+      
+    }
+  }
+
   @SuppressWarnings("unchecked")
   public <T> T getService(Class<T> clazz) {
     return (T) getContainer().getComponentInstanceOfType(clazz);
-  }
-  
-  private Session getSession() throws RepositoryException {
-    PortalContainer container = PortalContainer.getInstance();
-    RepositoryService repositoryService = (RepositoryService) container.getComponentInstance(RepositoryService.class);
-    ManageableRepository repository = repositoryService.getCurrentRepository();
-    return repository.getSystemSession("portal-test");
   }
 
   /**
