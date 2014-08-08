@@ -17,6 +17,11 @@
 package org.exoplatform.social.core.mysql.storage;
 
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -205,7 +210,7 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl implements Sta
     StringBuilder getActivitySQL = new StringBuilder();
     getActivitySQL.append("select ")
                   .append("_id, title, titleId, body, bodyId, postedTime, lastUpdated, posterId, ownerId,")
-                  .append("permaLink, appId, externalId, priority, hidable, lockable, likers, metadata")
+                  .append("permaLink, appId, externalId, priority, hidable, lockable, likers, metadata, templateParams")
                   .append(" from activity where _id = ?");
 
     ExoSocialActivity activity = new ExoSocialActivityImpl();
@@ -271,14 +276,23 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl implements Sta
       activity.setPriority(null);
     }
     activity.setPosterId(rs.getString("posterId"));
-
-    /*
-    List<String> computeCommentid = new ArrayList<String>();
-    for (ActivityEntity commentEntity : activityEntity.getComments()) {
-      computeCommentid.add(commentEntity.getId());
+    //
+    byte[] st = (byte[]) rs.getObject("templateParams");
+    try {
+      ByteArrayInputStream baip = new ByteArrayInputStream(st);
+      ObjectInputStream ois = new ObjectInputStream(baip);
+      activity.setTemplateParams((Map<String, String>) ois.readObject());
+    } catch (Exception e) {
+      LOG.debug("Failed to get templateParams of activity from database");
     }
 
-    activity.setReplyToId(computeCommentid.toArray(new String[]{}));*/
+    //
+    List<String> commentIds = new ArrayList<String>();
+    List<ExoSocialActivity> comments = getStorage().getComments(activity, 0, -1);
+    for (ExoSocialActivity comment : comments) {
+      commentIds.add(comment.getId());
+    }
+    activity.setReplyToId(commentIds.toArray(new String[]{}));
     
     String lks = rs.getString("likers");
     String[] likes = StringUtils.split(lks, ",");
@@ -305,7 +319,7 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl implements Sta
       }
     }
     stream.setType(providerId);
-    
+    stream.setPrettyId(remoteId);
     
     //
     activity.setActivityStream(stream);
@@ -874,8 +888,8 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl implements Sta
     StringBuilder insertTableSQL = new StringBuilder();
     insertTableSQL.append("INSERT INTO activity")
                   .append("(_id, title, titleId, body, bodyId, postedTime, lastUpdated, posterId, ownerId,")
-                  .append("permaLink, appId, externalId, priority, hidable, lockable, likers, metadata)")
-                  .append("VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
+                  .append("permaLink, appId, externalId, priority, hidable, lockable, likers, metadata, templateParams)")
+                  .append("VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
     
     try {
       dbConnection = dbConnect.getDBConnection();
@@ -939,6 +953,20 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl implements Sta
     preparedStatement.setString(index++, StringUtils.join(activity.getLikeIdentityIds(),","));
     //TODO add metadata
     preparedStatement.setString(index++, null);
+    //
+    if (activity.getTemplateParams() != null) {
+      try {
+        ByteArrayOutputStream b = new ByteArrayOutputStream();
+        ObjectOutputStream output = new ObjectOutputStream(b);
+        output.writeObject(activity.getTemplateParams());
+        preparedStatement.setBinaryStream(index++, new ByteArrayInputStream(b.toByteArray()));
+      } catch (IOException e) {
+        LOG.debug("Failed to save templateParams of activity into database");
+      }
+    } else {
+      preparedStatement.setNull(index++, Types.BLOB);
+    }
+    
     return index;
   }
   
@@ -1074,7 +1102,7 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl implements Sta
     StringBuilder sql = new StringBuilder();
     sql.append("update activity ")
                   .append("set title=?, titleId=?, body=?, bodyId=?, postedTime=?, lastUpdated=?, posterId=?, ownerId=?,")
-                  .append("permaLink=?, appId=?, externalId=?, priority=?, hidable=?, lockable=?, likers=?, metadata=?")
+                  .append("permaLink=?, appId=?, externalId=?, priority=?, hidable=?, lockable=?, likers=?, metadata=?, templateParams=?")
                   .append(" where _id = ?");
     
     try {
@@ -1821,7 +1849,9 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl implements Sta
     }
     
     if(CollectionUtils.isNotEmpty(relationships)){
-      sql.append("or posterId in ('").append(StringUtils.join(relationshipIds, "','")).append("') ");
+      sql.append("or (posterId in ('").append(StringUtils.join(relationshipIds, "','")).append("') ")
+         .append("and viewerType in ('POSTER','LIKER','COMMENTER','MENTIONER'))")
+         ;
     }
     
     sql.append(")");
@@ -1862,69 +1892,50 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl implements Sta
 			Identity ownerIdentity, int offset, int limit) {
 	  return getActivitiesOfConnectionsForUpgrade(ownerIdentity, offset, limit);
 	}
-
-	@Override
-	public List<ExoSocialActivity> getActivitiesOfConnectionsForUpgrade(
-			Identity ownerIdentity, int offset, int limit) {
-    List<Identity> relationships = relationshipStorage.getConnections(ownerIdentity);
+	
+	private String getActivitiesOfConnectionsQuery(Identity ownerIdentity, int offset, int limit, boolean isCount) {
+	  List<Identity> relationships = relationshipStorage.getConnections(ownerIdentity);
     Set<String> relationshipIds = new HashSet<String>();
     for (Identity identity : relationships) {
       relationshipIds.add(identity.getId());
     }
-    
-    Connection dbConnection = null;
-    PreparedStatement preparedStatement = null;
-    ResultSet rs = null;
-
     StringBuilder getActivitySQL = new StringBuilder();
-    getActivitySQL.append("select distinct activityId")
+    getActivitySQL.append(isCount ? "select count(distinct activityId)" : "select distinct activityId")
                   .append(" from stream_item where (viewerId = ?")
                   .append(" or posterId in ('")
                   .append(StringUtils.join(relationshipIds, "','"))
-                  .append("'))");
-
-    long sinceTime = getSinceTime(ownerIdentity, offset, ActivityType.CONNECTION);
-    if (sinceTime > 0) {
-      getActivitySQL.append(" and time < ?");
-    }
-    
-    getActivitySQL.append(" order by time desc limit 0,").append(limit);
-    
+                  .append("'))")
+                  .append(" order by time desc");;
+    getActivitySQL.append(limit > 0 ? " LIMIT " + limit : "").append(offset > 0 ? " OFFSET " + offset : "");
+    return getActivitySQL.toString();
+	}
+	
+  @Override
+  public List<ExoSocialActivity> getActivitiesOfConnectionsForUpgrade(Identity ownerIdentity, int offset, int limit) {
+    Connection dbConnection = null;
+    PreparedStatement preparedStatement = null;
+    ResultSet rs = null;
     List<ExoSocialActivity> list = new ArrayList<ExoSocialActivity>();
+    //
     try {
       dbConnection = dbConnect.getDBConnection();
-      preparedStatement = dbConnection.prepareStatement(getActivitySQL.toString());
+      preparedStatement = dbConnection.prepareStatement(getActivitiesOfConnectionsQuery(ownerIdentity, offset, limit, false));
       preparedStatement.setString(1, ownerIdentity.getId());
-      
-      if (sinceTime > 0) {
-        preparedStatement.setLong(2, sinceTime);
-      }
       rs = preparedStatement.executeQuery();
-
       while (rs.next()) {
         ExoSocialActivity activity = getStorage().getActivity(rs.getString("activityId"));
         list.add(activity);
       }
-
-      LOG.debug("activities found");
-
+    } catch (Exception e) {
       return list;
-
-    } catch (SQLException e) {
-
-      LOG.error("error in stream items look up:", e.getMessage());
-      return null;
-
     } finally {
       try {
         if (rs != null) {
           rs.close();
         }
-
         if (preparedStatement != null) {
           preparedStatement.close();
         }
-
         if (dbConnection != null) {
           dbConnection.close();
         }
@@ -1932,13 +1943,43 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl implements Sta
         LOG.error("Cannot close statement or connection:", e.getMessage());
       }
     }
-	}
+    //
+    return list;
+  }
 
-	@Override
-	public int getNumberOfActivitiesOfConnections(Identity ownerIdentity) {
-		// TODO Auto-generated method stub
-		return 0;
-	}
+  @Override
+  public int getNumberOfActivitiesOfConnections(Identity ownerIdentity) {
+    Connection dbConnection = null;
+    PreparedStatement preparedStatement = null;
+    ResultSet rs = null;
+    try {
+      dbConnection = dbConnect.getDBConnection();
+      preparedStatement = dbConnection.prepareStatement(getActivitiesOfConnectionsQuery(ownerIdentity, 0, -1, true));
+      preparedStatement.setString(1, ownerIdentity.getId());
+      rs = preparedStatement.executeQuery();
+      while (rs.next()) {
+        return rs.getInt(1);
+      }
+      return 0;
+    } catch (SQLException e) {
+      return 0;
+    } finally {
+      try {
+        if (rs != null) {
+          rs.close();
+        }
+        if (preparedStatement != null) {
+          preparedStatement.close();
+        }
+        if (dbConnection != null) {
+          dbConnection.close();
+        }
+      } catch (SQLException e) {
+        LOG.error("Cannot close statement or connection:", e.getMessage());
+      }
+    }
+  }
+
 
 	@Override
 	public int getNumberOfActivitiesOfConnectionsForUpgrade(
@@ -1981,66 +2022,59 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl implements Sta
 		// TODO Auto-generated method stub
 		return null;
 	}
-
-	@Override
-	public List<ExoSocialActivity> getUserSpacesActivities(
-			Identity ownerIdentity, int offset, int limit) {
-    Connection dbConnection = null;
-    PreparedStatement preparedStatement = null;
-    ResultSet rs = null;
-
-    List<Space> spaces = spaceStorage.getMemberSpaces(ownerIdentity.getRemoteId());
+	
+	private String getUserSpaceActivitiesQuery(Identity ownerIdentity, int offset, int limit, boolean isCount) {
+	  List<Space> spaces = spaceStorage.getMemberSpaces(ownerIdentity.getRemoteId());
     String[] spaceIds = new String[0];
     for (Space space : spaces) {
       spaceIds = (String[]) ArrayUtils.add(spaceIds, space.getPrettyName());
     }
     
     StringBuilder getActivitySQL = new StringBuilder();
-    getActivitySQL.append("select distinct activityId")
+    getActivitySQL.append(isCount ? "select count(distinct activityId)" : "select distinct activityId")
                   .append(" from stream_item where ownerId in ('")
-                  .append(StringUtils.join(spaceIds, "','")).append("') ");
+                  .append(StringUtils.join(spaceIds, "','")).append("') ")
+                  .append(" order by time desc");
+    getActivitySQL.append(limit > 0 ? " LIMIT " + limit : "").append(offset > 0 ? " OFFSET " + offset : "");
+    
+    return getActivitySQL.toString();
+	}
 
-    long sinceTime = getSinceTime(ownerIdentity, offset, ActivityType.SPACES);
-    if (sinceTime > 0) {
-      getActivitySQL.append(" and time < ?");
-    }
-    
-    getActivitySQL.append(" order by time desc limit 0,").append(limit);
-    
+	@Override
+	public List<ExoSocialActivity> getUserSpacesActivities(Identity ownerIdentity, int offset, int limit) {
+    return getUserSpacesActivitiesForUpgrade(ownerIdentity, offset, limit);
+	}
+
+	@Override
+	public List<ExoSocialActivity> getUserSpacesActivitiesForUpgrade(Identity ownerIdentity, int offset, int limit) {
+	  Connection dbConnection = null;
+    PreparedStatement preparedStatement = null;
+    ResultSet rs = null;
     List<ExoSocialActivity> list = new ArrayList<ExoSocialActivity>();
+    //
     try {
       dbConnection = dbConnect.getDBConnection();
-      preparedStatement = dbConnection.prepareStatement(getActivitySQL.toString());
-      
-      if (sinceTime > 0) {
-        preparedStatement.setLong(1, sinceTime);
-      }
+      preparedStatement = dbConnection.prepareStatement(getUserSpaceActivitiesQuery(ownerIdentity, offset, limit, false));
       rs = preparedStatement.executeQuery();
-
+      //
       while (rs.next()) {
         ExoSocialActivity activity = getStorage().getActivity(rs.getString("activityId"));
         list.add(activity);
       }
-
       LOG.debug("activities found");
-
+      //
       return list;
-
     } catch (SQLException e) {
-
       LOG.error("error in stream items look up:", e.getMessage());
       return null;
-
     } finally {
       try {
         if (rs != null) {
           rs.close();
         }
-
         if (preparedStatement != null) {
           preparedStatement.close();
         }
-
         if (dbConnection != null) {
           dbConnection.close();
         }
@@ -2051,16 +2085,35 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl implements Sta
 	}
 
 	@Override
-	public List<ExoSocialActivity> getUserSpacesActivitiesForUpgrade(
-			Identity ownerIdentity, int offset, int limit) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
 	public int getNumberOfUserSpacesActivities(Identity ownerIdentity) {
-		// TODO Auto-generated method stub
-		return 0;
+	  Connection dbConnection = null;
+    PreparedStatement preparedStatement = null;
+    ResultSet rs = null;
+    try {
+      dbConnection = dbConnect.getDBConnection();
+      preparedStatement = dbConnection.prepareStatement(getUserSpaceActivitiesQuery(ownerIdentity, 0, -1, true));
+      rs = preparedStatement.executeQuery();
+      while (rs.next()) {
+        return rs.getInt(1);
+      }
+      return 0;
+    } catch (SQLException e) {
+      return 0;
+    } finally {
+      try {
+        if (rs != null) {
+          rs.close();
+        }
+        if (preparedStatement != null) {
+          preparedStatement.close();
+        }
+        if (dbConnection != null) {
+          dbConnection.close();
+        }
+      } catch (SQLException e) {
+        LOG.error("Cannot close statement or connection:", e.getMessage());
+      }
+    }
 	}
 
 	@Override
@@ -2166,6 +2219,7 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl implements Sta
     comment.setPostedTime(rs.getLong("postedTime"));
     comment.setUpdated(rs.getLong("lastUpdated"));
     comment.setPosterId(rs.getString("posterId"));
+    comment.setParentId(rs.getString("activityId"));
 
     comment.isLocked(rs.getBoolean("lockable"));
     comment.isHidden(rs.getBoolean("hidable"));

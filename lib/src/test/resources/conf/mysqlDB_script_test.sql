@@ -20,6 +20,7 @@ CREATE TABLE `activity` (
   `lockable` tinyint(4) DEFAULT NULL,
   `likers` varchar(2000) DEFAULT NULL,
   `metadata` varchar(2000) DEFAULT NULL,
+  `templateParams` blob,
   PRIMARY KEY (`_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
