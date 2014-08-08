@@ -1,6 +1,7 @@
 package org.exoplatform.social.core.mysql.storage;
 
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.sql.Connection;
@@ -8,6 +9,7 @@ import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Properties;
 
 import javax.naming.Context;
 import javax.naming.InitialContext;
@@ -21,7 +23,9 @@ import org.picocontainer.Startable;
 
 public class MysqlJNDIConnection implements Startable, MysqlDBConnect {
   private static final Log LOG = ExoLogger.getLogger(MysqlJNDIConnection.class);
-  private static final String SCRIPT_FILE_PATH = "conf/mysqlDB_script.sql";
+  private static final String SCRIPT_FILE_PATH = "/conf/mysqlDB_script.sql";
+  private static final String DBINFO_FILE_PATH = "/conf/dbinfo.properties";
+  private String dbContext;
   
   private Statement statement;
   @Override
@@ -31,7 +35,7 @@ public class MysqlJNDIConnection implements Startable, MysqlDBConnect {
       Context initContext = new InitialContext();
       Context envContext = (Context) initContext.lookup("java:/comp/env");
       DataSource datasource = (DataSource) envContext
-          .lookup(DATASOURCE_CONTEXT);
+          .lookup(getDbContext());
       if (datasource != null) {
         result = datasource.getConnection();
       } else {
@@ -41,8 +45,19 @@ public class MysqlJNDIConnection implements Startable, MysqlDBConnect {
       LOG.error("Cannot get connection: " + ex);
     } catch (SQLException ex) {
       LOG.error("Cannot get connection: " + ex);
+    } catch (IOException e) {
+      LOG.error("Cannot get database context: " + e);
     }
     return result;
+  }
+
+  private String getDbContext() throws IOException {
+    if (dbContext == null) {
+      Properties props = new Properties();
+      props.load(getClass().getResourceAsStream(DBINFO_FILE_PATH));
+      return props.getProperty("db.context");
+    }
+    return dbContext;
   }
 
   public void start() {
@@ -98,11 +113,17 @@ public class MysqlJNDIConnection implements Startable, MysqlDBConnect {
     }
   }
   
-  
   private Statement getStatement() {
     try {
+      Properties props = new Properties();
+      props.load(getClass().getResourceAsStream(DBINFO_FILE_PATH));
+      String username = props.getProperty("db.username");
+      String password = props.getProperty("db.password");
+      String dbUrl = props.getProperty("db.url");
+      this.dbContext = props.getProperty("db.context");
+      
       if (statement == null) {
-        Connection con = DriverManager.getConnection(DB_URL, USER, PASS);
+        Connection con = DriverManager.getConnection(dbUrl, username, password);
         this.statement = con.createStatement();
       }
       return statement;

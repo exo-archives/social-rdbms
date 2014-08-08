@@ -23,9 +23,11 @@ import java.io.FileReader;
 import java.net.URL;
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.ResultSet;
 import java.sql.Statement;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Properties;
 
 import javax.jcr.Session;
 
@@ -63,7 +65,26 @@ public abstract class AbstractCoreTest extends BaseExoTestCase {
   protected SpaceService spaceService;
   protected MysqlDBConnect dbConnect;
   protected Session session;
+  protected String username;
+  protected String password;
+  private String dburl;
   
+  public String getUsername() {
+    return username;
+  }
+
+  public void setUsername(String username) {
+    this.username = username;
+  }
+
+  public String getPassword() {
+    return password;
+  }
+
+  public void setPassword(String password) {
+    this.password = password;
+  }
+
   @Override
   protected void setUp() throws Exception {
     //
@@ -76,14 +97,21 @@ public abstract class AbstractCoreTest extends BaseExoTestCase {
   }
 
   private void initDB() {
-    // clear if existing.
-    cleanDB();
-    //
-    String mysqlScriptFilePath = "conf/mysqlDB_script_test.sql";
-    String s = new String();
-    StringBuffer sb = new StringBuffer();
-
+    
     try {
+      Properties props = new Properties();
+      props.load(ClassLoader.getSystemResourceAsStream("conf/dbinfo_test.properties"));
+      this.username = props.getProperty("db.username");
+      this.password = props.getProperty("db.password");
+      this.dburl = props.getProperty("db.url");
+      
+      // clear if existing.
+      cleanDB();
+      
+      //
+      String mysqlScriptFilePath = "conf/mysqlDB_script_test.sql";
+      String s = new String();
+      StringBuffer sb = new StringBuffer();
       URL path = AbstractCoreTest.class.getClassLoader().getResource(mysqlScriptFilePath);
       FileReader fr = new FileReader(new File(path.getPath()));
 
@@ -96,7 +124,7 @@ public abstract class AbstractCoreTest extends BaseExoTestCase {
 
       String[] inst = sb.toString().split(";");
 
-      Connection con = DriverManager.getConnection("jdbc:mysql://localhost:3306", "root", "root");
+      Connection con = DriverManager.getConnection(dburl, username, password);
       Statement stmt = con.createStatement();
 
       for (int i = 0; i < inst.length; i++) {
@@ -115,19 +143,25 @@ public abstract class AbstractCoreTest extends BaseExoTestCase {
     //
     end();
     
-   // cleanDB();
+    cleanDB();
   }
   
   private void cleanDB() {
     String sql = "DROP DATABASE social_test";
+    String query = "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'social_test'";
     try {
-      Connection con = DriverManager.getConnection("jdbc:mysql://localhost:3306", "root", "root");
+      Connection con = DriverManager.getConnection(dburl, username, password);
       Statement stmt = con.createStatement();
-      stmt.executeUpdate(sql);
+      ResultSet rs = stmt.executeQuery(query);                  
+      rs.next();
+      if (rs.getInt("COUNT(*)") > 0) {
+        stmt.executeUpdate(sql);
+      }
     } catch (Exception e) {
+      LOG.error("Failed to drop social database." + e);
     }
   }
-
+  
   @SuppressWarnings("unchecked")
   public <T> T getService(Class<T> clazz) {
     return (T) getContainer().getComponentInstanceOfType(clazz);

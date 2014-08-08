@@ -16,9 +16,11 @@
  */
 package org.exoplatform.social.core.mysql.storage;
 
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.util.Properties;
 
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
@@ -27,13 +29,12 @@ import org.exoplatform.social.core.storage.impl.AbstractStorage;
 
 /**
  * Created by The eXo Platform SAS
- * Author : Nguyen Huy Quang
- *          quangnh2@exoplatform.com
  * Dec 12, 2013  
  */
 public class MysqlDBConnectImpl extends AbstractStorage implements MysqlDBConnect {
 
   private static final Log LOG = ExoLogger.getLogger(MysqlDBConnectImpl.class);
+  private static final String DB_INFO_TEST = "conf/dbinfo_test.properties";
 
   public Connection getDBConnection() {
     Connection dbConnection = null;
@@ -45,10 +46,18 @@ public class MysqlDBConnectImpl extends AbstractStorage implements MysqlDBConnec
     }
 
     try {
-      dbConnection = DriverManager.getConnection(DB_URL, USER, PASS);
+      Properties props = new Properties();
+      props.load(ClassLoader.getSystemResourceAsStream(DB_INFO_TEST));
+      String username = props.getProperty("db.username");
+      String password = props.getProperty("db.password");
+      String dbUrl = props.getProperty("db.social_test.url");
+          
+      dbConnection = DriverManager.getConnection(dbUrl, username, password);
       return dbConnection;
     } catch (SQLException e) {
       LOG.error("Connection fail:", e.getMessage());
+    } catch (IOException e) {
+      LOG.error("Failed in getting properties information.", e);
     }
 
     return dbConnection;
