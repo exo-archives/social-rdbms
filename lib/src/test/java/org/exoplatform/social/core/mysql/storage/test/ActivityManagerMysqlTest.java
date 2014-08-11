@@ -901,12 +901,12 @@ public class ActivityManagerMysqlTest extends AbstractCoreTest {
   public  void testGetComments() throws ActivityStorageException {
     ExoSocialActivity activity = new ExoSocialActivityImpl();;
     activity.setTitle("blah blah");
-    activityManager.saveActivity(rootIdentity, activity);
+    activityManager.saveActivityNoReturn(rootIdentity, activity);
 
     List<ExoSocialActivity> comments = new ArrayList<ExoSocialActivity>();
-    for (int i = 0; i < 1; i++) {
+    for (int i = 0; i < 3; i++) {
       ExoSocialActivity comment = new ExoSocialActivityImpl();;
-      comment.setTitle("comment blah blah");
+      comment.setTitle("comment " + i);
       comment.setUserId(rootIdentity.getId());
       activityManager.saveComment(activity, comment);
       assertNotNull("comment.getId() must not be null", comment.getId());
@@ -914,6 +914,15 @@ public class ActivityManagerMysqlTest extends AbstractCoreTest {
       comments.add(comment);
     }
 
+    RealtimeListAccess<ExoSocialActivity> listAccess = activityManager.getCommentsWithListAccess(activity);
+    assertEquals(3, listAccess.getSize());
+    List<ExoSocialActivity> listComments = listAccess.loadAsList(0, 5);
+    assertEquals(3, listComments.size());
+    assertEquals("comment 0", listComments.get(0).getTitle());
+    assertEquals("comment 1", listComments.get(1).getTitle());
+    assertEquals("comment 2", listComments.get(2).getTitle());
+    
+    
     ExoSocialActivity assertActivity = activityManager.getActivity(activity.getId());
     String[] commentIds = assertActivity.getReplyToId();
     for (int i = 1; i < commentIds.length; i++) {

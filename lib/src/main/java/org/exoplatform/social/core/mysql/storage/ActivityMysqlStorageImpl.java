@@ -1732,8 +1732,11 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl implements Sta
          .append("and viewerType in ('POSTER','LIKER','COMMENTER','MENTIONER'))")
          ;
     }
-    sql.append(") order by time desc");
-    sql.append(limit > 0 ? " LIMIT " + limit : "").append(offset >= 0 ? " OFFSET " + offset : "");
+    sql.append(")");
+    if (! isCount) {
+      sql.append(" order by time desc")
+         .append(limit > 0 ? " LIMIT " + limit : "").append(offset > 0 ? " OFFSET " + offset : "");
+    }
     //
     return sql.toString();
   }
@@ -1867,12 +1870,13 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl implements Sta
     }
     StringBuilder getActivitySQL = new StringBuilder();
     getActivitySQL.append(isCount ? "select count(distinct activityId)" : "select distinct activityId")
-                  .append(" from stream_item where (viewerId = ?")
-                  .append(" or posterId in ('")
+                  .append(" from stream_item where posterId in ('")
                   .append(StringUtils.join(relationshipIds, "','"))
-                  .append("'))")
-                  .append(" order by time desc");;
-    getActivitySQL.append(limit > 0 ? " LIMIT " + limit : "").append(offset > 0 ? " OFFSET " + offset : "");
+                  .append("')");
+    if (! isCount) {
+      getActivitySQL.append(" order by time desc")
+                    .append(limit > 0 ? " LIMIT " + limit : "").append(offset > 0 ? " OFFSET " + offset : "");
+    }
     return getActivitySQL.toString();
 	}
 	
@@ -1886,7 +1890,6 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl implements Sta
     try {
       dbConnection = dbConnect.getDBConnection();
       preparedStatement = dbConnection.prepareStatement(getActivitiesOfConnectionsQuery(ownerIdentity, offset, limit, false));
-      preparedStatement.setString(1, ownerIdentity.getId());
       rs = preparedStatement.executeQuery();
       while (rs.next()) {
         ExoSocialActivity activity = getStorage().getActivity(rs.getString("activityId"));
@@ -1921,7 +1924,6 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl implements Sta
     try {
       dbConnection = dbConnect.getDBConnection();
       preparedStatement = dbConnection.prepareStatement(getActivitiesOfConnectionsQuery(ownerIdentity, 0, -1, true));
-      preparedStatement.setString(1, ownerIdentity.getId());
       rs = preparedStatement.executeQuery();
       while (rs.next()) {
         return rs.getInt(1);
@@ -1999,9 +2001,11 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl implements Sta
     StringBuilder getActivitySQL = new StringBuilder();
     getActivitySQL.append(isCount ? "select count(distinct activityId)" : "select distinct activityId")
                   .append(" from stream_item where ownerId in ('")
-                  .append(StringUtils.join(spaceIds, "','")).append("') ")
-                  .append(" order by time desc");
-    getActivitySQL.append(limit > 0 ? " LIMIT " + limit : "").append(offset > 0 ? " OFFSET " + offset : "");
+                  .append(StringUtils.join(spaceIds, "','")).append("') ");
+    if (! isCount) {
+      getActivitySQL.append(" order by time desc")
+                    .append(limit > 0 ? " LIMIT " + limit : "").append(offset > 0 ? " OFFSET " + offset : "");
+    }
     
     return getActivitySQL.toString();
 	}
@@ -2125,21 +2129,18 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl implements Sta
     ResultSet rs = null;
 
     StringBuilder sql = new StringBuilder();
-    sql.append("select ")
-                  .append("_id, activityId, title, titleId, body, bodyId, postedTime,")
-                  .append("lastUpdated, posterId, ownerId, permaLink, hidable, lockable")
-                  .append(" from comment where activityId = ?");
+    sql.append("select _id from comment where activityId ='").append(existingActivity.getId()).append("'")
+       .append(" order by postedTime asc");
 
     try {
       dbConnection = dbConnect.getDBConnection();
       preparedStatement = dbConnection.prepareStatement(sql.toString());
-      preparedStatement.setString(1, existingActivity.getId());
 
       rs = preparedStatement.executeQuery();
 
       List<ExoSocialActivity> result = new ArrayList<ExoSocialActivity>();
       while (rs.next()) {
-        ExoSocialActivity comment = fillCommentFromResultSet(rs);
+        ExoSocialActivity comment = getStorage().getComment(rs.getString("_id"));
         processActivity(comment);
         result.add(comment);
       }
