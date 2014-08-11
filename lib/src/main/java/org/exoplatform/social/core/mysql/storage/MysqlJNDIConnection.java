@@ -61,7 +61,7 @@ public class MysqlJNDIConnection implements Startable, MysqlDBConnect {
       String[] inst = sb.toString().split(";");
       for (int i = 0; i < inst.length; i++) {
         if (!inst[i].trim().equals("")) {
-          statement.execute(inst[i]);
+          statement.executeUpdate(inst[i]);
         }
       }
     } catch (Exception e) {

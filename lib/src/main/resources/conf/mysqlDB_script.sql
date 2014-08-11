@@ -37,7 +37,7 @@ CREATE TABLE IF NOT EXISTS `comment` (
   PRIMARY KEY (`_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `stream_item` (
+CREATE TABLE IF NOT EXISTS `stream_item` (
   `_id` varchar(36) NOT NULL,
   `activityId` varchar(36) DEFAULT NULL,
   `ownerId` varchar(36) DEFAULT NULL,
