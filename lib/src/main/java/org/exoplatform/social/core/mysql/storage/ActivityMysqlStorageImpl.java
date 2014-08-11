@@ -183,7 +183,7 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl implements Sta
     StringBuilder getActivitySQL = new StringBuilder();
     getActivitySQL.append("select ")
                   .append("_id, title, titleId, body, bodyId, postedTime, lastUpdated, posterId, ownerId,")
-                  .append("permaLink, appId, externalId, priority, hidable, lockable, likers, metadata, templateParams")
+                  .append("permaLink, appId, externalId, priority, hidable, lockable, likers, metadata, templateParams, activityType")
                   .append(" from activity where _id = ?");
 
     ExoSocialActivity activity = new ExoSocialActivityImpl();
@@ -278,7 +278,7 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl implements Sta
     //
     activity.isLocked(rs.getBoolean("lockable"));
     activity.isHidden(rs.getBoolean("hidable"));
-
+    activity.setType(rs.getString("activityType"));
     
     activity.setStreamOwner(rs.getString("ownerId"));
     
@@ -362,7 +362,7 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl implements Sta
     } catch (SQLException e) {
 
       LOG.error("error in stream items look up:", e.getMessage());
-      return null;
+      return new ArrayList<ExoSocialActivity>();
 
     } finally {
       try {
@@ -427,7 +427,7 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl implements Sta
     } catch (SQLException e) {
 
       LOG.error("error in activities look up:", e.getMessage());
-      return null;
+      return new ArrayList<ExoSocialActivity>();
 
     } finally {
       try {
@@ -481,8 +481,8 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl implements Sta
     StringBuilder insertTableSQL = new StringBuilder();
     insertTableSQL.append("INSERT INTO comment")
                   .append("(_id, activityId, title, titleId, body, bodyId, postedTime, lastUpdated, posterId, ")
-                  .append("hidable, lockable)")
-                  .append("VALUES (?,?,?,?,?,?,?,?,?,?,?)");
+                  .append("hidable, lockable, templateParams)")
+                  .append("VALUES (?,?,?,?,?,?,?,?,?,?,?,?)");
 
     StringBuilder updateActivitySQL = new StringBuilder();
     updateActivitySQL.append("update activity set lastUpdated = ? where _id = ?");
@@ -508,6 +508,19 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl implements Sta
       preparedStatement.setString(9, comment.getUserId());
       preparedStatement.setBoolean(10, activity.isHidden());
       preparedStatement.setBoolean(11, activity.isLocked());
+      //
+      if (comment.getTemplateParams() != null) {
+        try {
+          ByteArrayOutputStream b = new ByteArrayOutputStream();
+          ObjectOutputStream output = new ObjectOutputStream(b);
+          output.writeObject(comment.getTemplateParams());
+          preparedStatement.setBinaryStream(12, new ByteArrayInputStream(b.toByteArray()));
+        } catch (IOException e) {
+          LOG.debug("Failed to save templateParams of activity into database");
+        }
+      } else {
+        preparedStatement.setNull(12, Types.BLOB);
+      }
 
       preparedStatement.executeUpdate();
 
@@ -845,8 +858,8 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl implements Sta
     StringBuilder insertTableSQL = new StringBuilder();
     insertTableSQL.append("INSERT INTO activity")
                   .append("(_id, title, titleId, body, bodyId, postedTime, lastUpdated, posterId, ownerId,")
-                  .append("permaLink, appId, externalId, priority, hidable, lockable, likers, metadata, templateParams)")
-                  .append("VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
+                  .append("permaLink, appId, externalId, priority, hidable, lockable, likers, metadata, templateParams, activityType)")
+                  .append("VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
     
     try {
       dbConnection = dbConnect.getDBConnection();
@@ -923,6 +936,7 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl implements Sta
     } else {
       preparedStatement.setNull(index++, Types.BLOB);
     }
+    preparedStatement.setString(index++, activity.getType());
     
     return index;
   }
@@ -1046,11 +1060,16 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl implements Sta
     String[] orginLikers = dbActivity.getLikeIdentityIds();
     
     long currentMillis = System.currentTimeMillis();
-    if (activity.getTitle() != null) {
-      dbActivity.setTitle(activity.getTitle());
+    if (activity.getTitle() == null) {
+      activity.setTitle(dbActivity.getTitle());
     }
-    dbActivity.setUpdated(currentMillis);
-    dbActivity.setLikeIdentityIds(activity.getLikeIdentityIds());
+    if (activity.getBody() == null) {
+      activity.setBody(dbActivity.getBody());
+    }
+    if (activity.getTemplateParams() == null) {
+      activity.setTemplateParams(dbActivity.getTemplateParams());
+    }
+    activity.setUpdated(currentMillis);
     
     //insert to mysql activity table
     Connection dbConnection = null;
@@ -1059,15 +1078,16 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl implements Sta
     StringBuilder sql = new StringBuilder();
     sql.append("update activity ")
                   .append("set title=?, titleId=?, body=?, bodyId=?, postedTime=?, lastUpdated=?, posterId=?, ownerId=?,")
-                  .append("permaLink=?, appId=?, externalId=?, priority=?, hidable=?, lockable=?, likers=?, metadata=?, templateParams=?")
+                  .append("permaLink=?, appId=?, externalId=?, priority=?, hidable=?, lockable=?, likers=?, metadata=?, templateParams=?, activityType=?")
                   .append(" where _id = ?");
     
     try {
       dbConnection = dbConnect.getDBConnection();
       preparedStatement = dbConnection.prepareStatement(sql.toString());
  
-      int index = fillPreparedStatementFromActivity(null, dbActivity, preparedStatement, 1);
-      preparedStatement.setString(index, dbActivity.getId());
+      Identity owner = identityStorage.findIdentity(OrganizationIdentityProvider.NAME, activity.getStreamOwner());
+      int index = fillPreparedStatementFromActivity(owner, activity, preparedStatement, 1);
+      preparedStatement.setString(index, activity.getId());
       
       preparedStatement.executeUpdate();
  
@@ -1473,7 +1493,7 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl implements Sta
     } catch (SQLException e) {
 
       LOG.error("error in stream items look up:", e.getMessage());
-      return null;
+      return new ArrayList<StreamItem>();
 
     } finally {
       try {
@@ -1529,7 +1549,7 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl implements Sta
     StringBuilder sql = new StringBuilder();
     sql.append("select ")
                   .append("_id, activityId, title, titleId, body, bodyId, postedTime,")
-                  .append("lastUpdated, posterId, ownerId, permaLink, hidable, lockable")
+                  .append("lastUpdated, posterId, ownerId, permaLink, hidable, lockable, templateParams")
                   .append(" from comment where _id = ?");
 
     try {
@@ -1745,7 +1765,7 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl implements Sta
     } catch (SQLException e) {
  
       LOG.error("error in activity look up:", e.getMessage());
-      return null;
+      return new LinkedList<ExoSocialActivity>();
  
     } finally {
       try {
@@ -2012,7 +2032,7 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl implements Sta
       return list;
     } catch (SQLException e) {
       LOG.error("error in stream items look up:", e.getMessage());
-      return null;
+      return new ArrayList<ExoSocialActivity>();
     } finally {
       try {
         if (rs != null) {
@@ -2106,7 +2126,8 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl implements Sta
 
     StringBuilder sql = new StringBuilder();
     sql.append("select _id from comment where activityId ='").append(existingActivity.getId()).append("'")
-       .append(" order by postedTime asc");
+       .append(" order by postedTime asc")
+       .append(limit > 0 ? " LIMIT " + limit : "").append(offset > 0 ? " OFFSET " + offset : "");
 
     try {
       dbConnection = dbConnect.getDBConnection();
@@ -2128,7 +2149,7 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl implements Sta
     } catch (SQLException e) {
 
       LOG.error("error in comments look up:", e.getMessage());
-      return null;
+      return new ArrayList<ExoSocialActivity>();
 
     } finally {
       try {
@@ -2166,6 +2187,15 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl implements Sta
 
     comment.isLocked(rs.getBoolean("lockable"));
     comment.isHidden(rs.getBoolean("hidable"));
+    //
+    byte[] st = (byte[]) rs.getObject("templateParams");
+    try {
+      ByteArrayInputStream baip = new ByteArrayInputStream(st);
+      ObjectInputStream ois = new ObjectInputStream(baip);
+      comment.setTemplateParams((Map<String, String>) ois.readObject());
+    } catch (Exception e) {
+      LOG.debug("Failed to get templateParams of comment from database");
+    }
 
     comment.setStreamOwner(rs.getString("ownerId"));
     comment.isComment(true);
@@ -2401,7 +2431,7 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl implements Sta
     } catch (SQLException e) {
 
       LOG.error("error in stream items look up:", e.getMessage());
-      return null;
+      return new ArrayList<ExoSocialActivity>();
 
     } finally {
       try {

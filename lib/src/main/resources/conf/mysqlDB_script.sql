@@ -17,6 +17,7 @@ CREATE TABLE IF NOT EXISTS `activity` (
   `likers` varchar(2000) DEFAULT NULL,
   `metadata` varchar(2000) DEFAULT NULL,
   `templateParams` blob,
+  `activityType` varchar(100) DEFAULT NULL,
   PRIMARY KEY (`_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -34,6 +35,7 @@ CREATE TABLE IF NOT EXISTS `comment` (
   `permaLink` varchar(255) DEFAULT NULL,
   `hidable` tinyint(4) DEFAULT NULL,
   `lockable` tinyint(4) DEFAULT NULL,
+  `templateParams` blob,
   PRIMARY KEY (`_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
