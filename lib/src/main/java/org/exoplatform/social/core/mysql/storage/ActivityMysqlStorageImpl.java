@@ -38,9 +38,7 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.UUID;
-import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -52,7 +50,6 @@ import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.Validate;
 import org.chromattic.api.ChromatticException;
-import org.exoplatform.commons.utils.CommonsUtils;
 import org.exoplatform.container.ExoContainer;
 import org.exoplatform.container.PortalContainer;
 import org.exoplatform.services.log.ExoLogger;
@@ -360,15 +357,10 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl implements Sta
     StringBuilder getActivitySQL = new StringBuilder();
     getActivitySQL.append("select distinct activityId")
                   .append(" from stream_item where ((viewerId = ? and (viewerType like ? or viewerType like ? or viewerType like ? or viewerType like ?))")
-                  .append(" or (posterId = ? and viewerType is null))");
+                  .append(" or (posterId = ? and viewerType is null))")
+                  .append(" order by time desc")
+                  .append(limit > 0 ? " LIMIT " + limit : "").append(offset >= 0 ? " OFFSET " + offset : "");
 
-    long sinceTime = getSinceTime(owner, offset, ActivityType.USER);
-    if (sinceTime > 0) {
-      getActivitySQL.append(" and time < ?");
-    }
-    
-    getActivitySQL.append(" order by time desc limit 0,").append(limit);
-    
     List<ExoSocialActivity> list = new ArrayList<ExoSocialActivity>();
     try {
       dbConnection = dbConnect.getDBConnection();
@@ -380,9 +372,6 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl implements Sta
       preparedStatement.setString(5, "%"+ViewerType.POSTER.getType()+"%");
       preparedStatement.setString(6, owner.getId());
       
-      if (sinceTime > 0) {
-        preparedStatement.setLong(7, sinceTime);
-      }
       rs = preparedStatement.executeQuery();
 
       while (rs.next()) {
@@ -435,14 +424,9 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl implements Sta
                   .append(" from stream_item where viewerId in ('")
                   .append(StringUtils.join(identityIds, "','"))
                   .append("') ")
-                  .append(" and (viewerType like ? or viewerType like ? or viewerType like ? or viewerType like ?)");
-
-    long sinceTime = getSinceTime(owner, offset, ActivityType.VIEWER);
-    if (sinceTime > 0) {
-      getActivitySQL.append(" and time < ?");
-    }
-
-    getActivitySQL.append(" order by time desc limit 0,").append(limit);
+                  .append(" and (viewerType like ? or viewerType like ? or viewerType like ? or viewerType like ?)")
+                  .append(" order by time desc")
+                  .append(limit > 0 ? " LIMIT " + limit : "").append(offset >= 0 ? " OFFSET " + offset : "");
 
     List<ExoSocialActivity> list = new ArrayList<ExoSocialActivity>();
     try {
@@ -453,9 +437,6 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl implements Sta
       preparedStatement.setString(3, "%" + ViewerType.MENTIONER.getType() + "%");
       preparedStatement.setString(4, "%" + ViewerType.POSTER.getType() + "%");
 
-      if (sinceTime > 0) {
-        preparedStatement.setLong(5, sinceTime);
-      }
       rs = preparedStatement.executeQuery();
 
       while (rs.next()) {
@@ -1723,6 +1704,39 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl implements Sta
 			int offset, int limit) {
 	  return getActivityFeedForUpgrade(ownerIdentity, offset, limit);
 	}
+	
+	private String getFeedActivitySQLQuery(Identity ownerIdentity, int limit, int offset, boolean isCount) {
+    List<Identity> relationships = relationshipStorage.getConnections(ownerIdentity);
+    Set<String> relationshipIds = new HashSet<String>();
+    for (Identity identity : relationships) {
+      relationshipIds.add(identity.getId());
+    }
+    // get spaces where user is member
+    List<Space> spaces = spaceStorage.getMemberSpaces(ownerIdentity.getRemoteId());
+    String[] spaceIds = new String[0];
+    for (Space space : spaces) {
+      spaceIds = (String[]) ArrayUtils.add(spaceIds, space.getPrettyName());
+    }
+    
+    StringBuilder sql = new StringBuilder();
+    sql.append(isCount ? "select count(distinct activityId)" : "select distinct activityId")
+       .append(" from stream_item where ")
+       .append(" (viewerId ='").append(ownerIdentity.getId()).append("'");
+    
+    if(CollectionUtils.isNotEmpty(spaces)){
+      sql.append(" or ownerId in ('").append(StringUtils.join(spaceIds, "','")).append("') ");
+    }
+    
+    if(CollectionUtils.isNotEmpty(relationships)){
+      sql.append(" or (posterId in ('").append(StringUtils.join(relationshipIds, "','")).append("') ")
+         .append("and viewerType in ('POSTER','LIKER','COMMENTER','MENTIONER'))")
+         ;
+    }
+    sql.append(") order by time desc");
+    sql.append(limit > 0 ? " LIMIT " + limit : "").append(offset >= 0 ? " OFFSET " + offset : "");
+    //
+    return sql.toString();
+  }
 
 	@Override
 	public List<ExoSocialActivity> getActivityFeedForUpgrade(
@@ -1732,61 +1746,16 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl implements Sta
     PreparedStatement preparedStatement = null;
     ResultSet rs = null;
     
-    //get spaces where user is member
-    List<Space> spaces = spaceStorage.getMemberSpaces(ownerIdentity.getRemoteId());
-    String[] spaceIds = new String[0];
-    for (Space space : spaces) {
-      spaceIds = (String[]) ArrayUtils.add(spaceIds, space.getPrettyName());
-    }
-    
-    List<Identity> relationships = relationshipStorage.getConnections(ownerIdentity);
-    
-    Set<String> relationshipIds = new HashSet<String>();
-    for (Identity identity : relationships) {
-      relationshipIds.add(identity.getId());
-    }
-    
-    StringBuilder sql = new StringBuilder();
-    sql.append("select ")
-       .append("_id, title, titleId, body, bodyId, postedTime, lastUpdated, posterId, ownerId,")
-       .append("permaLink, appId, externalId, priority, hidable, lockable, likers, metadata")
-       .append(" from activity as a inner join (select distinct activityId from stream_item where ")
-       .append(" (viewerId = ? ");
-    
-    if(CollectionUtils.isNotEmpty(spaces)){
-      sql.append("or ownerId in ('").append(StringUtils.join(spaceIds, "','")).append("') ");
-    }
-    
-    if(CollectionUtils.isNotEmpty(relationships)){
-      sql.append("or posterId in ('").append(StringUtils.join(relationshipIds, "','")).append("') ");
-    }
-    
-    sql.append(")");
-    
-    long sinceTime = getSinceTime(ownerIdentity, offset, ActivityType.FEED);
-    if (sinceTime > 0) {
-      sql.append(" and time < ?");
-    }
-    
-    sql.append(" order by time desc limit 0,").append(limit).append(") as si on a._id = si.activityId");
-    
     List<ExoSocialActivity> result = new LinkedList<ExoSocialActivity>();
     
     try {
       dbConnection = dbConnect.getDBConnection();
-      preparedStatement = dbConnection.prepareStatement(sql.toString());
-      preparedStatement.setString(1, ownerIdentity.getId());
-      
-      if (sinceTime > 0) {
-        preparedStatement.setLong(2, sinceTime);
-      }
+      preparedStatement = dbConnection.prepareStatement(getFeedActivitySQLQuery(ownerIdentity, limit, offset, false));
       
       rs = preparedStatement.executeQuery();
       
       while(rs.next()){
-        //ExoSocialActivity activity = new ExoSocialActivityImpl();
-        //fillActivityFromResultSet(rs, activity);
-        ExoSocialActivity activity = getStorage().getActivity(rs.getString("_id"));
+        ExoSocialActivity activity = getStorage().getActivity(rs.getString("activityId"));
         result.add(activity);
       }
       
@@ -1826,37 +1795,34 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl implements Sta
 
   @Override
   public int getNumberOfActivitesOnActivityFeedForUpgrade(Identity ownerIdentity) {
-    List<Identity> relationships = relationshipStorage.getConnections(ownerIdentity);
-
-    Set<String> relationshipIds = new HashSet<String>();
-    for (Identity identity : relationships) {
-      relationshipIds.add(identity.getId());
+    Connection dbConnection = null;
+    PreparedStatement preparedStatement = null;
+    ResultSet rs = null;
+    try {
+      dbConnection = dbConnect.getDBConnection();
+      preparedStatement = dbConnection.prepareStatement(getFeedActivitySQLQuery(ownerIdentity, 0, -1, true));
+      rs = preparedStatement.executeQuery();
+      while (rs.next()) {
+        return rs.getInt(1);
+      }
+      return 0;
+    } catch (SQLException e) {
+      return 0;
+    } finally {
+      try {
+        if (rs != null) {
+          rs.close();
+        }
+        if (preparedStatement != null) {
+          preparedStatement.close();
+        }
+        if (dbConnection != null) {
+          dbConnection.close();
+        }
+      } catch (SQLException e) {
+        LOG.error("Cannot close statement or connection:", e.getMessage());
+      }
     }
-
-    // get spaces where user is member
-    List<Space> spaces = spaceStorage.getMemberSpaces(ownerIdentity.getRemoteId());
-    String[] spaceIds = new String[0];
-    for (Space space : spaces) {
-      spaceIds = (String[]) ArrayUtils.add(spaceIds, space.getPrettyName());
-    }
-
-    StringBuilder sql = new StringBuilder();
-    sql.append("select count(distinct activityId) as count from stream_item where ")
-       .append(" (viewerId = ? ");
-    
-    if(CollectionUtils.isNotEmpty(spaces)){
-      sql.append("or ownerId in ('").append(StringUtils.join(spaceIds, "','")).append("') ");
-    }
-    
-    if(CollectionUtils.isNotEmpty(relationships)){
-      sql.append("or (posterId in ('").append(StringUtils.join(relationshipIds, "','")).append("') ")
-         .append("and viewerType in ('POSTER','LIKER','COMMENTER','MENTIONER'))")
-         ;
-    }
-    
-    sql.append(")");
-    
-    return getCount(sql.toString(), ownerIdentity.getId());
   }
 
 	@Override
@@ -2434,14 +2400,9 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl implements Sta
 
     StringBuilder getActivitySQL = new StringBuilder();
     getActivitySQL.append("select distinct activityId")
-                  .append(" from stream_item where ownerId = ?");
-
-    long sinceTime = getSinceTime(spaceIdentity, index, ActivityType.SPACE);
-    if (sinceTime > 0) {
-      getActivitySQL.append(" and time < ?");
-    }
-    
-    getActivitySQL.append(" order by time desc limit 0,").append(limit);
+                  .append(" from stream_item where ownerId = ?")
+                  .append(" order by time desc")
+                  .append(limit > 0 ? " LIMIT " + limit : "").append(index >= 0 ? " OFFSET " + index : "");
     
     List<ExoSocialActivity> list = new ArrayList<ExoSocialActivity>();
     try {
@@ -2449,9 +2410,6 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl implements Sta
       preparedStatement = dbConnection.prepareStatement(getActivitySQL.toString());
       preparedStatement.setString(1, spaceIdentity.getRemoteId());
       
-      if (sinceTime > 0) {
-        preparedStatement.setLong(2, sinceTime);
-      }
       rs = preparedStatement.executeQuery();
 
       while (rs.next()) {
@@ -2753,7 +2711,7 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl implements Sta
     };
   }
   
-  public long getSinceTime(Identity owner, long offset, ActivityType type) throws ActivityStorageException{
+  private long gettSinceTime(Identity owner, long offset, ActivityType type) throws ActivityStorageException{
     return 0;
   }
 }

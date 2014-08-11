@@ -793,6 +793,7 @@ public class ActivityManagerMysqlTest extends AbstractCoreTest {
 
     RealtimeListAccess<ExoSocialActivity> demoActivityFeed = activityManager.getActivityFeedWithListAccess(demoIdentity);
     assertEquals("demoActivityFeed.getSize() must be 8", 8, demoActivityFeed.getSize());
+    assertEquals(8, demoActivityFeed.load(0, 10).length);
     
     Relationship demoMaryConnection = relationshipManager.inviteToConnect(demoIdentity, maryIdentity);
     assertEquals(8, activityManager.getActivityFeedWithListAccess(demoIdentity).getSize());
@@ -800,9 +801,12 @@ public class ActivityManagerMysqlTest extends AbstractCoreTest {
     relationshipManager.confirm(demoIdentity, maryIdentity);
     demoActivityFeed = activityManager.getActivityFeedWithListAccess(demoIdentity);
     assertEquals("demoActivityFeed.getSize() must return 11", 11, demoActivityFeed.getSize());
+    assertEquals(11, demoActivityFeed.load(0, 15).length);
+    assertEquals(6, demoActivityFeed.load(5, 15).length);
     
     RealtimeListAccess<ExoSocialActivity> maryActivityFeed = activityManager.getActivityFeedWithListAccess(maryIdentity);
     assertEquals("maryActivityFeed.getSize() must return 6", 6, maryActivityFeed.getSize());
+    assertEquals(6, maryActivityFeed.load(0, 10).length);
     
     // Create demo's activity on space
     createActivityToOtherIdentity(demoIdentity, spaceIdentity, 5);
@@ -814,6 +818,7 @@ public class ActivityManagerMysqlTest extends AbstractCoreTest {
     // demo's Space feed must be be 5
     RealtimeListAccess<ExoSocialActivity> demoActivitiesSpaceFeed = activityManager.getActivitiesOfUserSpacesWithListAccess(demoIdentity);
     assertEquals(10, demoActivitiesSpaceFeed.getSize());
+    assertEquals(10, demoActivitiesSpaceFeed.load(0, 10).length);
 
     // the feed of mary must be the same because mary not the member of space
     maryActivityFeed = activityManager.getActivityFeedWithListAccess(maryIdentity);
@@ -825,6 +830,16 @@ public class ActivityManagerMysqlTest extends AbstractCoreTest {
 
     relationshipManager.delete(demoMaryConnection);
     spaceService.deleteSpace(space);
+  }
+  
+  public void testLoadMoreActivities() throws Exception {
+    this.populateActivityMass(demoIdentity, 30);
+    RealtimeListAccess<ExoSocialActivity> demoActivityFeed = activityManager.getActivityFeedWithListAccess(demoIdentity);
+    assertEquals(30, demoActivityFeed.getSize());
+    assertEquals(10, demoActivityFeed.load(0, 10).length);
+    assertEquals(20, demoActivityFeed.load(0, 20).length);
+    assertEquals(10, demoActivityFeed.load(20, 10).length);
+    assertEquals(15, demoActivityFeed.load(15, 20).length);
   }
   
   /**
