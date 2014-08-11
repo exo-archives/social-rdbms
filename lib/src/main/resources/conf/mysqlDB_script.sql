@@ -1,8 +1,4 @@
-CREATE DATABASE IF NOT EXISTS `social` /*!40100 DEFAULT CHARACTER SET utf8 COLLATE utf8_unicode_ci */;
-
-USE `social`;
-
-CREATE TABLE `activity` (
+CREATE TABLE IF NOT EXISTS `activity` (
   `_id` varchar(36) NOT NULL,
   `title` varchar(2000) DEFAULT NULL,
   `titleId` varchar(36) DEFAULT NULL,
@@ -24,7 +20,7 @@ CREATE TABLE `activity` (
   PRIMARY KEY (`_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `comment` (
+CREATE TABLE IF NOT EXISTS `comment` (
   `_id` varchar(36) NOT NULL,
   `activityId` varchar(36) NOT NULL,
   `title` varchar(2000) DEFAULT NULL,
@@ -57,7 +53,7 @@ CREATE TABLE `stream_item` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
-CREATE TABLE `stream_tracking` (
+CREATE TABLE IF NOT EXISTS `stream_tracking` (
   `_id` varchar(36) NOT NULL,
   `viewerId` varchar(36) DEFAULT NULL,
   `time` int(10) unsigned DEFAULT NULL,

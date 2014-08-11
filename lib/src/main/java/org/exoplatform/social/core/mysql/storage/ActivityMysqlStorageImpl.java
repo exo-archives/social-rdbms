@@ -133,23 +133,10 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl implements Sta
     this.activityProcessors = new TreeSet<ActivityProcessor>(processorComparator());
   }
   
-  private ScheduledExecutorService scheduledExecutor;
   @Override
   public void start() {
     
     removeExistingActivityImpl();
-//    try {
-//      scheduledExecutor = Executors.newSingleThreadScheduledExecutor();
-//      scheduledExecutor.scheduleWithFixedDelay(new Runnable() {
-//        
-//        @Override
-//        public void run() {
-//          removeExistingActivityImpl();
-//        }
-//      }, 500, 5000, TimeUnit.MILLISECONDS);
-//    } catch (Exception e) {
-//     e.printStackTrace();
-//    }
   }
   
   @Override
@@ -161,35 +148,24 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl implements Sta
       List storages = container.getComponentInstancesOfType(ActivityStorageImpl.class);
 
       for (Object impl : storages) {
-        LOG.info("Class: " + impl.getClass().getName());
         if (impl instanceof org.exoplatform.social.core.storage.synchronization.SynchronizedActivityStorage) {
           container.unregisterComponentByInstance(impl);
-          //ActivityManagerImpl
-          //CachedActivityStorage
           
           LOG.info("\nDone remove container : " + impl.getClass().getName());
           break;
         }
       }
       ActivityStorageImpl activityStorageImpl = (ActivityStorageImpl)container.getComponentInstanceOfType(ActivityStorageImpl.class);
-      
+      //
       CachedActivityStorage cachedActivityStorage = (CachedActivityStorage)container.getComponentInstanceOfType(CachedActivityStorage.class);
       cachedActivityStorage.setActivityStorageImpl(activityStorageImpl);
-      storages = container.getComponentInstancesOfType(ActivityStorageImpl.class);
-      LOG.info("Size of ActivityStorageImpl  : " + storages.size() + "\n");
-      LOG.info("Size current ActivityStorageImpl  : " + activityStorageImpl.getClass().getName() + "\n");
     } catch (Exception e) {
       LOG.error("Failed to remove ActivityStorageImpl ", e);
-    } finally {
-      if (scheduledExecutor != null && !scheduledExecutor.isShutdown()) {
-        scheduledExecutor.shutdownNow();
-      }
     }
   }
   
   @Override
 	public void setInjectStreams(boolean mustInject) {
-		// TODO Auto-generated method stub
 
 	}
 
@@ -249,7 +225,7 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl implements Sta
           dbConnection.close();
         }
       } catch (SQLException e) {
-        LOG.error("Cannot close statement or connection:", e.getMessage());
+        LOG.error("Cannot close statement or connection:", e);
       }
     }
   }
