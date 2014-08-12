@@ -31,7 +31,7 @@
   <description>Social Activity MySQL Addon Webapp</description>
   
   <build>
-    <finalName>social-activity-mysql-addons-webapp</finalName>
+    <finalName>social-activity-mysql-addons</finalName>
   </build>
   
 </project>

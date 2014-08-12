@@ -15,8 +15,6 @@
 * along with this program; if not, see<http://www.gnu.org/licenses/>.
  */
 package org.exoplatform.social.core.mysql.storage;
-
-
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -38,7 +36,6 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.UUID;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -50,7 +47,6 @@ import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.Validate;
 import org.chromattic.api.ChromatticException;
-import org.exoplatform.container.ExoContainer;
 import org.exoplatform.container.PortalContainer;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
@@ -76,13 +72,11 @@ import org.exoplatform.social.core.storage.api.ActivityStreamStorage;
 import org.exoplatform.social.core.storage.api.IdentityStorage;
 import org.exoplatform.social.core.storage.api.RelationshipStorage;
 import org.exoplatform.social.core.storage.api.SpaceStorage;
-import org.exoplatform.social.core.storage.cache.CachedActivityStorage;
 import org.exoplatform.social.core.storage.cache.model.key.ActivityType;
 import org.exoplatform.social.core.storage.exception.NodeNotFoundException;
 import org.exoplatform.social.core.storage.impl.ActivityBuilderWhere;
 import org.exoplatform.social.core.storage.impl.ActivityStorageImpl;
 import org.exoplatform.social.core.storage.impl.StorageUtils;
-import org.picocontainer.Startable;
 
 /**
  * Created by The eXo Platform SAS
@@ -90,14 +84,13 @@ import org.picocontainer.Startable;
  *          quangnh2@exoplatform.com
  * Dec 12, 2013  
  */
-public class ActivityMysqlStorageImpl extends ActivityStorageImpl implements Startable {
+public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
 
   private static final Pattern MENTION_PATTERN = Pattern.compile("@([^\\s]+)|@([^\\s]+)$");
   public static final Pattern USER_NAME_VALIDATOR_REGEX = Pattern.compile("^[\\p{L}][\\p{L}._\\-\\d]+$");
   
   public enum ViewerType {
-    SPACE("SPACE"), POSTER("POSTER"), LIKER("LIKER"), COMMENTER("COMMENTER"), MENTIONER("MENTIONER"), SPACE_MEMBER(
-        "SPACE_MEMBER");
+    SPACE("SPACE"), POSTER("POSTER"), LIKER("LIKER"), COMMENTER("COMMENTER"), MENTIONER("MENTIONER"), SPACE_MEMBER("SPACE_MEMBER");
 
     private final String type;
 
@@ -134,44 +127,12 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl implements Sta
   }
   
   @Override
-  public void start() {
-    
-    removeExistingActivityImpl();
-  }
-  
-  @Override
-  public void stop() {};
-  
-  private void removeExistingActivityImpl() {
-    try {
-      ExoContainer container = PortalContainer.getInstance();
-      List storages = container.getComponentInstancesOfType(ActivityStorageImpl.class);
-
-      for (Object impl : storages) {
-        if (impl instanceof org.exoplatform.social.core.storage.synchronization.SynchronizedActivityStorage) {
-          container.unregisterComponentByInstance(impl);
-          
-          LOG.info("\nDone remove container : " + impl.getClass().getName());
-          break;
-        }
-      }
-      ActivityStorageImpl activityStorageImpl = (ActivityStorageImpl)container.getComponentInstanceOfType(ActivityStorageImpl.class);
-      //
-      CachedActivityStorage cachedActivityStorage = (CachedActivityStorage)container.getComponentInstanceOfType(CachedActivityStorage.class);
-      cachedActivityStorage.setActivityStorageImpl(activityStorageImpl);
-    } catch (Exception e) {
-      LOG.error("Failed to remove ActivityStorageImpl ", e);
-    }
-  }
-  
-  @Override
 	public void setInjectStreams(boolean mustInject) {
 
 	}
 
 	@Override
-	public ExoSocialActivity getActivity(String activityId)
- throws ActivityStorageException {
+	public ExoSocialActivity getActivity(String activityId) throws ActivityStorageException {
 
     //
     // ActivityEntity activityEntity = _findById(ActivityEntity.class,
