@@ -33,7 +33,7 @@
   </component>
   
   <external-component-plugins>
-    <target-component>org.exoplatform.social.core.storage.cache.CachedActivityStorage</target-component>
+    <target-component>org.exoplatform.social.core.storage.api.ActivityStorage</target-component>
     <component-plugin>
       <name>ActivityStoragePlugin</name>
       <set-method>addPlugin</set-method>
