@@ -91,10 +91,6 @@
     <type>org.exoplatform.social.core.storage.cache.CachedActivityStorage</type> 
   </component>
   <component>
-    <key>org.exoplatform.social.core.storage.impl.ActivityStorageImpl</key>
-    <type>org.exoplatform.social.core.storage.synchronization.SynchronizedActivityStorage</type>
-  </component>
-  <component>
     <key>org.exoplatform.social.core.mysql.storage.ActivityMysqlStorageImpl</key>
     <type>org.exoplatform.social.core.mysql.storage.SynchronizedActivityMysqlStorage</type>
   </component>

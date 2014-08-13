@@ -20,13 +20,15 @@ import org.exoplatform.commons.testing.BaseExoContainerTestSuite;
 import org.exoplatform.commons.testing.ConfigTestCase;
 import org.exoplatform.social.core.mysql.storage.test.ActivityManagerMysqlTest;
 import org.exoplatform.social.core.mysql.storage.test.ActivityMysqlStorageImplTestCase;
+import org.exoplatform.social.core.mysql.storage.test.SpaceActivityMySqlPublisherTest;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.runners.Suite.SuiteClasses;
 
 @SuiteClasses({
   ActivityMysqlStorageImplTestCase.class,
-  ActivityManagerMysqlTest.class
+  ActivityManagerMysqlTest.class,
+  SpaceActivityMySqlPublisherTest.class
   })
 @ConfigTestCase(AbstractCoreTest.class)
 public class InitContainerTestSuite extends BaseExoContainerTestSuite {

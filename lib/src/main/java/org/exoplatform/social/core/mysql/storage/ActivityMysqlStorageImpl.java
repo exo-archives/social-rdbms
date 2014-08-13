@@ -59,7 +59,6 @@ import org.exoplatform.social.core.activity.model.ExoSocialActivity;
 import org.exoplatform.social.core.activity.model.ExoSocialActivityImpl;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvider;
-import org.exoplatform.social.core.identity.provider.SpaceIdentityProvider;
 import org.exoplatform.social.core.mysql.MysqlDBConnect;
 import org.exoplatform.social.core.mysql.model.StreamItem;
 import org.exoplatform.social.core.mysql.model.StreamItemImpl;
@@ -143,7 +142,7 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
 
     StringBuilder getActivitySQL = new StringBuilder();
     getActivitySQL.append("select ")
-                  .append("_id, title, titleId, body, bodyId, postedTime, lastUpdated, posterId, ownerId,")
+                  .append("_id, title, titleId, body, bodyId, postedTime, lastUpdated, posterId, ownerId, ownerIdentityId,")
                   .append("permaLink, appId, externalId, priority, hidable, lockable, likers, metadata, templateParams, activityType")
                   .append(" from activity where _id = ?");
 
@@ -241,22 +240,18 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
     activity.isHidden(rs.getBoolean("hidable"));
     activity.setType(rs.getString("activityType"));
     
-    activity.setStreamOwner(rs.getString("ownerId"));
     
     ActivityStream stream = new ActivityStreamImpl();
-    String remoteId = rs.getString("ownerId");
-    String providerId = OrganizationIdentityProvider.NAME;
-    if (remoteId != null) {
-      Identity id = identityStorage.findIdentity(providerId, remoteId);
-      if (id == null) {
-        providerId = SpaceIdentityProvider.NAME;
-      }
-    }
-    stream.setType(providerId);
-    stream.setPrettyId(remoteId);
+    String ownerIdentityId = rs.getString("ownerIdentityId");
+    Identity owner = identityStorage.findIdentityById(ownerIdentityId);
+    stream.setType(owner.getProviderId());
+    stream.setPrettyId(owner.getRemoteId());
+    stream.setId(owner.getId());
     
     //
     activity.setActivityStream(stream);
+    activity.setStreamOwner(owner.getRemoteId());
+    activity.setStreamId(ownerIdentityId);
   }
   
   
@@ -293,8 +288,8 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
 
     StringBuilder getActivitySQL = new StringBuilder();
     getActivitySQL.append("select distinct activityId")
-                  .append(" from stream_item where ((viewerId = ? and (viewerType like ? or viewerType like ? or viewerType like ? or viewerType like ?))")
-                  .append(" or (posterId = ? and viewerType is null))")
+                  .append(" from stream_item where (((viewerId = ? and not viewerType like '%SPACE%')")
+                  .append(" or (posterId = ? and viewerType is null)) and hidable='0')")
                   .append(" order by time desc")
                   .append(limit > 0 ? " LIMIT " + limit : "").append(offset >= 0 ? " OFFSET " + offset : "");
 
@@ -303,11 +298,7 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
       dbConnection = dbConnect.getDBConnection();
       preparedStatement = dbConnection.prepareStatement(getActivitySQL.toString());
       preparedStatement.setString(1, owner.getId());
-      preparedStatement.setString(2, "%"+ViewerType.COMMENTER.getType()+"%");
-      preparedStatement.setString(3, "%"+ViewerType.LIKER.getType()+"%");
-      preparedStatement.setString(4, "%"+ViewerType.MENTIONER.getType()+"%");
-      preparedStatement.setString(5, "%"+ViewerType.POSTER.getType()+"%");
-      preparedStatement.setString(6, owner.getId());
+      preparedStatement.setString(2, owner.getId());
       
       rs = preparedStatement.executeQuery();
 
@@ -358,10 +349,10 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
 
     StringBuilder getActivitySQL = new StringBuilder();
     getActivitySQL.append("select distinct activityId")
-                  .append(" from stream_item where viewerId in ('")
+                  .append(" from stream_item where (viewerId in ('")
                   .append(StringUtils.join(identityIds, "','"))
                   .append("') ")
-                  .append(" and (viewerType like ? or viewerType like ? or viewerType like ? or viewerType like ?)")
+                  .append(" and not viewerType like '%SPACE%' and hidable='0')")
                   .append(" order by time desc")
                   .append(limit > 0 ? " LIMIT " + limit : "").append(offset >= 0 ? " OFFSET " + offset : "");
 
@@ -369,10 +360,6 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
     try {
       dbConnection = dbConnect.getDBConnection();
       preparedStatement = dbConnection.prepareStatement(getActivitySQL.toString());
-      preparedStatement.setString(1, "%" + ViewerType.COMMENTER.getType() + "%");
-      preparedStatement.setString(2, "%" + ViewerType.LIKER.getType() + "%");
-      preparedStatement.setString(3, "%" + ViewerType.MENTIONER.getType() + "%");
-      preparedStatement.setString(4, "%" + ViewerType.POSTER.getType() + "%");
 
       rs = preparedStatement.executeQuery();
 
@@ -683,7 +670,7 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
     StringBuilder getActivitySQL = new StringBuilder();
     getActivitySQL.append("select ")
                   .append("_id, activityId, ownerId, posterId, viewerId, viewerType, hidable, lockable, time, mentioner, commenter")
-                  .append(" from stream_item where activityId = ? and viewerId = ?");
+                  .append(" from stream_item where activityId = ? and viewerId = ? and hidable='0'");
 
     StreamItem item = null;
 
@@ -809,6 +796,13 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
     if(owner != null){
       activity.setPosterId(activity.getUserId() != null ? activity.getUserId() : owner.getId());
       activity.setStreamOwner(owner.getRemoteId());
+      activity.setStreamId(owner.getId());
+      //
+      ActivityStream stream = new ActivityStreamImpl();
+      stream.setId(owner.getId());
+      stream.setPrettyId(owner.getRemoteId());
+      stream.setType(owner.getProviderId());
+      activity.setActivityStream(stream);
     }
     activity.setReplyToId(new String[]{});
     
@@ -818,9 +812,9 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
  
     StringBuilder insertTableSQL = new StringBuilder();
     insertTableSQL.append("INSERT INTO activity")
-                  .append("(_id, title, titleId, body, bodyId, postedTime, lastUpdated, posterId, ownerId,")
+                  .append("(_id, title, titleId, body, bodyId, postedTime, lastUpdated, posterId, ownerId, ownerIdentityId,")
                   .append("permaLink, appId, externalId, priority, hidable, lockable, likers, metadata, templateParams, activityType)")
-                  .append("VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
+                  .append("VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
     
     try {
       dbConnection = dbConnect.getDBConnection();
@@ -870,7 +864,8 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
     preparedStatement.setLong(index++, activity.getPostedTime());
     preparedStatement.setLong(index++, activity.getUpdated().getTime());
     preparedStatement.setString(index++, activity.getPosterId());
-    preparedStatement.setString(index++, owner != null ? owner.getRemoteId() : null);
+    preparedStatement.setString(index++, owner.getRemoteId());
+    preparedStatement.setString(index++, owner.getId());
     preparedStatement.setString(index++, activity.getPermaLink());
     preparedStatement.setString(index++, activity.getAppId());
     preparedStatement.setString(index++, activity.getExternalId());
@@ -1038,7 +1033,7 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
  
     StringBuilder sql = new StringBuilder();
     sql.append("update activity ")
-                  .append("set title=?, titleId=?, body=?, bodyId=?, postedTime=?, lastUpdated=?, posterId=?, ownerId=?,")
+                  .append("set title=?, titleId=?, body=?, bodyId=?, postedTime=?, lastUpdated=?, posterId=?, ownerId=?, ownerIdentityId=?,")
                   .append("permaLink=?, appId=?, externalId=?, priority=?, hidable=?, lockable=?, likers=?, metadata=?, templateParams=?, activityType=?")
                   .append(" where _id = ?");
     
@@ -1046,7 +1041,7 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
       dbConnection = dbConnect.getDBConnection();
       preparedStatement = dbConnection.prepareStatement(sql.toString());
  
-      Identity owner = identityStorage.findIdentity(OrganizationIdentityProvider.NAME, activity.getStreamOwner());
+      Identity owner = identityStorage.findIdentityById(activity.getStreamId());
       int index = fillPreparedStatementFromActivity(owner, activity, preparedStatement, 1);
       preparedStatement.setString(index, activity.getId());
       
@@ -1072,7 +1067,7 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
       }
     }
     
-    updateStreamItemTime(activity.getId(), dbActivity.getUpdated().getTime());
+    updateStreamItemTime(activity.getId(), dbActivity.getUpdated().getTime(), activity.isHidden());
     
     //update likers
     String[] removedLikes = StorageUtils.sub(orginLikers, activity.getLikeIdentityIds());
@@ -1161,21 +1156,22 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
   /**
    * update stream item's comment info
    */
-  private void updateStreamItemTime(String activityId, Long time) {
+  private void updateStreamItemTime(String activityId, Long time, boolean isHidden) {
     //insert to mysql stream_item table
     Connection dbConnection = null;
     PreparedStatement preparedStatement = null;
  
     StringBuilder sql = new StringBuilder();
     sql.append("update stream_item")
-                  .append(" set time = ?")
+                  .append(" set time = ?, hidable = ?")
                   .append(" where activityId = ?");
     
     try {
       dbConnection = dbConnect.getDBConnection();
       preparedStatement = dbConnection.prepareStatement(sql.toString());
       preparedStatement.setLong(1, time);
-      preparedStatement.setString(2, activityId);
+      preparedStatement.setBoolean(2, isHidden);
+      preparedStatement.setString(3, activityId);
       
       preparedStatement.executeUpdate();
  
@@ -1432,7 +1428,7 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
     getActivitySQL.append("select ")
                   .append("_id, activityId, ownerId, posterId, viewerId, viewerType, hidable, lockable, time, mentioner, commenter")
                   .append(" from stream_item where activityId = ? and viewerId in ('")
-                  .append(StringUtils.join(mentionIds, "','")).append("')");
+                  .append(StringUtils.join(mentionIds, "','")).append("') and hidable='0'");
 
     List<StreamItem> list = new ArrayList<StreamItem>();
     try {
@@ -1616,15 +1612,11 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
   public int getNumberOfUserActivitiesForUpgrade(Identity owner) throws ActivityStorageException {
     StringBuilder sql = new StringBuilder();
     sql.append("select count(distinct activityId) as count ")
-       .append(" from stream_item where ((viewerId = ? and (viewerType like ? or viewerType like ? or viewerType like ? or viewerType like ?))")
-       .append(" or (posterId = ? and viewerType is null))");
+       .append(" from stream_item where (((viewerId = ? and not viewerType like '%SPACE%')")
+       .append(" or (posterId = ? and viewerType is null)) and hidable='0')");
 
     return getCount(sql.toString(),
                     owner.getId(),
-                    ViewerType.COMMENTER.getType(),
-                    ViewerType.LIKER.getType(),
-                    ViewerType.MENTIONER.getType(),
-                    ViewerType.POSTER.getType(),
                     owner.getId());
   }
 
@@ -1678,7 +1670,7 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
     StringBuilder sql = new StringBuilder();
     sql.append(isCount ? "select count(distinct activityId)" : "select distinct activityId")
        .append(" from stream_item where ")
-       .append(" (viewerId ='").append(ownerIdentity.getId()).append("'");
+       .append(" ((viewerId ='").append(ownerIdentity.getId()).append("'");
     
     if(CollectionUtils.isNotEmpty(spaces)){
       sql.append(" or ownerId in ('").append(StringUtils.join(spaceIds, "','")).append("') ");
@@ -1686,10 +1678,9 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
     
     if(CollectionUtils.isNotEmpty(relationships)){
       sql.append(" or (posterId in ('").append(StringUtils.join(relationshipIds, "','")).append("') ")
-         .append("and viewerType in ('POSTER','LIKER','COMMENTER','MENTIONER'))")
-         ;
+         .append("and not viewerType like '%SPACE%')");
     }
-    sql.append(")");
+    sql.append(") and hidable='0')");
     if (! isCount) {
       sql.append(" order by time desc")
          .append(limit > 0 ? " LIMIT " + limit : "").append(offset > 0 ? " OFFSET " + offset : "");
@@ -1827,9 +1818,9 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
     }
     StringBuilder getActivitySQL = new StringBuilder();
     getActivitySQL.append(isCount ? "select count(distinct activityId)" : "select distinct activityId")
-                  .append(" from stream_item where posterId in ('")
+                  .append(" from stream_item where (posterId in ('")
                   .append(StringUtils.join(relationshipIds, "','"))
-                  .append("')");
+                  .append("') and hidable='0')");
     if (! isCount) {
       getActivitySQL.append(" order by time desc")
                     .append(limit > 0 ? " LIMIT " + limit : "").append(offset > 0 ? " OFFSET " + offset : "");
@@ -1957,8 +1948,8 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
     
     StringBuilder getActivitySQL = new StringBuilder();
     getActivitySQL.append(isCount ? "select count(distinct activityId)" : "select distinct activityId")
-                  .append(" from stream_item where ownerId in ('")
-                  .append(StringUtils.join(spaceIds, "','")).append("') ");
+                  .append(" from stream_item where (ownerId in ('")
+                  .append(StringUtils.join(spaceIds, "','")).append("') and hidable='0')");
     if (! isCount) {
       getActivitySQL.append(" order by time desc")
                     .append(limit > 0 ? " LIMIT " + limit : "").append(offset > 0 ? " OFFSET " + offset : "");
@@ -2294,7 +2285,7 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
 	@Override
 	public int getNumberOfSpaceActivitiesForUpgrade(Identity spaceIdentity) {
 	  StringBuilder sql = new StringBuilder();
-	  sql.append("select count(distinct activityId) as count from stream_item where ownerId = ?");
+	  sql.append("select count(distinct activityId) as count from stream_item where ownerId = ? and hidable='0'");
 	  return getCount(sql.toString(), spaceIdentity.getRemoteId());
 	}
 	
@@ -2368,7 +2359,7 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
 
     StringBuilder getActivitySQL = new StringBuilder();
     getActivitySQL.append("select distinct activityId")
-                  .append(" from stream_item where ownerId = ?")
+                  .append(" from stream_item where ownerId = ? and hidable='0'")
                   .append(" order by time desc")
                   .append(limit > 0 ? " LIMIT " + limit : "").append(index >= 0 ? " OFFSET " + index : "");
     
@@ -2441,7 +2432,7 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
     StringBuilder sql = new StringBuilder();
     sql.append("select count(distinct activityId) as count from stream_item where viewerId in('")
        .append(StringUtils.join(identityIds, "','"))
-       .append("')");
+       .append("') and hidable='0'");
     return getCount(sql.toString(), new Object());
 	}
 

@@ -12,6 +12,7 @@ CREATE TABLE `activity` (
   `lastUpdated` bigint(20) unsigned DEFAULT NULL,
   `posterId` varchar(36) DEFAULT NULL,
   `ownerId` varchar(36) DEFAULT NULL,
+  `ownerIdentityId` varchar(36) DEFAULT NULL,
   `permaLink` varchar(255) DEFAULT NULL,
   `appId` varchar(36) DEFAULT NULL,
   `externalId` varchar(36) DEFAULT NULL,
