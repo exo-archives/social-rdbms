@@ -71,7 +71,6 @@ import org.exoplatform.social.core.storage.api.ActivityStreamStorage;
 import org.exoplatform.social.core.storage.api.IdentityStorage;
 import org.exoplatform.social.core.storage.api.RelationshipStorage;
 import org.exoplatform.social.core.storage.api.SpaceStorage;
-import org.exoplatform.social.core.storage.cache.model.key.ActivityType;
 import org.exoplatform.social.core.storage.exception.NodeNotFoundException;
 import org.exoplatform.social.core.storage.impl.ActivityBuilderWhere;
 import org.exoplatform.social.core.storage.impl.ActivityStorageImpl;
@@ -87,6 +86,9 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
 
   private static final Pattern MENTION_PATTERN = Pattern.compile("@([^\\s]+)|@([^\\s]+)$");
   public static final Pattern USER_NAME_VALIDATOR_REGEX = Pattern.compile("^[\\p{L}][\\p{L}._\\-\\d]+$");
+  
+  private static final String TIME = "time";
+  private static final String POSTED_TIME = "postedTime";
   
   public enum ViewerType {
     SPACE("SPACE"), POSTER("POSTER"), LIKER("LIKER"), COMMENTER("COMMENTER"), MENTIONER("MENTIONER"), SPACE_MEMBER("SPACE_MEMBER");
@@ -267,29 +269,42 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
   }
   
 	@Override
-	public List<ExoSocialActivity> getUserActivities(Identity owner)
-			throws ActivityStorageException {
-		// TODO Auto-generated method stub
-		return null;
+	public List<ExoSocialActivity> getUserActivities(Identity owner) throws ActivityStorageException {
+		return getUserActivities(owner, 0, -1);
 	}
 
 	@Override
-	public List<ExoSocialActivity> getUserActivities(Identity owner,
-			long offset, long limit) throws ActivityStorageException {
+	public List<ExoSocialActivity> getUserActivities(Identity owner, long offset, long limit) throws ActivityStorageException {
 	  return getUserActivitiesForUpgrade(owner, offset, limit);
 	}
 
 	@Override
-	public List<ExoSocialActivity> getUserActivitiesForUpgrade(Identity owner,
-			long offset, long limit) throws ActivityStorageException {
-	  Connection dbConnection = null;
+	public List<ExoSocialActivity> getUserActivitiesForUpgrade(Identity owner, long offset, long limit) throws ActivityStorageException {
+	  return getUserActivities(owner, -1, false, offset, limit);
+	}
+	
+	private String buildSQLQueryByTime(String timeField, long time, boolean isNewer) {
+	  if (time < 0) return "";
+	  StringBuilder sb = new StringBuilder();
+	  if (isNewer) {
+	    sb.append(" and ").append(timeField).append(" > '").append(time).append("'");
+	  } else {
+	    sb.append(" and ").append(timeField).append(" < '").append(time).append("'");
+	  }
+	  return sb.toString();
+	}
+	
+	private List<ExoSocialActivity> getUserActivities(Identity owner, long time, boolean isNewer, long offset, long limit) throws ActivityStorageException {
+    Connection dbConnection = null;
     PreparedStatement preparedStatement = null;
     ResultSet rs = null;
 
     StringBuilder getActivitySQL = new StringBuilder();
     getActivitySQL.append("select distinct activityId")
                   .append(" from stream_item where (((viewerId = ? and not viewerType like '%SPACE%')")
-                  .append(" or (posterId = ? and viewerType is null)) and hidable='0')")
+                  .append(" or (posterId = ? and viewerType is null)) and hidable='0'")
+                  .append(buildSQLQueryByTime(TIME, time, isNewer))
+                  .append(")")
                   .append(" order by time desc")
                   .append(limit > 0 ? " LIMIT " + limit : "").append(offset >= 0 ? " OFFSET " + offset : "");
 
@@ -299,33 +314,26 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
       preparedStatement = dbConnection.prepareStatement(getActivitySQL.toString());
       preparedStatement.setString(1, owner.getId());
       preparedStatement.setString(2, owner.getId());
-      
       rs = preparedStatement.executeQuery();
-
+      //
       while (rs.next()) {
         ExoSocialActivity activity = getStorage().getActivity(rs.getString("activityId"));
         list.add(activity);
       }
-
       LOG.debug("activities found");
-
       return list;
 
     } catch (SQLException e) {
-
       LOG.error("error in stream items look up:", e.getMessage());
       return new ArrayList<ExoSocialActivity>();
-
     } finally {
       try {
         if (rs != null) {
           rs.close();
         }
-
         if (preparedStatement != null) {
           preparedStatement.close();
         }
-
         if (dbConnection != null) {
           dbConnection.close();
         }
@@ -334,7 +342,7 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
       }
     }
     
-	}
+  }
 
   @Override
   public List<ExoSocialActivity> getActivities(Identity owner,
@@ -349,7 +357,7 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
 
     StringBuilder getActivitySQL = new StringBuilder();
     getActivitySQL.append("select distinct activityId")
-                  .append(" from stream_item where (viewerId in ('")
+                  .append(" from stream_item where (posterId in ('")
                   .append(StringUtils.join(identityIds, "','"))
                   .append("') ")
                   .append(" and not viewerType like '%SPACE%' and hidable='0')")
@@ -508,7 +516,6 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
 
     commenter(poster, activity, comment);
 
-    // TODO update mentioner
     updateMentioner(poster, activity, comment);
 
   }
@@ -877,7 +884,6 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
     preparedStatement.setBoolean(index++, activity.isHidden());
     preparedStatement.setBoolean(index++, activity.isLocked());
     preparedStatement.setString(index++, StringUtils.join(activity.getLikeIdentityIds(),","));
-    //TODO add metadata
     preparedStatement.setString(index++, null);
     //
     if (activity.getTemplateParams() != null) {
@@ -1199,7 +1205,7 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
 	@Override
 	public ExoSocialActivity getParentActivity(ExoSocialActivity comment)
 			throws ActivityStorageException {
-		// TODO Auto-generated method stub
+		// This method is not used anymore
 		return null;
 	}
 
@@ -1610,42 +1616,38 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
 
   @Override
   public int getNumberOfUserActivitiesForUpgrade(Identity owner) throws ActivityStorageException {
+    return getNumberOfUserActivities(owner, -1, false);
+  }
+  
+  private int getNumberOfUserActivities(Identity owner, long time, boolean isNewer) {
     StringBuilder sql = new StringBuilder();
     sql.append("select count(distinct activityId) as count ")
        .append(" from stream_item where (((viewerId = ? and not viewerType like '%SPACE%')")
-       .append(" or (posterId = ? and viewerType is null)) and hidable='0')");
+       .append(" or (posterId = ? and viewerType is null)) and hidable='0'")
+       .append(buildSQLQueryByTime(TIME, time, isNewer))
+       .append(")");
 
-    return getCount(sql.toString(),
-                    owner.getId(),
-                    owner.getId());
+    return getCount(sql.toString(), owner.getId(), owner.getId());
   }
 
 	@Override
-	public int getNumberOfNewerOnUserActivities(Identity ownerIdentity,
-			ExoSocialActivity baseActivity) {
-		// TODO Auto-generated method stub
-		return 0;
+	public int getNumberOfNewerOnUserActivities(Identity ownerIdentity, ExoSocialActivity baseActivity) {
+	  return getNumberOfUserActivities(ownerIdentity, baseActivity.getPostedTime(), true);
 	}
 
 	@Override
-	public List<ExoSocialActivity> getNewerOnUserActivities(
-			Identity ownerIdentity, ExoSocialActivity baseActivity, int limit) {
-		// TODO Auto-generated method stub
-		return null;
+	public List<ExoSocialActivity> getNewerOnUserActivities(Identity ownerIdentity, ExoSocialActivity baseActivity, int limit) {
+		return getUserActivities(ownerIdentity, baseActivity.getPostedTime(), true, 0, limit);
 	}
 
 	@Override
-	public int getNumberOfOlderOnUserActivities(Identity ownerIdentity,
-			ExoSocialActivity baseActivity) {
-		// TODO Auto-generated method stub
-		return 0;
+	public int getNumberOfOlderOnUserActivities(Identity ownerIdentity, ExoSocialActivity baseActivity) {
+	  return getNumberOfUserActivities(ownerIdentity, baseActivity.getPostedTime(), false);
 	}
 
 	@Override
-	public List<ExoSocialActivity> getOlderOnUserActivities(
-			Identity ownerIdentity, ExoSocialActivity baseActivity, int limit) {
-		// TODO Auto-generated method stub
-		return null;
+	public List<ExoSocialActivity> getOlderOnUserActivities(Identity ownerIdentity, ExoSocialActivity baseActivity, int limit) {
+		return getUserActivities(ownerIdentity, baseActivity.getPostedTime(), false, 0, limit);
 	}
 
 	@Override
@@ -1654,7 +1656,7 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
 	  return getActivityFeedForUpgrade(ownerIdentity, offset, limit);
 	}
 	
-	private String getFeedActivitySQLQuery(Identity ownerIdentity, int limit, int offset, boolean isCount) {
+	private String getFeedActivitySQLQuery(Identity ownerIdentity, long time, boolean isNewer, int limit, int offset, boolean isCount) {
     List<Identity> relationships = relationshipStorage.getConnections(ownerIdentity);
     Set<String> relationshipIds = new HashSet<String>();
     for (Identity identity : relationships) {
@@ -1680,7 +1682,9 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
       sql.append(" or (posterId in ('").append(StringUtils.join(relationshipIds, "','")).append("') ")
          .append("and not viewerType like '%SPACE%')");
     }
-    sql.append(") and hidable='0')");
+    sql.append(") and hidable='0'")
+       .append(buildSQLQueryByTime(TIME, time, isNewer))
+       .append(")");
     if (! isCount) {
       sql.append(" order by time desc")
          .append(limit > 0 ? " LIMIT " + limit : "").append(offset > 0 ? " OFFSET " + offset : "");
@@ -1690,45 +1694,38 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
   }
 
 	@Override
-	public List<ExoSocialActivity> getActivityFeedForUpgrade(
-			Identity ownerIdentity, int offset, int limit) {
-	  
-	  Connection dbConnection = null;
+	public List<ExoSocialActivity> getActivityFeedForUpgrade(Identity ownerIdentity, int offset, int limit) {
+	  return getActivityFeed(ownerIdentity, -1, false, offset, limit);
+	}
+	
+  private List<ExoSocialActivity> getActivityFeed(Identity ownerIdentity, long time, boolean isNewer, int offset, int limit) {
+
+    Connection dbConnection = null;
     PreparedStatement preparedStatement = null;
     ResultSet rs = null;
-    
     List<ExoSocialActivity> result = new LinkedList<ExoSocialActivity>();
-    
     try {
       dbConnection = dbConnect.getDBConnection();
-      preparedStatement = dbConnection.prepareStatement(getFeedActivitySQLQuery(ownerIdentity, limit, offset, false));
-      
+      preparedStatement = dbConnection.prepareStatement(getFeedActivitySQLQuery(ownerIdentity, time, isNewer, limit, offset, false));
       rs = preparedStatement.executeQuery();
-      
-      while(rs.next()){
+      //
+      while (rs.next()) {
         ExoSocialActivity activity = getStorage().getActivity(rs.getString("activityId"));
         result.add(activity);
       }
-      
-      LOG.debug("getActivityFeed size = "+ result.size());
-      
+      LOG.debug("getActivityFeed size = " + result.size());
       return result;
-      
     } catch (SQLException e) {
- 
       LOG.error("error in activity look up:", e.getMessage());
       return new LinkedList<ExoSocialActivity>();
- 
     } finally {
       try {
         if (rs != null) {
           rs.close();
         }
-        
         if (preparedStatement != null) {
           preparedStatement.close();
         }
-        
         if (dbConnection != null) {
           dbConnection.close();
         }
@@ -1736,8 +1733,7 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
         LOG.error("Cannot close statement or connection:", e.getMessage());
       }
     }
-	  
-	}
+  }
 
   @Override
   public int getNumberOfActivitesOnActivityFeed(Identity ownerIdentity) {
@@ -1746,12 +1742,16 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
 
   @Override
   public int getNumberOfActivitesOnActivityFeedForUpgrade(Identity ownerIdentity) {
+    return getNumberOfActivityFeed(ownerIdentity, -1, false);
+  }
+  
+  private int getNumberOfActivityFeed(Identity ownerIdentity, long time, boolean isNewer) {
     Connection dbConnection = null;
     PreparedStatement preparedStatement = null;
     ResultSet rs = null;
     try {
       dbConnection = dbConnect.getDBConnection();
-      preparedStatement = dbConnection.prepareStatement(getFeedActivitySQLQuery(ownerIdentity, 0, -1, true));
+      preparedStatement = dbConnection.prepareStatement(getFeedActivitySQLQuery(ownerIdentity, time, isNewer, 0, -1, true));
       rs = preparedStatement.executeQuery();
       while (rs.next()) {
         return rs.getInt(1);
@@ -1777,31 +1777,23 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
   }
 
 	@Override
-	public int getNumberOfNewerOnActivityFeed(Identity ownerIdentity,
-			ExoSocialActivity baseActivity) {
-		// TODO Auto-generated method stub
-		return 0;
+	public int getNumberOfNewerOnActivityFeed(Identity ownerIdentity, ExoSocialActivity baseActivity) {
+		return getNumberOfActivityFeed(ownerIdentity, baseActivity.getPostedTime(), true);
 	}
 
 	@Override
-	public List<ExoSocialActivity> getNewerOnActivityFeed(
-			Identity ownerIdentity, ExoSocialActivity baseActivity, int limit) {
-		// TODO Auto-generated method stub
-		return null;
+	public List<ExoSocialActivity> getNewerOnActivityFeed(Identity ownerIdentity, ExoSocialActivity baseActivity, int limit) {
+		return getActivityFeed(ownerIdentity, baseActivity.getPostedTime(), true, 0, limit);
 	}
 
 	@Override
-	public int getNumberOfOlderOnActivityFeed(Identity ownerIdentity,
-			ExoSocialActivity baseActivity) {
-		// TODO Auto-generated method stub
-		return 0;
+	public int getNumberOfOlderOnActivityFeed(Identity ownerIdentity, ExoSocialActivity baseActivity) {
+	  return getNumberOfActivityFeed(ownerIdentity, baseActivity.getPostedTime(), false);
 	}
 
 	@Override
-	public List<ExoSocialActivity> getOlderOnActivityFeed(
-			Identity ownerIdentity, ExoSocialActivity baseActivity, int limit) {
-		// TODO Auto-generated method stub
-		return null;
+	public List<ExoSocialActivity> getOlderOnActivityFeed(Identity ownerIdentity, ExoSocialActivity baseActivity, int limit) {
+	  return getActivityFeed(ownerIdentity, baseActivity.getPostedTime(), false, 0, limit);
 	}
 
 	@Override
@@ -1810,7 +1802,7 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
 	  return getActivitiesOfConnectionsForUpgrade(ownerIdentity, offset, limit);
 	}
 	
-	private String getActivitiesOfConnectionsQuery(Identity ownerIdentity, int offset, int limit, boolean isCount) {
+	private String getActivitiesOfConnectionsQuery(Identity ownerIdentity, long time, boolean isNewer, int offset, int limit, boolean isCount) {
 	  List<Identity> relationships = relationshipStorage.getConnections(ownerIdentity);
     Set<String> relationshipIds = new HashSet<String>();
     for (Identity identity : relationships) {
@@ -1820,7 +1812,9 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
     getActivitySQL.append(isCount ? "select count(distinct activityId)" : "select distinct activityId")
                   .append(" from stream_item where (posterId in ('")
                   .append(StringUtils.join(relationshipIds, "','"))
-                  .append("') and hidable='0')");
+                  .append("') and not viewerType like '%SPACE%' and hidable='0'")
+                  .append(buildSQLQueryByTime(TIME, time, isNewer))
+                  .append(")");
     if (! isCount) {
       getActivitySQL.append(" order by time desc")
                     .append(limit > 0 ? " LIMIT " + limit : "").append(offset > 0 ? " OFFSET " + offset : "");
@@ -1830,6 +1824,10 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
 	
   @Override
   public List<ExoSocialActivity> getActivitiesOfConnectionsForUpgrade(Identity ownerIdentity, int offset, int limit) {
+    return getActivitiesOfConnections(ownerIdentity, -1, false, offset, limit);
+  }
+  
+  private List<ExoSocialActivity> getActivitiesOfConnections(Identity ownerIdentity, long time, boolean isNewer, int offset, int limit) {
     Connection dbConnection = null;
     PreparedStatement preparedStatement = null;
     ResultSet rs = null;
@@ -1837,7 +1835,7 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
     //
     try {
       dbConnection = dbConnect.getDBConnection();
-      preparedStatement = dbConnection.prepareStatement(getActivitiesOfConnectionsQuery(ownerIdentity, offset, limit, false));
+      preparedStatement = dbConnection.prepareStatement(getActivitiesOfConnectionsQuery(ownerIdentity, time, isNewer, offset, limit, false));
       rs = preparedStatement.executeQuery();
       while (rs.next()) {
         ExoSocialActivity activity = getStorage().getActivity(rs.getString("activityId"));
@@ -1866,12 +1864,16 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
 
   @Override
   public int getNumberOfActivitiesOfConnections(Identity ownerIdentity) {
+    return getNumberOfActivitiesOfConnectionsForUpgrade(ownerIdentity);
+  }
+
+  private int getNumberActivitiesOfConnections(Identity ownerIdentity, long time, boolean isNewer) {
     Connection dbConnection = null;
     PreparedStatement preparedStatement = null;
     ResultSet rs = null;
     try {
       dbConnection = dbConnect.getDBConnection();
-      preparedStatement = dbConnection.prepareStatement(getActivitiesOfConnectionsQuery(ownerIdentity, 0, -1, true));
+      preparedStatement = dbConnection.prepareStatement(getActivitiesOfConnectionsQuery(ownerIdentity, time, isNewer, 0, -1, true));
       rs = preparedStatement.executeQuery();
       while (rs.next()) {
         return rs.getInt(1);
@@ -1895,51 +1897,38 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
       }
     }
   }
-
-
+  
 	@Override
-	public int getNumberOfActivitiesOfConnectionsForUpgrade(
-			Identity ownerIdentity) {
-		// TODO Auto-generated method stub
-		return 0;
+	public int getNumberOfActivitiesOfConnectionsForUpgrade(Identity ownerIdentity) {
+		return getNumberActivitiesOfConnections(ownerIdentity, -1, false);
 	}
 
 	@Override
-	public List<ExoSocialActivity> getActivitiesOfIdentity(
-			Identity ownerIdentity, long offset, long limit) {
-		// TODO Auto-generated method stub
-		return null;
+	public List<ExoSocialActivity> getActivitiesOfIdentity(Identity ownerIdentity, long offset, long limit) {
+		return getUserActivities(ownerIdentity, offset, limit);
 	}
 
 	@Override
-	public int getNumberOfNewerOnActivitiesOfConnections(
-			Identity ownerIdentity, ExoSocialActivity baseActivity) {
-		// TODO Auto-generated method stub
-		return 0;
+	public int getNumberOfNewerOnActivitiesOfConnections(Identity ownerIdentity, ExoSocialActivity baseActivity) {
+		return getNumberActivitiesOfConnections(ownerIdentity, baseActivity.getPostedTime(), true);
 	}
 
 	@Override
-	public List<ExoSocialActivity> getNewerOnActivitiesOfConnections(
-			Identity ownerIdentity, ExoSocialActivity baseActivity, long limit) {
-		// TODO Auto-generated method stub
-		return null;
+	public List<ExoSocialActivity> getNewerOnActivitiesOfConnections(Identity ownerIdentity, ExoSocialActivity baseActivity, long limit) {
+		return getActivitiesOfConnections(ownerIdentity, baseActivity.getPostedTime(), true, 0, (int) limit);
 	}
 
 	@Override
-	public int getNumberOfOlderOnActivitiesOfConnections(
-			Identity ownerIdentity, ExoSocialActivity baseActivity) {
-		// TODO Auto-generated method stub
-		return 0;
+	public int getNumberOfOlderOnActivitiesOfConnections(Identity ownerIdentity, ExoSocialActivity baseActivity) {
+	  return getNumberActivitiesOfConnections(ownerIdentity, baseActivity.getPostedTime(), false);
 	}
 
 	@Override
-	public List<ExoSocialActivity> getOlderOnActivitiesOfConnections(
-			Identity ownerIdentity, ExoSocialActivity baseActivity, int limit) {
-		// TODO Auto-generated method stub
-		return null;
+	public List<ExoSocialActivity> getOlderOnActivitiesOfConnections(Identity ownerIdentity, ExoSocialActivity baseActivity, int limit) {
+	  return getActivitiesOfConnections(ownerIdentity, baseActivity.getPostedTime(), false, 0, limit);
 	}
 	
-	private String getUserSpaceActivitiesQuery(Identity ownerIdentity, int offset, int limit, boolean isCount) {
+	private String getUserSpaceActivitiesQuery(Identity ownerIdentity, long time, boolean isNewer, int offset, int limit, boolean isCount) {
 	  List<Space> spaces = spaceStorage.getMemberSpaces(ownerIdentity.getRemoteId());
     String[] spaceIds = new String[0];
     for (Space space : spaces) {
@@ -1949,7 +1938,9 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
     StringBuilder getActivitySQL = new StringBuilder();
     getActivitySQL.append(isCount ? "select count(distinct activityId)" : "select distinct activityId")
                   .append(" from stream_item where (ownerId in ('")
-                  .append(StringUtils.join(spaceIds, "','")).append("') and hidable='0')");
+                  .append(StringUtils.join(spaceIds, "','")).append("') and hidable='0'")
+                  .append(buildSQLQueryByTime(TIME, time, isNewer))
+                  .append(")");
     if (! isCount) {
       getActivitySQL.append(" order by time desc")
                     .append(limit > 0 ? " LIMIT " + limit : "").append(offset > 0 ? " OFFSET " + offset : "");
@@ -1965,6 +1956,10 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
 
 	@Override
 	public List<ExoSocialActivity> getUserSpacesActivitiesForUpgrade(Identity ownerIdentity, int offset, int limit) {
+	  return getUserSpacesActivities(ownerIdentity, -1, false, offset, limit);
+	}
+	
+	private List<ExoSocialActivity> getUserSpacesActivities(Identity ownerIdentity, long time, boolean isNewer, int offset, int limit) {
 	  Connection dbConnection = null;
     PreparedStatement preparedStatement = null;
     ResultSet rs = null;
@@ -1972,7 +1967,7 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
     //
     try {
       dbConnection = dbConnect.getDBConnection();
-      preparedStatement = dbConnection.prepareStatement(getUserSpaceActivitiesQuery(ownerIdentity, offset, limit, false));
+      preparedStatement = dbConnection.prepareStatement(getUserSpaceActivitiesQuery(ownerIdentity, time, isNewer, offset, limit, false));
       rs = preparedStatement.executeQuery();
       //
       while (rs.next()) {
@@ -2004,12 +1999,16 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
 
 	@Override
 	public int getNumberOfUserSpacesActivities(Identity ownerIdentity) {
-	  Connection dbConnection = null;
+	  return getNumberOfUserSpacesActivitiesForUpgrade(ownerIdentity);
+	}
+	
+	private int getNumberOfUserSpacesActivities(Identity ownerIdentity, long time, boolean isNewer) {
+    Connection dbConnection = null;
     PreparedStatement preparedStatement = null;
     ResultSet rs = null;
     try {
       dbConnection = dbConnect.getDBConnection();
-      preparedStatement = dbConnection.prepareStatement(getUserSpaceActivitiesQuery(ownerIdentity, 0, -1, true));
+      preparedStatement = dbConnection.prepareStatement(getUserSpaceActivitiesQuery(ownerIdentity, time, isNewer, 0, -1, true));
       rs = preparedStatement.executeQuery();
       while (rs.next()) {
         return rs.getInt(1);
@@ -2032,87 +2031,70 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
         LOG.error("Cannot close statement or connection:", e.getMessage());
       }
     }
-	}
+  }
 
 	@Override
 	public int getNumberOfUserSpacesActivitiesForUpgrade(Identity ownerIdentity) {
-		// TODO Auto-generated method stub
-		return 0;
+	  return getNumberOfUserSpacesActivities(ownerIdentity, -1, false);
 	}
 
 	@Override
-	public int getNumberOfNewerOnUserSpacesActivities(Identity ownerIdentity,
-			ExoSocialActivity baseActivity) {
-		// TODO Auto-generated method stub
-		return 0;
+	public int getNumberOfNewerOnUserSpacesActivities(Identity ownerIdentity, ExoSocialActivity baseActivity) {
+		return getNumberOfUserSpacesActivities(ownerIdentity, baseActivity.getPostedTime(), true);
 	}
 
 	@Override
-	public List<ExoSocialActivity> getNewerOnUserSpacesActivities(
-			Identity ownerIdentity, ExoSocialActivity baseActivity, int limit) {
-		// TODO Auto-generated method stub
-		return null;
+	public List<ExoSocialActivity> getNewerOnUserSpacesActivities(Identity ownerIdentity, ExoSocialActivity baseActivity, int limit) {
+		return getUserSpacesActivities(ownerIdentity, baseActivity.getPostedTime(), true, 0, limit);
 	}
 
 	@Override
-	public int getNumberOfOlderOnUserSpacesActivities(Identity ownerIdentity,
-			ExoSocialActivity baseActivity) {
-		// TODO Auto-generated method stub
-		return 0;
+	public int getNumberOfOlderOnUserSpacesActivities(Identity ownerIdentity, ExoSocialActivity baseActivity) {
+	  return getNumberOfUserSpacesActivities(ownerIdentity, baseActivity.getPostedTime(), false);
 	}
 
 	@Override
-	public List<ExoSocialActivity> getOlderOnUserSpacesActivities(
-			Identity ownerIdentity, ExoSocialActivity baseActivity, int limit) {
-		// TODO Auto-generated method stub
-		return null;
+	public List<ExoSocialActivity> getOlderOnUserSpacesActivities(Identity ownerIdentity, ExoSocialActivity baseActivity, int limit) {
+	  return getUserSpacesActivities(ownerIdentity, baseActivity.getPostedTime(), false, 0, limit);
 	}
 
 	@Override
-	public List<ExoSocialActivity> getComments(
-			ExoSocialActivity existingActivity, int offset, int limit) {
-	  
-	  Connection dbConnection = null;
+	public List<ExoSocialActivity> getComments(ExoSocialActivity existingActivity, int offset, int limit) {
+	  return getComments(existingActivity, -1, false, offset, limit);
+	}
+	
+	private List<ExoSocialActivity> getComments(ExoSocialActivity existingActivity, long time, boolean isNewer, int offset, int limit) {
+    Connection dbConnection = null;
     PreparedStatement preparedStatement = null;
     ResultSet rs = null;
-
+    //
     StringBuilder sql = new StringBuilder();
     sql.append("select _id from comment where activityId ='").append(existingActivity.getId()).append("'")
+       .append(buildSQLQueryByTime(POSTED_TIME, time, isNewer))
        .append(" order by postedTime asc")
        .append(limit > 0 ? " LIMIT " + limit : "").append(offset > 0 ? " OFFSET " + offset : "");
-
     try {
       dbConnection = dbConnect.getDBConnection();
       preparedStatement = dbConnection.prepareStatement(sql.toString());
-
       rs = preparedStatement.executeQuery();
-
       List<ExoSocialActivity> result = new ArrayList<ExoSocialActivity>();
       while (rs.next()) {
         ExoSocialActivity comment = getStorage().getComment(rs.getString("_id"));
         processActivity(comment);
         result.add(comment);
       }
-
-      LOG.debug("comments found");
-
       return result;
-
     } catch (SQLException e) {
-
       LOG.error("error in comments look up:", e.getMessage());
       return new ArrayList<ExoSocialActivity>();
-
     } finally {
       try {
         if (rs != null) {
           rs.close();
         }
-
         if (preparedStatement != null) {
           preparedStatement.close();
         }
-
         if (dbConnection != null) {
           dbConnection.close();
         }
@@ -2120,8 +2102,7 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
         LOG.error("Cannot close statement or connection:", e.getMessage());
       }
     }
-    
-	}
+  }
 
   private ExoSocialActivity fillCommentFromResultSet(ResultSet rs) throws SQLException{
     ExoSocialActivity comment = new ExoSocialActivityImpl();
@@ -2156,39 +2137,37 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
   
 	@Override
 	public int getNumberOfComments(ExoSocialActivity existingActivity) {
-	  Connection dbConnection = null;
+    return getNumberOfComments(existingActivity, -1, false);
+	}
+	
+	private int getNumberOfComments(ExoSocialActivity existingActivity, long time, boolean isNewer) {
+    Connection dbConnection = null;
     PreparedStatement preparedStatement = null;
     ResultSet rs = null;
-
+    //
     StringBuilder sql = new StringBuilder();
     sql.append("select count(*) numberOfComment ")
-       .append(" from comment where activityId = ?");
-
+       .append(" from comment where activityId = ?")
+       .append(buildSQLQueryByTime(POSTED_TIME, time, isNewer));
     try {
       dbConnection = dbConnect.getDBConnection();
       preparedStatement = dbConnection.prepareStatement(sql.toString());
       preparedStatement.setString(1, existingActivity.getId());
-
       rs = preparedStatement.executeQuery();
       while (rs.next()) {
         return rs.getInt(1);
       }
-
     } catch (SQLException e) {
-
       LOG.error("error in comments look up:", e.getMessage());
       return 0;
-
     } finally {
       try {
         if (rs != null) {
           rs.close();
         }
-
         if (preparedStatement != null) {
           preparedStatement.close();
         }
-
         if (dbConnection != null) {
           dbConnection.close();
         }
@@ -2196,38 +2175,27 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
         LOG.error("Cannot close statement or connection:", e.getMessage());
       }
     }
-    
     return 0;
+  }
+
+	@Override
+	public int getNumberOfNewerComments(ExoSocialActivity existingActivity, ExoSocialActivity baseComment) {
+	  return getNumberOfComments(existingActivity, baseComment.getPostedTime(), true);
 	}
 
 	@Override
-	public int getNumberOfNewerComments(ExoSocialActivity existingActivity,
-			ExoSocialActivity baseComment) {
-		// TODO Auto-generated method stub
-		return 0;
+	public List<ExoSocialActivity> getNewerComments(ExoSocialActivity existingActivity, ExoSocialActivity baseComment, int limit) {
+		return getComments(existingActivity, baseComment.getPostedTime(), true, 0, limit);
 	}
 
 	@Override
-	public List<ExoSocialActivity> getNewerComments(
-			ExoSocialActivity existingActivity, ExoSocialActivity baseComment,
-			int limit) {
-		// TODO Auto-generated method stub
-		return null;
+	public int getNumberOfOlderComments(ExoSocialActivity existingActivity, ExoSocialActivity baseComment) {
+	  return getNumberOfComments(existingActivity, baseComment.getPostedTime(), false);
 	}
 
 	@Override
-	public int getNumberOfOlderComments(ExoSocialActivity existingActivity,
-			ExoSocialActivity baseComment) {
-		// TODO Auto-generated method stub
-		return 0;
-	}
-
-	@Override
-	public List<ExoSocialActivity> getOlderComments(
-			ExoSocialActivity existingActivity, ExoSocialActivity baseComment,
-			int limit) {
-		// TODO Auto-generated method stub
-		return null;
+	public List<ExoSocialActivity> getOlderComments(ExoSocialActivity existingActivity, ExoSocialActivity baseComment, int limit) {
+	  return getComments(existingActivity, baseComment.getPostedTime(), false, 0, limit);
 	}
 
 	@Override
@@ -2242,31 +2210,23 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
 	}
 
 	@Override
-	public int getNumberOfNewerOnActivityFeed(Identity ownerIdentity,
-			Long sinceTime) {
-		// TODO Auto-generated method stub
-		return 0;
+	public int getNumberOfNewerOnActivityFeed(Identity ownerIdentity, Long sinceTime) {
+		return getNumberOfActivityFeed(ownerIdentity, sinceTime, true);
 	}
 
 	@Override
-	public int getNumberOfNewerOnUserActivities(Identity ownerIdentity,
-			Long sinceTime) {
-		// TODO Auto-generated method stub
-		return 0;
+	public int getNumberOfNewerOnUserActivities(Identity ownerIdentity, Long sinceTime) {
+		return getNumberOfUserActivities(ownerIdentity, sinceTime, true);
 	}
 
 	@Override
-	public int getNumberOfNewerOnActivitiesOfConnections(
-			Identity ownerIdentity, Long sinceTime) {
-		// TODO Auto-generated method stub
-		return 0;
+	public int getNumberOfNewerOnActivitiesOfConnections(Identity ownerIdentity, Long sinceTime) {
+		return getNumberActivitiesOfConnections(ownerIdentity, sinceTime, true);
 	}
 
 	@Override
-	public int getNumberOfNewerOnUserSpacesActivities(Identity ownerIdentity,
-			Long sinceTime) {
-		// TODO Auto-generated method stub
-		return 0;
+	public int getNumberOfNewerOnUserSpacesActivities(Identity ownerIdentity, Long sinceTime) {
+		return getNumberOfSpaceActivities(ownerIdentity, sinceTime, true);
 	}
 
 	@Override
@@ -2284,10 +2244,15 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
 
 	@Override
 	public int getNumberOfSpaceActivitiesForUpgrade(Identity spaceIdentity) {
-	  StringBuilder sql = new StringBuilder();
-	  sql.append("select count(distinct activityId) as count from stream_item where ownerId = ? and hidable='0'");
-	  return getCount(sql.toString(), spaceIdentity.getRemoteId());
+	  return getNumberOfSpaceActivities(spaceIdentity, -1, false);
 	}
+	
+	private int getNumberOfSpaceActivities(Identity spaceIdentity, long time, boolean isNewer) {
+    StringBuilder sql = new StringBuilder();
+    sql.append("select count(distinct activityId) as count from stream_item where ownerId = ? and hidable='0'")
+       .append(buildSQLQueryByTime(TIME, time, isNewer));
+    return getCount(sql.toString(), spaceIdentity.getRemoteId());
+  }
 	
 	private int getCount(String sql, Object... params){
 	  Connection dbConnection = null;
@@ -2345,14 +2310,16 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
 	}
 
 	@Override
-	public List<ExoSocialActivity> getSpaceActivities(Identity spaceIdentity,
-			int index, int limit) {
+	public List<ExoSocialActivity> getSpaceActivities(Identity spaceIdentity, int index, int limit) {
 	  return getSpaceActivitiesForUpgrade(spaceIdentity, index, limit);
 	}
 
 	@Override
-	public List<ExoSocialActivity> getSpaceActivitiesForUpgrade(
-			Identity spaceIdentity, int index, int limit) {
+	public List<ExoSocialActivity> getSpaceActivitiesForUpgrade(Identity spaceIdentity, int index, int limit) {
+    return getSpaceActivities(spaceIdentity, -1, false, index, limit);
+	}
+	
+	private List<ExoSocialActivity> getSpaceActivities(Identity spaceIdentity, long time, boolean isNewer, int index, int limit) {
     Connection dbConnection = null;
     PreparedStatement preparedStatement = null;
     ResultSet rs = null;
@@ -2360,6 +2327,7 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
     StringBuilder getActivitySQL = new StringBuilder();
     getActivitySQL.append("select distinct activityId")
                   .append(" from stream_item where ownerId = ? and hidable='0'")
+                  .append(buildSQLQueryByTime(TIME, time, isNewer))
                   .append(" order by time desc")
                   .append(limit > 0 ? " LIMIT " + limit : "").append(index >= 0 ? " OFFSET " + index : "");
     
@@ -2368,33 +2336,24 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
       dbConnection = dbConnect.getDBConnection();
       preparedStatement = dbConnection.prepareStatement(getActivitySQL.toString());
       preparedStatement.setString(1, spaceIdentity.getRemoteId());
-      
       rs = preparedStatement.executeQuery();
-
+      //
       while (rs.next()) {
         ExoSocialActivity activity = getStorage().getActivity(rs.getString("activityId"));
         list.add(activity);
       }
-
-      LOG.debug("activities found");
-
       return list;
-
     } catch (SQLException e) {
-
       LOG.error("error in stream items look up:", e.getMessage());
       return new ArrayList<ExoSocialActivity>();
-
     } finally {
       try {
         if (rs != null) {
           rs.close();
         }
-
         if (preparedStatement != null) {
           preparedStatement.close();
         }
-
         if (dbConnection != null) {
           dbConnection.close();
         }
@@ -2402,7 +2361,7 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
         LOG.error("Cannot close statement or connection:", e.getMessage());
       }
     }
-	}
+  }
 
 	@Override
 	public List<ExoSocialActivity> getActivitiesByPoster(
@@ -2430,45 +2389,35 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
 			Identity viewerIdentity) {
     String[] identityIds = getIdentities(ownerIdentity, viewerIdentity);
     StringBuilder sql = new StringBuilder();
-    sql.append("select count(distinct activityId) as count from stream_item where viewerId in('")
+    sql.append("select count(distinct activityId) as count from stream_item where posterId in('")
        .append(StringUtils.join(identityIds, "','"))
        .append("') and hidable='0'");
     return getCount(sql.toString(), new Object());
 	}
 
 	@Override
-	public List<ExoSocialActivity> getNewerOnSpaceActivities(
-			Identity spaceIdentity, ExoSocialActivity baseActivity, int limit) {
-		// TODO Auto-generated method stub
-		return null;
+	public List<ExoSocialActivity> getNewerOnSpaceActivities(Identity spaceIdentity, ExoSocialActivity baseActivity, int limit) {
+		return getSpaceActivities(spaceIdentity, baseActivity.getPostedTime(), true, 0, limit);
 	}
 
 	@Override
-	public int getNumberOfNewerOnSpaceActivities(Identity spaceIdentity,
-			ExoSocialActivity baseActivity) {
-		// TODO Auto-generated method stub
-		return 0;
+	public int getNumberOfNewerOnSpaceActivities(Identity spaceIdentity, ExoSocialActivity baseActivity) {
+		return getNumberOfSpaceActivities(spaceIdentity, baseActivity.getPostedTime(), true);
 	}
 
 	@Override
-	public List<ExoSocialActivity> getOlderOnSpaceActivities(
-			Identity spaceIdentity, ExoSocialActivity baseActivity, int limit) {
-		// TODO Auto-generated method stub
-		return null;
+	public List<ExoSocialActivity> getOlderOnSpaceActivities(Identity spaceIdentity, ExoSocialActivity baseActivity, int limit) {
+	  return getSpaceActivities(spaceIdentity, baseActivity.getPostedTime(), false, 0, limit);
 	}
 
 	@Override
-	public int getNumberOfOlderOnSpaceActivities(Identity spaceIdentity,
-			ExoSocialActivity baseActivity) {
-		// TODO Auto-generated method stub
-		return 0;
+	public int getNumberOfOlderOnSpaceActivities(Identity spaceIdentity, ExoSocialActivity baseActivity) {
+	  return getNumberOfSpaceActivities(spaceIdentity, baseActivity.getPostedTime(), false);
 	}
 
 	@Override
-	public int getNumberOfNewerOnSpaceActivities(Identity spaceIdentity,
-			Long sinceTime) {
-		// TODO Auto-generated method stub
-		return 0;
+	public int getNumberOfNewerOnSpaceActivities(Identity spaceIdentity, Long sinceTime) {
+	  return getNumberOfSpaceActivities(spaceIdentity, sinceTime, true);
 	}
 
 	@Override
@@ -2514,136 +2463,98 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
 	}
 
 	@Override
-	public List<ExoSocialActivity> getNewerFeedActivities(Identity owner,
-			Long sinceTime, int limit) {
-		// TODO Auto-generated method stub
-		return null;
+	public List<ExoSocialActivity> getNewerFeedActivities(Identity owner, Long sinceTime, int limit) {
+		return getActivityFeed(owner, sinceTime, true, 0, limit);
 	}
 
 	@Override
-	public List<ExoSocialActivity> getNewerUserActivities(Identity owner,
-			Long sinceTime, int limit) {
-		// TODO Auto-generated method stub
-		return null;
+	public List<ExoSocialActivity> getNewerUserActivities(Identity owner, Long sinceTime, int limit) {
+		return getUserActivities(owner, sinceTime, true, 0, limit);
 	}
 
 	@Override
-	public List<ExoSocialActivity> getNewerUserSpacesActivities(Identity owner,
-			Long sinceTime, int limit) {
-		// TODO Auto-generated method stub
-		return null;
+	public List<ExoSocialActivity> getNewerUserSpacesActivities(Identity owner, Long sinceTime, int limit) {
+		return getUserSpacesActivities(owner, sinceTime, true, 0, limit);
 	}
 
 	@Override
-	public List<ExoSocialActivity> getNewerActivitiesOfConnections(
-			Identity owner, Long sinceTime, int limit) {
-		// TODO Auto-generated method stub
-		return null;
+	public List<ExoSocialActivity> getNewerActivitiesOfConnections(Identity owner, Long sinceTime, int limit) {
+		return getActivitiesOfConnections(owner, sinceTime, true, 0, limit);
 	}
 
 	@Override
-	public List<ExoSocialActivity> getNewerSpaceActivities(Identity owner,
-			Long sinceTime, int limit) {
-		// TODO Auto-generated method stub
-		return null;
+	public List<ExoSocialActivity> getNewerSpaceActivities(Identity owner, Long sinceTime, int limit) {
+		return getSpaceActivities(owner, sinceTime, true, 0, limit);
 	}
 
 	@Override
-	public List<ExoSocialActivity> getOlderFeedActivities(Identity owner,
-			Long sinceTime, int limit) {
-		// TODO Auto-generated method stub
-		return null;
+	public List<ExoSocialActivity> getOlderFeedActivities(Identity owner, Long sinceTime, int limit) {
+	  return getActivityFeed(owner, sinceTime, false, 0, limit);
 	}
 
 	@Override
-	public List<ExoSocialActivity> getOlderUserActivities(Identity owner,
-			Long sinceTime, int limit) {
-		// TODO Auto-generated method stub
-		return null;
+	public List<ExoSocialActivity> getOlderUserActivities(Identity owner, Long sinceTime, int limit) {
+	  return getUserActivities(owner, sinceTime, false, 0, limit);
 	}
 
 	@Override
-	public List<ExoSocialActivity> getOlderUserSpacesActivities(Identity owner,
-			Long sinceTime, int limit) {
-		// TODO Auto-generated method stub
-		return null;
+	public List<ExoSocialActivity> getOlderUserSpacesActivities(Identity owner, Long sinceTime, int limit) {
+	  return getUserSpacesActivities(owner, sinceTime, false, 0, limit);
 	}
 
 	@Override
-	public List<ExoSocialActivity> getOlderActivitiesOfConnections(
-			Identity owner, Long sinceTime, int limit) {
-		// TODO Auto-generated method stub
-		return null;
+	public List<ExoSocialActivity> getOlderActivitiesOfConnections(Identity owner, Long sinceTime, int limit) {
+	  return getActivitiesOfConnections(owner, sinceTime, false, 0, limit);
 	}
 
 	@Override
-	public List<ExoSocialActivity> getOlderSpaceActivities(Identity owner,
-			Long sinceTime, int limit) {
-		// TODO Auto-generated method stub
-		return null;
+	public List<ExoSocialActivity> getOlderSpaceActivities(Identity owner, Long sinceTime, int limit) {
+	  return getSpaceActivities(owner, sinceTime, false, 0, limit);
 	}
 
 	@Override
-	public int getNumberOfOlderOnActivityFeed(Identity ownerIdentity,
-			Long sinceTime) {
-		// TODO Auto-generated method stub
-		return 0;
+	public int getNumberOfOlderOnActivityFeed(Identity ownerIdentity, Long sinceTime) {
+		return getNumberOfActivityFeed(ownerIdentity, sinceTime, false);
 	}
 
 	@Override
-	public int getNumberOfOlderOnUserActivities(Identity ownerIdentity,
-			Long sinceTime) {
-		// TODO Auto-generated method stub
-		return 0;
+	public int getNumberOfOlderOnUserActivities(Identity ownerIdentity, Long sinceTime) {
+		return getNumberOfUserActivities(ownerIdentity, sinceTime, false);
 	}
 
 	@Override
-	public int getNumberOfOlderOnActivitiesOfConnections(
-			Identity ownerIdentity, Long sinceTime) {
-		// TODO Auto-generated method stub
-		return 0;
+	public int getNumberOfOlderOnActivitiesOfConnections(Identity ownerIdentity, Long sinceTime) {
+		return getNumberActivitiesOfConnections(ownerIdentity, sinceTime, false);
 	}
 
 	@Override
-	public int getNumberOfOlderOnUserSpacesActivities(Identity ownerIdentity,
-			Long sinceTime) {
-		// TODO Auto-generated method stub
-		return 0;
+	public int getNumberOfOlderOnUserSpacesActivities(Identity ownerIdentity, Long sinceTime) {
+		return getNumberOfUserSpacesActivities(ownerIdentity, sinceTime, false);
 	}
 
 	@Override
-	public int getNumberOfOlderOnSpaceActivities(Identity ownerIdentity,
-			Long sinceTime) {
-		// TODO Auto-generated method stub
-		return 0;
+	public int getNumberOfOlderOnSpaceActivities(Identity ownerIdentity, Long sinceTime) {
+	  return getNumberOfSpaceActivities(ownerIdentity, sinceTime, false);
 	}
 
 	@Override
-	public List<ExoSocialActivity> getNewerComments(
-			ExoSocialActivity existingActivity, Long sinceTime, int limit) {
-		// TODO Auto-generated method stub
-		return null;
+	public List<ExoSocialActivity> getNewerComments(ExoSocialActivity existingActivity, Long sinceTime, int limit) {
+		return getComments(existingActivity, sinceTime, true, 0, limit);
 	}
 
 	@Override
-	public List<ExoSocialActivity> getOlderComments(
-			ExoSocialActivity existingActivity, Long sinceTime, int limit) {
-		// TODO Auto-generated method stub
-		return null;
+	public List<ExoSocialActivity> getOlderComments(ExoSocialActivity existingActivity, Long sinceTime, int limit) {
+	  return getComments(existingActivity, sinceTime, false, 0, limit);
 	}
 
 	@Override
-	public int getNumberOfNewerComments(ExoSocialActivity existingActivity,
-			Long sinceTime) {
-		// TODO Auto-generated method stub
-		return 0;
+	public int getNumberOfNewerComments(ExoSocialActivity existingActivity, Long sinceTime) {
+		return getNumberOfComments(existingActivity, sinceTime, true);
 	}
 
 	@Override
-	public int getNumberOfOlderComments(ExoSocialActivity existingActivity,
-			Long sinceTime) {
-		// TODO Auto-generated method stub
-		return 0;
+	public int getNumberOfOlderComments(ExoSocialActivity existingActivity, Long sinceTime) {
+	  return getNumberOfComments(existingActivity, sinceTime, false);
 	}
 
   private ActivityStorage getStorage() {
@@ -2670,7 +2581,4 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
     };
   }
   
-  private long gettSinceTime(Identity owner, long offset, ActivityType type) throws ActivityStorageException{
-    return 0;
-  }
 }
