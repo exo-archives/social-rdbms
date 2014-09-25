@@ -499,6 +499,50 @@ public class ActivityMysqlStorageImplTestCase extends AbstractCoreTest {
     assertEquals(0, mysqlStorage.getNumberOfOlderComments(activity, baseComment));
   }
   
+  public void testMentionersAndCommenters() throws Exception {
+    ExoSocialActivity activity = createActivity(1);
+    activity.setTitle("hello @demo @john");
+    mysqlStorage.saveActivity(rootIdentity, activity);
+    tearDownActivityList.add(activity);
+    
+    ExoSocialActivity got = mysqlStorage.getActivity(activity.getId());
+    assertNotNull(got);
+    assertEquals(2, got.getMentionedIds().length);
+    
+    ExoSocialActivity comment1 = new ExoSocialActivityImpl();
+    comment1.setTitle("comment 1");
+    comment1.setUserId(demoIdentity.getId());
+    mysqlStorage.saveComment(activity, comment1);
+    ExoSocialActivity comment2 = new ExoSocialActivityImpl();
+    comment2.setTitle("comment 2");
+    comment2.setUserId(johnIdentity.getId());
+    mysqlStorage.saveComment(activity, comment2);
+    
+    got = mysqlStorage.getActivity(activity.getId());
+    assertEquals(2, got.getReplyToId().length);
+    assertEquals(2, got.getCommentedIds().length);
+    
+    ExoSocialActivity comment3 = new ExoSocialActivityImpl();
+    comment3.setTitle("hello @mary");
+    comment3.setUserId(johnIdentity.getId());
+    mysqlStorage.saveComment(activity, comment3);
+    
+    got = mysqlStorage.getActivity(activity.getId());
+    assertEquals(3, got.getReplyToId().length);
+    assertEquals(2, got.getCommentedIds().length);
+    assertEquals(3, got.getMentionedIds().length);
+    
+    ExoSocialActivity gotComment = mysqlStorage.getComment(comment3.getId());
+    assertEquals(1, gotComment.getMentionedIds().length);
+    
+    mysqlStorage.deleteComment(activity.getId(), comment3.getId());
+    
+    got = mysqlStorage.getActivity(activity.getId());
+    assertEquals(2, got.getReplyToId().length);
+    assertEquals(2, got.getCommentedIds().length);
+    assertEquals(2, got.getMentionedIds().length);
+  }
+  
   private Space getSpaceInstance(SpaceService spaceService, int number) throws Exception {
     Space space = new Space();
     space.setDisplayName("my space " + number);
@@ -538,6 +582,8 @@ public class ActivityMysqlStorageImplTestCase extends AbstractCoreTest {
     activity.setBodyId("BodyId of "+ activity.getTitle());
     activity.setLikeIdentityIds(new String[]{"demo", "mary"});
     activity.setMentionedIds(new String[]{"demo", "john"});
+    activity.setCommentedIds(new String[]{});
+    activity.setReplyToId(new String[]{});
     activity.setAppId("AppID");
     activity.setExternalId("External ID");
     

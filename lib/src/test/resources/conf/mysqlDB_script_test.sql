@@ -2,7 +2,7 @@ CREATE DATABASE `social_test` /*!40100 DEFAULT CHARACTER SET utf8 COLLATE utf8_u
 
 USE `social_test`;
 
-CREATE TABLE `activity` (
+CREATE TABLE IF NOT EXISTS `activity` (
   `_id` varchar(36) NOT NULL,
   `title` varchar(2000) DEFAULT NULL,
   `titleId` varchar(36) DEFAULT NULL,
@@ -20,13 +20,16 @@ CREATE TABLE `activity` (
   `hidable` tinyint(4) DEFAULT NULL,
   `lockable` tinyint(4) DEFAULT NULL,
   `likers` varchar(2000) DEFAULT NULL,
+  `mentioners` varchar(2000) DEFAULT NULL,
+  `commenters` varchar(2000) DEFAULT NULL,
+  `commentIds` varchar(2000) DEFAULT NULL,
   `metadata` varchar(2000) DEFAULT NULL,
   `templateParams` blob,
   `activityType` varchar(100) DEFAULT NULL,
   PRIMARY KEY (`_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `comment` (
+CREATE TABLE IF NOT EXISTS `comment` (
   `_id` varchar(36) NOT NULL,
   `activityId` varchar(36) NOT NULL,
   `title` varchar(2000) DEFAULT NULL,
@@ -37,6 +40,7 @@ CREATE TABLE `comment` (
   `lastUpdated` bigint(20) unsigned DEFAULT NULL,
   `posterId` varchar(36) DEFAULT NULL,
   `ownerId` varchar(36) DEFAULT NULL,
+  `mentioners` varchar(2000) DEFAULT NULL,
   `permaLink` varchar(255) DEFAULT NULL,
   `hidable` tinyint(4) DEFAULT NULL,
   `lockable` tinyint(4) DEFAULT NULL,
@@ -44,7 +48,7 @@ CREATE TABLE `comment` (
   PRIMARY KEY (`_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `stream_item` (
+CREATE TABLE IF NOT EXISTS `stream_item` (
   `_id` varchar(36) NOT NULL,
   `activityId` varchar(36) DEFAULT NULL,
   `ownerId` varchar(36) DEFAULT NULL,
@@ -60,7 +64,7 @@ CREATE TABLE `stream_item` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
-CREATE TABLE `stream_tracking` (
+CREATE TABLE IF NOT EXISTS `stream_tracking` (
   `_id` varchar(36) NOT NULL,
   `viewerId` varchar(36) DEFAULT NULL,
   `time` int(10) unsigned DEFAULT NULL,

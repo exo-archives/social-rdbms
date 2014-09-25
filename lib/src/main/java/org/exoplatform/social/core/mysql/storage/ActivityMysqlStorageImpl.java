@@ -26,6 +26,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -145,7 +146,7 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
     StringBuilder getActivitySQL = new StringBuilder();
     getActivitySQL.append("select ")
                   .append("_id, title, titleId, body, bodyId, postedTime, lastUpdated, posterId, ownerId, ownerIdentityId,")
-                  .append("permaLink, appId, externalId, priority, hidable, lockable, likers, metadata, templateParams, activityType")
+                  .append("permaLink, appId, externalId, priority, hidable, lockable, likers, mentioners, commenters, commentIds, metadata, templateParams, activityType")
                   .append(" from activity where _id = ?");
 
     ExoSocialActivity activity = new ExoSocialActivityImpl();
@@ -221,18 +222,23 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
       LOG.debug("Failed to get templateParams of activity from database");
     }
 
-    //
-    List<String> commentIds = new ArrayList<String>();
-    List<ExoSocialActivity> comments = getStorage().getComments(activity, 0, -1);
-    for (ExoSocialActivity comment : comments) {
-      commentIds.add(comment.getId());
-    }
-    activity.setReplyToId(commentIds.toArray(new String[]{}));
+    String[] commentIds = StringUtils.split(rs.getString("commentIds"), ",");
+    activity.setReplyToId(commentIds);
     
     String lks = rs.getString("likers");
     String[] likes = StringUtils.split(lks, ",");
     if (likes != null) {
       activity.setLikeIdentityIds(likes);
+    }
+    
+    String[] mentioners = StringUtils.split(rs.getString("mentioners"), ",");
+    if (mentioners != null) {
+      activity.setMentionedIds(mentioners);
+    }
+    
+    String[] commenters = StringUtils.split(rs.getString("commenters"), ",");
+    if (commenters != null) {
+      activity.setCommentedIds(commenters);
     }
     
     //mentioners and commenters are moved to StreamItem
@@ -436,16 +442,24 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
 
     StringBuilder insertTableSQL = new StringBuilder();
     insertTableSQL.append("INSERT INTO comment")
-                  .append("(_id, activityId, title, titleId, body, bodyId, postedTime, lastUpdated, posterId, ")
+                  .append("(_id, activityId, title, titleId, body, bodyId, postedTime, lastUpdated, posterId, mentioners, ")
                   .append("hidable, lockable, templateParams)")
-                  .append("VALUES (?,?,?,?,?,?,?,?,?,?,?,?)");
+                  .append("VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)");
 
     StringBuilder updateActivitySQL = new StringBuilder();
-    updateActivitySQL.append("update activity set lastUpdated = ? where _id = ?");
+    updateActivitySQL.append("update activity set lastUpdated = ?, mentioners = ?, commenters = ?, commentIds = ? where _id = ?");
 
     long currentMillis = System.currentTimeMillis();
     long commentMillis = (comment.getPostedTime() != null ? comment.getPostedTime() : currentMillis);
-
+    List<String> mentioners = new ArrayList<String>();
+    activity.setMentionedIds(processMentions(activity.getMentionedIds(), comment.getTitle(), mentioners, true));
+    List<String> commenters = new ArrayList<String>(Arrays.asList(activity.getCommentedIds()));
+    if (comment.getUserId() != null && ! commenters.contains(comment.getUserId())) {
+      commenters.add(comment.getUserId());
+    }
+    activity.setCommentedIds(commenters.toArray(new String[0]));
+    
+    comment.setMentionedIds(processMentions(comment.getTitle()));
     try {
       dbConnection = dbConnect.getDBConnection();
 
@@ -462,35 +476,45 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
       preparedStatement.setLong(7, commentMillis);
       preparedStatement.setLong(8, commentMillis);
       preparedStatement.setString(9, comment.getUserId());
-      preparedStatement.setBoolean(10, activity.isHidden());
-      preparedStatement.setBoolean(11, activity.isLocked());
+      preparedStatement.setString(10, StringUtils.join(comment.getMentionedIds(),","));
+      preparedStatement.setBoolean(11, activity.isHidden());
+      preparedStatement.setBoolean(12, activity.isLocked());
       //
       if (comment.getTemplateParams() != null) {
         try {
           ByteArrayOutputStream b = new ByteArrayOutputStream();
           ObjectOutputStream output = new ObjectOutputStream(b);
           output.writeObject(comment.getTemplateParams());
-          preparedStatement.setBinaryStream(12, new ByteArrayInputStream(b.toByteArray()));
+          preparedStatement.setBinaryStream(13, new ByteArrayInputStream(b.toByteArray()));
         } catch (IOException e) {
           LOG.debug("Failed to save templateParams of activity into database");
         }
       } else {
-        preparedStatement.setNull(12, Types.BLOB);
+        preparedStatement.setNull(13, Types.BLOB);
       }
 
       preparedStatement.executeUpdate();
 
       LOG.debug("new comment created");
 
+      //
+      List<String> commentIds = new ArrayList(Arrays.asList(activity.getReplyToId()));
+      commentIds.add(comment.getId());
+      
       // update activity
       preparedStatement = dbConnection.prepareStatement(updateActivitySQL.toString());
       preparedStatement.setLong(1, commentMillis);
-      preparedStatement.setString(2, activity.getId());
+      preparedStatement.setString(2, StringUtils.join(activity.getMentionedIds(),","));
+      preparedStatement.setString(3, StringUtils.join(activity.getCommentedIds(),","));
+      preparedStatement.setString(4, StringUtils.join(commentIds,","));
+      preparedStatement.setString(5, activity.getId());
 
       preparedStatement.executeUpdate();
 
       LOG.debug("activity updated");
 
+      activity.setReplyToId(commentIds.toArray(new String[commentIds.size()]));
+      activity.setUpdated(currentMillis);
     } catch (SQLException e) {
 
       LOG.error("error in comment creation:", e.getMessage());
@@ -820,8 +844,8 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
     StringBuilder insertTableSQL = new StringBuilder();
     insertTableSQL.append("INSERT INTO activity")
                   .append("(_id, title, titleId, body, bodyId, postedTime, lastUpdated, posterId, ownerId, ownerIdentityId,")
-                  .append("permaLink, appId, externalId, priority, hidable, lockable, likers, metadata, templateParams, activityType)")
-                  .append("VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
+                  .append("permaLink, appId, externalId, priority, hidable, lockable, likers, mentioners, commenters, commentIds, metadata, templateParams, activityType)")
+                  .append("VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
     
     try {
       dbConnection = dbConnect.getDBConnection();
@@ -884,6 +908,9 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
     preparedStatement.setBoolean(index++, activity.isHidden());
     preparedStatement.setBoolean(index++, activity.isLocked());
     preparedStatement.setString(index++, StringUtils.join(activity.getLikeIdentityIds(),","));
+    preparedStatement.setString(index++, StringUtils.join(activity.getMentionedIds(),","));
+    preparedStatement.setString(index++, StringUtils.join(activity.getCommentedIds(),","));
+    preparedStatement.setString(index++, StringUtils.join(activity.getReplyToId(),","));
     preparedStatement.setString(index++, null);
     //
     if (activity.getTemplateParams() != null) {
@@ -1040,7 +1067,7 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
     StringBuilder sql = new StringBuilder();
     sql.append("update activity ")
                   .append("set title=?, titleId=?, body=?, bodyId=?, postedTime=?, lastUpdated=?, posterId=?, ownerId=?, ownerIdentityId=?,")
-                  .append("permaLink=?, appId=?, externalId=?, priority=?, hidable=?, lockable=?, likers=?, metadata=?, templateParams=?, activityType=?")
+                  .append("permaLink=?, appId=?, externalId=?, priority=?, hidable=?, lockable=?, likers=?, mentioners=?, commenters=?, commentIds=?, metadata=?, templateParams=?, activityType=?")
                   .append(" where _id = ?");
     
     try {
@@ -1334,14 +1361,68 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
 	@Override
 	public void deleteComment(String activityId, String commentId)
 			throws ActivityStorageException {
-	  ExoSocialActivity comment = getComment(commentId);
-    
+	  //
+	  updateParentActivity(activityId, commentId);
+	  //
     deleteComment(commentId);
+	}
+
+  private void updateParentActivity(String activityId, String commentId) {
+    ExoSocialActivity comment = getComment(commentId);
+    ExoSocialActivity activity = getActivity(activityId);
+    String[] mentioners = activity.getMentionedIds();
+    String[] commenters = activity.getCommentedIds();
+    List<String> commentIds = new ArrayList<String>(Arrays.asList(activity.getReplyToId()));
+    mentioners = processMentions(mentioners, comment.getTitle(), new ArrayList<String>(), false);
+    commenters = processCommenters(commenters, comment.getPosterId(), new ArrayList<String>(), false);
+    commentIds.remove(commentId);
     
     String[] mentionIds = processMentions(comment.getTitle());
     //update activities refs for mentioner
     removeMentioner(activityId, mentionIds);
-	}
+    
+    Connection dbConnection = null;
+    PreparedStatement preparedStatement = null;
+    dbConnection = dbConnect.getDBConnection();
+    long currentMillis = System.currentTimeMillis();
+    long commentMillis = (comment.getPostedTime() != null ? comment.getPostedTime() : currentMillis);
+    StringBuilder insertTableSQL = new StringBuilder();
+    try {
+      // insert comment
+      preparedStatement = dbConnection.prepareStatement(insertTableSQL.toString());
+      
+      StringBuilder updateActivitySQL = new StringBuilder();
+      updateActivitySQL.append("update activity set lastUpdated = ?,mentioners = ?, commenters = ?, commentIds = ? where _id = ?");
+  
+      List<String> removedMentioners = new ArrayList<String>(Arrays.asList(mentionIds));
+      
+      // update activity
+      preparedStatement = dbConnection.prepareStatement(updateActivitySQL.toString());
+      preparedStatement.setLong(1, commentMillis);
+      preparedStatement.setString(2, StringUtils.join(processMentions(activity.getMentionedIds(), comment.getTitle(), removedMentioners, false),","));
+      preparedStatement.setString(3, StringUtils.join(activity.getCommentedIds(),","));
+      preparedStatement.setString(4, StringUtils.join(commentIds,","));
+      preparedStatement.setString(5, activity.getId());
+  
+      preparedStatement.executeUpdate();
+    } catch (SQLException e) {
+
+      LOG.error("error in updating activity:", e.getMessage());
+
+    } finally {
+      try {
+        if (preparedStatement != null) {
+          preparedStatement.close();
+        }
+
+        if (dbConnection != null) {
+          dbConnection.close();
+        }
+      } catch (SQLException e) {
+        LOG.error("Cannot close statement or connection:", e.getMessage());
+      }
+    }
+  }
 
   private void removeMentioner(String activityId, String[] mentionIds) {
     if(ArrayUtils.isEmpty(mentionIds)){
@@ -1383,6 +1464,76 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
     
   }
   
+  private String[] processMentions(String[] mentionerIds, String title, List<String> addedOrRemovedIds, boolean isAdded) {
+    if (title == null || title.length() == 0) {
+      return ArrayUtils.EMPTY_STRING_ARRAY;
+    }
+    
+    Matcher matcher = MENTION_PATTERN.matcher(title);
+    while (matcher.find()) {
+      String remoteId = matcher.group().substring(1);
+      if (!USER_NAME_VALIDATOR_REGEX.matcher(remoteId).matches()) {
+        continue;
+      }
+      Identity identity = identityStorage.findIdentity(OrganizationIdentityProvider.NAME, remoteId);
+      // if not the right mention then ignore
+      if (identity != null) { 
+        String mentionStr = identity.getId() + MENTION_CHAR; // identityId@
+        mentionerIds = isAdded ? add(mentionerIds, mentionStr, addedOrRemovedIds) : remove(mentionerIds, mentionStr, addedOrRemovedIds);
+      }
+    }
+    return mentionerIds;
+  }
+  
+  private String[] processCommenters(String[] commenters, String commenter, List<String> addedOrRemovedIds, boolean isAdded) {
+    if (commenter == null || commenter.length() == 0) {
+      return ArrayUtils.EMPTY_STRING_ARRAY;
+    }
+    
+    String newCommenter = commenter + MENTION_CHAR; 
+    commenters = isAdded ? add(commenters, newCommenter, addedOrRemovedIds) : remove(commenters, newCommenter, addedOrRemovedIds);
+    
+    return commenters;
+  }
+  
+  private String[] add(String[] mentionerIds, String mentionStr, List<String> addedOrRemovedIds) {
+    if (ArrayUtils.toString(mentionerIds).indexOf(mentionStr) == -1) { // the first mention
+      addedOrRemovedIds.add(mentionStr.replace(MENTION_CHAR, ""));
+      return (String[]) ArrayUtils.add(mentionerIds, mentionStr + 1);
+    }
+    
+    String storedId = null;
+    for (String mentionerId : mentionerIds) {
+      if (mentionerId.indexOf(mentionStr) != -1) {
+        mentionerIds = (String[]) ArrayUtils.removeElement(mentionerIds, mentionerId);
+        storedId = mentionStr + (Integer.parseInt(mentionerId.split(MENTION_CHAR)[1]) + 1);
+        break;
+      }
+    }
+    
+    addedOrRemovedIds.add(mentionStr.replace(MENTION_CHAR, ""));
+    mentionerIds = (String[]) ArrayUtils.add(mentionerIds, storedId);
+    return mentionerIds;
+  }
+  
+  private String[] remove(String[] mentionerIds, String mentionStr, List<String> addedOrRemovedIds) {
+    for (String mentionerId : mentionerIds) {
+      if (mentionerId.indexOf(mentionStr) != -1) {
+        int numStored = Integer.parseInt(mentionerId.split(MENTION_CHAR)[1]) - 1;
+        
+        if (numStored == 0) {
+          addedOrRemovedIds.add(mentionStr.replace(MENTION_CHAR, ""));
+          return (String[]) ArrayUtils.removeElement(mentionerIds, mentionerId);
+        }
+
+        mentionerIds = (String[]) ArrayUtils.removeElement(mentionerIds, mentionerId);
+        mentionerIds = (String[]) ArrayUtils.add(mentionerIds, mentionStr + numStored);
+        break;
+      }
+    }
+    return mentionerIds;
+  }
+    
   private void deleteStreamItem(String id) throws ActivityStorageException {
     LOG.debug("begin to delete stream item");
 
@@ -1512,7 +1663,7 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
     StringBuilder sql = new StringBuilder();
     sql.append("select ")
                   .append("_id, activityId, title, titleId, body, bodyId, postedTime,")
-                  .append("lastUpdated, posterId, ownerId, permaLink, hidable, lockable, templateParams")
+                  .append("lastUpdated, mentioners, posterId, ownerId, permaLink, hidable, lockable, templateParams")
                   .append(" from comment where _id = ?");
 
     try {
@@ -2130,6 +2281,11 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
       LOG.debug("Failed to get templateParams of comment from database");
     }
 
+    String[] mentioners = StringUtils.split(rs.getString("mentioners"), ",");
+    if (mentioners != null) {
+      comment.setMentionedIds(mentioners);
+    }
+    
     comment.setStreamOwner(rs.getString("ownerId"));
     comment.isComment(true);
     return comment;
