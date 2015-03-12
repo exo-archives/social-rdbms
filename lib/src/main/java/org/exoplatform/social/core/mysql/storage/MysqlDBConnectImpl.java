@@ -22,44 +22,63 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.Properties;
 
+import org.exoplatform.commons.utils.PrivilegedSystemHelper;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
-import org.exoplatform.social.core.mysql.MysqlDBConnect;
-import org.exoplatform.social.core.storage.impl.AbstractStorage;
 
 /**
  * Created by The eXo Platform SAS
  * Dec 12, 2013  
  */
-public class MysqlDBConnectImpl extends AbstractStorage implements MysqlDBConnect {
+public class MysqlDBConnectImpl extends AbstractMysqlDBConnect {
+  private static final Log    LOG             = ExoLogger.getLogger(MysqlDBConnectImpl.class);
 
-  private static final Log LOG = ExoLogger.getLogger(MysqlDBConnectImpl.class);
-  private static final String DB_INFO_TEST = "conf/dbinfo_test.properties";
+  private static final String DB_CONF_INFO    = "/conf/dbinfo.properties";
+  private static final String DB_URL_KEY      = "db.url";
+  private static final String DB_SOC_NAME_KEY = "db.social.name";
+  private static final String DB_USER_KEY     = "db.username";
+  private static final String DB_PASS_KEY     = "db.password";
 
   public Connection getDBConnection() {
-    Connection dbConnection = null;
-
     try {
       Class.forName(JDBC_DRIVER);
     } catch (ClassNotFoundException e) {
-      LOG.error("Driver registered fail:", e.getMessage());
+      LOG.error("Driver registered fail:", e);
+      return null;
     }
 
+    Properties props = getProperties();
     try {
-      Properties props = new Properties();
-      props.load(ClassLoader.getSystemResourceAsStream(DB_INFO_TEST));
-      String username = props.getProperty("db.username");
-      String password = props.getProperty("db.password");
-      String dbUrl = props.getProperty("db.social_test.url");
-          
-      dbConnection = DriverManager.getConnection(dbUrl, username, password);
-      return dbConnection;
+      return DriverManager.getConnection(props.getProperty(DB_URL_KEY) + props.getProperty(DB_SOC_NAME_KEY),
+                                         props.getProperty(DB_USER_KEY), props.getProperty(DB_PASS_KEY));
     } catch (SQLException e) {
-      LOG.error("Connection fail:", e.getMessage());
-    } catch (IOException e) {
-      LOG.error("Failed in getting properties information.", e);
+      try {
+        createDatabase(props);
+        //
+        return getDBConnection();
+      } catch (SQLException e2) {
+        LOG.error("Connection fail:", e.getMessage());
+        return null;
+      }
     }
-
-    return dbConnection;
+  }
+  
+  private Properties getProperties() {
+    Properties props = new Properties(PrivilegedSystemHelper.getProperties());
+    if(!props.containsKey(DB_SOC_NAME_KEY)) {
+      try {
+        props.load(getClass().getResourceAsStream(DB_CONF_INFO));
+      } catch (IOException e) {
+        LOG.error("Can not load properties file:" + DB_CONF_INFO, e.getMessage());
+      }
+    }
+    return props;
+  }
+  
+  private void createDatabase(Properties props) throws SQLException {
+    Connection con = DriverManager.getConnection(props.getProperty(DB_URL_KEY) + 
+                                                 "?user=" + props.getProperty(DB_USER_KEY) +
+                                                 "&password=" + props.getProperty(DB_PASS_KEY));
+    con.createStatement().executeUpdate("CREATE DATABASE " + props.getProperty(DB_SOC_NAME_KEY));
   }
 }

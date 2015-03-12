@@ -22,12 +22,10 @@ import java.io.File;
 import java.io.FileReader;
 import java.net.URL;
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.Statement;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Properties;
 
 import javax.jcr.Session;
 
@@ -65,25 +63,6 @@ public abstract class AbstractCoreTest extends BaseExoTestCase {
   protected SpaceService spaceService;
   protected MysqlDBConnect dbConnect;
   protected Session session;
-  protected String username;
-  protected String password;
-  private String dburl;
-  
-  public String getUsername() {
-    return username;
-  }
-
-  public void setUsername(String username) {
-    this.username = username;
-  }
-
-  public String getPassword() {
-    return password;
-  }
-
-  public void setPassword(String password) {
-    this.password = password;
-  }
 
   @Override
   protected void setUp() throws Exception {
@@ -99,12 +78,6 @@ public abstract class AbstractCoreTest extends BaseExoTestCase {
   private void initDB() {
     
     try {
-      Properties props = new Properties();
-      props.load(ClassLoader.getSystemResourceAsStream("conf/dbinfo_test.properties"));
-      this.username = props.getProperty("db.username");
-      this.password = props.getProperty("db.password");
-      this.dburl = props.getProperty("db.url");
-      
       // clear if existing.
       cleanDB();
       
@@ -124,7 +97,7 @@ public abstract class AbstractCoreTest extends BaseExoTestCase {
 
       String[] inst = sb.toString().split(";");
 
-      Connection con = DriverManager.getConnection(dburl, username, password);
+      Connection con = dbConnect.getDBConnection();
       Statement stmt = con.createStatement();
 
       for (int i = 0; i < inst.length; i++) {
@@ -150,7 +123,7 @@ public abstract class AbstractCoreTest extends BaseExoTestCase {
     String sql = "DROP DATABASE social_test";
     String query = "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'social_test'";
     try {
-      Connection con = DriverManager.getConnection(dburl, username, password);
+      Connection con = dbConnect.getDBConnection();
       Statement stmt = con.createStatement();
       ResultSet rs = stmt.executeQuery(query);                  
       rs.next();
