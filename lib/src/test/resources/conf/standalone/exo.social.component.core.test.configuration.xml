@@ -71,6 +71,11 @@
     </init-params>
   </component>
 
+  <component>
+    <key>org.exoplatform.social.core.dao.ActivityDao</key>
+    <type>org.exoplatform.social.core.dao.ActivityDao</type>
+  </component>
+
   <!--
     Activity Stream storage components.
   -->

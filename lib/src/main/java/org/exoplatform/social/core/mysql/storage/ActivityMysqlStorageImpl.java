@@ -112,6 +112,7 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
   private ActivityStorage activityStorage;
   private MysqlDBConnect dbConnect;
   
+
   private static final Log LOG = ExoLogger.getLogger(ActivityMysqlStorageImpl.class);
   
   public ActivityMysqlStorageImpl(final RelationshipStorage relationshipStorage,
@@ -255,7 +256,7 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
     stream.setType(owner.getProviderId());
     stream.setPrettyId(owner.getRemoteId());
     stream.setId(owner.getId());
-    
+
     //
     activity.setActivityStream(stream);
     activity.setStreamOwner(owner.getRemoteId());
@@ -269,7 +270,7 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
       try {
         it.next().processActivity(existingActivity);
       } catch (Exception e) {
-        LOG.warn("activity processing failed " + e.getMessage());
+        LOG.warn("activity processing failed ");
       }
     }
   }
@@ -779,7 +780,6 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
     }
 
     try {
-
       if (activity.getId() == null) {
         _createActivity(owner, activity);
       } else {
@@ -825,15 +825,17 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
     activity.setMentionedIds(processMentions(activity.getTitle()));
     
     if(owner != null){
+      String remoter = owner.getRemoteId();
       activity.setPosterId(activity.getUserId() != null ? activity.getUserId() : owner.getId());
-      activity.setStreamOwner(owner.getRemoteId());
+      activity.setStreamOwner(remoter);
       activity.setStreamId(owner.getId());
       //
       ActivityStream stream = new ActivityStreamImpl();
       stream.setId(owner.getId());
-      stream.setPrettyId(owner.getRemoteId());
+      stream.setPrettyId(remoter);
       stream.setType(owner.getProviderId());
       activity.setActivityStream(stream);
+      
     }
     activity.setReplyToId(new String[]{});
     
@@ -883,7 +885,7 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
     
     return null;
   }
-
+  
   private int fillPreparedStatementFromActivity(Identity owner,
                                                  ExoSocialActivity activity,
                                                  PreparedStatement preparedStatement,
@@ -930,26 +932,26 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
     return index;
   }
   
-  private void newStreamItemForNewActivity(Identity poster, ExoSocialActivity activity) {
+  private void newStreamItemForNewActivity(Identity owner, ExoSocialActivity activity) {
     //create StreamItem
-    if (OrganizationIdentityProvider.NAME.equals(poster.getProviderId())) {
+    if (OrganizationIdentityProvider.NAME.equals(owner.getProviderId())) {
       //poster
-      poster(poster, activity);
+      poster(owner, activity);
       //connection
       //connection(poster, activity);
       //mention
-      mention(poster, activity);
+      mention(owner, activity);
     } else {
       //for SPACE
-      spaceMembers(poster, activity);
+      spaceMembers(owner, activity);
     }
   }
   
-  private void poster(Identity poster, ExoSocialActivity activity) {
+  private void poster(Identity owner, ExoSocialActivity activity) {
     createStreamItem(activity.getId(),
-                     poster.getRemoteId(),
-                     activity.getUserId() != null ? activity.getUserId() : poster.getId(),
-                     poster.getId(),
+                     owner.getRemoteId(),
+                     activity.getUserId() != null ? activity.getUserId() : owner.getId(),
+                     owner.getId(),
                      ViewerType.POSTER.getType(),
                      activity.isHidden(),
                      activity.isLocked(),
@@ -1059,7 +1061,6 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
       activity.setTemplateParams(dbActivity.getTemplateParams());
     }
     activity.setUpdated(currentMillis);
-    
     //insert to mysql activity table
     Connection dbConnection = null;
     PreparedStatement preparedStatement = null;
