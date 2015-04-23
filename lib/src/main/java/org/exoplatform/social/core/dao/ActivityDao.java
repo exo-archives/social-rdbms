@@ -87,7 +87,7 @@ public class ActivityDao {
 
   private void updateEntity(Object entity) {
     try {
-      getCurrentEntityManager().merge(entity);
+      entity = getCurrentEntityManager().merge(entity);
       commit();
     } catch (Exception e) {
       LOG.error("Failed to update " + entity.getClass().getSimpleName(), e);
@@ -146,11 +146,6 @@ public class ActivityDao {
       activities.add(streamItem.getActivity());
     }
     return activities;
-  }
-
-  public void saveComment(Activity activity, Comment comment) throws ActivityStorageException {
-    activity.addComments(comment);
-    updateActivity(activity);
   }
 
   public Activity saveActivity(Identity owner, Activity activity) throws ActivityStorageException {
@@ -232,8 +227,36 @@ public class ActivityDao {
     //
     saveEntity(streamItem);
   }
+
+  public void saveComment(Activity activity, Comment comment) throws ActivityStorageException {
+    activity.addComment(comment);
+    updateActivity(activity);
+  }
+
   public Activity getActivityByComment(Comment comment) throws ActivityStorageException {
+    TypedQuery<Activity> query = getCurrentEntityManager().createNamedQuery("getActivityByComment", Activity.class);
+    query.setParameter("COMMENT_ID", comment.getId());
+    return query.getSingleResult();
+  }
+
+  public List<Comment> getNewerComments(Activity existingActivity, Long sinceTime, int limit) {
     return null;
+  }
+
+  public List<Comment> getOlderComments(Activity existingActivity, Long sinceTime, int limit) {
+    return null;
+  }
+
+  public int getNumberOfNewerComments(Activity existingActivity, Long sinceTime) {
+    return 0;
+  }
+
+  public int getNumberOfOlderComments(Activity existingActivity, Long sinceTime) {
+    return 0;
+  }
+
+  public Comment getComment(Long commentId) throws ActivityStorageException {
+    return getCurrentEntityManager().find(Comment.class, commentId);
   }
 
   public void deleteActivity(String activityId) throws ActivityStorageException {
@@ -644,30 +667,5 @@ public class ActivityDao {
   public int getNumberOfOlderOnSpaceActivities(Identity ownerIdentity, Long sinceTime) {
     // TODO Auto-generated method stub
     return 0;
-  }
-
-  public List<Activity> getNewerComments(Activity existingActivity, Long sinceTime, int limit) {
-    // TODO Auto-generated method stub
-    return null;
-  }
-
-  public List<Activity> getOlderComments(Activity existingActivity, Long sinceTime, int limit) {
-    // TODO Auto-generated method stub
-    return null;
-  }
-
-  public int getNumberOfNewerComments(Activity existingActivity, Long sinceTime) {
-    // TODO Auto-generated method stub
-    return 0;
-  }
-
-  public int getNumberOfOlderComments(Activity existingActivity, Long sinceTime) {
-    // TODO Auto-generated method stub
-    return 0;
-  }
-
-  public Activity getComment(String commentId) throws ActivityStorageException {
-    // TODO Auto-generated method stub
-    return null;
   }
 }

@@ -242,38 +242,6 @@ public class ActivityDAOTest extends AbstractCoreTest {
   }
 
   /**
-   * Tests {@link activityDao#getParentActivity(Activity)}.
-   */
-//  public void testGetParentActivity() {
-//    populateActivityMass(demoIdentity, 1);
-//    Activity demoActivity = activityDao.getActivitiesWithListAccess(demoIdentity).load(0, 1)[0];
-//    assertNotNull("demoActivity must be false", demoActivity);
-//    assertNull(activityDao.getParentActivity(demoActivity));
-//
-//    //comment
-//    Activity comment = new Activity();
-//    comment.setTitle("comment");
-//    comment.setOwnerId(demoIdentity.getId());
-//    activityDao.saveComment(demoActivity, comment);
-//    Activity gotComment = activityDao.getCommentsWithListAccess(demoActivity).load(0, 1)[0];
-//    assertNotNull("gotComment must not be null", gotComment);
-//    Activity parentActivity = activityDao.getParentActivity(gotComment);
-//    assertNotNull("parentActivity must not be null", parentActivity);
-//    assertEquals("parentActivity.getId() must return: " + demoActivity.getId(),
-//                 demoActivity.getId(),
-//                 parentActivity.getId());
-//    assertEquals("parentActivity.getTitle() must return: " + demoActivity.getTitle(),
-//                 demoActivity.getTitle(),
-//                 parentActivity.getTitle());
-//    assertEquals("parentActivity.getOwnerId() must return: " + demoActivity.getOwnerId(),
-//                 demoActivity.getOwnerId(),
-//                 parentActivity.getOwnerId());
-//  }
-
-
-
-  
-  /**
    * Unit Test for:
    * <p>
    * {@link activityDao#deleteActivity(org.exoplatform.social.core.activity.model.Activity)}
@@ -319,72 +287,97 @@ public class ActivityDAOTest extends AbstractCoreTest {
     comment.setTitle(commentTitle);
     comment.setOwnerId(demoIdentity.getId());
     activityDao.saveComment(activity, comment);
+    //
+    activity = activityDao.getActivity(activity.getId());
     
     List<Comment> demoComments = activityDao.getComments(activity);
     assertNotNull(demoComments);
     assertEquals(1, demoComments.size());
     
-    assertEquals(commentTitle, demoComments.get(0).getTitle());
-    assertEquals(demoIdentity.getId(), demoComments.get(0).getOwnerId());
-
-//    Activity gotActivity = activityDao.getActivityByComment(comment);
-//    assertNotNull(gotActivity);
-//    assertEquals(activity.getId(), gotActivity.getId());
-//    assertEquals(1, gotActivity.getComments().size());
-//    assertEquals(comment, gotActivity.getComments().get(0));
-
+    comment = demoComments.get(0);
+    assertEquals(commentTitle, comment.getTitle());
+    assertEquals(demoIdentity.getId(), comment.getOwnerId());
   }
-//  
-//  /**
-//   * Test {@link activityDao#getCommentsWithListAccess(Activity)}
-//   * 
-//   * @throws Exception
-//   * @since 1.2.0-Beta3
-//   */
-//  public void testGetCommentsWithListAccess() throws Exception {
-//    Activity demoActivity = new Activity();
-//    demoActivity.setTitle("demo activity");
-//    demoActivity.setOwnerId(demoActivity.getId());
-//    activityDao.saveActivity(demoIdentity, demoActivity);
-//    tearDownActivityList.add(demoActivity);
-//    
-//    int total = 10;
-//    
-//    for (int i = 0; i < total; i ++) {
-//      Activity maryComment = new Activity();
-//      maryComment.setOwnerId(maryIdentity.getId());
-//      maryComment.setTitle("mary comment");
-//      activityDao.saveComment(demoActivity, maryComment);
-//    }
-//    
-//    RealtimeListAccess<Activity> maryComments = activityDao.getCommentsWithListAccess(demoActivity);
-//    assertNotNull("maryComments must not be null", maryComments);
-//    assertEquals("maryComments.getSize() must return: 10", total, maryComments.getSize());
-//    
-//  }
-//  
-//  /**
-//   * Test {@link activityDao#deleteComment(Activity, Activity)}
-//   * 
-//   * @throws Exception
-//   * @since 1.2.0-Beta3
-//   */
-//  public void testDeleteComment() throws Exception {
-//    Activity demoActivity = new Activity();
-//    demoActivity.setTitle("demo activity");
-//    demoActivity.setOwnerId(demoActivity.getId());
-//    activityDao.saveActivity(demoIdentity, demoActivity);
-//    tearDownActivityList.add(demoActivity);
-//    
-//    Activity maryComment = new Activity();
-//    maryComment.setTitle("mary comment");
-//    maryComment.setOwnerId(maryIdentity.getId());
-//    activityDao.saveComment(demoActivity, maryComment);
-//    
-//    activityDao.deleteComment(demoActivity, maryComment);
-//    
-//    assertEquals("activityDao.getComments(demoActivity).size() must return: 0", 0, activityDao.getComments(demoActivity).size());
-//  }
+
+  /**
+   * Tests {@link activityDao#getActivityByComment(Activity)}.
+   */
+  public void testGetActivityByComment() {
+    String activityTitle = "activity title";
+    String userId = johnIdentity.getId();
+    Activity demoActivity = new Activity();
+    demoActivity.setTitle(activityTitle);
+    demoActivity.setOwnerId(userId);
+    activityDao.saveActivity(johnIdentity, demoActivity);
+    tearDownActivityList.add(demoActivity);
+    // comment
+    Comment comment = new Comment();
+    comment.setTitle("demo comment");
+    comment.setOwnerId(demoIdentity.getId());
+    activityDao.saveComment(demoActivity, comment);
+    //
+    List<Comment> demoComments = activityDao.getComments(demoActivity);
+    Long commentId = demoComments.get(0).getId();
+    comment = activityDao.getComment(commentId);
+    System.out.println(comment.getId());
+
+    Activity gotActivity = activityDao.getActivityByComment(comment);
+    assertNotNull(gotActivity);
+    assertEquals(demoActivity.getId(), gotActivity.getId());
+    assertEquals(1, gotActivity.getComments().size());
+    assertEquals(comment, gotActivity.getComments().get(0));
+    assertEquals(demoActivity.getOwnerId(), comment.getOwnerId());
+  }
+  
+  /**
+   * Test {@link activityDao#getComments(Activity)}
+   * 
+   * @throws Exception
+   */
+  public void testGetComments() throws Exception {
+    Activity demoActivity = new Activity();
+    demoActivity.setTitle("demo activity");
+    demoActivity.setOwnerId(demoActivity.getId());
+    activityDao.saveActivity(demoIdentity, demoActivity);
+    tearDownActivityList.add(demoActivity);
+    
+    int total = 10;
+    
+    for (int i = 0; i < total; i ++) {
+      Comment maryComment = new Comment();
+      maryComment.setOwnerId(maryIdentity.getId());
+      maryComment.setTitle("mary comment");
+      activityDao.saveComment(demoActivity, maryComment);
+    }
+    List<Comment> maryComments = activityDao.getComments(demoActivity);
+    assertNotNull(maryComments);
+    assertEquals(total, maryComments.size());
+  }
+
+  
+  /**
+   * Test {@link activityDao#deleteComment(Activity, Activity)}
+   * 
+   * @throws Exception
+   * @since 1.2.0-Beta3
+   */
+  public void testDeleteComment() throws Exception {
+    Activity demoActivity = new Activity();
+    demoActivity.setTitle("demo activity");
+    demoActivity.setOwnerId(demoActivity.getId());
+    activityDao.saveActivity(demoIdentity, demoActivity);
+    tearDownActivityList.add(demoActivity);
+    
+    Comment maryComment = new Comment();
+    maryComment.setTitle("mary comment");
+    maryComment.setOwnerId(maryIdentity.getId());
+    activityDao.saveComment(demoActivity, maryComment);
+    //
+    
+    activityDao.deleteComment(maryComment);
+    
+    assertEquals("activityDao.getComments(demoActivity).size() must return: 0", 0, activityDao.getComments(demoActivity).size());
+  }
 //  
 //  /**
 //   * Test {@link activityDao#saveLike(Activity, Identity)}

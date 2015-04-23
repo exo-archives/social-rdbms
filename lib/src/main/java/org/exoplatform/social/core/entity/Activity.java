@@ -14,6 +14,7 @@ import javax.persistence.Column;
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import javax.persistence.EntityListeners;
+import javax.persistence.FetchType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.JoinTable;
@@ -21,6 +22,7 @@ import javax.persistence.MapKeyColumn;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
+import javax.persistence.OrderBy;
 import javax.persistence.PrePersist;
 import javax.persistence.Table;
 
@@ -67,17 +69,17 @@ public class Activity extends BaseActivity {
     name = "SOC_ACTIVITY_TEMPLATE_PARAMS",
     joinColumns=@JoinColumn(name = "ACTIVITY_ID")
   )
-
   @MapKeyColumn(name="TEMPLATE_PARAM_KEY")
   @Column(name="TEMPLATE_PARAM_VALUE")
   private Map<String, String> templateParams;
 
-  @OneToMany(cascade=CascadeType.ALL)
+  @OneToMany(cascade=CascadeType.ALL, fetch=FetchType.LAZY)
   @JoinTable(
     name = "SOC_ACTIVITY_COMMENTS",
     joinColumns = @JoinColumn(name = "ACTIVITY_ID"),
     inverseJoinColumns = @JoinColumn(name = "COMMENT_ID")
   )
+  @OrderBy("posted DESC")  
   private List<Comment> comments;
 
   public Activity() {
@@ -125,7 +127,7 @@ public class Activity extends BaseActivity {
     this.comments = comments;
   }
 
-  public void addComments(Comment comment) {
+  public void addComment(Comment comment) {
     if (this.comments == null) {
       this.comments = new ArrayList<Comment>();
     }

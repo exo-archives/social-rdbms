@@ -19,7 +19,7 @@ public abstract class BaseActivity implements Serializable {
   @Column(length = 36)
   private String titleId;
   @Temporal(TemporalType.TIMESTAMP)
-  private Date posted;
+  protected Date posted;
   @Temporal(TemporalType.TIMESTAMP)
   private Date lastUpdated;
   @Column(length = 36)
