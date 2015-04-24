@@ -21,8 +21,11 @@ public class StreamItem {
   @JoinColumn(name = "ACTIVITY_ID")
   private Activity   activity;
 
+  /**
+   * This is id's Identity owner of ActivityStream or SpaceStream
+   */
   @Column(length = 36)
-  private String     viewerId;
+  private String     ownerId;
 
   @Enumerated
   private StreamType streamType;
@@ -50,12 +53,12 @@ public class StreamItem {
     this.activity = activity;
   }
 
-  public String getViewerId() {
-    return viewerId;
+  public String getOwnerId() {
+    return ownerId;
   }
 
-  public void setViewerId(String viewerId) {
-    this.viewerId = viewerId;
+  public void setOwnerId(String ownerId) {
+    this.ownerId = ownerId;
   }
 
   public StreamType getStreamType() {

@@ -4,12 +4,15 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.SortedSet;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.Persistence;
 import javax.persistence.TypedQuery;
 
+import org.apache.commons.lang.ArrayUtils;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 import org.exoplatform.services.security.ConversationState;
@@ -22,7 +25,6 @@ import org.exoplatform.social.core.entity.StreamItem;
 import org.exoplatform.social.core.entity.StreamType;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvider;
-import org.exoplatform.social.core.mysql.model.ActivityStreamEntity;
 import org.exoplatform.social.core.space.model.Space;
 import org.exoplatform.social.core.storage.ActivityStorageException;
 import org.exoplatform.social.core.storage.api.ActivityStorage.TimestampType;
@@ -44,6 +46,9 @@ public class ActivityDao {
   private final SpaceStorage spaceStorage;
   private ActivityStreamStorage streamStorage;
   private final static String ENTITY_MANAGER_KEY = "SOC_ENTITY_MANAGER";
+  private static final Pattern MENTION_PATTERN = Pattern.compile("@([^\\s]+)|@([^\\s]+)$");
+  public static final Pattern USER_NAME_VALIDATOR_REGEX = Pattern.compile("^[\\p{L}][\\p{L}._\\-\\d]+$");
+
 
   public ActivityDao(final RelationshipStorage relationshipStorage,
                      final IdentityStorage identityStorage,
@@ -115,50 +120,76 @@ public class ActivityDao {
   }
 
   public List<Activity> getUserActivities(Identity owner, long offset, long limit) throws ActivityStorageException {
-    TypedQuery<Activity> query = getCurrentEntityManager().createNamedQuery("getUserActivities", Activity.class);
-    query.setParameter("ownerId", owner.getId());
-    if (limit > 0) {
-      query.setFirstResult((int) offset);
-      query.setMaxResults((int) limit);
-    }
-    return query.getResultList();
+    return getUserActivities(owner, 0, false, offset, limit);
   }
 
-  public List<Activity> getActivities(Identity owner, Identity viewer, long offset, long limit) throws ActivityStorageException {
-    StringBuilder strQuery = new StringBuilder();
-    strQuery.append("select new ")//DISTINCT
-            .append(StreamItem.class.getName())
-            .append("(activityId) from StreamItem as s join a.activityId Activity a where (s.viewerId = '")
-            .append(viewer.getId())
-            .append("') and (a.ownerId ='")
+  public List<Activity> getUserActivitiesForUpgrade(Identity owner, long offset, long limit) throws ActivityStorageException {
+    return getUserActivities(owner, 0, true, offset, limit);
+  }
+
+  /**
+   * Get activities of user that:
+   *  + case 1: User is owner of activity or owner of activity-stream and not on space and not hidden.
+   *  + case 2: User is owner of activity post on space and not hidden.
+   * @param owner
+   * @param offset
+   * @param limit
+   * @return
+   * @throws ActivityStorageException
+   */
+  public List<Activity> getUserActivities(Identity owner, long time, boolean isNewer, long offset, long limit) throws ActivityStorageException {
+    StringBuilder strQuery = new StringBuilder();//DISTINCT
+    strQuery.append("select s from StreamItem s join s.activity a where ((a.ownerId ='")
             .append(owner.getId())
-            .append("')");
+            .append("') or (s.ownerId = '")
+            .append(owner.getId())
+            .append("' and not s.streamType like '%SPACE%')) and (a.hidden = '0')")
+            .append(buildSQLQueryByTime("a.lastUpdated", time, isNewer))
+            .append(" order by a.lastUpdated desc");
+    //
+    return getActivities(strQuery.toString(), offset, limit);
+  }
 
-    TypedQuery<StreamItem> query = getCurrentEntityManager().createNamedQuery(strQuery.toString(), StreamItem.class);
+  private List<Activity> getActivities(String strQuery, long offset, long limit) throws ActivityStorageException {
+    TypedQuery<StreamItem> typeQuery = getCurrentEntityManager().createQuery(strQuery, StreamItem.class);
     if (limit > 0) {
-      query.setFirstResult((int) offset);
-      query.setMaxResults((int) limit);
+      typeQuery.setFirstResult((int) offset);
+      typeQuery.setMaxResults((int) limit);
     }
-
     List<Activity> activities = new ArrayList<Activity>();
-    List<StreamItem> streamItems = query.getResultList();
+    List<StreamItem> streamItems = typeQuery.getResultList();
     for (StreamItem streamItem : streamItems) {
       activities.add(streamItem.getActivity());
     }
     return activities;
   }
 
+  public List<Activity> getActivities(Identity owner, Identity viewer, long offset, long limit) throws ActivityStorageException {
+    StringBuilder strQuery = new StringBuilder();//DISTINCT
+    strQuery.append("select s from StreamItem s join s.activity a where s.ownerId = '")
+            .append(owner.getId())
+            .append("' and not s.streamType like '%SPACE%' and (a.ownerId ='")
+            .append(owner.getId())
+            .append("' or a.ownerId ='")
+            .append(owner.getId())
+            .append("') and (a.hidden = '0') order by a.lastUpdated desc");
+    //
+    return getActivities(strQuery.toString(), offset, limit);
+  }
+
+  private String buildSQLQueryByTime(String timeField, long time, boolean isNewer) {
+    if (time <= 0) return "";
+    StringBuilder sb = new StringBuilder();
+    if (isNewer) {
+      sb.append(" and (").append(timeField).append(" > '").append(time).append("')");
+    } else {
+      sb.append(" and (").append(timeField).append(" < '").append(time).append("')");
+    }
+    return sb.toString();
+  }
+
   public Activity saveActivity(Identity owner, Activity activity) throws ActivityStorageException {
-    String remoter = owner.getRemoteId();
-    activity.setPosterId(activity.getOwnerId() != null ? activity.getOwnerId() : owner.getId());
-    //
-    ActivityStreamEntity stream = new ActivityStreamEntity();
-    stream.setId(owner.getId());
-    stream.setPrettyId(remoter);
-    stream.setType(owner.getProviderId());
-    //
-//    stream.setActivity(activity);
-//    activity.setActivityStream(stream);
+    activity.setOwnerId(owner.getId());
     //
     saveEntity(activity);
     //
@@ -172,37 +203,37 @@ public class ActivityDao {
     query.setParameter("activityId", activityId);
     return query.getResultList();
   }
-  
-  private void saveStreamItem(Identity poster, Activity activity) {
+
+  private void saveStreamItem(Identity owner, Activity activity) {
     //create StreamItem
-    if (OrganizationIdentityProvider.NAME.equals(poster.getProviderId())) {
+    if (OrganizationIdentityProvider.NAME.equals(owner.getProviderId())) {
       //poster
-      poster(poster, activity);
+      poster(owner, activity);
       //connection
       //connection(poster, activity);
       //mention
-      mention(poster, activity);
+      mention(owner, activity);
     } else {
       //for SPACE
-      spaceMembers(poster, activity);
+      spaceMembers(owner, activity);
     }
   }
 
-  private void poster(Identity poster, Activity activity) {
-    String viewerId = activity.getOwnerId() != null ? activity.getOwnerId() : poster.getId();
-    createStreamItem(StreamType.POSTER, activity, viewerId);
+  private void poster(Identity owner, Activity activity) {
+    createStreamItem(StreamType.POSTER, activity, owner.getId());
   }
-        
+
   /**
    * Creates StreamItem for each user who has mentioned on the activity
    * 
-   * @param poster
+   * @param owner
    * @param activity
    * @throws MongoException
    */
-  private void mention(Identity poster, Activity activity) {
+  private void mention(Identity owner, Activity activity) {
     // calculate mentioners
-    for (String mentioner : new String[]{}) {
+    String [] mentions = processMentions(activity.getTitle());
+    for (String mentioner : mentions) {
       Identity identity = identityStorage.findIdentity(OrganizationIdentityProvider.NAME, mentioner);
       if(identity != null) {
         createStreamItem(StreamType.MENTIONER, activity, identity.getId());
@@ -210,19 +241,18 @@ public class ActivityDao {
     }
   }
 
-  private void spaceMembers(Identity poster, Activity activity) {
-    Space space = spaceStorage.getSpaceByPrettyName(poster.getRemoteId());
+  private void spaceMembers(Identity owner, Activity activity) {
+    Space space = spaceStorage.getSpaceByPrettyName(owner.getRemoteId());
 
     if (space == null) return;
     //
-    String viewerId = activity.getOwnerId() != null ? activity.getOwnerId() : poster.getId();
-    createStreamItem(StreamType.SPACE_MEMBER, activity, viewerId);
+    createStreamItem(StreamType.SPACE_MEMBER, activity, owner.getId());
   }
 
-  private void createStreamItem(StreamType streamType, Activity activity, String viewerId){
+  private void createStreamItem(StreamType streamType, Activity activity, String ownerId){
     
     StreamItem streamItem = new StreamItem(streamType);
-    streamItem.setViewerId(viewerId);
+    streamItem.setOwnerId(ownerId);
     streamItem.setActivity(activity);
     //
     saveEntity(streamItem);
@@ -437,7 +467,8 @@ public class ActivityDao {
   }
 
   public List<Comment> getComments(Activity existingActivity, int offset, int limit) {
-    return existingActivity.getComments();
+    //
+    return getActivity(existingActivity.getId()).getComments();
   }
 
   public int getNumberOfComments(Activity existingActivity) {
@@ -667,5 +698,32 @@ public class ActivityDao {
   public int getNumberOfOlderOnSpaceActivities(Identity ownerIdentity, Long sinceTime) {
     // TODO Auto-generated method stub
     return 0;
+  }
+  
+  
+  /**
+   * Processes Mentioners who has been mentioned via the Activity.
+   * 
+   * @param title
+   */
+  private String[] processMentions(String title) {
+    String[] mentionerIds = new String[0];
+    if (title == null || title.length() == 0) {
+      return ArrayUtils.EMPTY_STRING_ARRAY;
+    }
+
+    Matcher matcher = MENTION_PATTERN.matcher(title);
+    while (matcher.find()) {
+      String remoteId = matcher.group().substring(1);
+      if (!USER_NAME_VALIDATOR_REGEX.matcher(remoteId).matches()) {
+        continue;
+      }
+      Identity identity = identityStorage.findIdentity(OrganizationIdentityProvider.NAME, remoteId);
+      // if not the right mention then ignore
+      if (identity != null) {
+        mentionerIds = (String[]) ArrayUtils.add(mentionerIds, identity.getId());
+      }
+    }
+    return mentionerIds;
   }
 }

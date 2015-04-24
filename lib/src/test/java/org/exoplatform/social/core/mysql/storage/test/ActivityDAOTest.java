@@ -121,7 +121,7 @@ public class ActivityDAOTest extends AbstractCoreTest {
     super.tearDown();
   }
 
-  private Activity createActivity(String activityTitle, String ownerId) {
+  private Activity createActivity(String activityTitle, String posterId) {
     Activity activity = new Activity();
     // test for reserving order of map values for i18n activity
     Map<String, String> templateParams = new LinkedHashMap<String, String>();
@@ -130,7 +130,8 @@ public class ActivityDAOTest extends AbstractCoreTest {
     templateParams.put("key3", "value 3");
     activity.setTemplateParams(templateParams);
     activity.setTitle(activityTitle);
-    activity.setOwnerId(ownerId);
+    activity.setBody("The body of " + activityTitle);
+    activity.setPosterId(posterId);
     activity.setType("DEFAULT_ACTIVITY");
 
     //
@@ -156,8 +157,8 @@ public class ActivityDAOTest extends AbstractCoreTest {
    */
   public void testActivity() throws Exception {
     String activityTitle = "activity title";
-    String userId = johnIdentity.getId();
-    Activity activity = createActivity(activityTitle, userId);
+    String johnIdentityId = johnIdentity.getId();
+    Activity activity = createActivity(activityTitle, maryIdentity.getId());
     activity.setLocked(true);
     // test for reserving order of map values for i18n activity
 
@@ -168,7 +169,7 @@ public class ActivityDAOTest extends AbstractCoreTest {
     //
     assertNotNull(activity);
     assertEquals(activityTitle, activity.getTitle());
-    assertEquals(userId, activity.getOwnerId());
+    assertEquals(johnIdentityId, activity.getOwnerId());
     Map<String, String> gotTemplateParams = activity.getTemplateParams();
     for (int i = 1; i < 4; i++) {
       assertTrue(gotTemplateParams.values().contains("value " + 1));
@@ -185,6 +186,7 @@ public class ActivityDAOTest extends AbstractCoreTest {
    */
   public void testGetActivitiiesByUser() throws ActivityStorageException {
     List<Activity> rootActivities = activityDao.getUserActivities(rootIdentity);
+    System.out.println(rootActivities);
     assertEquals(0, rootActivities.size());
 
     String activityTitle = "title";
@@ -314,13 +316,16 @@ public class ActivityDAOTest extends AbstractCoreTest {
     Comment comment = new Comment();
     comment.setTitle("demo comment");
     comment.setOwnerId(demoIdentity.getId());
+    //
+    demoActivity = activityDao.getActivity(demoActivity.getId());
+    //
     activityDao.saveComment(demoActivity, comment);
     //
-    List<Comment> demoComments = activityDao.getComments(demoActivity);
+    List<Comment> demoComments = demoActivity.getComments();
+    
     Long commentId = demoComments.get(0).getId();
+    //
     comment = activityDao.getComment(commentId);
-    System.out.println(comment.getId());
-
     Activity gotActivity = activityDao.getActivityByComment(comment);
     assertNotNull(gotActivity);
     assertEquals(demoActivity.getId(), gotActivity.getId());
@@ -373,10 +378,10 @@ public class ActivityDAOTest extends AbstractCoreTest {
     maryComment.setOwnerId(maryIdentity.getId());
     activityDao.saveComment(demoActivity, maryComment);
     //
-    
+    maryComment = activityDao.getComment(maryComment.getId());
     activityDao.deleteComment(maryComment);
     
-    assertEquals("activityDao.getComments(demoActivity).size() must return: 0", 0, activityDao.getComments(demoActivity).size());
+    assertEquals(0, activityDao.getComments(demoActivity).size());
   }
 //  
 //  /**

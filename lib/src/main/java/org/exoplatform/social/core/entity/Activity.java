@@ -38,10 +38,6 @@ import org.json.JSONObject;
   @NamedQuery(
     name = "getActivitiesByLikerId",
     query = "select a from Activity a join a.likerIds likers where likers = :likerId"
-  ),
-  @NamedQuery(
-    name = "getUserActivities",
-    query = "select a from Activity a where a.ownerId = :ownerId"
   )
 })
 public class Activity extends BaseActivity {
@@ -57,8 +53,8 @@ public class Activity extends BaseActivity {
 
   @ElementCollection
   @CollectionTable(
-          name = "SOC_ACTIVITY_LIKERS",
-          joinColumns=@JoinColumn(name = "ACTIVITY_ID")
+    name = "SOC_ACTIVITY_LIKERS",
+    joinColumns=@JoinColumn(name = "ACTIVITY_ID")
   )
 
   @Column(name="LIKER_ID")
@@ -73,13 +69,8 @@ public class Activity extends BaseActivity {
   @Column(name="TEMPLATE_PARAM_VALUE")
   private Map<String, String> templateParams;
 
-  @OneToMany(cascade=CascadeType.ALL, fetch=FetchType.LAZY)
-  @JoinTable(
-    name = "SOC_ACTIVITY_COMMENTS",
-    joinColumns = @JoinColumn(name = "ACTIVITY_ID"),
-    inverseJoinColumns = @JoinColumn(name = "COMMENT_ID")
-  )
-  @OrderBy("posted DESC")  
+  @OneToMany(cascade=CascadeType.ALL, mappedBy="activity", fetch=FetchType.LAZY)
+  @OrderBy("posted DESC")
   private List<Comment> comments;
 
   public Activity() {
@@ -131,6 +122,7 @@ public class Activity extends BaseActivity {
     if (this.comments == null) {
       this.comments = new ArrayList<Comment>();
     }
+    comment.setActivity(this);
     this.comments.add(comment);
   }
 

@@ -7,10 +7,12 @@ import javax.persistence.Column;
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import javax.persistence.EntityListeners;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.JoinTable;
+import javax.persistence.ManyToOne;
 import javax.persistence.MapKeyColumn;
 import javax.persistence.NamedQuery;
 import javax.persistence.PostPersist;
@@ -49,6 +51,10 @@ public class Comment extends BaseActivity{
   @Column(name="TEMPLATE_PARAM_VALUE")
   private Map<String, String> templateParams;
 
+  @ManyToOne(fetch=FetchType.LAZY)
+  @JoinColumn(name="ACTIVITY_ID")
+  private Activity activity;
+
   public Comment() {
     setPosted(new Date());
     setLastUpdated(new Date());
@@ -68,6 +74,14 @@ public class Comment extends BaseActivity{
 
   public void setTemplateParams(Map<String, String> templateParams) {
     this.templateParams = templateParams;
+  }
+
+  public Activity getActivity() {
+    return activity;
+  }
+
+  public void setActivity(Activity activity) {
+    this.activity = activity;
   }
 
   @Override

@@ -24,7 +24,7 @@
    xmlns="http://www.exoplatform.org/xml/ns/kernel_1_2.xsd">
    
   <component>
-    <key>org.exoplatform.social.core.mysql.storage.ActivityMysqlStorageImpl</key>
+    <key>org.exoplatform.social.core.mysql.storage.ActivityHibernateStorageImpl</key>
     <type>org.exoplatform.social.core.mysql.storage.SynchronizedActivityMysqlStorage</type>
   </component>
   <component>
