@@ -26,6 +26,13 @@
   <component>
     <key>org.exoplatform.social.core.dao.ActivityDao</key>
     <type>org.exoplatform.social.core.dao.ActivityDao</type>
+    <init-params>    
+      <value-param>
+        <name>persistenceUnitName</name>
+        <description>The name of persistence unit</description>
+        <value>org.exoplatform.social.hibernate-activity</value>      
+      </value-param>
+    </init-params>    
   </component>
   
   <component>

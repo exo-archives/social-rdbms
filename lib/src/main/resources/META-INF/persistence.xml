@@ -18,4 +18,20 @@
       
     </properties>
   </persistence-unit>
+
+  <persistence-unit name="org.exoplatform.social.hibernate-activity-test" transaction-type="RESOURCE_LOCAL">
+    <provider>org.hibernate.ejb.HibernatePersistence</provider>
+
+    <properties>
+      <property name="javax.persistence.provider" value="org.hibernate.ejb.HibernatePersistence" />
+      <property name="javax.persistence.jdbc.driver" value="org.h2.Driver" />
+      <property name="javax.persistence.jdbc.url" value="jdbc:h2:mem:db1;DB_CLOSE_DELAY=-1;MVCC=TRUE" />
+      <property name="javax.persistence.jdbc.user" value="sa" />
+      <property name="javax.persistence.jdbc.password" value="" />
+
+      <property name="hibernate.dialect" value="org.hibernate.dialect.H2Dialect" />
+      <property name="hibernate.show_sql" value="false" />
+      <property name="hibernate.hbm2ddl.auto" value="create" />
+    </properties>
+  </persistence-unit>
 </persistence>

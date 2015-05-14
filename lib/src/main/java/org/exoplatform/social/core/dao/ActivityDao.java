@@ -13,6 +13,8 @@ import javax.persistence.Persistence;
 import javax.persistence.TypedQuery;
 
 import org.apache.commons.lang.ArrayUtils;
+import org.exoplatform.container.xml.InitParams;
+import org.exoplatform.container.xml.ValueParam;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 import org.exoplatform.services.security.ConversationState;
@@ -44,7 +46,7 @@ public class ActivityDao {
   private final RelationshipStorage relationshipStorage;
   private final IdentityStorage identityStorage;
   private final SpaceStorage spaceStorage;
-  private ActivityStreamStorage streamStorage;
+  private final ActivityStreamStorage streamStorage;
   private final static String ENTITY_MANAGER_KEY = "SOC_ENTITY_MANAGER";
   private static final Pattern MENTION_PATTERN = Pattern.compile("@([^\\s]+)|@([^\\s]+)$");
   public static final Pattern USER_NAME_VALIDATOR_REGEX = Pattern.compile("^[\\p{L}][\\p{L}._\\-\\d]+$");
@@ -53,8 +55,15 @@ public class ActivityDao {
   public ActivityDao(final RelationshipStorage relationshipStorage,
                      final IdentityStorage identityStorage,
                      final SpaceStorage spaceStorage,
-                     final ActivityStreamStorage streamStorage) {
-    FACTORY = Persistence.createEntityManagerFactory("org.exoplatform.social.hibernate-activity");
+                     final ActivityStreamStorage streamStorage,
+                     InitParams params) {
+    String persistenceUnitName = "org.exoplatform.social.hibernate-activity";
+    ValueParam persistenceUnitNameParam = params.getValueParam("persistenceUnitName");
+    if (persistenceUnitNameParam != null) {
+      persistenceUnitName = persistenceUnitNameParam.getValue();
+    }
+
+    FACTORY = Persistence.createEntityManagerFactory(persistenceUnitName);
     //
     this.relationshipStorage = relationshipStorage;
     this.identityStorage = identityStorage;
