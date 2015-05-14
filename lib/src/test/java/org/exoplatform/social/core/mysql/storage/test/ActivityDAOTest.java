@@ -116,6 +116,8 @@ public class ActivityDAOTest extends AbstractCoreTest {
       }
       spaceService.deleteSpace(space);
     }
+    //
+    activityDao.close();
     // logout
     ConversationState.setCurrent(null);
     super.tearDown();
@@ -186,7 +188,6 @@ public class ActivityDAOTest extends AbstractCoreTest {
    */
   public void testGetActivitiiesByUser() throws ActivityStorageException {
     List<Activity> rootActivities = activityDao.getUserActivities(rootIdentity);
-    System.out.println(rootActivities);
     assertEquals(0, rootActivities.size());
 
     String activityTitle = "title";
@@ -306,10 +307,10 @@ public class ActivityDAOTest extends AbstractCoreTest {
    */
   public void testGetActivityByComment() {
     String activityTitle = "activity title";
-    String userId = johnIdentity.getId();
+    String identityId = johnIdentity.getId();
     Activity demoActivity = new Activity();
     demoActivity.setTitle(activityTitle);
-    demoActivity.setOwnerId(userId);
+    demoActivity.setOwnerId(identityId);
     activityDao.saveActivity(johnIdentity, demoActivity);
     tearDownActivityList.add(demoActivity);
     // comment
@@ -321,6 +322,7 @@ public class ActivityDAOTest extends AbstractCoreTest {
     //
     activityDao.saveComment(demoActivity, comment);
     //
+    demoActivity = activityDao.getActivity(demoActivity.getId());
     List<Comment> demoComments = demoActivity.getComments();
     
     Long commentId = demoComments.get(0).getId();
@@ -331,7 +333,7 @@ public class ActivityDAOTest extends AbstractCoreTest {
     assertEquals(demoActivity.getId(), gotActivity.getId());
     assertEquals(1, gotActivity.getComments().size());
     assertEquals(comment, gotActivity.getComments().get(0));
-    assertEquals(demoActivity.getOwnerId(), comment.getOwnerId());
+    assertEquals(demoIdentity.getId(), comment.getOwnerId());
   }
   
   /**

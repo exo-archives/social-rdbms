@@ -66,7 +66,7 @@ public class ActivityDao {
     EntityManager entityManager = (EntityManager) ConversationState.getCurrent().getAttribute(ENTITY_MANAGER_KEY);
     if (entityManager == null || !entityManager.isOpen() ||
         !entityManager.getTransaction().isActive()) {
-      if(entityManager != null) {
+      if(entityManager != null && entityManager.isOpen()) {
         entityManager.close();
       }
       //
@@ -79,6 +79,14 @@ public class ActivityDao {
 
   public synchronized void commit() {
     getCurrentEntityManager().getTransaction().commit();
+  }
+
+  public synchronized void close() {
+    EntityManager entityManager = (EntityManager) ConversationState.getCurrent().getAttribute(ENTITY_MANAGER_KEY);
+    if (entityManager != null && entityManager.isOpen() && entityManager.getTransaction().isActive()) {
+      entityManager.close();
+    }
+    ConversationState.getCurrent().setAttribute(ENTITY_MANAGER_KEY, null);
   }
 
   private synchronized void saveEntity(Object entity) {
@@ -259,6 +267,8 @@ public class ActivityDao {
   }
 
   public void saveComment(Activity activity, Comment comment) throws ActivityStorageException {
+    //
+    saveEntity(comment);
     activity.addComment(comment);
     updateActivity(activity);
   }
@@ -501,8 +511,8 @@ public class ActivityDao {
     return null;
   }
 
-  public void updateActivity(Activity existingActivity) throws ActivityStorageException {
-    updateEntity(existingActivity);
+  public void updateActivity(Activity activity) throws ActivityStorageException {
+    updateEntity(activity);
   }
 
   public int getNumberOfNewerOnActivityFeed(Identity ownerIdentity, Long sinceTime) {

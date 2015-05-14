@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2003-2013 eXo Platform SAS.
+ * Copyright (C) 2003-2015 eXo Platform SAS.
  *
  * This program is free software; you can redistribute it and/or
 * modify it under the terms of the GNU Affero General Public License
@@ -32,6 +32,7 @@ import org.exoplatform.social.core.activity.model.ExoSocialActivity;
 import org.exoplatform.social.core.activity.model.ExoSocialActivityImpl;
 import org.exoplatform.social.core.dao.ActivityDao;
 import org.exoplatform.social.core.entity.Activity;
+import org.exoplatform.social.core.entity.Comment;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.storage.ActivityStorageException;
 import org.exoplatform.social.core.storage.api.IdentityStorage;
@@ -40,12 +41,6 @@ import org.exoplatform.social.core.storage.api.SpaceStorage;
 import org.exoplatform.social.core.storage.impl.ActivityBuilderWhere;
 import org.exoplatform.social.core.storage.impl.ActivityStorageImpl;
 
-/**
- * Created by The eXo Platform SAS
- * Author : Nguyen Huy Quang
- *          quangnh2@exoplatform.com
- * Dec 12, 2013  
- */
 public class ActivityHibernateStorageImpl extends ActivityStorageImpl {
 
   private final ActivityDao activityDao;
@@ -70,7 +65,7 @@ public class ActivityHibernateStorageImpl extends ActivityStorageImpl {
     super.setInjectStreams(mustInject);
   }
 
-  private ExoSocialActivity convertActivityToSocialActivity(Activity activityEntity) {
+  private ExoSocialActivity convertActivityEntityToActivity(Activity activityEntity) {
     if(activityEntity == null) return null;
     //
     ExoSocialActivity activity = new ExoSocialActivityImpl(activityEntity.getPosterId(), activityEntity.getType(),
@@ -120,11 +115,28 @@ public class ActivityHibernateStorageImpl extends ActivityStorageImpl {
     return activityEntity;
   }
 
+  private Comment convertCommentToCommentEntity(ExoSocialActivity comment) {
+    Comment commentEntity = new Comment();
+    if (comment.getId() != null) {
+      commentEntity = activityDao.getComment(Long.valueOf(comment.getId()));
+    }
+    commentEntity.setTitle(comment.getTitle());
+    commentEntity.setTitleId(comment.getTitleId());
+    commentEntity.setBody(comment.getBody());
+    commentEntity.setOwnerId(comment.getStreamOwner());
+    commentEntity.setTemplateParams(comment.getTemplateParams());
+    //
+    commentEntity.setLocked(comment.isLocked());
+    commentEntity.setHidden(comment.isHidden());
+    //
+    return commentEntity;
+  }
+
   private List<ExoSocialActivity> convertActivityEntitiesToActivities(List<Activity> activities) {
     List<ExoSocialActivity> exoSocialActivities = new ArrayList<ExoSocialActivity>();
     if (activities == null) return exoSocialActivities;
     for (Activity activity : activities) {
-      exoSocialActivities.add(convertActivityToSocialActivity(activity));
+      exoSocialActivities.add(convertActivityEntityToActivity(activity));
     }
     return exoSocialActivities;
   }
@@ -133,7 +145,7 @@ public class ActivityHibernateStorageImpl extends ActivityStorageImpl {
   public ExoSocialActivity getActivity(String activityId) throws ActivityStorageException {
     Activity activity = activityDao.getActivity(activityId);
     //
-    return convertActivityToSocialActivity(activity);
+    return convertActivityEntityToActivity(activity);
   }
 
   @Override
@@ -154,14 +166,12 @@ public class ActivityHibernateStorageImpl extends ActivityStorageImpl {
 
   @Override
   public List<ExoSocialActivity> getActivities(Identity owner, Identity viewer, long offset, long limit) throws ActivityStorageException {
-    // TODO Auto-generated method stub
-    return null;
+    return convertActivityEntitiesToActivities(activityDao.getActivities(owner, viewer, offset, limit));
   }
 
   @Override
   public void saveComment(ExoSocialActivity activity, ExoSocialActivity comment) throws ActivityStorageException {
-    // TODO Auto-generated method stub
-    
+    activityDao.saveComment(convertActivityToActivityEntity(activity), convertCommentToCommentEntity(comment));
   }
 
   @Override
@@ -174,20 +184,28 @@ public class ActivityHibernateStorageImpl extends ActivityStorageImpl {
 
   @Override
   public ExoSocialActivity getParentActivity(ExoSocialActivity comment) throws ActivityStorageException {
-    // TODO Auto-generated method stub
+    Comment commentEntity = activityDao.getComment(Long.valueOf(comment.getId()));
+    if (commentEntity != null) {
+      return convertActivityEntityToActivity(commentEntity.getActivity());
+    }
     return null;
   }
 
   @Override
   public void deleteActivity(String activityId) throws ActivityStorageException {
-    // TODO Auto-generated method stub
-    
+    activityDao.deleteActivity(activityId);
   }
 
   @Override
   public void deleteComment(String activityId, String commentId) throws ActivityStorageException {
-    // TODO Auto-generated method stub
-    
+    List<Comment> comments = activityDao.getActivity(activityId).getComments();
+    for (Comment comment : comments) {
+      if (comment.getId() == Long.valueOf(commentId)) {
+        activityDao.deleteComment(comment);
+        comments.remove(comment);
+        break;
+      }
+    }
   }
 
   @Override
