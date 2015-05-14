@@ -102,9 +102,9 @@
     <key>org.exoplatform.social.core.storage.api.ActivityStorage</key>
     <type>org.exoplatform.social.core.storage.cache.CachedActivityStorage</type> 
   </component>
-  <component>
-    <key>org.exoplatform.social.core.mysql.storage.ActivityMysqlStorageImpl</key>
-    <type>org.exoplatform.social.core.mysql.storage.SynchronizedActivityMysqlStorage</type>
+	<component>
+    <key>org.exoplatform.social.core.mysql.storage.ActivityHibernateStorageImpl</key>
+    <type>org.exoplatform.social.core.mysql.storage.ActivityHibernateStorageImpl</type>
   </component>
   <component>
     <key>org.exoplatform.social.core.mysql.MysqlDBConnect</key>

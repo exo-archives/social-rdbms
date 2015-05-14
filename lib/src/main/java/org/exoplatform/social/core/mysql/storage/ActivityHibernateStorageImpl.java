@@ -17,13 +17,14 @@
 package org.exoplatform.social.core.mysql.storage;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.SortedSet;
+import java.util.TreeSet;
 
 import org.exoplatform.container.component.BaseComponentPlugin;
-import org.exoplatform.services.database.DAO;
 import org.exoplatform.social.core.ActivityProcessor;
 import org.exoplatform.social.core.activity.filter.ActivityFilter;
 import org.exoplatform.social.core.activity.filter.ActivityUpdateFilter;
@@ -46,6 +47,7 @@ public class ActivityHibernateStorageImpl extends ActivityStorageImpl {
 
   private final ActivityDao activityDao;
   private final IdentityStorage identityStorage;
+  private final SortedSet<ActivityProcessor> activityProcessors;
   public ActivityHibernateStorageImpl(RelationshipStorage relationshipStorage, 
                                       IdentityStorage identityStorage, 
                                       SpaceStorage spaceStorage,
@@ -54,6 +56,19 @@ public class ActivityHibernateStorageImpl extends ActivityStorageImpl {
     //
     this.activityDao = activityDao;
     this.identityStorage = identityStorage;
+    this.activityProcessors = new TreeSet<ActivityProcessor>(processorComparator());
+  }
+  
+  private static Comparator<ActivityProcessor> processorComparator() {
+    return new Comparator<ActivityProcessor>() {
+
+      public int compare(ActivityProcessor p1, ActivityProcessor p2) {
+        if (p1 == null || p2 == null) {
+          throw new IllegalArgumentException("Cannot compare null ActivityProcessor");
+        }
+        return p1.getPriority() - p2.getPriority();
+      }
+    };
   }
 
   @Override
@@ -95,7 +110,7 @@ public class ActivityHibernateStorageImpl extends ActivityStorageImpl {
     return activity;
   }
   
-  private Activity convertActivityToActivityEntity(ExoSocialActivity activity) {
+  private Activity convertActivityToActivityEntity(ExoSocialActivity activity, String ownerId) {
     Activity activityEntity  =  new Activity();
     if (activity.getId() != null) {
       activityEntity = activityDao.getActivity(activity.getId());
@@ -104,7 +119,9 @@ public class ActivityHibernateStorageImpl extends ActivityStorageImpl {
     activityEntity.setTitleId(activity.getTitleId());
     activityEntity.setType(activity.getType());
     activityEntity.setBody(activity.getBody());
-    activityEntity.setOwnerId(activity.getStreamOwner());
+    if (ownerId != null) {
+      activityEntity.setPosterId(activity.getUserId() != null ? activity.getUserId() : ownerId);
+    }
     if(activity.getLikeIdentityIds() != null) {
       activityEntity.setLikerIds(new HashSet<String>(Arrays.asList(activity.getLikeIdentityIds())));
     }
@@ -116,13 +133,12 @@ public class ActivityHibernateStorageImpl extends ActivityStorageImpl {
     return activityEntity;
   }
 
-  private ExoSocialActivity convertCommentToCommentEntity(Comment comment) {
+  private ExoSocialActivity convertCommentEntityToComment(Comment comment) {
     ExoSocialActivity exoSocialActivity = new ExoSocialActivityImpl(comment.getPosterId(), null,
         comment.getTitle(), comment.getBody(), false);
     exoSocialActivity.setTitle(comment.getTitle());
     exoSocialActivity.setTitleId(comment.getTitleId());
     exoSocialActivity.setBody(comment.getBody());
-    exoSocialActivity.setStreamOwner(comment.getOwnerId());
     exoSocialActivity.setTemplateParams(comment.getTemplateParams());
     //
     exoSocialActivity.isLocked(comment.getLocked().booleanValue());
@@ -135,7 +151,7 @@ public class ActivityHibernateStorageImpl extends ActivityStorageImpl {
     List<ExoSocialActivity> exoSocialActivities = new ArrayList<ExoSocialActivity>();
     if (comments == null) return exoSocialActivities;
     for (Comment comment : comments) {
-      exoSocialActivities.add(convertCommentToCommentEntity(comment));
+      exoSocialActivities.add(convertCommentEntityToComment(comment));
     }
     return exoSocialActivities;
   }
@@ -148,7 +164,7 @@ public class ActivityHibernateStorageImpl extends ActivityStorageImpl {
     commentEntity.setTitle(comment.getTitle());
     commentEntity.setTitleId(comment.getTitleId());
     commentEntity.setBody(comment.getBody());
-    commentEntity.setOwnerId(comment.getStreamOwner());
+    commentEntity.setPosterId(comment.getUserId());
     commentEntity.setTemplateParams(comment.getTemplateParams());
     //
     commentEntity.setLocked(comment.isLocked());
@@ -196,12 +212,13 @@ public class ActivityHibernateStorageImpl extends ActivityStorageImpl {
 
   @Override
   public void saveComment(ExoSocialActivity activity, ExoSocialActivity comment) throws ActivityStorageException {
-    activityDao.saveComment(convertActivityToActivityEntity(activity), convertCommentToCommentEntity(comment));
+    Activity activityEntity = activityDao.getActivity(activity.getId());
+    activityDao.saveComment(activityEntity, convertCommentToCommentEntity(comment));
   }
 
   @Override
   public ExoSocialActivity saveActivity(Identity owner, ExoSocialActivity activity) throws ActivityStorageException {
-    Activity activityEntity = convertActivityToActivityEntity(activity);
+    Activity activityEntity = convertActivityToActivityEntity(activity, owner.getId());
     activityDao.saveActivity(owner, activityEntity);
     activity.setId(activityEntity.getId());
     return activity;
@@ -464,13 +481,13 @@ public class ActivityHibernateStorageImpl extends ActivityStorageImpl {
 
   @Override
   public SortedSet<ActivityProcessor> getActivityProcessors() {
-    // TODO Auto-generated method stub
-    return null;
+    return activityProcessors;
   }
 
   @Override
   public void updateActivity(ExoSocialActivity existingActivity) throws ActivityStorageException {
-    // TODO Auto-generated method stub
+    Activity activityEntity = convertActivityToActivityEntity(existingActivity, null);
+    activityDao.updateActivity(activityEntity);
     
   }
 

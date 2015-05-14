@@ -3,6 +3,7 @@ package org.exoplatform.social.core.entity;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -67,7 +68,7 @@ public class Activity extends BaseActivity {
   )
   @MapKeyColumn(name="TEMPLATE_PARAM_KEY")
   @Column(name="TEMPLATE_PARAM_VALUE")
-  private Map<String, String> templateParams;
+  private Map<String, String> templateParams = new LinkedHashMap<String, String>();
 
   @OneToMany(cascade=CascadeType.ALL, mappedBy="activity", fetch=FetchType.LAZY)
   @OrderBy("posted DESC")

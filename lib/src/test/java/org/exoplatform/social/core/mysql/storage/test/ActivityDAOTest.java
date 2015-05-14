@@ -69,7 +69,6 @@ public class ActivityDAOTest extends AbstractCoreTest {
   @Override
   public void setUp() throws Exception {
     super.setUp();
-    loginUser("root");
     identityManager = getService(IdentityManager.class);
     relationshipManager = getService(RelationshipManager.class);
     spaceService = getService(SpaceService.class);
@@ -141,15 +140,6 @@ public class ActivityDAOTest extends AbstractCoreTest {
     activity.setLocked(false);
     //
     return activity;
-  }
-
-  public void loginUser(String userId) {
-    MembershipEntry membershipEntry = new MembershipEntry("/platform/user", "*");
-    Collection<MembershipEntry> membershipEntries = new ArrayList<MembershipEntry>();
-    membershipEntries.add(membershipEntry);
-    org.exoplatform.services.security.Identity identity = new org.exoplatform.services.security.Identity(userId, membershipEntries);
-    ConversationState state = new ConversationState(identity);
-    ConversationState.setCurrent(state);
   }
 
   /**

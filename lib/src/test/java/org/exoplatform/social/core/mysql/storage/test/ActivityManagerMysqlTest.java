@@ -148,10 +148,9 @@ public class ActivityManagerMysqlTest extends AbstractCoreTest {
     assertEquals("activity.getTitle() must return: " + activityTitle, activityTitle, activity.getTitle());
     assertEquals("activity.getUserId() must return: " + userId, userId, activity.getUserId());
     Map<String, String> gotTemplateParams = activity.getTemplateParams();
-    List<String> values = new ArrayList(gotTemplateParams.values());
-    assertEquals("value 1", values.get(0));
-    assertEquals("value 2", values.get(1));
-    assertEquals("value 3", values.get(2));
+    assertEquals("value 1", gotTemplateParams.get("key1"));
+    assertEquals("value 2", gotTemplateParams.get("key2"));
+    assertEquals("value 3", gotTemplateParams.get("key3"));
     
     //
     assertTrue(activity.isLocked());

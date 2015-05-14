@@ -24,7 +24,9 @@ import java.net.URL;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 
 import javax.jcr.Session;
@@ -40,6 +42,8 @@ import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 import org.exoplatform.services.organization.OrganizationService;
 import org.exoplatform.services.organization.User;
+import org.exoplatform.services.security.ConversationState;
+import org.exoplatform.services.security.MembershipEntry;
 import org.exoplatform.social.core.mysql.MysqlDBConnect;
 import org.exoplatform.social.core.space.SpaceException;
 import org.exoplatform.social.core.space.SpaceUtils;
@@ -68,7 +72,7 @@ public abstract class AbstractCoreTest extends BaseExoTestCase {
   protected void setUp() throws Exception {
     //
     begin();
-    
+    loginUser("root");
     spaceService = (SpaceService) getContainer().getComponentInstanceOfType(SpaceService.class);
     dbConnect = (MysqlDBConnect) getContainer().getComponentInstanceOfType(MysqlDBConnect.class);
     
@@ -190,6 +194,16 @@ public abstract class AbstractCoreTest extends BaseExoTestCase {
       LOG.warn("Error while saving space", e);
     }
     return space;
+  }
+  
+
+  public void loginUser(String userId) {
+    MembershipEntry membershipEntry = new MembershipEntry("/platform/user", "*");
+    Collection<MembershipEntry> membershipEntries = new ArrayList<MembershipEntry>();
+    membershipEntries.add(membershipEntry);
+    org.exoplatform.services.security.Identity identity = new org.exoplatform.services.security.Identity(userId, membershipEntries);
+    ConversationState state = new ConversationState(identity);
+    ConversationState.setCurrent(state);
   }
   
 }
