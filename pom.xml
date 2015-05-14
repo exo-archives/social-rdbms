@@ -43,7 +43,7 @@
     <org.exoplatform.depmgt.version>10-SNAPSHOT</org.exoplatform.depmgt.version>
     <!-- Platform Project Dependencies -->
     <hibernate.version>4.1.12.Final</hibernate.version>
-    <org.exoplatform.social.version>4.2.x-soc-activity-mysql-SNAPSHOT</org.exoplatform.social.version>
+    <org.exoplatform.social.version>4.2.x-SNAPSHOT</org.exoplatform.social.version>
     
     <argLine>-Xmx1024m -XX:MaxPermSize=512m</argLine>
   </properties>
