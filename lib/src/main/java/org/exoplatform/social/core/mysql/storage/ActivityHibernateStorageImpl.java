@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.SortedSet;
 
 import org.exoplatform.container.component.BaseComponentPlugin;
+import org.exoplatform.services.database.DAO;
 import org.exoplatform.social.core.ActivityProcessor;
 import org.exoplatform.social.core.activity.filter.ActivityFilter;
 import org.exoplatform.social.core.activity.filter.ActivityUpdateFilter;
@@ -115,6 +116,30 @@ public class ActivityHibernateStorageImpl extends ActivityStorageImpl {
     return activityEntity;
   }
 
+  private ExoSocialActivity convertCommentToCommentEntity(Comment comment) {
+    ExoSocialActivity exoSocialActivity = new ExoSocialActivityImpl(comment.getPosterId(), null,
+        comment.getTitle(), comment.getBody(), false);
+    exoSocialActivity.setTitle(comment.getTitle());
+    exoSocialActivity.setTitleId(comment.getTitleId());
+    exoSocialActivity.setBody(comment.getBody());
+    exoSocialActivity.setStreamOwner(comment.getOwnerId());
+    exoSocialActivity.setTemplateParams(comment.getTemplateParams());
+    //
+    exoSocialActivity.isLocked(comment.getLocked().booleanValue());
+    exoSocialActivity.isHidden(comment.getHidden().booleanValue());
+    //
+    return exoSocialActivity;
+  }
+
+  private List<ExoSocialActivity> convertCommentEntitiesToComments(List<Comment> comments) {
+    List<ExoSocialActivity> exoSocialActivities = new ArrayList<ExoSocialActivity>();
+    if (comments == null) return exoSocialActivities;
+    for (Comment comment : comments) {
+      exoSocialActivities.add(convertCommentToCommentEntity(comment));
+    }
+    return exoSocialActivities;
+  }
+  
   private Comment convertCommentToCommentEntity(ExoSocialActivity comment) {
     Comment commentEntity = new Comment();
     if (comment.getId() != null) {
@@ -131,7 +156,7 @@ public class ActivityHibernateStorageImpl extends ActivityStorageImpl {
     //
     return commentEntity;
   }
-
+  
   private List<ExoSocialActivity> convertActivityEntitiesToActivities(List<Activity> activities) {
     List<ExoSocialActivity> exoSocialActivities = new ArrayList<ExoSocialActivity>();
     if (activities == null) return exoSocialActivities;
@@ -198,14 +223,10 @@ public class ActivityHibernateStorageImpl extends ActivityStorageImpl {
 
   @Override
   public void deleteComment(String activityId, String commentId) throws ActivityStorageException {
-    List<Comment> comments = activityDao.getActivity(activityId).getComments();
-    for (Comment comment : comments) {
-      if (comment.getId() == Long.valueOf(commentId)) {
-        activityDao.deleteComment(comment);
-        comments.remove(comment);
-        break;
-      }
-    }
+    Comment comment = activityDao.getComment(Long.valueOf(commentId));
+    
+    activityDao.getActivity(activityId).getComments().remove(comment);
+    activityDao.deleteComment(comment);
   }
 
   @Override
@@ -408,14 +429,13 @@ public class ActivityHibernateStorageImpl extends ActivityStorageImpl {
 
   @Override
   public List<ExoSocialActivity> getComments(ExoSocialActivity existingActivity, int offset, int limit) {
-    // TODO Auto-generated method stub
-    return null;
+    return convertCommentEntitiesToComments(activityDao
+        .getComments(activityDao.getActivity(existingActivity.getId()), offset, limit));
   }
 
   @Override
   public int getNumberOfComments(ExoSocialActivity existingActivity) {
-    // TODO Auto-generated method stub
-    return 0;
+    return activityDao.getNumberOfComments(activityDao.getActivity(existingActivity.getId()));
   }
 
   @Override

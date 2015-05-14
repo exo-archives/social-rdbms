@@ -476,14 +476,45 @@ public class ActivityDao {
     return getComments(existingActivity, 0, -1);
   }
 
+//  public List<Comment> getComments(Activity existingActivity, int offset, int limit) {
+//    List<Comment> gotComments = getActivity(existingActivity.getId()).getComments(); 
+//    List<Comment> newComments = new ArrayList<Comment>();
+//    if (limit == -1) {
+//      limit = gotComments.size();
+//    }
+//    if(limit > 0) {
+//      for (int i = offset; i < gotComments.size() && i < limit; i++) {
+//        Comment cmt = gotComments.get(i);
+//        if (!cmt.getHidden() && !cmt.getLocked()) {
+//          newComments.add(cmt);
+//        }
+//      }
+//    }
+//    
+//    //
+//    return newComments;
+//  }
+
   public List<Comment> getComments(Activity existingActivity, int offset, int limit) {
+    StringBuilder strQuery = new StringBuilder();//DISTINCT
+    strQuery.append("select c from Comment c join c.activity a where (a.id ='")
+            .append(existingActivity.getId())
+            .append("') and (a.hidden = '0') and (a.locked = '0') order by a.lastUpdated desc");
     //
-    return getActivity(existingActivity.getId()).getComments();
+    return getComments(strQuery.toString(), offset, limit);
   }
 
+  private List<Comment> getComments(String strQuery, long offset, long limit) throws ActivityStorageException {
+    TypedQuery<Comment> typeQuery = getCurrentEntityManager().createQuery(strQuery, Comment.class);
+    if (limit > 0) {
+      typeQuery.setFirstResult((int) offset);
+      typeQuery.setMaxResults((int) limit);
+    }
+    return typeQuery.getResultList();
+  }
+  
   public int getNumberOfComments(Activity existingActivity) {
-    // TODO Auto-generated method stub
-    return 0;
+    return getComments(existingActivity).size();
   }
 
   public int getNumberOfNewerComments(Activity existingActivity, Activity baseComment) {
