@@ -312,7 +312,7 @@ public class ActivityManagerMysqlTest extends AbstractCoreTest {
     ExoSocialActivity gotComment = activityManager.getCommentsWithListAccess(demoActivity).load(0, 1)[0];
     assertNotNull("gotComment must not be null", gotComment);
     ExoSocialActivity parentActivity = activityManager.getParentActivity(gotComment);
-    assertNotNull("parentActivity must not be null", parentActivity);
+    assertNotNull(parentActivity);
     assertEquals("parentActivity.getId() must return: " + demoActivity.getId(),
                  demoActivity.getId(),
                  parentActivity.getId());

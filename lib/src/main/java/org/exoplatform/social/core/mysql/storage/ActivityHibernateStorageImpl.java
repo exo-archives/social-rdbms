@@ -25,6 +25,8 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 
 import org.exoplatform.container.component.BaseComponentPlugin;
+import org.exoplatform.services.log.ExoLogger;
+import org.exoplatform.services.log.Log;
 import org.exoplatform.social.core.ActivityProcessor;
 import org.exoplatform.social.core.activity.filter.ActivityFilter;
 import org.exoplatform.social.core.activity.filter.ActivityUpdateFilter;
@@ -44,7 +46,7 @@ import org.exoplatform.social.core.storage.impl.ActivityBuilderWhere;
 import org.exoplatform.social.core.storage.impl.ActivityStorageImpl;
 
 public class ActivityHibernateStorageImpl extends ActivityStorageImpl {
-
+  private static final Log LOG = ExoLogger.getLogger(ActivityHibernateStorageImpl.class);
   private final ActivityDao activityDao;
   private final IdentityStorage identityStorage;
   private final SortedSet<ActivityProcessor> activityProcessors;
@@ -142,17 +144,18 @@ public class ActivityHibernateStorageImpl extends ActivityStorageImpl {
   }
 
   private ExoSocialActivity convertCommentEntityToComment(Comment comment) {
-    ExoSocialActivity exoSocialActivity = new ExoSocialActivityImpl(comment.getPosterId(), null,
+    ExoSocialActivity exoComment = new ExoSocialActivityImpl(comment.getPosterId(), null,
         comment.getTitle(), comment.getBody(), false);
-    exoSocialActivity.setTitle(comment.getTitle());
-    exoSocialActivity.setTitleId(comment.getTitleId());
-    exoSocialActivity.setBody(comment.getBody());
-    exoSocialActivity.setTemplateParams(comment.getTemplateParams());
+    exoComment.setId(String.valueOf(comment.getId()));
+    exoComment.setTitle(comment.getTitle());
+    exoComment.setTitleId(comment.getTitleId());
+    exoComment.setBody(comment.getBody());
+    exoComment.setTemplateParams(comment.getTemplateParams());
     //
-    exoSocialActivity.isLocked(comment.getLocked().booleanValue());
-    exoSocialActivity.isHidden(comment.getHidden().booleanValue());
+    exoComment.isLocked(comment.getLocked().booleanValue());
+    exoComment.isHidden(comment.getHidden().booleanValue());
     //
-    return exoSocialActivity;
+    return exoComment;
   }
 
   private List<ExoSocialActivity> convertCommentEntitiesToComments(List<Comment> comments) {
@@ -238,9 +241,14 @@ public class ActivityHibernateStorageImpl extends ActivityStorageImpl {
 
   @Override
   public ExoSocialActivity getParentActivity(ExoSocialActivity comment) throws ActivityStorageException {
-    Comment commentEntity = activityDao.getComment(Long.valueOf(comment.getId()));
-    if (commentEntity != null) {
-      return convertActivityEntityToActivity(commentEntity.getActivity());
+    try {
+      Comment commentEntity = activityDao.getComment(Long.valueOf(comment.getId()));
+      if (commentEntity != null) {
+        return convertActivityEntityToActivity(commentEntity.getActivity());
+      }
+    } catch (NumberFormatException e) {
+      LOG.warn("The input ExoSocialActivity is not comment, it is Activity");
+      return null;
     }
     return null;
   }

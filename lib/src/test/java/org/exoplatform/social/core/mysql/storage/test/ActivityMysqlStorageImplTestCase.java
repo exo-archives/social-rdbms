@@ -22,7 +22,6 @@ import java.util.List;
 import org.exoplatform.social.core.activity.model.ExoSocialActivity;
 import org.exoplatform.social.core.activity.model.ExoSocialActivityImpl;
 import org.exoplatform.social.core.identity.model.Identity;
-import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvider;
 import org.exoplatform.social.core.identity.provider.SpaceIdentityProvider;
 import org.exoplatform.social.core.mysql.test.AbstractCoreTest;
 import org.exoplatform.social.core.relationship.model.Relationship;
@@ -48,15 +47,6 @@ public class ActivityMysqlStorageImplTestCase extends AbstractCoreTest {
     
     assertNotNull(identityStorage);
     assertNotNull(activityStorage);
-    rootIdentity = new Identity(OrganizationIdentityProvider.NAME, "root");
-    johnIdentity = new Identity(OrganizationIdentityProvider.NAME, "john");
-    maryIdentity = new Identity(OrganizationIdentityProvider.NAME, "mary");
-    demoIdentity = new Identity(OrganizationIdentityProvider.NAME, "demo");
-    
-    identityStorage.saveIdentity(rootIdentity);
-    identityStorage.saveIdentity(johnIdentity);
-    identityStorage.saveIdentity(maryIdentity);
-    identityStorage.saveIdentity(demoIdentity);
 
     assertNotNull(rootIdentity.getId());
     assertNotNull(johnIdentity.getId());

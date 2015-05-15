@@ -102,10 +102,6 @@
     <key>org.exoplatform.social.core.storage.api.ActivityStorage</key>
     <type>org.exoplatform.social.core.mysql.storage.ActivityHibernateStorageImpl</type> 
   </component>
-  <component>
-    <key>org.exoplatform.social.core.mysql.MysqlDBConnect</key>
-    <type>org.exoplatform.social.core.mysql.storage.MysqlDBConnectImpl</type>
-  </component>
   <!--
     Identity storage components.
   -->
