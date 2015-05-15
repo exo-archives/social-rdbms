@@ -24,8 +24,6 @@ import org.exoplatform.social.core.activity.model.ExoSocialActivityImpl;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvider;
 import org.exoplatform.social.core.identity.provider.SpaceIdentityProvider;
-import org.exoplatform.social.core.manager.IdentityManager;
-import org.exoplatform.social.core.manager.RelationshipManager;
 import org.exoplatform.social.core.mysql.test.AbstractCoreTest;
 import org.exoplatform.social.core.relationship.model.Relationship;
 import org.exoplatform.social.core.space.impl.DefaultSpaceApplicationHandler;
@@ -33,33 +31,20 @@ import org.exoplatform.social.core.space.model.Space;
 import org.exoplatform.social.core.space.spi.SpaceService;
 import org.exoplatform.social.core.storage.api.ActivityStorage;
 import org.exoplatform.social.core.storage.api.IdentityStorage;
-import org.exoplatform.social.core.storage.impl.ActivityStorageImpl;
 
 public class ActivityMysqlStorageImplTestCase extends AbstractCoreTest {
   
   private IdentityStorage identityStorage;
   private ActivityStorage activityStorage;
-  private RelationshipManager relationshipManager;
-  private IdentityManager identityManager;
-  private ActivityStorageImpl mysqlStorage;
   
   private List<ExoSocialActivity> tearDownActivityList;
   private List<Space> tearDownSpaceList;
 
-  private Identity rootIdentity;
-  private Identity johnIdentity;
-  private Identity maryIdentity;
-  private Identity demoIdentity;
- 
-  
   @Override
   protected void setUp() throws Exception {
     super.setUp();
-    identityStorage = getComponent(IdentityStorage.class);
-    activityStorage = getComponent(ActivityStorage.class);
-    mysqlStorage = getComponent(ActivityStorageImpl.class);
-    relationshipManager = getComponent(RelationshipManager.class);
-    identityManager = getComponent(IdentityManager.class);
+    identityStorage = getService(IdentityStorage.class);
+    activityStorage = getService(ActivityStorage.class);
     
     assertNotNull(identityStorage);
     assertNotNull(activityStorage);
@@ -82,15 +67,10 @@ public class ActivityMysqlStorageImplTestCase extends AbstractCoreTest {
     tearDownSpaceList = new ArrayList<Space>();
   }
 
-  private <T> T getComponent(Class<T> clazz) {
-    Object o = getContainer().getComponentInstanceOfType(clazz);
-    return clazz.cast(o);
-  }
-  
   @Override
   protected void tearDown() throws Exception {
     for (ExoSocialActivity activity : tearDownActivityList) {
-      mysqlStorage.deleteActivity(activity.getId());
+      activityStorageImpl.deleteActivity(activity.getId());
     }
     identityStorage.deleteIdentity(rootIdentity);
     identityStorage.deleteIdentity(johnIdentity);
@@ -111,11 +91,11 @@ public class ActivityMysqlStorageImplTestCase extends AbstractCoreTest {
     
     ExoSocialActivity activity = createActivity(0);
     //
-    mysqlStorage.saveActivity(demoIdentity, activity);
+    activityStorageImpl.saveActivity(demoIdentity, activity);
     
     assertNotNull(activity.getId());
     
-    ExoSocialActivity rs = mysqlStorage.getActivity(activity.getId());
+    ExoSocialActivity rs = activityStorageImpl.getActivity(activity.getId());
     
     //
     assertEquals("demo", rs.getLikeIdentityIds()[0]);
@@ -128,14 +108,14 @@ public class ActivityMysqlStorageImplTestCase extends AbstractCoreTest {
   public void testUpdateActivity() {
     ExoSocialActivity activity = createActivity(1);
     //
-    mysqlStorage.saveActivity(demoIdentity, activity);
+    activityStorageImpl.saveActivity(demoIdentity, activity);
     
     activity.setTitle("Title after updated");
     
     //update
-    mysqlStorage.updateActivity(activity);
+    activityStorageImpl.updateActivity(activity);
     
-    ExoSocialActivity res = mysqlStorage.getActivity(activity.getId());
+    ExoSocialActivity res = activityStorageImpl.getActivity(activity.getId());
     
     assertEquals("Title after updated", res.getTitle());
     //
@@ -145,58 +125,58 @@ public class ActivityMysqlStorageImplTestCase extends AbstractCoreTest {
   public void testGetActivity() {
     ExoSocialActivity activity = createActivity(1);
     //
-    mysqlStorage.saveActivity(demoIdentity, activity);
+    activityStorageImpl.saveActivity(demoIdentity, activity);
     
     
   }
   
   public void testGetNewerOnUserActivities() {
     createActivities(2, demoIdentity);
-    ExoSocialActivity firstActivity = mysqlStorage.getUserActivities(demoIdentity, 0, 10).get(0);
-    assertEquals(0, mysqlStorage.getNewerOnUserActivities(demoIdentity, firstActivity, 10).size());
-    assertEquals(0, mysqlStorage.getNumberOfNewerOnUserActivities(demoIdentity, firstActivity));
+    ExoSocialActivity firstActivity = activityStorageImpl.getUserActivities(demoIdentity, 0, 10).get(0);
+    assertEquals(0, activityStorageImpl.getNewerOnUserActivities(demoIdentity, firstActivity, 10).size());
+    assertEquals(0, activityStorageImpl.getNumberOfNewerOnUserActivities(demoIdentity, firstActivity));
     //
     createActivities(2, maryIdentity);
-    assertEquals(0, mysqlStorage.getNewerOnUserActivities(demoIdentity, firstActivity, 10).size());
-    assertEquals(0, mysqlStorage.getNumberOfNewerOnUserActivities(demoIdentity, firstActivity));
+    assertEquals(0, activityStorageImpl.getNewerOnUserActivities(demoIdentity, firstActivity, 10).size());
+    assertEquals(0, activityStorageImpl.getNumberOfNewerOnUserActivities(demoIdentity, firstActivity));
     //
     createActivities(2, demoIdentity);
-    assertEquals(2, mysqlStorage.getNewerOnUserActivities(demoIdentity, firstActivity, 10).size());
-    assertEquals(2, mysqlStorage.getNumberOfNewerOnUserActivities(demoIdentity, firstActivity));
+    assertEquals(2, activityStorageImpl.getNewerOnUserActivities(demoIdentity, firstActivity, 10).size());
+    assertEquals(2, activityStorageImpl.getNumberOfNewerOnUserActivities(demoIdentity, firstActivity));
   }
   
   public void testGetOlderOnUserActivities() {
     createActivities(2, demoIdentity);
-    ExoSocialActivity baseActivity = mysqlStorage.getUserActivities(demoIdentity, 0, 10).get(0);
-    assertEquals(1, mysqlStorage.getOlderOnUserActivities(demoIdentity, baseActivity, 10).size());
-    assertEquals(1, mysqlStorage.getNumberOfOlderOnUserActivities(demoIdentity, baseActivity));
+    ExoSocialActivity baseActivity = activityStorageImpl.getUserActivities(demoIdentity, 0, 10).get(0);
+    assertEquals(1, activityStorageImpl.getOlderOnUserActivities(demoIdentity, baseActivity, 10).size());
+    assertEquals(1, activityStorageImpl.getNumberOfOlderOnUserActivities(demoIdentity, baseActivity));
     //
     createActivities(2, maryIdentity);
-    assertEquals(1, mysqlStorage.getOlderOnUserActivities(demoIdentity, baseActivity, 10).size());
-    assertEquals(1, mysqlStorage.getNumberOfOlderOnUserActivities(demoIdentity, baseActivity));
+    assertEquals(1, activityStorageImpl.getOlderOnUserActivities(demoIdentity, baseActivity, 10).size());
+    assertEquals(1, activityStorageImpl.getNumberOfOlderOnUserActivities(demoIdentity, baseActivity));
     //
     createActivities(2, demoIdentity);
-    baseActivity = mysqlStorage.getUserActivities(demoIdentity, 0, 10).get(0);
-    assertEquals(3, mysqlStorage.getOlderOnUserActivities(demoIdentity, baseActivity, 10).size());
-    assertEquals(3, mysqlStorage.getNumberOfOlderOnUserActivities(demoIdentity, baseActivity));
+    baseActivity = activityStorageImpl.getUserActivities(demoIdentity, 0, 10).get(0);
+    assertEquals(3, activityStorageImpl.getOlderOnUserActivities(demoIdentity, baseActivity, 10).size());
+    assertEquals(3, activityStorageImpl.getNumberOfOlderOnUserActivities(demoIdentity, baseActivity));
   }
   
   public void testGetNewerOnActivityFeed() {
     createActivities(3, demoIdentity);
-    ExoSocialActivity demoBaseActivity = mysqlStorage.getActivityFeed(demoIdentity, 0, 10).get(0);
-    assertEquals(0, mysqlStorage.getNewerOnActivityFeed(demoIdentity, demoBaseActivity, 10).size());
-    assertEquals(0, mysqlStorage.getNumberOfNewerOnActivityFeed(demoIdentity, demoBaseActivity));
+    ExoSocialActivity demoBaseActivity = activityStorageImpl.getActivityFeed(demoIdentity, 0, 10).get(0);
+    assertEquals(0, activityStorageImpl.getNewerOnActivityFeed(demoIdentity, demoBaseActivity, 10).size());
+    assertEquals(0, activityStorageImpl.getNumberOfNewerOnActivityFeed(demoIdentity, demoBaseActivity));
     //
     createActivities(1, demoIdentity);
-    assertEquals(1, mysqlStorage.getNewerOnActivityFeed(demoIdentity, demoBaseActivity, 10).size());
-    assertEquals(1, mysqlStorage.getNumberOfNewerOnActivityFeed(demoIdentity, demoBaseActivity));
+    assertEquals(1, activityStorageImpl.getNewerOnActivityFeed(demoIdentity, demoBaseActivity, 10).size());
+    assertEquals(1, activityStorageImpl.getNumberOfNewerOnActivityFeed(demoIdentity, demoBaseActivity));
     //
     createActivities(2, maryIdentity);
     Relationship demoMaryConnection = relationshipManager.inviteToConnect(demoIdentity, maryIdentity);
     relationshipManager.confirm(maryIdentity, demoIdentity);
     createActivities(2, maryIdentity);
-    assertEquals(5, mysqlStorage.getNewerOnActivityFeed(demoIdentity, demoBaseActivity, 10).size());
-    assertEquals(5, mysqlStorage.getNumberOfNewerOnActivityFeed(demoIdentity, demoBaseActivity));
+    assertEquals(5, activityStorageImpl.getNewerOnActivityFeed(demoIdentity, demoBaseActivity, 10).size());
+    assertEquals(5, activityStorageImpl.getNumberOfNewerOnActivityFeed(demoIdentity, demoBaseActivity));
     
     //clear data
     relationshipManager.delete(demoMaryConnection);
@@ -208,18 +188,18 @@ public class ActivityMysqlStorageImplTestCase extends AbstractCoreTest {
     Relationship maryDemoConnection = relationshipManager.inviteToConnect(maryIdentity, demoIdentity);
     relationshipManager.confirm(demoIdentity, maryIdentity);
     
-    List<ExoSocialActivity> demoActivityFeed = mysqlStorage.getActivityFeed(demoIdentity, 0, 10);
+    List<ExoSocialActivity> demoActivityFeed = activityStorageImpl.getActivityFeed(demoIdentity, 0, 10);
     ExoSocialActivity baseActivity = demoActivityFeed.get(4);
-    assertEquals(0, mysqlStorage.getNumberOfOlderOnActivityFeed(demoIdentity, baseActivity));
-    assertEquals(0, mysqlStorage.getOlderOnActivityFeed(demoIdentity, baseActivity, 10).size());
+    assertEquals(0, activityStorageImpl.getNumberOfOlderOnActivityFeed(demoIdentity, baseActivity));
+    assertEquals(0, activityStorageImpl.getOlderOnActivityFeed(demoIdentity, baseActivity, 10).size());
     //
     createActivities(1, johnIdentity);
-    assertEquals(0, mysqlStorage.getNumberOfOlderOnActivityFeed(demoIdentity, baseActivity));
-    assertEquals(0, mysqlStorage.getOlderOnActivityFeed(demoIdentity, baseActivity, 10).size());
+    assertEquals(0, activityStorageImpl.getNumberOfOlderOnActivityFeed(demoIdentity, baseActivity));
+    assertEquals(0, activityStorageImpl.getOlderOnActivityFeed(demoIdentity, baseActivity, 10).size());
     //
     baseActivity = demoActivityFeed.get(2);
-    assertEquals(2, mysqlStorage.getNumberOfOlderOnActivityFeed(demoIdentity, baseActivity));
-    assertEquals(2, mysqlStorage.getOlderOnActivityFeed(demoIdentity, baseActivity, 10).size());
+    assertEquals(2, activityStorageImpl.getNumberOfOlderOnActivityFeed(demoIdentity, baseActivity));
+    assertEquals(2, activityStorageImpl.getOlderOnActivityFeed(demoIdentity, baseActivity, 10).size());
     
     //clear data
     relationshipManager.delete(maryDemoConnection);
@@ -232,46 +212,46 @@ public class ActivityMysqlStorageImplTestCase extends AbstractCoreTest {
     createActivities(2, johnIdentity);
     createActivities(2, rootIdentity);
     
-    List<ExoSocialActivity> maryActivities = mysqlStorage.getActivitiesOfIdentity(maryIdentity, 0, 10);
+    List<ExoSocialActivity> maryActivities = activityStorageImpl.getActivitiesOfIdentity(maryIdentity, 0, 10);
     assertEquals(3, maryActivities.size());
     
     //base activity is the first activity created by mary
     ExoSocialActivity baseActivity = maryActivities.get(2);
     
     //As mary has no connections, there are any activity on her connection stream
-    assertEquals(0, mysqlStorage.getNewerOnActivitiesOfConnections(maryIdentity, baseActivity, 10).size());
-    assertEquals(0, mysqlStorage.getNumberOfNewerOnActivitiesOfConnections(maryIdentity, baseActivity));
+    assertEquals(0, activityStorageImpl.getNewerOnActivitiesOfConnections(maryIdentity, baseActivity, 10).size());
+    assertEquals(0, activityStorageImpl.getNumberOfNewerOnActivitiesOfConnections(maryIdentity, baseActivity));
     
     //demo connect with mary
     Relationship maryDemoRelationship = relationshipManager.inviteToConnect(maryIdentity, demoIdentity);
     relationshipManager.confirm(maryIdentity, demoIdentity);
     relationships.add(maryDemoRelationship);
     
-    assertEquals(1, mysqlStorage.getNewerOnActivitiesOfConnections(maryIdentity, baseActivity, 10).size());
-    assertEquals(1, mysqlStorage.getNumberOfNewerOnActivitiesOfConnections(maryIdentity, baseActivity));
+    assertEquals(1, activityStorageImpl.getNewerOnActivitiesOfConnections(maryIdentity, baseActivity, 10).size());
+    assertEquals(1, activityStorageImpl.getNumberOfNewerOnActivitiesOfConnections(maryIdentity, baseActivity));
     
     //demo has 2 activities created by mary newer than the base activity
-    assertEquals(2, mysqlStorage.getNewerOnActivitiesOfConnections(demoIdentity, baseActivity, 10).size());
-    assertEquals(2, mysqlStorage.getNumberOfNewerOnActivitiesOfConnections(demoIdentity, baseActivity));
+    assertEquals(2, activityStorageImpl.getNewerOnActivitiesOfConnections(demoIdentity, baseActivity, 10).size());
+    assertEquals(2, activityStorageImpl.getNumberOfNewerOnActivitiesOfConnections(demoIdentity, baseActivity));
     
     //john connects with mary
     Relationship maryJohnRelationship = relationshipManager.inviteToConnect(maryIdentity, johnIdentity);
     relationshipManager.confirm(maryIdentity, johnIdentity);
     relationships.add(maryJohnRelationship);
     
-    assertEquals(3, mysqlStorage.getNewerOnActivitiesOfConnections(maryIdentity, baseActivity, 10).size());
-    assertEquals(3, mysqlStorage.getNumberOfNewerOnActivitiesOfConnections(maryIdentity, baseActivity));
+    assertEquals(3, activityStorageImpl.getNewerOnActivitiesOfConnections(maryIdentity, baseActivity, 10).size());
+    assertEquals(3, activityStorageImpl.getNumberOfNewerOnActivitiesOfConnections(maryIdentity, baseActivity));
     
-    assertEquals(2, mysqlStorage.getNewerOnActivitiesOfConnections(johnIdentity, baseActivity, 10).size());
-    assertEquals(2, mysqlStorage.getNumberOfNewerOnActivitiesOfConnections(johnIdentity, baseActivity));
+    assertEquals(2, activityStorageImpl.getNewerOnActivitiesOfConnections(johnIdentity, baseActivity, 10).size());
+    assertEquals(2, activityStorageImpl.getNumberOfNewerOnActivitiesOfConnections(johnIdentity, baseActivity));
     
     //mary connects with root
     Relationship maryRootRelationship = relationshipManager.inviteToConnect(maryIdentity, rootIdentity);
     relationshipManager.confirm(maryIdentity, rootIdentity);
     relationships.add(maryRootRelationship);
     
-    assertEquals(5, mysqlStorage.getNewerOnActivitiesOfConnections(maryIdentity, baseActivity, 10).size());
-    assertEquals(5, mysqlStorage.getNumberOfNewerOnActivitiesOfConnections(maryIdentity, baseActivity));
+    assertEquals(5, activityStorageImpl.getNewerOnActivitiesOfConnections(maryIdentity, baseActivity, 10).size());
+    assertEquals(5, activityStorageImpl.getNumberOfNewerOnActivitiesOfConnections(maryIdentity, baseActivity));
     
     for (Relationship rel : relationships) {
       relationshipManager.delete(rel);
@@ -285,48 +265,48 @@ public class ActivityMysqlStorageImplTestCase extends AbstractCoreTest {
     createActivities(2, johnIdentity);
     createActivities(2, rootIdentity);
     
-    List<ExoSocialActivity> maryActivities = mysqlStorage.getActivitiesOfIdentity(maryIdentity, 0, 10);
+    List<ExoSocialActivity> maryActivities = activityStorageImpl.getActivitiesOfIdentity(maryIdentity, 0, 10);
     assertEquals(3, maryActivities.size());
     
     //base activity is the first activity created by mary
     ExoSocialActivity baseActivity = maryActivities.get(2);
     
     //As mary has no connections, there are any activity on her connection stream
-    assertEquals(0, mysqlStorage.getOlderOnActivitiesOfConnections(maryIdentity, baseActivity, 10).size());
-    assertEquals(0, mysqlStorage.getNumberOfOlderOnActivitiesOfConnections(maryIdentity, baseActivity));
+    assertEquals(0, activityStorageImpl.getOlderOnActivitiesOfConnections(maryIdentity, baseActivity, 10).size());
+    assertEquals(0, activityStorageImpl.getNumberOfOlderOnActivitiesOfConnections(maryIdentity, baseActivity));
     
     //demo connect with mary
     Relationship maryDemoRelationship = relationshipManager.inviteToConnect(maryIdentity, demoIdentity);
     relationshipManager.confirm(maryIdentity, demoIdentity);
     relationships.add(maryDemoRelationship);
     
-    baseActivity = mysqlStorage.getActivitiesOfIdentity(demoIdentity, 0, 10).get(0);
-    assertEquals(0, mysqlStorage.getOlderOnActivitiesOfConnections(maryIdentity, baseActivity, 10).size());
-    assertEquals(0, mysqlStorage.getNumberOfOlderOnActivitiesOfConnections(maryIdentity, baseActivity));
+    baseActivity = activityStorageImpl.getActivitiesOfIdentity(demoIdentity, 0, 10).get(0);
+    assertEquals(0, activityStorageImpl.getOlderOnActivitiesOfConnections(maryIdentity, baseActivity, 10).size());
+    assertEquals(0, activityStorageImpl.getNumberOfOlderOnActivitiesOfConnections(maryIdentity, baseActivity));
     
-    assertEquals(3, mysqlStorage.getOlderOnActivitiesOfConnections(demoIdentity, baseActivity, 10).size());
-    assertEquals(3, mysqlStorage.getNumberOfOlderOnActivitiesOfConnections(demoIdentity, baseActivity));
+    assertEquals(3, activityStorageImpl.getOlderOnActivitiesOfConnections(demoIdentity, baseActivity, 10).size());
+    assertEquals(3, activityStorageImpl.getNumberOfOlderOnActivitiesOfConnections(demoIdentity, baseActivity));
     
     //john connects with mary
     Relationship maryJohnRelationship = relationshipManager.inviteToConnect(maryIdentity, johnIdentity);
     relationshipManager.confirm(maryIdentity, johnIdentity);
     relationships.add(maryJohnRelationship);
     
-    baseActivity = mysqlStorage.getActivitiesOfIdentity(johnIdentity, 0, 10).get(0);
-    assertEquals(2, mysqlStorage.getOlderOnActivitiesOfConnections(maryIdentity, baseActivity, 10).size());
-    assertEquals(2, mysqlStorage.getNumberOfOlderOnActivitiesOfConnections(maryIdentity, baseActivity));
+    baseActivity = activityStorageImpl.getActivitiesOfIdentity(johnIdentity, 0, 10).get(0);
+    assertEquals(2, activityStorageImpl.getOlderOnActivitiesOfConnections(maryIdentity, baseActivity, 10).size());
+    assertEquals(2, activityStorageImpl.getNumberOfOlderOnActivitiesOfConnections(maryIdentity, baseActivity));
     
-    assertEquals(3, mysqlStorage.getOlderOnActivitiesOfConnections(johnIdentity, baseActivity, 10).size());
-    assertEquals(3, mysqlStorage.getNumberOfOlderOnActivitiesOfConnections(johnIdentity, baseActivity));
+    assertEquals(3, activityStorageImpl.getOlderOnActivitiesOfConnections(johnIdentity, baseActivity, 10).size());
+    assertEquals(3, activityStorageImpl.getNumberOfOlderOnActivitiesOfConnections(johnIdentity, baseActivity));
     
     //mary connects with root
     Relationship maryRootRelationship = relationshipManager.inviteToConnect(maryIdentity, rootIdentity);
     relationshipManager.confirm(maryIdentity, rootIdentity);
     relationships.add(maryRootRelationship);
     
-    baseActivity = mysqlStorage.getActivitiesOfIdentity(rootIdentity, 0, 10).get(0);
-    assertEquals(4, mysqlStorage.getOlderOnActivitiesOfConnections(maryIdentity, baseActivity, 10).size());
-    assertEquals(4, mysqlStorage.getNumberOfOlderOnActivitiesOfConnections(maryIdentity, baseActivity));
+    baseActivity = activityStorageImpl.getActivitiesOfIdentity(rootIdentity, 0, 10).get(0);
+    assertEquals(4, activityStorageImpl.getOlderOnActivitiesOfConnections(maryIdentity, baseActivity, 10).size());
+    assertEquals(4, activityStorageImpl.getNumberOfOlderOnActivitiesOfConnections(maryIdentity, baseActivity));
     
     for (Relationship rel : relationships) {
       relationshipManager.delete(rel);
@@ -345,18 +325,18 @@ public class ActivityMysqlStorageImplTestCase extends AbstractCoreTest {
       ExoSocialActivity activity = new ExoSocialActivityImpl();
       activity.setTitle("activity title " + i);
       activity.setUserId(demoIdentity.getId());
-      mysqlStorage.saveActivity(spaceIdentity, activity);
+      activityStorageImpl.saveActivity(spaceIdentity, activity);
       tearDownActivityList.add(activity);
       if (i == 0) {
         baseActivity = activity;
       }
     }
     
-    assertEquals(9, mysqlStorage.getNewerOnUserSpacesActivities(demoIdentity, baseActivity, 10).size());
-    assertEquals(9, mysqlStorage.getNumberOfNewerOnUserSpacesActivities(demoIdentity, baseActivity));
+    assertEquals(9, activityStorageImpl.getNewerOnUserSpacesActivities(demoIdentity, baseActivity, 10).size());
+    assertEquals(9, activityStorageImpl.getNumberOfNewerOnUserSpacesActivities(demoIdentity, baseActivity));
     //
-    assertEquals(9, mysqlStorage.getNewerOnSpaceActivities(spaceIdentity, baseActivity, 10).size());
-    assertEquals(9, mysqlStorage.getNumberOfNewerOnSpaceActivities(spaceIdentity, baseActivity));
+    assertEquals(9, activityStorageImpl.getNewerOnSpaceActivities(spaceIdentity, baseActivity, 10).size());
+    assertEquals(9, activityStorageImpl.getNumberOfNewerOnSpaceActivities(spaceIdentity, baseActivity));
     
     Space space2 = this.getSpaceInstance(spaceService, 1);
     tearDownSpaceList.add(space2);
@@ -366,12 +346,12 @@ public class ActivityMysqlStorageImplTestCase extends AbstractCoreTest {
       ExoSocialActivity activity = new ExoSocialActivityImpl();
       activity.setTitle("activity title " + i);
       activity.setUserId(demoIdentity.getId());
-      mysqlStorage.saveActivity(spaceIdentity2, activity);
+      activityStorageImpl.saveActivity(spaceIdentity2, activity);
       tearDownActivityList.add(activity);
     }
     
-    assertEquals(19, mysqlStorage.getNewerOnUserSpacesActivities(demoIdentity, baseActivity, 20).size());
-    assertEquals(19, mysqlStorage.getNumberOfNewerOnUserSpacesActivities(demoIdentity, baseActivity));
+    assertEquals(19, activityStorageImpl.getNewerOnUserSpacesActivities(demoIdentity, baseActivity, 20).size());
+    assertEquals(19, activityStorageImpl.getNumberOfNewerOnUserSpacesActivities(demoIdentity, baseActivity));
   }
   
   public void testGetOlderOnUserSpacesActivities() throws Exception {
@@ -386,18 +366,18 @@ public class ActivityMysqlStorageImplTestCase extends AbstractCoreTest {
       ExoSocialActivity activity = new ExoSocialActivityImpl();
       activity.setTitle("activity title " + i);
       activity.setUserId(demoIdentity.getId());
-      mysqlStorage.saveActivity(spaceIdentity, activity);
+      activityStorageImpl.saveActivity(spaceIdentity, activity);
       tearDownActivityList.add(activity);
       if (i == 4) {
         baseActivity = activity;
       }
     }
     
-    assertEquals(4, mysqlStorage.getOlderOnUserSpacesActivities(demoIdentity, baseActivity, 10).size());
-    assertEquals(4, mysqlStorage.getNumberOfOlderOnUserSpacesActivities(demoIdentity, baseActivity));
+    assertEquals(4, activityStorageImpl.getOlderOnUserSpacesActivities(demoIdentity, baseActivity, 10).size());
+    assertEquals(4, activityStorageImpl.getNumberOfOlderOnUserSpacesActivities(demoIdentity, baseActivity));
     //
-    assertEquals(4, mysqlStorage.getOlderOnSpaceActivities(spaceIdentity, baseActivity, 10).size());
-    assertEquals(4, mysqlStorage.getNumberOfOlderOnSpaceActivities(spaceIdentity, baseActivity));
+    assertEquals(4, activityStorageImpl.getOlderOnSpaceActivities(spaceIdentity, baseActivity, 10).size());
+    assertEquals(4, activityStorageImpl.getNumberOfOlderOnSpaceActivities(spaceIdentity, baseActivity));
     
     Space space2 = this.getSpaceInstance(spaceService, 1);
     tearDownSpaceList.add(space2);
@@ -407,12 +387,12 @@ public class ActivityMysqlStorageImplTestCase extends AbstractCoreTest {
       ExoSocialActivity activity = new ExoSocialActivityImpl();
       activity.setTitle("activity title " + i);
       activity.setUserId(demoIdentity.getId());
-      mysqlStorage.saveActivity(spaceIdentity2, activity);
+      activityStorageImpl.saveActivity(spaceIdentity2, activity);
       tearDownActivityList.add(activity);
     }
     
-    assertEquals(4, mysqlStorage.getOlderOnUserSpacesActivities(demoIdentity, baseActivity, 10).size());
-    assertEquals(4, mysqlStorage.getNumberOfOlderOnUserSpacesActivities(demoIdentity, baseActivity));
+    assertEquals(4, activityStorageImpl.getOlderOnUserSpacesActivities(demoIdentity, baseActivity, 10).size());
+    assertEquals(4, activityStorageImpl.getNumberOfOlderOnUserSpacesActivities(demoIdentity, baseActivity));
   }
   
   public void testGetNewerComments() {
@@ -421,7 +401,7 @@ public class ActivityMysqlStorageImplTestCase extends AbstractCoreTest {
     ExoSocialActivity activity = new ExoSocialActivityImpl();
     activity.setTitle("activity title");
     activity.setUserId(rootIdentity.getId());
-    mysqlStorage.saveActivity(rootIdentity, activity);
+    activityStorageImpl.saveActivity(rootIdentity, activity);
     tearDownActivityList.add(activity);
     
     for (int i = 0; i < totalNumber; i ++) {
@@ -429,7 +409,7 @@ public class ActivityMysqlStorageImplTestCase extends AbstractCoreTest {
       ExoSocialActivity comment = new ExoSocialActivityImpl();
       comment.setTitle("john comment " + i);
       comment.setUserId(johnIdentity.getId());
-      mysqlStorage.saveComment(activity, comment);
+      activityStorageImpl.saveComment(activity, comment);
     }
     
     for (int i = 0; i < totalNumber; i ++) {
@@ -437,24 +417,24 @@ public class ActivityMysqlStorageImplTestCase extends AbstractCoreTest {
       ExoSocialActivity comment = new ExoSocialActivityImpl();
       comment.setTitle("demo comment " + i);
       comment.setUserId(demoIdentity.getId());
-      mysqlStorage.saveComment(activity, comment);
+      activityStorageImpl.saveComment(activity, comment);
     }
     
-    List<ExoSocialActivity> comments = mysqlStorage.getComments(activity, 0, 20);
+    List<ExoSocialActivity> comments = activityStorageImpl.getComments(activity, 0, 20);
     assertEquals(20, comments.size());
     
     ExoSocialActivity baseComment = comments.get(0);
     
-    assertEquals(19, mysqlStorage.getNewerComments(activity, baseComment, 20).size());
-    assertEquals(19, mysqlStorage.getNumberOfNewerComments(activity, baseComment));
+    assertEquals(19, activityStorageImpl.getNewerComments(activity, baseComment, 20).size());
+    assertEquals(19, activityStorageImpl.getNumberOfNewerComments(activity, baseComment));
     
     baseComment = comments.get(9);
-    assertEquals(10, mysqlStorage.getNewerComments(activity, baseComment, 20).size());
-    assertEquals(10, mysqlStorage.getNumberOfNewerComments(activity, baseComment));
+    assertEquals(10, activityStorageImpl.getNewerComments(activity, baseComment, 20).size());
+    assertEquals(10, activityStorageImpl.getNumberOfNewerComments(activity, baseComment));
     
     baseComment = comments.get(19);
-    assertEquals(0, mysqlStorage.getNewerComments(activity, baseComment, 20).size());
-    assertEquals(0, mysqlStorage.getNumberOfNewerComments(activity, baseComment));
+    assertEquals(0, activityStorageImpl.getNewerComments(activity, baseComment, 20).size());
+    assertEquals(0, activityStorageImpl.getNumberOfNewerComments(activity, baseComment));
   }
   
   public void testGetOlderComments() {
@@ -463,7 +443,7 @@ public class ActivityMysqlStorageImplTestCase extends AbstractCoreTest {
     ExoSocialActivity activity = new ExoSocialActivityImpl();
     activity.setTitle("activity title");
     activity.setUserId(rootIdentity.getId());
-    mysqlStorage.saveActivity(rootIdentity, activity);
+    activityStorageImpl.saveActivity(rootIdentity, activity);
     tearDownActivityList.add(activity);
     
     for (int i = 0; i < totalNumber; i ++) {
@@ -471,7 +451,7 @@ public class ActivityMysqlStorageImplTestCase extends AbstractCoreTest {
       ExoSocialActivity comment = new ExoSocialActivityImpl();
       comment.setTitle("john comment " + i);
       comment.setUserId(johnIdentity.getId());
-      mysqlStorage.saveComment(activity, comment);
+      activityStorageImpl.saveComment(activity, comment);
     }
     
     for (int i = 0; i < totalNumber; i ++) {
@@ -479,65 +459,65 @@ public class ActivityMysqlStorageImplTestCase extends AbstractCoreTest {
       ExoSocialActivity comment = new ExoSocialActivityImpl();
       comment.setTitle("demo comment " + i);
       comment.setUserId(demoIdentity.getId());
-      mysqlStorage.saveComment(activity, comment);
+      activityStorageImpl.saveComment(activity, comment);
     }
     
-    List<ExoSocialActivity> comments = mysqlStorage.getComments(activity, 0, 20);
+    List<ExoSocialActivity> comments = activityStorageImpl.getComments(activity, 0, 20);
     assertEquals(20, comments.size());
     
     ExoSocialActivity baseComment = comments.get(19);
     
-    assertEquals(19, mysqlStorage.getOlderComments(activity, baseComment, 20).size());
-    assertEquals(19, mysqlStorage.getNumberOfOlderComments(activity, baseComment));
+    assertEquals(19, activityStorageImpl.getOlderComments(activity, baseComment, 20).size());
+    assertEquals(19, activityStorageImpl.getNumberOfOlderComments(activity, baseComment));
     
     baseComment = comments.get(10);
-    assertEquals(10, mysqlStorage.getOlderComments(activity, baseComment, 20).size());
-    assertEquals(10, mysqlStorage.getNumberOfOlderComments(activity, baseComment));
+    assertEquals(10, activityStorageImpl.getOlderComments(activity, baseComment, 20).size());
+    assertEquals(10, activityStorageImpl.getNumberOfOlderComments(activity, baseComment));
     
     baseComment = comments.get(0);
-    assertEquals(0, mysqlStorage.getOlderComments(activity, baseComment, 20).size());
-    assertEquals(0, mysqlStorage.getNumberOfOlderComments(activity, baseComment));
+    assertEquals(0, activityStorageImpl.getOlderComments(activity, baseComment, 20).size());
+    assertEquals(0, activityStorageImpl.getNumberOfOlderComments(activity, baseComment));
   }
   
   public void testMentionersAndCommenters() throws Exception {
     ExoSocialActivity activity = createActivity(1);
     activity.setTitle("hello @demo @john");
-    mysqlStorage.saveActivity(rootIdentity, activity);
+    activityStorageImpl.saveActivity(rootIdentity, activity);
     tearDownActivityList.add(activity);
     
-    ExoSocialActivity got = mysqlStorage.getActivity(activity.getId());
+    ExoSocialActivity got = activityStorageImpl.getActivity(activity.getId());
     assertNotNull(got);
     assertEquals(2, got.getMentionedIds().length);
     
     ExoSocialActivity comment1 = new ExoSocialActivityImpl();
     comment1.setTitle("comment 1");
     comment1.setUserId(demoIdentity.getId());
-    mysqlStorage.saveComment(activity, comment1);
+    activityStorageImpl.saveComment(activity, comment1);
     ExoSocialActivity comment2 = new ExoSocialActivityImpl();
     comment2.setTitle("comment 2");
     comment2.setUserId(johnIdentity.getId());
-    mysqlStorage.saveComment(activity, comment2);
+    activityStorageImpl.saveComment(activity, comment2);
     
-    got = mysqlStorage.getActivity(activity.getId());
+    got = activityStorageImpl.getActivity(activity.getId());
     assertEquals(2, got.getReplyToId().length);
     assertEquals(2, got.getCommentedIds().length);
     
     ExoSocialActivity comment3 = new ExoSocialActivityImpl();
     comment3.setTitle("hello @mary");
     comment3.setUserId(johnIdentity.getId());
-    mysqlStorage.saveComment(activity, comment3);
+    activityStorageImpl.saveComment(activity, comment3);
     
-    got = mysqlStorage.getActivity(activity.getId());
+    got = activityStorageImpl.getActivity(activity.getId());
     assertEquals(3, got.getReplyToId().length);
     assertEquals(2, got.getCommentedIds().length);
     assertEquals(3, got.getMentionedIds().length);
     
-    ExoSocialActivity gotComment = mysqlStorage.getComment(comment3.getId());
+    ExoSocialActivity gotComment = activityStorageImpl.getComment(comment3.getId());
     assertEquals(1, gotComment.getMentionedIds().length);
     
-    mysqlStorage.deleteComment(activity.getId(), comment3.getId());
+    activityStorageImpl.deleteComment(activity.getId(), comment3.getId());
     
-    got = mysqlStorage.getActivity(activity.getId());
+    got = activityStorageImpl.getActivity(activity.getId());
     assertEquals(2, got.getReplyToId().length);
     assertEquals(2, got.getCommentedIds().length);
     assertEquals(2, got.getMentionedIds().length);
@@ -567,7 +547,7 @@ public class ActivityMysqlStorageImplTestCase extends AbstractCoreTest {
     for (int i = 0; i < number; i++) {
       ExoSocialActivity activity = new ExoSocialActivityImpl();
       activity.setTitle("activity title " + i);
-      mysqlStorage.saveActivity(owner, activity);
+      activityStorageImpl.saveActivity(owner, activity);
       tearDownActivityList.add(activity);
     }
   }

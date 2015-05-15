@@ -17,13 +17,6 @@
 
 package org.exoplatform.social.core.mysql.test;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.net.URL;
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -44,11 +37,16 @@ import org.exoplatform.services.organization.OrganizationService;
 import org.exoplatform.services.organization.User;
 import org.exoplatform.services.security.ConversationState;
 import org.exoplatform.services.security.MembershipEntry;
-import org.exoplatform.social.core.mysql.MysqlDBConnect;
+import org.exoplatform.social.core.identity.model.Identity;
+import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvider;
+import org.exoplatform.social.core.manager.ActivityManager;
+import org.exoplatform.social.core.manager.IdentityManager;
+import org.exoplatform.social.core.manager.RelationshipManager;
 import org.exoplatform.social.core.space.SpaceException;
 import org.exoplatform.social.core.space.SpaceUtils;
 import org.exoplatform.social.core.space.model.Space;
 import org.exoplatform.social.core.space.spi.SpaceService;
+import org.exoplatform.social.core.storage.impl.ActivityStorageImpl;
 
 /**
  * @author <a href="mailto:thanhvc@exoplatform.com">Thanh Vu</a>
@@ -65,7 +63,16 @@ import org.exoplatform.social.core.space.spi.SpaceService;
 public abstract class AbstractCoreTest extends BaseExoTestCase {
   private final Log LOG = ExoLogger.getLogger(AbstractCoreTest.class);
   protected SpaceService spaceService;
-  protected MysqlDBConnect dbConnect;
+  protected IdentityManager identityManager;
+  protected RelationshipManager relationshipManager;
+  protected ActivityManager activityManager;
+  protected ActivityStorageImpl activityStorageImpl;
+
+  protected Identity rootIdentity;
+  protected Identity johnIdentity;
+  protected Identity maryIdentity;
+  protected Identity demoIdentity;
+
   protected Session session;
 
   @Override
@@ -73,72 +80,23 @@ public abstract class AbstractCoreTest extends BaseExoTestCase {
     //
     begin();
     loginUser("root");
-    spaceService = (SpaceService) getContainer().getComponentInstanceOfType(SpaceService.class);
-    dbConnect = (MysqlDBConnect) getContainer().getComponentInstanceOfType(MysqlDBConnect.class);
-    
-    initDB();
+    identityManager = getService(IdentityManager.class);
+    activityManager =  getService(ActivityManager.class);
+    activityStorageImpl = getService(ActivityStorageImpl.class);
+    relationshipManager = getService(RelationshipManager.class);
+    spaceService = getService(SpaceService.class);
+    //
+    rootIdentity = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, "root", false);
+    johnIdentity = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, "john", false);
+    maryIdentity = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, "mary", false);
+    demoIdentity = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, "demo", false);
   }
-
-  private void initDB() {
-    
-    try {
-      // clear if existing.
-      cleanDB();
-      
-      //
-      String mysqlScriptFilePath = "conf/mysqlDB_script_test.sql";
-      String s = new String();
-      StringBuffer sb = new StringBuffer();
-      URL path = AbstractCoreTest.class.getClassLoader().getResource(mysqlScriptFilePath);
-      FileReader fr = new FileReader(new File(path.getPath()));
-
-      BufferedReader br = new BufferedReader(fr);
-
-      while ((s = br.readLine()) != null) {
-        sb.append(s);
-      }
-      br.close();
-
-      String[] inst = sb.toString().split(";");
-
-      Connection con = dbConnect.getDBConnection();
-      Statement stmt = con.createStatement();
-
-      for (int i = 0; i < inst.length; i++) {
-        if (!inst[i].trim().equals("")) {
-          stmt.executeUpdate(inst[i]);
-        }
-      }
-
-    } catch (Exception e) {
-      LOG.error("Failed in executing mysql script.", e);
-    }
-  }
-
   @Override
   protected void tearDown() throws Exception {
     //
     end();
     
-    cleanDB();
   }
-  
-  private void cleanDB() {
-    String sql = "DROP DATABASE social_test";
-    String query = "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'social_test'";
-    try {
-      Connection con = dbConnect.getDBConnection();
-      Statement stmt = con.createStatement();
-      ResultSet rs = stmt.executeQuery(query);                  
-      rs.next();
-      if (rs.getInt("COUNT(*)") > 0) {
-        stmt.executeUpdate(sql);
-      }
-    } catch (Exception e) {
-      LOG.error("Failed to drop social database." + e);
-    }
-  }
-  
   @SuppressWarnings("unchecked")
   public <T> T getService(Class<T> clazz) {
     return (T) getContainer().getComponentInstanceOfType(clazz);

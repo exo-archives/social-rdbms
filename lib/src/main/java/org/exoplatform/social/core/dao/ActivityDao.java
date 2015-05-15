@@ -378,7 +378,7 @@ public class ActivityDao {
     }
     StringBuilder sql = new StringBuilder();
     sql.append("select s from StreamItem s join s.activity a where ")
-       .append(" ((a.ownerId ='").append(ownerIdentity.getId()).append("'");
+       .append(" ((a.ownerId='").append(ownerIdentity.getId()).append("'");
     
     if(CollectionUtils.isNotEmpty(spaces)){
       sql.append(" or s.ownerId in ('").append(StringUtils.join(spaceIds, "','")).append("') ");
@@ -387,7 +387,7 @@ public class ActivityDao {
       sql.append(" or (a.posterId in ('").append(StringUtils.join(relationshipIds, "','")).append("') ")
          .append("and not s.streamType like '%SPACE%')");
     }
-    sql.append(") and hidable='0'")
+    sql.append(") and a.hidden='0'")
        .append(buildSQLQueryByTime("a.lastUpdated", time, isNewer))
        .append(")");
     sql.append(" order by a.lastUpdated desc");

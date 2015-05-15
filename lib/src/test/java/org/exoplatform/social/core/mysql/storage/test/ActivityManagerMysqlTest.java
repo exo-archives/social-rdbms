@@ -17,7 +17,6 @@
 package org.exoplatform.social.core.mysql.storage.test;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -35,8 +34,6 @@ import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvider;
 import org.exoplatform.social.core.identity.provider.SpaceIdentityProvider;
 import org.exoplatform.social.core.manager.ActivityManager;
-import org.exoplatform.social.core.manager.IdentityManager;
-import org.exoplatform.social.core.manager.RelationshipManager;
 import org.exoplatform.social.core.mysql.test.AbstractCoreTest;
 import org.exoplatform.social.core.relationship.model.Relationship;
 import org.exoplatform.social.core.space.SpaceUtils;
@@ -53,27 +50,14 @@ public class ActivityManagerMysqlTest extends AbstractCoreTest {
   private final Log LOG = ExoLogger.getLogger(ActivityManagerMysqlTest.class);
   private List<ExoSocialActivity> tearDownActivityList;
   private List<Space> tearDownSpaceList;
-  private Identity rootIdentity;
-  private Identity johnIdentity;
-  private Identity maryIdentity;
-  private Identity demoIdentity;
   private Identity ghostIdentity;
   private Identity raulIdentity;
   private Identity jameIdentity;
   private Identity paulIdentity;
 
-  private IdentityManager identityManager;
-  private RelationshipManager relationshipManager;
-  private ActivityManager activityManager;
-  private SpaceService spaceService;
-
   @Override
   public void setUp() throws Exception {
     super.setUp();
-    identityManager = (IdentityManager) getContainer().getComponentInstanceOfType(IdentityManager.class);
-    activityManager =  (ActivityManager) getContainer().getComponentInstanceOfType(ActivityManager.class);
-    relationshipManager = (RelationshipManager) getContainer().getComponentInstanceOfType(RelationshipManager.class);
-    spaceService = (SpaceService) getContainer().getComponentInstanceOfType(SpaceService.class);
     tearDownActivityList = new ArrayList<ExoSocialActivity>();
     tearDownSpaceList = new ArrayList<Space>();
     rootIdentity = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, "root", false);

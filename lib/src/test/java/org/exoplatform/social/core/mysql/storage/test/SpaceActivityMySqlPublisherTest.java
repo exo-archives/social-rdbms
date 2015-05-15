@@ -31,15 +31,12 @@ import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.identity.model.Profile;
 import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvider;
 import org.exoplatform.social.core.identity.provider.SpaceIdentityProvider;
-import org.exoplatform.social.core.manager.ActivityManager;
-import org.exoplatform.social.core.manager.IdentityManager;
 import org.exoplatform.social.core.model.AvatarAttachment;
 import org.exoplatform.social.core.mysql.test.AbstractCoreTest;
 import org.exoplatform.social.core.space.impl.DefaultSpaceApplicationHandler;
 import org.exoplatform.social.core.space.model.Space;
 import org.exoplatform.social.core.space.model.Space.UpdatedField;
 import org.exoplatform.social.core.space.spi.SpaceLifeCycleEvent;
-import org.exoplatform.social.core.space.spi.SpaceService;
 import org.exoplatform.social.core.storage.api.IdentityStorage;
 import org.exoplatform.social.core.storage.api.SpaceStorage;
 
@@ -49,10 +46,7 @@ import org.exoplatform.social.core.storage.api.SpaceStorage;
  */
 public class SpaceActivityMySqlPublisherTest extends  AbstractCoreTest {
   private final Log LOG = ExoLogger.getLogger(SpaceActivityMySqlPublisherTest.class);
-  private ActivityManager activityManager;
-  private IdentityManager identityManager;
   private IdentityStorage identityStorage;
-  private SpaceService spaceService;
   private SpaceStorage spaceStorage;
   private SpaceActivityPublisher spaceActivityPublisher;
   private List<ExoSocialActivity> tearDownActivityList;
@@ -60,18 +54,12 @@ public class SpaceActivityMySqlPublisherTest extends  AbstractCoreTest {
   public void setUp() throws Exception {
     super.setUp();
     tearDownActivityList = new ArrayList<ExoSocialActivity>();
-    activityManager = (ActivityManager) getContainer().getComponentInstanceOfType(ActivityManager.class);
-    assertNotNull("activityManager must not be null", activityManager);
-    identityManager =  (IdentityManager) getContainer().getComponentInstanceOfType(IdentityManager.class);
-    assertNotNull("identityManager must not be null", identityManager);
-    spaceService = (SpaceService) getContainer().getComponentInstanceOfType(SpaceService.class);
-    assertNotNull("spaceService must not be null", spaceService);
-    spaceStorage = (SpaceStorage) getContainer().getComponentInstanceOfType(SpaceStorage.class);
+    spaceStorage = getService(SpaceStorage.class);
+    spaceActivityPublisher = getService(SpaceActivityPublisher.class);
+    identityStorage = getService(IdentityStorage.class);
     assertNotNull(spaceStorage);
-    spaceActivityPublisher = (SpaceActivityPublisher) getContainer().getComponentInstanceOfType(SpaceActivityPublisher.class);
-    assertNotNull("spaceActivityPublisher must not be null", spaceActivityPublisher);
-    identityStorage =  (IdentityStorage) getContainer().getComponentInstanceOfType(IdentityStorage.class);
-    assertNotNull("identityStorage must not be null", identityStorage);
+    assertNotNull(spaceActivityPublisher);
+    assertNotNull(identityStorage);
   }
 
   @Override

@@ -17,7 +17,6 @@
 package org.exoplatform.social.core.mysql.storage.test;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -27,15 +26,12 @@ import org.exoplatform.services.log.Log;
 import org.exoplatform.services.organization.OrganizationService;
 import org.exoplatform.services.organization.User;
 import org.exoplatform.services.security.ConversationState;
-import org.exoplatform.services.security.MembershipEntry;
 import org.exoplatform.social.core.dao.ActivityDao;
 import org.exoplatform.social.core.entity.Activity;
 import org.exoplatform.social.core.entity.Comment;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvider;
 import org.exoplatform.social.core.identity.provider.SpaceIdentityProvider;
-import org.exoplatform.social.core.manager.IdentityManager;
-import org.exoplatform.social.core.manager.RelationshipManager;
 import org.exoplatform.social.core.mysql.test.AbstractCoreTest;
 import org.exoplatform.social.core.space.SpaceUtils;
 import org.exoplatform.social.core.space.impl.DefaultSpaceApplicationHandler;
@@ -51,37 +47,21 @@ public class ActivityDAOTest extends AbstractCoreTest {
   private final Log LOG = ExoLogger.getLogger(ActivityDAOTest.class);
   private List<Activity> tearDownActivityList;
   private List<Space> tearDownSpaceList;
-  private Identity rootIdentity;
-  private Identity johnIdentity;
-  private Identity maryIdentity;
-  private Identity demoIdentity;
   private Identity ghostIdentity;
   private Identity raulIdentity;
   private Identity jameIdentity;
   private Identity paulIdentity;
 
-  private IdentityManager identityManager;
-  private RelationshipManager relationshipManager;
-  private SpaceService spaceService;
-  
   private ActivityDao activityDao;
 
   @Override
   public void setUp() throws Exception {
     super.setUp();
-    identityManager = getService(IdentityManager.class);
-    relationshipManager = getService(RelationshipManager.class);
-    spaceService = getService(SpaceService.class);
-
     activityDao = getService(ActivityDao.class);
     //
     tearDownActivityList = new ArrayList<Activity>();
     tearDownSpaceList = new ArrayList<Space>();
     //
-    rootIdentity = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, "root", false);
-    johnIdentity = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, "john", false);
-    maryIdentity = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, "mary", false);
-    demoIdentity = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, "demo", false);
     ghostIdentity = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, "ghost", true);
     raulIdentity = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, "raul", true);
     jameIdentity = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, "jame", true);
