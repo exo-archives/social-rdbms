@@ -1,8 +1,10 @@
 package org.exoplatform.social.core.dao;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.SortedSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -12,7 +14,9 @@ import javax.persistence.EntityManagerFactory;
 import javax.persistence.Persistence;
 import javax.persistence.TypedQuery;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.ArrayUtils;
+import org.apache.commons.lang.StringUtils;
 import org.exoplatform.container.xml.InitParams;
 import org.exoplatform.container.xml.ValueParam;
 import org.exoplatform.services.log.ExoLogger;
@@ -357,43 +361,42 @@ public class ActivityDao {
   }
 
   public List<Activity> getActivityFeed(Identity ownerIdentity, int offset, int limit) {
-    // TODO Auto-generated method stub
-    return null;
+    return getActivities(getFeedActivitySQLQuery(ownerIdentity, -1, false), offset, limit);
   }
 
-  public List<Activity> getActivityFeedForUpgrade(Identity ownerIdentity, int offset, int limit) {
-    // TODO Auto-generated method stub
-    return null;
+  private String getFeedActivitySQLQuery(Identity ownerIdentity, long time, boolean isNewer) {
+    List<Identity> relationships = relationshipStorage.getConnections(ownerIdentity);
+    Set<String> relationshipIds = new HashSet<String>();
+    for (Identity identity : relationships) {
+      relationshipIds.add(identity.getId());
+    }
+    // get spaces where user is member
+    List<Space> spaces = spaceStorage.getMemberSpaces(ownerIdentity.getRemoteId());
+    String[] spaceIds = new String[0];
+    for (Space space : spaces) {
+      spaceIds = (String[]) ArrayUtils.add(spaceIds, space.getPrettyName());
+    }
+    StringBuilder sql = new StringBuilder();
+    sql.append("select s from StreamItem s join s.activity a where ")
+       .append(" ((a.ownerId ='").append(ownerIdentity.getId()).append("'");
+    
+    if(CollectionUtils.isNotEmpty(spaces)){
+      sql.append(" or s.ownerId in ('").append(StringUtils.join(spaceIds, "','")).append("') ");
+    }
+    if(CollectionUtils.isNotEmpty(relationships)){
+      sql.append(" or (a.posterId in ('").append(StringUtils.join(relationshipIds, "','")).append("') ")
+         .append("and not s.streamType like '%SPACE%')");
+    }
+    sql.append(") and hidable='0'")
+       .append(buildSQLQueryByTime("a.lastUpdated", time, isNewer))
+       .append(")");
+    sql.append(" order by a.lastUpdated desc");
+    //
+    return sql.toString();
   }
 
   public int getNumberOfActivitesOnActivityFeed(Identity ownerIdentity) {
-    // TODO Auto-generated method stub
-    return 0;
-  }
-
-  public int getNumberOfActivitesOnActivityFeedForUpgrade(Identity ownerIdentity) {
-    // TODO Auto-generated method stub
-    return 0;
-  }
-
-  public int getNumberOfNewerOnActivityFeed(Identity ownerIdentity, Activity baseActivity) {
-    // TODO Auto-generated method stub
-    return 0;
-  }
-
-  public List<Activity> getNewerOnActivityFeed(Identity ownerIdentity, Activity baseActivity, int limit) {
-    // TODO Auto-generated method stub
-    return null;
-  }
-
-  public int getNumberOfOlderOnActivityFeed(Identity ownerIdentity, Activity baseActivity) {
-    // TODO Auto-generated method stub
-    return 0;
-  }
-
-  public List<Activity> getOlderOnActivityFeed(Identity ownerIdentity, Activity baseActivity, int limit) {
-    // TODO Auto-generated method stub
-    return null;
+    return getActivityFeed(ownerIdentity, 0, -1).size();
   }
 
   public List<Activity> getActivitiesOfConnections(Identity ownerIdentity, int offset, int limit) {

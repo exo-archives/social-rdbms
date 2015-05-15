@@ -105,7 +105,15 @@ public class ActivityHibernateStorageImpl extends ActivityStorageImpl {
     activity.isHidden(activityEntity.getHidden());
     activity.setTitleId(activityEntity.getTitleId());
     //
-    
+    List<String> commentIds = new ArrayList<String>();
+    List<String> replyToIds = new ArrayList<String>();
+    List<Comment> comments =activityEntity.getComments();
+    for (Comment comment : comments) {
+      commentIds.add(comment.getPosterId());
+      replyToIds.add(String.valueOf(comment.getId()));
+    }
+    activity.setCommentedIds(commentIds.toArray(new String[commentIds.size()]));
+    activity.setReplyToId(replyToIds.toArray(new String[replyToIds.size()]));
     //
     return activity;
   }
@@ -213,7 +221,11 @@ public class ActivityHibernateStorageImpl extends ActivityStorageImpl {
   @Override
   public void saveComment(ExoSocialActivity activity, ExoSocialActivity comment) throws ActivityStorageException {
     Activity activityEntity = activityDao.getActivity(activity.getId());
-    activityDao.saveComment(activityEntity, convertCommentToCommentEntity(comment));
+    Comment commentEntity = convertCommentToCommentEntity(comment);
+    activityDao.saveComment(activityEntity, commentEntity);
+    comment.setId(String.valueOf(commentEntity.getId()));
+    //
+    activity = convertActivityEntityToActivity(activityEntity);
   }
 
   @Override
@@ -296,20 +308,18 @@ public class ActivityHibernateStorageImpl extends ActivityStorageImpl {
 
   @Override
   public List<ExoSocialActivity> getActivityFeed(Identity ownerIdentity, int offset, int limit) {
-    // TODO Auto-generated method stub
-    return null;
+    return getActivityFeedForUpgrade(ownerIdentity, offset, limit);
   }
 
   @Override
   public List<ExoSocialActivity> getActivityFeedForUpgrade(Identity ownerIdentity, int offset, int limit) {
-    // TODO Auto-generated method stub
-    return null;
+    return convertActivityEntitiesToActivities(activityDao.getActivityFeed(ownerIdentity, offset, limit));
   }
 
   @Override
   public int getNumberOfActivitesOnActivityFeed(Identity ownerIdentity) {
     // TODO Auto-generated method stub
-    return 0;
+    return activityDao.getNumberOfActivitesOnActivityFeed(ownerIdentity);
   }
 
   @Override
@@ -751,8 +761,7 @@ public class ActivityHibernateStorageImpl extends ActivityStorageImpl {
 
   @Override
   public ExoSocialActivity getComment(String commentId) throws ActivityStorageException {
-    // TODO Auto-generated method stub
-    return null;
+    return convertCommentEntityToComment( activityDao.getComment(Long.valueOf(commentId)));
   }
   
 }

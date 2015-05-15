@@ -23,9 +23,9 @@ public abstract class BaseActivity implements Serializable {
   @Temporal(TemporalType.TIMESTAMP)
   private Date lastUpdated;
   @Column(length = 36)
-  private String posterId;
+  private String posterId;// creator
   @Column(length = 36)
-  private String ownerId;
+  private String ownerId;// owner of stream
   @Column(length = 255)
   private String permaLink;
   @Column(length = 36)
