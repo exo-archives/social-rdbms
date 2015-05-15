@@ -36,7 +36,6 @@
   </component>
   
   <component>
-    <key>org.exoplatform.social.core.mysql.storage.ActivityHibernateStorageImpl</key>
     <type>org.exoplatform.social.core.mysql.storage.ActivityHibernateStorageImpl</type>
   </component>
   
