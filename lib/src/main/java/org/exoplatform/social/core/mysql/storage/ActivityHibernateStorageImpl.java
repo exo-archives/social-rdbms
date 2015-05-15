@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.SortedSet;
@@ -117,6 +118,10 @@ public class ActivityHibernateStorageImpl extends ActivityStorageImpl {
     activity.setCommentedIds(commentIds.toArray(new String[commentIds.size()]));
     activity.setReplyToId(replyToIds.toArray(new String[replyToIds.size()]));
     //
+    
+    //
+    processActivity(activity);
+    
     return activity;
   }
   
@@ -155,6 +160,10 @@ public class ActivityHibernateStorageImpl extends ActivityStorageImpl {
     exoComment.isLocked(comment.getLocked().booleanValue());
     exoComment.isHidden(comment.getHidden().booleanValue());
     //
+    
+    //
+    processActivity(exoComment);
+    
     return exoComment;
   }
 
@@ -772,4 +781,14 @@ public class ActivityHibernateStorageImpl extends ActivityStorageImpl {
     return convertCommentEntityToComment( activityDao.getComment(Long.valueOf(commentId)));
   }
   
+  private void processActivity(ExoSocialActivity existingActivity) {
+    Iterator<ActivityProcessor> it = activityProcessors.iterator();
+    while (it.hasNext()) {
+      try {
+        it.next().processActivity(existingActivity);
+      } catch (Exception e) {
+        LOG.warn("activity processing failed ");
+      }
+    }
+  }
 }
