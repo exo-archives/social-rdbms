@@ -513,6 +513,10 @@ public class ActivityHibernateStorageImpl extends ActivityStorageImpl {
 
   @Override
   public void updateActivity(ExoSocialActivity existingActivity) throws ActivityStorageException {
+    ExoSocialActivity updatedActivity = getActivity(existingActivity.getId());
+    if (existingActivity.getTitle() == null) existingActivity.setTitle(updatedActivity.getTitle());
+    if (existingActivity.getBody() == null) existingActivity.setBody(updatedActivity.getBody());
+    
     Activity activityEntity = convertActivityToActivityEntity(existingActivity, null);
     activityDao.updateActivity(activityEntity);
     
