@@ -14,7 +14,7 @@
 * You should have received a copy of the GNU General Public License
 * along with this program; if not, see<http://www.gnu.org/licenses/>.
  */
-package org.exoplatform.social.core.mysql.storage;
+package org.exoplatform.social.core.mysql.old;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -60,9 +60,6 @@ import org.exoplatform.social.core.activity.model.ExoSocialActivity;
 import org.exoplatform.social.core.activity.model.ExoSocialActivityImpl;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvider;
-import org.exoplatform.social.core.mysql.MysqlDBConnect;
-import org.exoplatform.social.core.mysql.model.StreamItem;
-import org.exoplatform.social.core.mysql.model.StreamItemImpl;
 import org.exoplatform.social.core.relationship.model.Relationship;
 import org.exoplatform.social.core.relationship.model.Relationship.Type;
 import org.exoplatform.social.core.space.model.Space;
@@ -110,7 +107,6 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
   private final IdentityStorage identityStorage;
   private final SpaceStorage spaceStorage;
   private ActivityStorage activityStorage;
-  private MysqlDBConnect dbConnect;
   
 
   private static final Log LOG = ExoLogger.getLogger(ActivityMysqlStorageImpl.class);
@@ -118,14 +114,12 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
   public ActivityMysqlStorageImpl(final RelationshipStorage relationshipStorage,
                                   final IdentityStorage identityStorage,
                                   final SpaceStorage spaceStorage,
-                                  final ActivityStreamStorage streamStorage,
-                                  MysqlDBConnect dbConnect) {
+                                  final ActivityStreamStorage streamStorage) {
 
     super(relationshipStorage, identityStorage, spaceStorage, streamStorage);
     this.relationshipStorage = relationshipStorage;
     this.identityStorage = identityStorage;
     this.spaceStorage = spaceStorage;
-    this.dbConnect = dbConnect;
     this.activityProcessors = new TreeSet<ActivityProcessor>(processorComparator());
   }
   
@@ -153,7 +147,6 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
     ExoSocialActivity activity = new ExoSocialActivityImpl();
 
     try {
-      dbConnection = dbConnect.getDBConnection();
       preparedStatement = dbConnection.prepareStatement(getActivitySQL.toString());
       preparedStatement.setString(1, activityId);
 
@@ -317,7 +310,6 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
 
     List<ExoSocialActivity> list = new ArrayList<ExoSocialActivity>();
     try {
-      dbConnection = dbConnect.getDBConnection();
       preparedStatement = dbConnection.prepareStatement(getActivitySQL.toString());
       preparedStatement.setString(1, owner.getId());
       preparedStatement.setString(2, owner.getId());
@@ -373,7 +365,7 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
 
     List<ExoSocialActivity> list = new ArrayList<ExoSocialActivity>();
     try {
-      dbConnection = dbConnect.getDBConnection();
+      //dbConnection = dbConnect.getDBConnection();
       preparedStatement = dbConnection.prepareStatement(getActivitySQL.toString());
 
       rs = preparedStatement.executeQuery();
@@ -462,7 +454,7 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
     
     comment.setMentionedIds(processMentions(comment.getTitle()));
     try {
-      dbConnection = dbConnect.getDBConnection();
+      //dbConnection = dbConnect.getDBConnection();
 
       // insert comment
       preparedStatement = dbConnection.prepareStatement(insertTableSQL.toString());
@@ -659,7 +651,7 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
                   .append(" where _id = ?");
     
     try {
-      dbConnection = dbConnect.getDBConnection();
+      //dbConnection = dbConnect.getDBConnection();
       preparedStatement = dbConnection.prepareStatement(insertTableSQL.toString());
       preparedStatement.setString(1, viewerTypes);
       preparedStatement.setString(2, viewerId);
@@ -707,7 +699,7 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
     StreamItem item = null;
 
     try {
-      dbConnection = dbConnect.getDBConnection();
+      //dbConnection = dbConnect.getDBConnection();
       preparedStatement = dbConnection.prepareStatement(getActivitySQL.toString());
       preparedStatement.setString(1, activityId);
       preparedStatement.setString(2, viewerId);
@@ -850,7 +842,7 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
                   .append("VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
     
     try {
-      dbConnection = dbConnect.getDBConnection();
+      //dbConnection = dbConnect.getDBConnection();
       preparedStatement = dbConnection.prepareStatement(insertTableSQL.toString());
  
       activity.setId(UUID.randomUUID().toString());
@@ -1007,7 +999,7 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
                   .append("VALUES (?,?,?,?,?,?,?,?,?)");
     
     try {
-      dbConnection = dbConnect.getDBConnection();
+      //dbConnection = dbConnect.getDBConnection();
       preparedStatement = dbConnection.prepareStatement(insertTableSQL.toString());
       preparedStatement.setString(1, UUID.randomUUID().toString());
       preparedStatement.setString(2, activityId);
@@ -1072,7 +1064,7 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
                   .append(" where _id = ?");
     
     try {
-      dbConnection = dbConnect.getDBConnection();
+      //dbConnection = dbConnect.getDBConnection();
       preparedStatement = dbConnection.prepareStatement(sql.toString());
  
       Identity owner = identityStorage.findIdentityById(activity.getStreamId());
@@ -1201,7 +1193,7 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
                   .append(" where activityId = ?");
     
     try {
-      dbConnection = dbConnect.getDBConnection();
+      //dbConnection = dbConnect.getDBConnection();
       preparedStatement = dbConnection.prepareStatement(sql.toString());
       preparedStatement.setLong(1, time);
       preparedStatement.setBoolean(2, isHidden);
@@ -1249,7 +1241,7 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
     StringBuilder sql = new StringBuilder("delete from activity where _id = ?");
 
     try {
-      dbConnection = dbConnect.getDBConnection();
+      //dbConnection = dbConnect.getDBConnection();
 
       // insert comment
       preparedStatement = dbConnection.prepareStatement(sql.toString());
@@ -1291,7 +1283,7 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
     StringBuilder sql = new StringBuilder("delete from comment where activityId = ?");
 
     try {
-      dbConnection = dbConnect.getDBConnection();
+      //dbConnection = dbConnect.getDBConnection();
 
       // insert comment
       preparedStatement = dbConnection.prepareStatement(sql.toString());
@@ -1330,7 +1322,7 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
     StringBuilder sql = new StringBuilder("delete from stream_item where activityId = ?");
 
     try {
-      dbConnection = dbConnect.getDBConnection();
+      //dbConnection = dbConnect.getDBConnection();
 
       // insert comment
       preparedStatement = dbConnection.prepareStatement(sql.toString());
@@ -1384,7 +1376,7 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
     
     Connection dbConnection = null;
     PreparedStatement preparedStatement = null;
-    dbConnection = dbConnect.getDBConnection();
+    //dbConnection = dbConnect.getDBConnection();
     long currentMillis = System.currentTimeMillis();
     long commentMillis = (comment.getPostedTime() != null ? comment.getPostedTime() : currentMillis);
     StringBuilder insertTableSQL = new StringBuilder();
@@ -1545,7 +1537,7 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
     StringBuilder sql = new StringBuilder("delete from stream_item where _id = ?");
 
     try {
-      dbConnection = dbConnect.getDBConnection();
+      //dbConnection = dbConnect.getDBConnection();
 
       // insert comment
       preparedStatement = dbConnection.prepareStatement(sql.toString());
@@ -1590,7 +1582,7 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
 
     List<StreamItem> list = new ArrayList<StreamItem>();
     try {
-      dbConnection = dbConnect.getDBConnection();
+      //dbConnection = dbConnect.getDBConnection();
       preparedStatement = dbConnection.prepareStatement(getActivitySQL.toString());
       preparedStatement.setString(1, activityId);
 
@@ -1668,7 +1660,7 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
                   .append(" from comment where _id = ?");
 
     try {
-      dbConnection = dbConnect.getDBConnection();
+      //dbConnection = dbConnect.getDBConnection();
       preparedStatement = dbConnection.prepareStatement(sql.toString());
       preparedStatement.setString(1, id);
 
@@ -1716,7 +1708,7 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
     StringBuilder sql = new StringBuilder("delete from comment where _id = ?");
 
     try {
-      dbConnection = dbConnect.getDBConnection();
+      //dbConnection = dbConnect.getDBConnection();
 
       // insert comment
       preparedStatement = dbConnection.prepareStatement(sql.toString());
@@ -1857,7 +1849,7 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
     ResultSet rs = null;
     List<ExoSocialActivity> result = new LinkedList<ExoSocialActivity>();
     try {
-      dbConnection = dbConnect.getDBConnection();
+      //dbConnection = dbConnect.getDBConnection();
       preparedStatement = dbConnection.prepareStatement(getFeedActivitySQLQuery(ownerIdentity, time, isNewer, limit, offset, false));
       rs = preparedStatement.executeQuery();
       //
@@ -1902,7 +1894,7 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
     PreparedStatement preparedStatement = null;
     ResultSet rs = null;
     try {
-      dbConnection = dbConnect.getDBConnection();
+      //dbConnection = dbConnect.getDBConnection();
       preparedStatement = dbConnection.prepareStatement(getFeedActivitySQLQuery(ownerIdentity, time, isNewer, 0, -1, true));
       rs = preparedStatement.executeQuery();
       while (rs.next()) {
@@ -1986,7 +1978,7 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
     List<ExoSocialActivity> list = new ArrayList<ExoSocialActivity>();
     //
     try {
-      dbConnection = dbConnect.getDBConnection();
+      //dbConnection = dbConnect.getDBConnection();
       preparedStatement = dbConnection.prepareStatement(getActivitiesOfConnectionsQuery(ownerIdentity, time, isNewer, offset, limit, false));
       rs = preparedStatement.executeQuery();
       while (rs.next()) {
@@ -2024,7 +2016,7 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
     PreparedStatement preparedStatement = null;
     ResultSet rs = null;
     try {
-      dbConnection = dbConnect.getDBConnection();
+      //dbConnection = dbConnect.getDBConnection();
       preparedStatement = dbConnection.prepareStatement(getActivitiesOfConnectionsQuery(ownerIdentity, time, isNewer, 0, -1, true));
       rs = preparedStatement.executeQuery();
       while (rs.next()) {
@@ -2118,7 +2110,7 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
     List<ExoSocialActivity> list = new ArrayList<ExoSocialActivity>();
     //
     try {
-      dbConnection = dbConnect.getDBConnection();
+      //dbConnection = dbConnect.getDBConnection();
       preparedStatement = dbConnection.prepareStatement(getUserSpaceActivitiesQuery(ownerIdentity, time, isNewer, offset, limit, false));
       rs = preparedStatement.executeQuery();
       //
@@ -2159,7 +2151,7 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
     PreparedStatement preparedStatement = null;
     ResultSet rs = null;
     try {
-      dbConnection = dbConnect.getDBConnection();
+      //dbConnection = dbConnect.getDBConnection();
       preparedStatement = dbConnection.prepareStatement(getUserSpaceActivitiesQuery(ownerIdentity, time, isNewer, 0, -1, true));
       rs = preparedStatement.executeQuery();
       while (rs.next()) {
@@ -2226,7 +2218,7 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
        .append(" order by postedTime asc")
        .append(limit > 0 ? " LIMIT " + limit : "").append(offset > 0 ? " OFFSET " + offset : "");
     try {
-      dbConnection = dbConnect.getDBConnection();
+      //dbConnection = dbConnect.getDBConnection();
       preparedStatement = dbConnection.prepareStatement(sql.toString());
       rs = preparedStatement.executeQuery();
       List<ExoSocialActivity> result = new ArrayList<ExoSocialActivity>();
@@ -2307,7 +2299,7 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
        .append(" from comment where activityId = ?")
        .append(buildSQLQueryByTime(POSTED_TIME, time, isNewer));
     try {
-      dbConnection = dbConnect.getDBConnection();
+      //dbConnection = dbConnect.getDBConnection();
       preparedStatement = dbConnection.prepareStatement(sql.toString());
       preparedStatement.setString(1, existingActivity.getId());
       rs = preparedStatement.executeQuery();
@@ -2418,7 +2410,7 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
     int count = 0;
     
     try {
-      dbConnection = dbConnect.getDBConnection();
+      //dbConnection = dbConnect.getDBConnection();
       preparedStatement = dbConnection.prepareStatement(sql);
       
       int index = 1;
@@ -2490,7 +2482,7 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
     
     List<ExoSocialActivity> list = new ArrayList<ExoSocialActivity>();
     try {
-      dbConnection = dbConnect.getDBConnection();
+      //dbConnection = dbConnect.getDBConnection();
       preparedStatement = dbConnection.prepareStatement(getActivitySQL.toString());
       preparedStatement.setString(1, spaceIdentity.getRemoteId());
       rs = preparedStatement.executeQuery();
