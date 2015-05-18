@@ -16,6 +16,9 @@
  */
 package org.exoplatform.social.addons.storage.dao;
 
+import java.util.List;
+
+import org.exoplatform.social.addons.storage.entity.Activity;
 import org.exoplatform.social.addons.storage.entity.Comment;
 
 /**
@@ -27,4 +30,7 @@ import org.exoplatform.social.addons.storage.entity.Comment;
 public interface CommentDAO extends GenericDAO<Comment, Long> {
 
   //Add customize methods here
+  List<Comment> getComments(Activity existingActivity, int offset, int limit);
+
+  int getNumberOfComments(Activity existingActivity);
 }

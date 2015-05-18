@@ -16,8 +16,14 @@
  */
 package org.exoplatform.social.addons.storage.dao.jpa;
 
+import java.util.List;
+
+import javax.persistence.TypedQuery;
+
 import org.exoplatform.social.addons.storage.dao.CommentDAO;
+import org.exoplatform.social.addons.storage.entity.Activity;
 import org.exoplatform.social.addons.storage.entity.Comment;
+import org.exoplatform.social.core.storage.ActivityStorageException;
 
 /**
  * Created by The eXo Platform SAS
@@ -27,4 +33,27 @@ import org.exoplatform.social.addons.storage.entity.Comment;
  */
 public class CommentDAOImpl extends GenericDAOImpl<Comment, Long>  implements CommentDAO {
   //implements customize methods here
+  
+  public List<Comment> getComments(Activity existingActivity, int offset, int limit) {
+    StringBuilder strQuery = new StringBuilder();//DISTINCT
+    strQuery.append("select c from Comment c join c.activity a where (a.id ='")
+            .append(existingActivity.getId())
+            .append("') and (a.hidden = '0') and (a.locked = '0') order by a.lastUpdated desc");
+    //
+    return getComments(strQuery.toString(), offset, limit);
+  }
+
+  private List<Comment> getComments(String strQuery, long offset, long limit) throws ActivityStorageException {
+    TypedQuery<Comment> typeQuery = lifecycleLookup().getCurrentEntityManager().createQuery(strQuery, Comment.class);
+    if (limit > 0) {
+      typeQuery.setFirstResult((int) offset);
+      typeQuery.setMaxResults((int) limit);
+    }
+    return typeQuery.getResultList();
+  }
+
+  public int getNumberOfComments(Activity existingActivity) {
+    // TODO: Need use count query
+    return existingActivity.getComments().size();
+  }
 }

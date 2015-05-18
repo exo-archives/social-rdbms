@@ -24,15 +24,20 @@ import java.util.List;
 import java.util.Map;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
+import org.apache.commons.lang.ArrayUtils;
 import org.exoplatform.container.component.BaseComponentPlugin;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
-
 import org.exoplatform.social.addons.storage.dao.ActivityDAO;
 import org.exoplatform.social.addons.storage.dao.CommentDAO;
+import org.exoplatform.social.addons.storage.dao.StreamItemDAO;
 import org.exoplatform.social.addons.storage.entity.Activity;
 import org.exoplatform.social.addons.storage.entity.Comment;
+import org.exoplatform.social.addons.storage.entity.StreamItem;
+import org.exoplatform.social.addons.storage.entity.StreamType;
 import org.exoplatform.social.core.ActivityProcessor;
 import org.exoplatform.social.core.activity.filter.ActivityFilter;
 import org.exoplatform.social.core.activity.filter.ActivityUpdateFilter;
@@ -41,6 +46,8 @@ import org.exoplatform.social.core.activity.model.ActivityStreamImpl;
 import org.exoplatform.social.core.activity.model.ExoSocialActivity;
 import org.exoplatform.social.core.activity.model.ExoSocialActivityImpl;
 import org.exoplatform.social.core.identity.model.Identity;
+import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvider;
+import org.exoplatform.social.core.space.model.Space;
 import org.exoplatform.social.core.storage.ActivityStorageException;
 import org.exoplatform.social.core.storage.api.IdentityStorage;
 import org.exoplatform.social.core.storage.api.RelationshipStorage;
@@ -52,13 +59,18 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
 
   private static final Log LOG = ExoLogger.getLogger(RDBMSActivityStorageImpl.class);
   private final ActivityDAO activityDAO;
+  private final StreamItemDAO streamItemDAO;
   private final CommentDAO commentDAO;
   private final IdentityStorage identityStorage;
+  private final SpaceStorage spaceStorage;
   private final SortedSet<ActivityProcessor> activityProcessors;
+  private static final Pattern MENTION_PATTERN = Pattern.compile("@([^\\s]+)|@([^\\s]+)$");
   public RDBMSActivityStorageImpl(RelationshipStorage relationshipStorage, 
                                       IdentityStorage identityStorage, 
                                       SpaceStorage spaceStorage,
-                                      ActivityDAO activityDAO, CommentDAO commentDAO) {
+                                      ActivityDAO activityDAO,
+                                      StreamItemDAO streamItemDAO,
+                                      CommentDAO commentDAO) {
     
     super(relationshipStorage, identityStorage, spaceStorage);
     //
@@ -66,7 +78,9 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
     this.identityStorage = identityStorage;
     this.activityProcessors = new TreeSet<ActivityProcessor>(processorComparator());
     this.activityDAO = activityDAO;
+    this.streamItemDAO = streamItemDAO;
     this.commentDAO = commentDAO;
+    this.spaceStorage = spaceStorage;
   }
   
   private static Comparator<ActivityProcessor> processorComparator() {
@@ -218,27 +232,22 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
 
   @Override
   public List<ExoSocialActivity> getUserActivities(Identity owner) throws ActivityStorageException {
-    //
-    //return convertActivityEntitiesToActivities(activityDAO.getUserActivities(owner));
-    return null;
+    return getUserActivities(owner, 0, -1);
   }
 
   @Override
   public List<ExoSocialActivity> getUserActivities(Identity owner, long offset, long limit) throws ActivityStorageException {
-    //return convertActivityEntitiesToActivities(activityDAO.getUserActivities(owner, offset, limit));
-    return null;
+    return convertActivityEntitiesToActivities(activityDAO.getUserActivities(owner, 0, false, offset, limit));
   }
 
   @Override
   public List<ExoSocialActivity> getUserActivitiesForUpgrade(Identity owner, long offset, long limit) throws ActivityStorageException {
-    //return convertActivityEntitiesToActivities(activityDAO.getUserActivitiesForUpgrade(owner, offset, limit));
-    return null;
+    return convertActivityEntitiesToActivities(activityDAO.getUserActivities(owner, 0, true, offset, limit));
   }
 
   @Override
   public List<ExoSocialActivity> getActivities(Identity owner, Identity viewer, long offset, long limit) throws ActivityStorageException {
-    //return convertActivityEntitiesToActivities(activityDAO.getActivities(owner, viewer, offset, limit));
-    return null;
+    return convertActivityEntitiesToActivities(activityDAO.getActivities(owner, viewer, offset, limit));
   }
 
   @Override
@@ -258,11 +267,96 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
   @Override
   public ExoSocialActivity saveActivity(Identity owner, ExoSocialActivity activity) throws ActivityStorageException {
     Activity entity = convertActivityToActivityEntity(activity, owner.getId());
+    //
+    entity.setOwnerId(owner.getId());
+    //
     activityDAO.create(entity);
     activity.setId(Long.toString(entity.getId()));
+    //
+    saveStreamItem(owner, entity);
+    
     return activity;
   }
 
+  private void saveStreamItem(Identity owner, Activity activity) {
+    //create StreamItem
+    if (OrganizationIdentityProvider.NAME.equals(owner.getProviderId())) {
+      //poster
+      poster(owner, activity);
+      //connection
+      //connection(poster, activity);
+      //mention
+      mention(owner, activity);
+    } else {
+      //for SPACE
+      spaceMembers(owner, activity);
+    }
+  }
+
+  private void poster(Identity owner, Activity activity) {
+    createStreamItem(StreamType.POSTER, activity, owner.getId());
+  }
+
+  /**
+   * Creates StreamItem for each user who has mentioned on the activity
+   * 
+   * @param owner
+   * @param activity
+   */
+  private void mention(Identity owner, Activity activity) {
+    // calculate mentioners
+    String [] mentions = processMentions(activity.getTitle());
+    for (String mentioner : mentions) {
+      Identity identity = identityStorage.findIdentity(OrganizationIdentityProvider.NAME, mentioner);
+      if(identity != null) {
+        createStreamItem(StreamType.MENTIONER, activity, identity.getId());
+      }
+    }
+  }
+
+  private void spaceMembers(Identity owner, Activity activity) {
+    Space space = spaceStorage.getSpaceByPrettyName(owner.getRemoteId());
+
+    if (space == null) return;
+    //
+    createStreamItem(StreamType.SPACE_MEMBER, activity, owner.getId());
+  }
+
+  private void createStreamItem(StreamType streamType, Activity activity, String ownerId){
+    
+    StreamItem streamItem = new StreamItem(streamType);
+    streamItem.setOwnerId(ownerId);
+    streamItem.setActivity(activity);
+    //
+    streamItemDAO.create(streamItem);
+  }
+
+  /**
+   * Processes Mentioners who has been mentioned via the Activity.
+   * 
+   * @param title
+   */
+  private String[] processMentions(String title) {
+    String[] mentionerIds = new String[0];
+    if (title == null || title.length() == 0) {
+      return ArrayUtils.EMPTY_STRING_ARRAY;
+    }
+
+    Matcher matcher = MENTION_PATTERN.matcher(title);
+    while (matcher.find()) {
+      String remoteId = matcher.group().substring(1);
+      if (!USER_NAME_VALIDATOR_REGEX.matcher(remoteId).matches()) {
+        continue;
+      }
+      Identity identity = identityStorage.findIdentity(OrganizationIdentityProvider.NAME, remoteId);
+      // if not the right mention then ignore
+      if (identity != null) {
+        mentionerIds = (String[]) ArrayUtils.add(mentionerIds, identity.getId());
+      }
+    }
+    return mentionerIds;
+  }
+  
   @Override
   public ExoSocialActivity getParentActivity(ExoSocialActivity comment) throws ActivityStorageException {
     try {
@@ -279,6 +373,12 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
 
   @Override
   public void deleteActivity(String activityId) throws ActivityStorageException {
+    //TODO change streamItem to OneToMany to auto remove StreamItem when remove activity
+    List<StreamItem> streamItems = streamItemDAO.findStreamItemByActivityId(Long.valueOf(activityId));
+    for (StreamItem streamItem : streamItems) {
+      streamItemDAO.delete(streamItem);
+    }
+    //
     activityDAO.delete(Long.valueOf(activityId));
   }
 
@@ -346,15 +446,12 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
 
   @Override
   public List<ExoSocialActivity> getActivityFeedForUpgrade(Identity ownerIdentity, int offset, int limit) {
-    //return convertActivityEntitiesToActivities(activityDAO.getActivityFeed(ownerIdentity, offset, limit));
-    return null;
+    return convertActivityEntitiesToActivities(activityDAO.getActivityFeed(ownerIdentity, offset, limit));
   }
 
   @Override
   public int getNumberOfActivitesOnActivityFeed(Identity ownerIdentity) {
-    // TODO Auto-generated method stub
-    //return activityDAO.getNumberOfActivitesOnActivityFeed(ownerIdentity);
-    return 0;
+    return activityDAO.getNumberOfActivitesOnActivityFeed(ownerIdentity);
   }
 
   @Override
@@ -491,15 +588,12 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
 
   @Override
   public List<ExoSocialActivity> getComments(ExoSocialActivity existingActivity, int offset, int limit) {
-    
-    //return convertCommentEntitiesToComments(activityDAO.getComments(activityDAO.getActivity(existingActivity.getId()), offset, limit));
-    return null;
+    return convertCommentEntitiesToComments(commentDAO.getComments(activityDAO.find(Long.valueOf(existingActivity.getId())), offset, limit));
   }
 
   @Override
   public int getNumberOfComments(ExoSocialActivity existingActivity) {
-    //return activityDAO.getNumberOfComments(activityDAO.getActivity(existingActivity.getId()));
-    return 0;
+    return commentDAO.getNumberOfComments(activityDAO.find(Long.valueOf(existingActivity.getId())));
   }
 
   @Override

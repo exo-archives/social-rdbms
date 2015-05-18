@@ -16,7 +16,11 @@
  */
 package org.exoplatform.social.addons.storage.dao;
 
+import java.util.List;
+
 import org.exoplatform.social.addons.storage.entity.Activity;
+import org.exoplatform.social.core.identity.model.Identity;
+import org.exoplatform.social.core.storage.ActivityStorageException;
 
 /**
  * Created by The eXo Platform SAS
@@ -25,7 +29,12 @@ import org.exoplatform.social.addons.storage.entity.Activity;
  * May 18, 2015  
  */
 public interface ActivityDAO extends GenericDAO<Activity, Long> {
-  
-  //Add customize methods here
 
+  // Add customize methods here
+  List<Activity> getUserActivities(Identity owner, long time, boolean isNewer, long offset, long limit) throws ActivityStorageException;
+
+  List<Activity> getActivities(Identity owner, Identity viewer, long offset, long limit) throws ActivityStorageException;
+
+  List<Activity> getActivityFeed(Identity ownerIdentity, int offset, int limit);
+  int getNumberOfActivitesOnActivityFeed(Identity ownerIdentity);
 }

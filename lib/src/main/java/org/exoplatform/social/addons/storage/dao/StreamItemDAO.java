@@ -16,6 +16,8 @@
  */
 package org.exoplatform.social.addons.storage.dao;
 
+import java.util.List;
+
 import org.exoplatform.social.addons.storage.entity.StreamItem;
 
 /**
@@ -27,4 +29,5 @@ import org.exoplatform.social.addons.storage.entity.StreamItem;
 public interface StreamItemDAO extends GenericDAO<StreamItem, Long> {
 
   //Add customize methods here
+  List<StreamItem> findStreamItemByActivityId(Long activityId);
 }

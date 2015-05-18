@@ -16,6 +16,10 @@
  */
 package org.exoplatform.social.addons.storage.dao.jpa;
 
+import java.util.List;
+
+import javax.persistence.TypedQuery;
+
 import org.exoplatform.social.addons.storage.dao.StreamItemDAO;
 import org.exoplatform.social.addons.storage.entity.StreamItem;
 
@@ -28,4 +32,10 @@ import org.exoplatform.social.addons.storage.entity.StreamItem;
 public class StreamItemDAOImpl extends GenericDAOImpl<StreamItem, Long>  implements StreamItemDAO {
 
   //Add customize methods here
+  
+  public List<StreamItem> findStreamItemByActivityId(Long activityId) {
+    TypedQuery<StreamItem> query = lifecycleLookup().getCurrentEntityManager().createNamedQuery("getStreamByActivityId", StreamItem.class);
+    query.setParameter("activityId", activityId);
+    return query.getResultList();
+  }
 }
