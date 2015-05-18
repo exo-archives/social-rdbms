@@ -24,27 +24,33 @@
    xmlns="http://www.exoplatform.org/xml/ns/kernel_1_2.xsd">
 
   <component>
-    <key>org.exoplatform.social.core.dao.ActivityDao</key>
-    <type>org.exoplatform.social.core.dao.ActivityDao</type>
+    <type>org.exoplatform.social.addons.storage.session.SocialSessionLifecycle</type>
     <init-params>    
       <value-param>
-        <name>persistenceUnitName</name>
+        <name>persistent-unit-param</name>
         <description>The name of persistence unit</description>
-        <value>org.exoplatform.social.hibernate-activity</value>      
+        <value>soc-activity-persistence</value>      
       </value-param>
     </init-params>    
   </component>
   
   <component>
-    <type>org.exoplatform.social.core.mysql.storage.ActivityHibernateStorageImpl</type>
+    <key>org.exoplatform.social.addons.storage.dao.ActivityDAO</key>
+    <type>org.exoplatform.social.addons.storage.dao.jpa.ActivityDAOImpl</type>
   </component>
   
-  <external-component-plugins>
-    <target-component>org.exoplatform.social.core.storage.api.ActivityStorage</target-component>
-    <component-plugin>
-      <name>ActivityHibernateStorageImpl</name>
-      <set-method>addPlugin</set-method>
-      <type>org.exoplatform.social.core.mysql.storage.ActivityHibernateStorageImpl</type>
-    </component-plugin>
-  </external-component-plugins>
+  <component>
+    <key>org.exoplatform.social.addons.storage.dao.CommentDAO</key>
+    <type>org.exoplatform.social.addons.storage.dao.jpa.CommentDAOImpl</type>
+  </component>
+  
+  <component>
+    <key>org.exoplatform.social.addons.storage.dao.StreamItemDAO</key>
+    <type>org.exoplatform.social.addons.storage.dao.jpa.StreamItemDAOImpl</type>
+  </component>
+  
+  <component>
+    <key>org.exoplatform.social.core.storage.api.ActivityStorage</key>
+    <type>org.exoplatform.social.addons.storage.SynchronizedRDBMSActivityStorage</type>
+  </component>
 </configuration>

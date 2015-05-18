@@ -1,4 +1,4 @@
-package org.exoplatform.social.core.entity;
+package org.exoplatform.social.addons.storage.entity;
 
 import javax.persistence.Column;
 import javax.persistence.MappedSuperclass;

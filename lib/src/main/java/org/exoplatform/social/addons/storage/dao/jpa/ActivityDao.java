@@ -1,4 +1,4 @@
-package org.exoplatform.social.core.dao;
+package org.exoplatform.social.addons.storage.dao.jpa;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -22,13 +22,13 @@ import org.exoplatform.container.xml.ValueParam;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 import org.exoplatform.services.security.ConversationState;
+import org.exoplatform.social.addons.storage.entity.Activity;
+import org.exoplatform.social.addons.storage.entity.Comment;
+import org.exoplatform.social.addons.storage.entity.StreamItem;
+import org.exoplatform.social.addons.storage.entity.StreamType;
 import org.exoplatform.social.core.ActivityProcessor;
 import org.exoplatform.social.core.activity.filter.ActivityFilter;
 import org.exoplatform.social.core.activity.filter.ActivityUpdateFilter;
-import org.exoplatform.social.core.entity.Activity;
-import org.exoplatform.social.core.entity.Comment;
-import org.exoplatform.social.core.entity.StreamItem;
-import org.exoplatform.social.core.entity.StreamType;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvider;
 import org.exoplatform.social.core.space.model.Space;

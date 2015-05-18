@@ -1,4 +1,4 @@
-package org.exoplatform.social.core.entity;
+package org.exoplatform.social.addons.storage.entity;
 
 import java.util.Date;
 import java.util.Map;
@@ -28,7 +28,7 @@ import javax.persistence.Table;
   name = "getActivityByComment",
   query = "select a from Activity a join a.comments Comment where Comment.id = :COMMENT_ID"
 )
-public class Comment extends BaseActivity{
+public class Comment extends BaseActivity {
   @Id
   @GeneratedValue
   @Column(name="COMMENT_ID")

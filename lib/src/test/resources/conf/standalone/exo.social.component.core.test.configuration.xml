@@ -72,36 +72,47 @@
   </component>
 
   <component>
-    <key>org.exoplatform.social.core.dao.ActivityDao</key>
-    <type>org.exoplatform.social.core.dao.ActivityDao</type>
-    <init-params>
+    <key>org.exoplatform.social.addons.storage.session.SocialSessionLifecycle</key>
+    <type>org.exoplatform.social.addons.storage.session.SocialSessionLifecycle</type>
+    <init-params>    
       <value-param>
-        <name>persistenceUnitName</name>
+        <name>persistent-unit-param</name>
         <description>The name of persistence unit</description>
-        <value>org.exoplatform.social.hibernate-activity-test</value>      
+        <value>soc-activity-persistence-test</value>      
       </value-param>
     </init-params>    
   </component>
-
+  
+  <component>
+    <key>org.exoplatform.social.addons.storage.dao.ActivityDAO</key>
+    <type>org.exoplatform.social.addons.storage.dao.jpa.ActivityDAOImpl</type>
+  </component>
+  
+  <component>
+    <key>org.exoplatform.social.addons.storage.dao.CommentDAO</key>
+    <type>org.exoplatform.social.addons.storage.dao.jpa.CommentDAOImpl</type>
+  </component>
+  
+  <component>
+    <key>org.exoplatform.social.addons.storage.dao.StreamItemDAO</key>
+    <type>org.exoplatform.social.addons.storage.dao.jpa.StreamItemDAOImpl</type>
+  </component>
+   <!--
+    Activity storage components.
+  -->
+  <component>
+    <key>org.exoplatform.social.core.storage.api.ActivityStorage</key>
+    <type>org.exoplatform.social.addons.storage.SynchronizedRDBMSActivityStorage</type>
+  </component>
+  
   <!--
     Activity Stream storage components.
   -->
-  <component>
-    <key>org.exoplatform.social.core.storage.api.ActivityStreamStorage</key>
-    <type>org.exoplatform.social.core.storage.cache.CachedActivityStreamStorage</type>
-  </component>
   <component>
     <key>org.exoplatform.social.core.storage.impl.ActivityStreamStorageImpl</key>
     <type>org.exoplatform.social.core.storage.synchronization.SynchronizedActivityStreamStorage</type>
   </component>
   
-  <!--
-    Activity storage components.
-  -->
-  <component>
-    <key>org.exoplatform.social.core.storage.api.ActivityStorage</key>
-    <type>org.exoplatform.social.core.mysql.storage.ActivityHibernateStorageImpl</type> 
-  </component>
   <!--
     Identity storage components.
   -->

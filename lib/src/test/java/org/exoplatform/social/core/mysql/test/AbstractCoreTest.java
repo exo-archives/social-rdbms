@@ -77,7 +77,6 @@ public abstract class AbstractCoreTest extends BaseExoTestCase {
 
   @Override
   protected void setUp() throws Exception {
-    //
     begin();
     loginUser("root");
     identityManager = getService(IdentityManager.class);
@@ -91,12 +90,13 @@ public abstract class AbstractCoreTest extends BaseExoTestCase {
     maryIdentity = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, "mary", false);
     demoIdentity = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, "demo", false);
   }
+
   @Override
   protected void tearDown() throws Exception {
     //
     end();
-    
-  }
+  }  
+  
   @SuppressWarnings("unchecked")
   public <T> T getService(Class<T> clazz) {
     return (T) getContainer().getComponentInstanceOfType(clazz);

@@ -1,4 +1,4 @@
-package org.exoplatform.social.core.entity;
+package org.exoplatform.social.addons.storage.entity;
 
 /**
  * Created by bdechateauvieux on 4/1/15.

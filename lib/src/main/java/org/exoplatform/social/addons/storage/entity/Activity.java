@@ -1,4 +1,4 @@
-package org.exoplatform.social.core.entity;
+package org.exoplatform.social.addons.storage.entity;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -7,15 +7,15 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
 
 import javax.persistence.CascadeType;
 import javax.persistence.CollectionTable;
 import javax.persistence.Column;
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
-import javax.persistence.EntityListeners;
 import javax.persistence.FetchType;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.JoinTable;
@@ -24,7 +24,6 @@ import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
 import javax.persistence.OrderBy;
-import javax.persistence.PrePersist;
 import javax.persistence.Table;
 
 import org.json.JSONObject;
@@ -34,7 +33,6 @@ import org.json.JSONObject;
  */
 @Entity
 @Table(name = "SOC_ACTIVITIES")
-@EntityListeners({Activity.ActivityEntityListener.class})
 @NamedQueries({
   @NamedQuery(
     name = "getActivitiesByLikerId",
@@ -43,12 +41,9 @@ import org.json.JSONObject;
 })
 public class Activity extends BaseActivity {
   @Id
-//    @GeneratedValue
-//    @GeneratedValue(generator="system-uuid")
-//    @GenericGenerator(name="system-uuid", strategy = "uuid2")
-  @Column(name="ACTIVITY_ID", length=36)
-//    private Long id;
-  private String id;
+  @GeneratedValue(strategy = GenerationType.AUTO)
+  @Column(name="ACTIVITY_ID")
+  private Long id;
 
   private String type;
 
@@ -79,7 +74,7 @@ public class Activity extends BaseActivity {
     setLastUpdated(new Date());
   }
 
-  public void setId(String id) {
+  public void setId(Long id) {
     this.id = id;
   }
 
@@ -127,17 +122,8 @@ public class Activity extends BaseActivity {
     this.comments.add(comment);
   }
 
-  public String getId() {
+  public Long getId() {
     return id;
-  }
-
-  public static class ActivityEntityListener {
-    @PrePersist
-    public void onPrePersist(Activity activity) {
-      if(activity.getId() == null) {
-        activity.setId(UUID.randomUUID().toString());
-      }
-    }
   }
 
   @Override

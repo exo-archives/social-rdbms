@@ -14,7 +14,7 @@
 * You should have received a copy of the GNU General Public License
 * along with this program; if not, see<http://www.gnu.org/licenses/>.
  */
-package org.exoplatform.social.core.mysql.storage;
+package org.exoplatform.social.addons.storage;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -28,6 +28,11 @@ import java.util.TreeSet;
 import org.exoplatform.container.component.BaseComponentPlugin;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
+
+import org.exoplatform.social.addons.storage.dao.ActivityDAO;
+import org.exoplatform.social.addons.storage.dao.CommentDAO;
+import org.exoplatform.social.addons.storage.entity.Activity;
+import org.exoplatform.social.addons.storage.entity.Comment;
 import org.exoplatform.social.core.ActivityProcessor;
 import org.exoplatform.social.core.activity.filter.ActivityFilter;
 import org.exoplatform.social.core.activity.filter.ActivityUpdateFilter;
@@ -35,9 +40,6 @@ import org.exoplatform.social.core.activity.model.ActivityStream;
 import org.exoplatform.social.core.activity.model.ActivityStreamImpl;
 import org.exoplatform.social.core.activity.model.ExoSocialActivity;
 import org.exoplatform.social.core.activity.model.ExoSocialActivityImpl;
-import org.exoplatform.social.core.dao.ActivityDao;
-import org.exoplatform.social.core.entity.Activity;
-import org.exoplatform.social.core.entity.Comment;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.storage.ActivityStorageException;
 import org.exoplatform.social.core.storage.api.IdentityStorage;
@@ -46,20 +48,25 @@ import org.exoplatform.social.core.storage.api.SpaceStorage;
 import org.exoplatform.social.core.storage.impl.ActivityBuilderWhere;
 import org.exoplatform.social.core.storage.impl.ActivityStorageImpl;
 
-public class ActivityHibernateStorageImpl extends ActivityStorageImpl {
-  private static final Log LOG = ExoLogger.getLogger(ActivityHibernateStorageImpl.class);
-  private final ActivityDao activityDao;
+public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
+
+  private static final Log LOG = ExoLogger.getLogger(RDBMSActivityStorageImpl.class);
+  private final ActivityDAO activityDAO;
+  private final CommentDAO commentDAO;
   private final IdentityStorage identityStorage;
   private final SortedSet<ActivityProcessor> activityProcessors;
-  public ActivityHibernateStorageImpl(RelationshipStorage relationshipStorage, 
+  public RDBMSActivityStorageImpl(RelationshipStorage relationshipStorage, 
                                       IdentityStorage identityStorage, 
                                       SpaceStorage spaceStorage,
-                                      ActivityDao activityDao) {
+                                      ActivityDAO activityDAO, CommentDAO commentDAO) {
+    
     super(relationshipStorage, identityStorage, spaceStorage);
     //
-    this.activityDao = activityDao;
+    
     this.identityStorage = identityStorage;
     this.activityProcessors = new TreeSet<ActivityProcessor>(processorComparator());
+    this.activityDAO = activityDAO;
+    this.commentDAO = commentDAO;
   }
   
   private static Comparator<ActivityProcessor> processorComparator() {
@@ -90,7 +97,7 @@ public class ActivityHibernateStorageImpl extends ActivityStorageImpl {
     ExoSocialActivity activity = new ExoSocialActivityImpl(activityEntity.getPosterId(), activityEntity.getType(),
                                                            activityEntity.getTitle(), activityEntity.getBody(), false);
     
-    activity.setId(activityEntity.getId());
+    activity.setId(Long.toString(activityEntity.getId()));
     activity.setLikeIdentityIds(activityEntity.getLikerIds().toArray(new String[]{}));
     activity.setTemplateParams(activityEntity.getTemplateParams());
     
@@ -128,7 +135,7 @@ public class ActivityHibernateStorageImpl extends ActivityStorageImpl {
   private Activity convertActivityToActivityEntity(ExoSocialActivity activity, String ownerId) {
     Activity activityEntity  =  new Activity();
     if (activity.getId() != null) {
-      activityEntity = activityDao.getActivity(activity.getId());
+      activityEntity = activityDAO.find(Long.valueOf(activity.getId()));
     }
     activityEntity.setTitle(activity.getTitle());
     activityEntity.setTitleId(activity.getTitleId());
@@ -179,7 +186,7 @@ public class ActivityHibernateStorageImpl extends ActivityStorageImpl {
   private Comment convertCommentToCommentEntity(ExoSocialActivity comment) {
     Comment commentEntity = new Comment();
     if (comment.getId() != null) {
-      commentEntity = activityDao.getComment(Long.valueOf(comment.getId()));
+      commentEntity = commentDAO.find(Long.valueOf(comment.getId()));
     }
     commentEntity.setTitle(comment.getTitle());
     commentEntity.setTitleId(comment.getTitleId());
@@ -204,54 +211,62 @@ public class ActivityHibernateStorageImpl extends ActivityStorageImpl {
   
   @Override
   public ExoSocialActivity getActivity(String activityId) throws ActivityStorageException {
-    Activity activity = activityDao.getActivity(activityId);
+    Activity entity = activityDAO.find(Long.valueOf(activityId));
     //
-    return convertActivityEntityToActivity(activity);
+    return convertActivityEntityToActivity(entity);
   }
 
   @Override
   public List<ExoSocialActivity> getUserActivities(Identity owner) throws ActivityStorageException {
     //
-    return convertActivityEntitiesToActivities(activityDao.getUserActivities(owner));
+    //return convertActivityEntitiesToActivities(activityDAO.getUserActivities(owner));
+    return null;
   }
 
   @Override
   public List<ExoSocialActivity> getUserActivities(Identity owner, long offset, long limit) throws ActivityStorageException {
-    return convertActivityEntitiesToActivities(activityDao.getUserActivities(owner, offset, limit));
+    //return convertActivityEntitiesToActivities(activityDAO.getUserActivities(owner, offset, limit));
+    return null;
   }
 
   @Override
   public List<ExoSocialActivity> getUserActivitiesForUpgrade(Identity owner, long offset, long limit) throws ActivityStorageException {
-    return convertActivityEntitiesToActivities(activityDao.getUserActivitiesForUpgrade(owner, offset, limit));
+    //return convertActivityEntitiesToActivities(activityDAO.getUserActivitiesForUpgrade(owner, offset, limit));
+    return null;
   }
 
   @Override
   public List<ExoSocialActivity> getActivities(Identity owner, Identity viewer, long offset, long limit) throws ActivityStorageException {
-    return convertActivityEntitiesToActivities(activityDao.getActivities(owner, viewer, offset, limit));
+    //return convertActivityEntitiesToActivities(activityDAO.getActivities(owner, viewer, offset, limit));
+    return null;
   }
 
   @Override
   public void saveComment(ExoSocialActivity activity, ExoSocialActivity comment) throws ActivityStorageException {
-    Activity activityEntity = activityDao.getActivity(activity.getId());
+    //TODO
+    Activity activityEntity = activityDAO.find(Long.valueOf(activity.getId()));
     Comment commentEntity = convertCommentToCommentEntity(comment);
-    activityDao.saveComment(activityEntity, commentEntity);
+    commentEntity = commentDAO.create(commentEntity);
     comment.setId(String.valueOf(commentEntity.getId()));
-    //
+    activityEntity.addComment(commentEntity);
+    activityDAO.update(activityEntity);
+    
+    //TODO
     activity = convertActivityEntityToActivity(activityEntity);
   }
 
   @Override
   public ExoSocialActivity saveActivity(Identity owner, ExoSocialActivity activity) throws ActivityStorageException {
-    Activity activityEntity = convertActivityToActivityEntity(activity, owner.getId());
-    activityDao.saveActivity(owner, activityEntity);
-    activity.setId(activityEntity.getId());
+    Activity entity = convertActivityToActivityEntity(activity, owner.getId());
+    activityDAO.create(entity);
+    activity.setId(Long.toString(entity.getId()));
     return activity;
   }
 
   @Override
   public ExoSocialActivity getParentActivity(ExoSocialActivity comment) throws ActivityStorageException {
     try {
-      Comment commentEntity = activityDao.getComment(Long.valueOf(comment.getId()));
+      Comment commentEntity = commentDAO.find(Long.valueOf(comment.getId()));
       if (commentEntity != null) {
         return convertActivityEntityToActivity(commentEntity.getActivity());
       }
@@ -264,15 +279,16 @@ public class ActivityHibernateStorageImpl extends ActivityStorageImpl {
 
   @Override
   public void deleteActivity(String activityId) throws ActivityStorageException {
-    activityDao.deleteActivity(activityId);
+    activityDAO.delete(Long.valueOf(activityId));
   }
 
   @Override
   public void deleteComment(String activityId, String commentId) throws ActivityStorageException {
-    Comment comment = activityDao.getComment(Long.valueOf(commentId));
+    //TODO
+    commentDAO.delete(Long.valueOf(commentId));
     
-    activityDao.getActivity(activityId).getComments().remove(comment);
-    activityDao.deleteComment(comment);
+//    activityDAO.getActivity(activityId).getComments().remove(comment);
+//    activityDAO.deleteComment(comment);
   }
 
   @Override
@@ -330,13 +346,15 @@ public class ActivityHibernateStorageImpl extends ActivityStorageImpl {
 
   @Override
   public List<ExoSocialActivity> getActivityFeedForUpgrade(Identity ownerIdentity, int offset, int limit) {
-    return convertActivityEntitiesToActivities(activityDao.getActivityFeed(ownerIdentity, offset, limit));
+    //return convertActivityEntitiesToActivities(activityDAO.getActivityFeed(ownerIdentity, offset, limit));
+    return null;
   }
 
   @Override
   public int getNumberOfActivitesOnActivityFeed(Identity ownerIdentity) {
     // TODO Auto-generated method stub
-    return activityDao.getNumberOfActivitesOnActivityFeed(ownerIdentity);
+    //return activityDAO.getNumberOfActivitesOnActivityFeed(ownerIdentity);
+    return 0;
   }
 
   @Override
@@ -473,13 +491,15 @@ public class ActivityHibernateStorageImpl extends ActivityStorageImpl {
 
   @Override
   public List<ExoSocialActivity> getComments(ExoSocialActivity existingActivity, int offset, int limit) {
-    return convertCommentEntitiesToComments(activityDao
-        .getComments(activityDao.getActivity(existingActivity.getId()), offset, limit));
+    
+    //return convertCommentEntitiesToComments(activityDAO.getComments(activityDAO.getActivity(existingActivity.getId()), offset, limit));
+    return null;
   }
 
   @Override
   public int getNumberOfComments(ExoSocialActivity existingActivity) {
-    return activityDao.getNumberOfComments(activityDao.getActivity(existingActivity.getId()));
+    //return activityDAO.getNumberOfComments(activityDAO.getActivity(existingActivity.getId()));
+    return 0;
   }
 
   @Override
@@ -518,7 +538,7 @@ public class ActivityHibernateStorageImpl extends ActivityStorageImpl {
     if (existingActivity.getBody() == null) existingActivity.setBody(updatedActivity.getBody());
     
     Activity activityEntity = convertActivityToActivityEntity(existingActivity, null);
-    activityDao.updateActivity(activityEntity);
+    activityDAO.update(activityEntity);
     
   }
 
@@ -782,7 +802,7 @@ public class ActivityHibernateStorageImpl extends ActivityStorageImpl {
 
   @Override
   public ExoSocialActivity getComment(String commentId) throws ActivityStorageException {
-    return convertCommentEntityToComment( activityDao.getComment(Long.valueOf(commentId)));
+    return convertCommentEntityToComment(commentDAO.find(Long.valueOf(commentId)));
   }
   
   private void processActivity(ExoSocialActivity existingActivity) {
