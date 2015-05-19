@@ -185,7 +185,9 @@ public class GenericDAOImpl<E,ID extends Serializable> implements GenericDAO<E, 
         try {
           lifecycleLookup().getCurrentEntityManager().getTransaction().commit();
         } catch (Exception e) {
-          lifecycleLookup().getCurrentEntityManager().getTransaction().rollback();
+          if (lifecycleLookup().isActive()) {
+            lifecycleLookup().getCurrentEntityManager().getTransaction().rollback();
+          }
         }
       }
     }
