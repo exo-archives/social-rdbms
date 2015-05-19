@@ -131,7 +131,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
     //
     List<String> commentIds = new ArrayList<String>();
     List<String> replyToIds = new ArrayList<String>();
-    List<Comment> comments =activityEntity.getComments();
+    List<Comment> comments = activityEntity.getComments() != null ? activityEntity.getComments() : new ArrayList<Comment>();
     for (Comment comment : comments) {
       commentIds.add(comment.getPosterId());
       replyToIds.add(String.valueOf(comment.getId()));

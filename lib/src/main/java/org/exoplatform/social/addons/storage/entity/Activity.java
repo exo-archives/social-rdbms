@@ -26,8 +26,6 @@ import javax.persistence.OneToMany;
 import javax.persistence.OrderBy;
 import javax.persistence.Table;
 
-import nu.validator.htmlparser.annotation.QName;
-
 import org.json.JSONObject;
 
 /**

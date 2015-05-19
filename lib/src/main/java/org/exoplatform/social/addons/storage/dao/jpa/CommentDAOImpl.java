@@ -54,6 +54,10 @@ public class CommentDAOImpl extends GenericDAOImpl<Comment, Long>  implements Co
 
   public int getNumberOfComments(Activity existingActivity) {
     // TODO: Need use count query
-    return existingActivity.getComments().size();
+    try {
+      return existingActivity.getComments().size();
+    } catch (Exception e) {
+      return 0;
+    }
   }
 }
