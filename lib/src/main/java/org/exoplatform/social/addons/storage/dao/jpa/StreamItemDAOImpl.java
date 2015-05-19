@@ -21,6 +21,7 @@ import java.util.List;
 import javax.persistence.TypedQuery;
 
 import org.exoplatform.social.addons.storage.dao.StreamItemDAO;
+import org.exoplatform.social.addons.storage.dao.jpa.synchronization.SynchronizedGenericDAO;
 import org.exoplatform.social.addons.storage.entity.StreamItem;
 
 /**
@@ -29,7 +30,7 @@ import org.exoplatform.social.addons.storage.entity.StreamItem;
  *          exo@exoplatform.com
  * May 18, 2015  
  */
-public class StreamItemDAOImpl extends GenericDAOImpl<StreamItem, Long>  implements StreamItemDAO {
+public class StreamItemDAOImpl extends SynchronizedGenericDAO<StreamItem, Long>  implements StreamItemDAO {
 
   //Add customize methods here
   

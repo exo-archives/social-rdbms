@@ -38,7 +38,6 @@ import org.exoplatform.social.core.manager.RelationshipManager;
 import org.exoplatform.social.core.mysql.test.AbstractCoreTest;
 import org.exoplatform.social.core.space.model.Space;
 import org.exoplatform.social.core.space.spi.SpaceService;
-import org.exoplatform.social.core.storage.ActivityStorageException;
 
 /**
  * Created by The eXo Platform SAS
@@ -88,7 +87,6 @@ public class ActivityDAOTest extends AbstractCoreTest {
         activityDao.delete(activity);
       } catch (Exception e) {
         LOG.warn("Can not delete activity with id: " + activity.getId(), e);
-//        assertFalse(true);
       }
     }
 
@@ -162,11 +160,6 @@ public class ActivityDAOTest extends AbstractCoreTest {
     return activity;
   }
   
-  private List<Activity> getUserActivities(Identity identity, int offset, int limit) {
-    return activityDao.getUserActivities(identity, -1, false, offset, limit);
-  }
-  
-  
   private Activity saveActivity(Identity ownerIdentity, Activity activity) {
     activity.setOwnerId(ownerIdentity.getId());
     activity = activityDao.create(activity);
@@ -174,48 +167,6 @@ public class ActivityDAOTest extends AbstractCoreTest {
     //
     return activity;
   }
-  /**
-   * Test {@link activityDao#getActivity(getUserActivities)}
-   * 
-   * @throws ActivityStorageException
-   */
-  public void testGetActivitiiesByUser() throws ActivityStorageException {
-    List<Activity> rootActivities = getUserActivities(rootIdentity, 0, -1);
-    assertEquals(0, rootActivities.size());
-
-    String activityTitle = "title";
-    String userId = rootIdentity.getId();
-    Activity activity = createActivity(activityTitle, userId);
-    
-    activity.setOwnerId(rootIdentity.getId());
-    activity = activityDao.create(activity);
-
-    Activity got = activityDao.find(activity.getId());
-    assertNotNull(got);
-    assertEquals(activityTitle, got.getTitle());
-    assertEquals(userId, got.getOwnerId());
-
-    rootActivities = getUserActivities(rootIdentity, 0, -1);
-    assertEquals(1, rootActivities.size());
-    LOG.info("Create 100 activities...");
-    //
-    for (int i = 0; i < 100; i++) {
-      activity = createActivity(activityTitle + " " + i, userId);
-      activity.setOwnerId(rootIdentity.getId());
-      activity = activityDao.create(activity);
-    }
-    //
-    LOG.info("Loadding 20 activities...");
-    rootActivities = getUserActivities(rootIdentity, 0, 20);
-    assertEquals(20, rootActivities.size());
-    //
-    LOG.info("Loadding 101 activities...");
-    rootActivities = getUserActivities(rootIdentity, 0, -1);
-    assertEquals(101, rootActivities.size());
-    //
-    tearDownActivityList.addAll(rootActivities);
-  }
-  
   /**
    * Test {@link activityDao#updateActivity(Activity)}
    * 
@@ -252,7 +203,7 @@ public class ActivityDAOTest extends AbstractCoreTest {
     Activity activity = new Activity();
     activity.setTitle(activityTitle);
     activity.setOwnerId(userId);
-    saveActivity(johnIdentity, activity);
+    activity = activityDao.create(activity);
     //
     activity = activityDao.find(activity.getId());
     
@@ -277,7 +228,6 @@ public class ActivityDAOTest extends AbstractCoreTest {
     activity.setTitle(activityTitle);
     activity.setOwnerId(userId);
     saveActivity(johnIdentity, activity);
-    
     String commentTitle = "Comment title";
     
     //demo comments on john's activity
@@ -285,7 +235,10 @@ public class ActivityDAOTest extends AbstractCoreTest {
     comment.setTitle(commentTitle);
     comment.setOwnerId(demoIdentity.getId());
     commentDao.create(comment);
+    System.out.println(comment.toString());
+    
     activity.addComment(comment);
+    assertNotNull(comment.getId());
     activityDao.update(activity);
     //
     activity = activityDao.find(activity.getId());
@@ -328,57 +281,63 @@ public class ActivityDAOTest extends AbstractCoreTest {
     assertEquals(1, demoActivity.getComments().size());
     assertEquals(demoIdentity.getId(), comment.getOwnerId());
   }
-//  
-//  /**
-//   * Test {@link activityDao#getComments(Activity)}
-//   * 
-//   * @throws Exception
-//   */
-//  public void testGetComments() throws Exception {
-//    Activity demoActivity = new Activity();
-//    demoActivity.setTitle("demo activity");
-//    //TODO Refactoring
-//    //demoActivity.setOwnerId(demoActivity.getId());
-//    activityDao.saveActivity(demoIdentity, demoActivity);
-//    tearDownActivityList.add(demoActivity);
-//    
-//    int total = 10;
-//    
-//    for (int i = 0; i < total; i ++) {
-//      Comment maryComment = new Comment();
-//      maryComment.setOwnerId(maryIdentity.getId());
-//      maryComment.setTitle("mary comment");
-//      activityDao.saveComment(demoActivity, maryComment);
-//    }
-//    List<Comment> maryComments = activityDao.getComments(demoActivity);
-//    assertNotNull(maryComments);
-//    assertEquals(total, maryComments.size());
-//  }
-//
-//  
-//  /**
-//   * Test {@link activityDao#deleteComment(Activity, Activity)}
-//   * 
-//   * @throws Exception
-//   * @since 1.2.0-Beta3
-//   */
-//  public void testDeleteComment() throws Exception {
-//    Activity demoActivity = new Activity();
-//    demoActivity.setTitle("demo activity");
-//    //TODO Refactoring
-//    //demoActivity.setOwnerId(demoActivity.getId());
-//    activityDao.saveActivity(demoIdentity, demoActivity);
-//    tearDownActivityList.add(demoActivity);
-//    
-//    Comment maryComment = new Comment();
-//    maryComment.setTitle("mary comment");
-//    maryComment.setOwnerId(maryIdentity.getId());
-//    activityDao.saveComment(demoActivity, maryComment);
-//    //
-//    maryComment = activityDao.getComment(maryComment.getId());
-//    activityDao.deleteComment(maryComment);
-//    
-//    assertEquals(0, activityDao.getComments(demoActivity).size());
-//  }
+  
+  /**
+   * Test {@link activityDao#getComments(Activity)}
+   * 
+   * @throws Exception
+   */
+  public void testGetComments() throws Exception {
+    Activity demoActivity = new Activity();
+    demoActivity.setTitle("demo activity");
+    demoActivity.setOwnerId(demoIdentity.getId());
+    saveActivity(johnIdentity, demoActivity);
+    tearDownActivityList.add(demoActivity);
+    
+    int total = 10;
+    
+    for (int i = 0; i < total; i ++) {
+      Comment maryComment = new Comment();
+      maryComment.setOwnerId(maryIdentity.getId());
+      maryComment.setTitle("mary comment");
+      commentDao.create(maryComment);
+      demoActivity.addComment(maryComment);
+      activityDao.update(demoActivity);
+    }
+    
+    demoActivity = activityDao.find(demoActivity.getId());
+    List<Comment> maryComments = demoActivity.getComments();
+    assertNotNull(maryComments);
+    assertEquals(total, maryComments.size());
+  }
+
+  
+  /**
+   * Test {@link activityDao#deleteComment(Activity, Activity)}
+   * 
+   * @throws Exception
+   * @since 4.3.x
+   */
+  public void testDeleteComment() throws Exception {
+    Activity demoActivity = new Activity();
+    demoActivity.setTitle("demo activity");
+    demoActivity.setOwnerId(demoIdentity.getId());
+    saveActivity(demoIdentity, demoActivity);
+    tearDownActivityList.add(demoActivity);
+    
+    Comment maryComment = new Comment();
+    maryComment.setTitle("mary comment");
+    maryComment.setOwnerId(maryIdentity.getId());
+    commentDao.create(maryComment);
+    demoActivity.addComment(maryComment);
+    activityDao.update(demoActivity);
+    //
+    maryComment = commentDao.find(maryComment.getId());
+    commentDao.delete(maryComment);
+    System.out.println(commentDao.find(maryComment.getId()));
+    demoActivity = activityDao.find(demoActivity.getId());
+    
+    assertEquals(0, demoActivity.getComments().size());
+  }
 
 }

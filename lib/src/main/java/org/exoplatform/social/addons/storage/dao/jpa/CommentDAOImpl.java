@@ -21,6 +21,7 @@ import java.util.List;
 import javax.persistence.TypedQuery;
 
 import org.exoplatform.social.addons.storage.dao.CommentDAO;
+import org.exoplatform.social.addons.storage.dao.jpa.synchronization.SynchronizedGenericDAO;
 import org.exoplatform.social.addons.storage.entity.Activity;
 import org.exoplatform.social.addons.storage.entity.Comment;
 import org.exoplatform.social.core.storage.ActivityStorageException;
@@ -31,7 +32,7 @@ import org.exoplatform.social.core.storage.ActivityStorageException;
  *          exo@exoplatform.com
  * May 18, 2015  
  */
-public class CommentDAOImpl extends GenericDAOImpl<Comment, Long>  implements CommentDAO {
+public class CommentDAOImpl extends SynchronizedGenericDAO<Comment, Long>  implements CommentDAO {
   //implements customize methods here
   
   public List<Comment> getComments(Activity existingActivity, int offset, int limit) {

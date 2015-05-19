@@ -17,6 +17,7 @@
 package org.exoplatform.social.core.mysql.storage.test;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -324,7 +325,43 @@ public class ActivityManagerMysqlTest extends AbstractCoreTest {
                  parentActivity.getUserId());
   }
 
+  public void testGetActivitiiesByUser() throws ActivityStorageException {
+    String activityTitle = "title";
+    String userId = rootIdentity.getId();
+    ExoSocialActivity activity = new ExoSocialActivityImpl();
+    activity.setTitle(activityTitle);
+    activity.setUserId(userId);
+    activityManager.saveActivityNoReturn(rootIdentity, activity);
+    //
+    activity = activityManager.getActivity(String.valueOf(activity.getId()));
 
+    assertNotNull(activity);
+    assertEquals(activityTitle, activity.getTitle());
+    assertEquals(userId, activity.getUserId());
+
+    RealtimeListAccess<ExoSocialActivity> activities = activityManager.getActivitiesWithListAccess(rootIdentity);
+    
+    assertEquals(1, activities.load(0, 10).length);
+    LOG.info("Create 100 activities...");
+    //
+    for (int i = 0; i < 100; i++) {
+      activity = new ExoSocialActivityImpl();
+      activity.setTitle(activityTitle + " " + i);
+      activity.setUserId(userId);
+      //
+      activityManager.saveActivityNoReturn(rootIdentity, activity);
+    }
+    activities = activityManager.getActivitiesWithListAccess(rootIdentity);
+    //
+    LOG.info("Loadding 20 activities...");
+    assertEquals(20, activities.load(0, 20).length);
+    //
+    List<ExoSocialActivity> exoActivities = Arrays.asList(activities.load(0, activities.getSize()));
+    LOG.info("Loadding 101 activities...");
+    assertEquals(101, exoActivities.size());
+    //
+    tearDownActivityList.addAll(exoActivities);
+  }
 
   /**
    * Test {@link ActivityManager#updateActivity(ExoSocialActivity)}
