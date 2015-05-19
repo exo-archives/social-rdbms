@@ -21,6 +21,7 @@ import java.lang.reflect.ParameterizedType;
 import java.util.List;
 
 import javax.persistence.EntityManager;
+import javax.persistence.EntityNotFoundException;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Root;
@@ -60,7 +61,11 @@ public class GenericDAOImpl<E,ID extends Serializable> implements GenericDAO<E, 
 
   @Override
   public E find(ID id) {
-    return (E) lifecycleLookup().getCurrentEntityManager().find(entityClass, id);
+    E result = lifecycleLookup().getCurrentEntityManager().find(entityClass, id);
+    if (result == null) {
+      LOG.warn("Entity ID: " + id + " not found!");
+    }
+    return result;
   }
 
   @Override
@@ -111,8 +116,12 @@ public class GenericDAOImpl<E,ID extends Serializable> implements GenericDAO<E, 
   
   @Override
   public void delete(ID id) {
-    EntityManager em = lifecycleLookup().getCurrentEntityManager();
-    em.remove(em.getReference(entityClass, id));
+    try {
+      EntityManager em = lifecycleLookup().getCurrentEntityManager();
+      em.remove(em.getReference(entityClass, id));
+    } catch (EntityNotFoundException nex) {
+      LOG.warn("Entity ID " + id + " not found!");
+    }
   }
 
   @Override
