@@ -235,7 +235,6 @@ public class ActivityDAOTest extends AbstractCoreTest {
     comment.setTitle(commentTitle);
     comment.setOwnerId(demoIdentity.getId());
     commentDao.create(comment);
-    System.out.println(comment.toString());
     
     activity.addComment(comment);
     assertNotNull(comment.getId());
@@ -333,9 +332,9 @@ public class ActivityDAOTest extends AbstractCoreTest {
     activityDao.update(demoActivity);
     //
     maryComment = commentDao.find(maryComment.getId());
-    commentDao.delete(maryComment);
-    System.out.println(commentDao.find(maryComment.getId()));
     demoActivity = activityDao.find(demoActivity.getId());
+    demoActivity.getComments().remove(maryComment);
+    activityDao.update(demoActivity);
     
     assertEquals(0, demoActivity.getComments().size());
   }

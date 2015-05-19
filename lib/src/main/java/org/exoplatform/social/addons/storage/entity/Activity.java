@@ -69,7 +69,7 @@ public class Activity extends BaseActivity {
   @OrderBy("posted DESC")
   private List<Comment> comments;
   
-  @OneToMany(cascade=CascadeType.ALL, mappedBy="stream", fetch=FetchType.LAZY)
+  @OneToMany(cascade=CascadeType.ALL, mappedBy="activity", fetch=FetchType.LAZY)
   @OrderBy("id DESC")
   private List<StreamItem> streamItems;
 
