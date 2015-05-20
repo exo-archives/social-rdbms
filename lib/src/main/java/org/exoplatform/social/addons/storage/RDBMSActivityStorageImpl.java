@@ -123,7 +123,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
     stream.setId(owner.getId());
     //
     activity.setActivityStream(stream);
-    activity.setStreamOwner(ownerIdentityId);
+    activity.setStreamOwner(owner.getRemoteId());
     //
     activity.isLocked(activityEntity.getLocked());
     activity.isHidden(activityEntity.getHidden());
@@ -683,12 +683,12 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
 
   @Override
   public List<ExoSocialActivity> getSpaceActivities(Identity spaceIdentity, int offset, int limit) {
-    return convertActivityEntitiesToActivities(activityDAO.getUserActivities(spaceIdentity, 0, false, offset, limit));
+    return convertActivityEntitiesToActivities(activityDAO.getSpaceActivities(spaceIdentity, 0, false, offset, limit));
   }
 
   @Override
   public List<ExoSocialActivity> getSpaceActivitiesForUpgrade(Identity spaceIdentity, int offset, int limit) {
-    return convertActivityEntitiesToActivities(activityDAO.getUserActivities(spaceIdentity, 0, false, offset, limit));
+    return convertActivityEntitiesToActivities(activityDAO.getSpaceActivities(spaceIdentity, 0, true, offset, limit));
   }
 
   @Override
