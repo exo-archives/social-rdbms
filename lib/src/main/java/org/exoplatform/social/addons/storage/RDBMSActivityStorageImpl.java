@@ -186,7 +186,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
     exoComment.isHidden(comment.getHidden().booleanValue());
     exoComment.setUpdated(comment.getLastUpdated());
     //
-    
+    exoComment.setParentId(comment.getActivity().getId() + "");
     //
     processActivity(exoComment);
     
@@ -242,12 +242,12 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
 
   @Override
   public List<ExoSocialActivity> getUserActivities(Identity owner, long offset, long limit) throws ActivityStorageException {
-    return convertActivityEntitiesToActivities(activityDAO.getUserActivities(owner, 0, false, offset, limit));
+    return getUserActivitiesForUpgrade(owner, offset, limit);
   }
 
   @Override
   public List<ExoSocialActivity> getUserActivitiesForUpgrade(Identity owner, long offset, long limit) throws ActivityStorageException {
-    return convertActivityEntitiesToActivities(activityDAO.getUserActivities(owner, 0, true, offset, limit));
+    return convertActivityEntitiesToActivities(activityDAO.getUserActivities(owner, 0, false, offset, limit));
   }
 
   @Override
@@ -260,6 +260,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
     //TODO
     Activity activityEntity = activityDAO.find(Long.valueOf(activity.getId()));
     Comment commentEntity = convertCommentToCommentEntity(comment);
+    commentEntity.setActivity(activityEntity);
     commentEntity = commentDAO.create(commentEntity);
     comment.setId(String.valueOf(commentEntity.getId()));
     activityEntity.addComment(commentEntity);
@@ -409,8 +410,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
 
   @Override
   public int getNumberOfUserActivities(Identity owner) throws ActivityStorageException {
-    // TODO Auto-generated method stub
-    return 0;
+    return activityDAO.getNumberOfUserActivities(owner);
   }
 
   @Override
@@ -490,20 +490,17 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
 
   @Override
   public List<ExoSocialActivity> getActivitiesOfConnections(Identity ownerIdentity, int offset, int limit) {
-    // TODO Auto-generated method stub
-    return null;
+    return getActivitiesOfConnectionsForUpgrade(ownerIdentity, offset, limit);
   }
 
   @Override
   public List<ExoSocialActivity> getActivitiesOfConnectionsForUpgrade(Identity ownerIdentity, int offset, int limit) {
-    // TODO Auto-generated method stub
-    return null;
+    return convertActivityEntitiesToActivities(activityDAO.getActivitiesOfConnections(ownerIdentity, offset, limit));
   }
 
   @Override
   public int getNumberOfActivitiesOfConnections(Identity ownerIdentity) {
-    // TODO Auto-generated method stub
-    return 0;
+    return activityDAO.getNumberOfActivitiesOfConnections(ownerIdentity);
   }
 
   @Override
@@ -632,6 +629,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
     ExoSocialActivity updatedActivity = getActivity(existingActivity.getId());
     if (existingActivity.getTitle() == null) existingActivity.setTitle(updatedActivity.getTitle());
     if (existingActivity.getBody() == null) existingActivity.setBody(updatedActivity.getBody());
+    if (existingActivity.getTemplateParams() == null) existingActivity.setTemplateParams(updatedActivity.getTemplateParams());
     
     Activity activityEntity = convertActivityToActivityEntity(existingActivity, null);
     activityEntity.setLastUpdated(System.currentTimeMillis());

@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
+import org.exoplatform.commons.utils.ListAccess;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 import org.exoplatform.services.organization.OrganizationService;
@@ -1037,28 +1038,28 @@ public class ActivityManagerMysqlTest extends AbstractCoreTest {
  public void testGetActivitiesOfConnections() throws Exception {
    this.populateActivityMass(johnIdentity, 10);
    
-   List<ExoSocialActivity> demoConnectionActivities = activityManager.getActivitiesOfConnections(demoIdentity);
-   assertNotNull("demoConnectionActivities must not be null", demoConnectionActivities);
-   assertEquals("demoConnectionActivities.size() must return: 0", 0, demoConnectionActivities.size());
+   ListAccess<ExoSocialActivity> demoConnectionActivities = activityManager.getActivitiesOfConnectionsWithListAccess(demoIdentity);
+   assertEquals(0, demoConnectionActivities.load(0, 20).length);
+   assertEquals(0, demoConnectionActivities.getSize());
    
-   Relationship demoJohnRelationship = relationshipManager.invite(demoIdentity, johnIdentity);
-   relationshipManager.confirm(demoJohnRelationship);
+   Relationship demoJohnRelationship = relationshipManager.inviteToConnect(demoIdentity, johnIdentity);
+   relationshipManager.confirm(johnIdentity, demoIdentity);
    
-   demoConnectionActivities = activityManager.getActivitiesOfConnections(demoIdentity);
-   assertNotNull("demoConnectionActivities must not be null", demoConnectionActivities);
-   assertEquals("demoConnectionActivities.size() must return: 10", 10, demoConnectionActivities.size());
+   demoConnectionActivities = activityManager.getActivitiesOfConnectionsWithListAccess(demoIdentity);
+   assertEquals(10, demoConnectionActivities.load(0, 20).length);
+   assertEquals(10, demoConnectionActivities.getSize());
    
    this.populateActivityMass(maryIdentity, 10);
    
-   Relationship demoMaryRelationship = relationshipManager.invite(demoIdentity, maryIdentity);
-   relationshipManager.confirm(demoMaryRelationship);
+   Relationship demoMaryRelationship = relationshipManager.inviteToConnect(demoIdentity, maryIdentity);
+   relationshipManager.confirm(maryIdentity, demoIdentity);
    
-   demoConnectionActivities = activityManager.getActivitiesOfConnections(demoIdentity);
-   assertNotNull("demoConnectionActivities must not be null", demoConnectionActivities);
-   assertEquals("demoConnectionActivities.size() must return: 20", 20, demoConnectionActivities.size());
+   demoConnectionActivities = activityManager.getActivitiesOfConnectionsWithListAccess(demoIdentity);
+   assertEquals(20, demoConnectionActivities.load(0, 20).length);
+   assertEquals(20, demoConnectionActivities.getSize());
    
-   relationshipManager.remove(demoJohnRelationship);
-   relationshipManager.remove(demoMaryRelationship);
+   relationshipManager.delete(demoJohnRelationship);
+   relationshipManager.delete(demoMaryRelationship);
  }
  
  public void testGetActivitiesOfConnectionswithOffsetLimit() throws Exception {

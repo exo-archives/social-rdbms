@@ -54,12 +54,15 @@ public class ActivityDAOImpl extends SynchronizedGenericDAO<Activity, Long> impl
   }
 
   private List<Activity> getActivities(String strQuery, long offset, long limit) throws ActivityStorageException {
+    List<Activity> activities = new ArrayList<Activity>();
+    if (strQuery == null || strQuery.isEmpty()) {
+      return activities;
+    }
     TypedQuery<StreamItem> typeQuery = lifecycleLookup().getCurrentEntityManager().createQuery(strQuery, StreamItem.class);
     if (limit > 0) {
       typeQuery.setFirstResult((int) offset);
       typeQuery.setMaxResults((int) limit);
     }
-    List<Activity> activities = new ArrayList<Activity>();
     List<StreamItem> streamItems = typeQuery.getResultList();
     for (StreamItem streamItem : streamItems) {
       activities.add(streamItem.getActivity());
@@ -88,6 +91,11 @@ public class ActivityDAOImpl extends SynchronizedGenericDAO<Activity, Long> impl
             .append(" order by a.lastUpdated desc");
     //
     return getActivities(strQuery.toString(), offset, limit);
+  }
+  
+  @Override
+  public int getNumberOfUserActivities(Identity ownerIdentity) {
+    return getUserActivities(ownerIdentity, 0, false, 0, -1).size();
   }
 
   public List<Activity> getSpaceActivities(Identity owner, long time, boolean isNewer, long offset, long limit) throws ActivityStorageException {
@@ -196,10 +204,44 @@ public class ActivityDAOImpl extends SynchronizedGenericDAO<Activity, Long> impl
        .append("s.ownerId in ('").append(StringUtils.join(spaceIds, "','")).append("') ");
     
     sql.append(" and a.hidden='0'")
-       .append(buildSQLQueryByTime("a.lastUpdated", time, isNewer))
-       .append(")");
+       .append(buildSQLQueryByTime("a.lastUpdated", time, isNewer));
     sql.append(" order by a.lastUpdated desc");
     //
     return sql.toString();
   }
+
+  @Override
+  public List<Activity> getActivitiesOfConnections(Identity ownerIdentity, int offset, int limit) {
+    return getActivities(getConnectionsActivitySQLQuery(ownerIdentity, -1, false), offset, limit);
+  }
+
+  @Override
+  public int getNumberOfActivitiesOfConnections(Identity ownerIdentity) {
+    return getActivitiesOfConnections(ownerIdentity, 0, -1).size();
+  }
+  
+  private String getConnectionsActivitySQLQuery(Identity ownerIdentity, long time, boolean isNewer) {
+    RelationshipStorage relationshipStorage = CommonsUtils.getService(RelationshipStorage.class);
+    //
+    List<Identity> relationships = relationshipStorage.getConnections(ownerIdentity);
+    if (relationships == null || relationships.size() == 0) {
+      return StringUtils.EMPTY;
+    }
+    Set<String> relationshipIds = new HashSet<String>();
+    for (Identity identity : relationships) {
+      relationshipIds.add(identity.getId());
+    }
+    StringBuilder sql = new StringBuilder();
+    sql.append("select s from StreamItem s join s.activity a where ")
+       .append("a.posterId in ('").append(StringUtils.join(relationshipIds, "','")).append("') ")
+       .append("and s.streamType <> 0");
+    
+    sql.append(" and a.hidden='0'")
+       .append(buildSQLQueryByTime("a.lastUpdated", time, isNewer));
+    sql.append(" order by a.lastUpdated desc");
+    //
+    System.out.println(sql.toString());
+    return sql.toString();
+  }
+
 }
