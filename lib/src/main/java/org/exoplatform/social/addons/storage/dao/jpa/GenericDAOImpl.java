@@ -111,7 +111,7 @@ public class GenericDAOImpl<E,ID extends Serializable> implements GenericDAO<E, 
 
   @Override
   public void delete(E entity) {
-    lifecycleLookup().getCurrentEntityManager().remove(entity);
+    lifecycleLookup().getCurrentEntityManager().remove(update(entity));
   }
   
   @Override

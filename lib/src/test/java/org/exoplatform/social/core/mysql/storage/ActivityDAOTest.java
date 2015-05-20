@@ -335,8 +335,10 @@ public class ActivityDAOTest extends AbstractCoreTest {
     demoActivity = activityDao.find(demoActivity.getId());
     demoActivity.getComments().remove(maryComment);
     activityDao.update(demoActivity);
-    
-    assertEquals(0, demoActivity.getComments().size());
+    commentDao.delete(maryComment);
+    //
+    assertNull(commentDao.find(maryComment.getId()));
+    assertEquals(0, activityDao.find(demoActivity.getId()).getComments().size());
   }
 
 }
