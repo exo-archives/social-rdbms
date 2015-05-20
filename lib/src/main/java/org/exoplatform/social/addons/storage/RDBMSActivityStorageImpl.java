@@ -275,11 +275,11 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
     Activity entity = convertActivityToActivityEntity(activity, owner.getId());
     //
     entity.setOwnerId(owner.getId());
+    saveStreamItem(owner, entity);
     //
     activityDAO.create(entity);
     activity.setId(Long.toString(entity.getId()));
     //
-    saveStreamItem(owner, entity);
     
     return activity;
   }
@@ -325,16 +325,14 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
 
     if (space == null) return;
     //
-    createStreamItem(StreamType.SPACE_MEMBER, activity, space.getId());
+    createStreamItem(StreamType.SPACE, activity, space.getId());
   }
 
   private void createStreamItem(StreamType streamType, Activity activity, String ownerId){
     
     StreamItem streamItem = new StreamItem(streamType);
     streamItem.setOwnerId(ownerId);
-    streamItem.setActivity(activity);
-    //
-    streamItemDAO.create(streamItem);
+    activity.addStreamItem(streamItem);
   }
 
   /**
@@ -546,8 +544,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
 
   @Override
   public List<ExoSocialActivity> getUserSpacesActivities(Identity ownerIdentity, int offset, int limit) {
-    // TODO Auto-generated method stub
-    return null;
+    return convertActivityEntitiesToActivities(activityDAO.getUserSpacesActivities(ownerIdentity, offset, limit));
   }
 
   @Override
@@ -558,8 +555,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
 
   @Override
   public int getNumberOfUserSpacesActivities(Identity ownerIdentity) {
-    // TODO Auto-generated method stub
-    return 0;
+    return activityDAO.getNumberOfUserSpacesActivities(ownerIdentity);
   }
 
   @Override

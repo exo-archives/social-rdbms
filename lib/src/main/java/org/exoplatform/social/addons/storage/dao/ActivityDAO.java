@@ -37,4 +37,7 @@ public interface ActivityDAO extends GenericDAO<Activity, Long> {
 
   List<Activity> getActivityFeed(Identity ownerIdentity, int offset, int limit);
   int getNumberOfActivitesOnActivityFeed(Identity ownerIdentity);
+  
+  List<Activity> getUserSpacesActivities(Identity ownerIdentity, int offset, int limit);
+  int getNumberOfUserSpacesActivities(Identity ownerIdentity);
 }

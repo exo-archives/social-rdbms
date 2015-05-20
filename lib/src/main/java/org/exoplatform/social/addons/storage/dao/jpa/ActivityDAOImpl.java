@@ -156,7 +156,7 @@ public class ActivityDAOImpl extends SynchronizedGenericDAO<Activity, Long> impl
     }
     if(CollectionUtils.isNotEmpty(relationships)){
       sql.append(" or (a.posterId in ('").append(StringUtils.join(relationshipIds, "','")).append("') ")
-         .append("and not s.streamType like '%SPACE%')");
+         .append("and s.streamType <> 0)");
     }
     sql.append(") and a.hidden='0'")
        .append(buildSQLQueryByTime("a.lastUpdated", time, isNewer))
@@ -169,5 +169,37 @@ public class ActivityDAOImpl extends SynchronizedGenericDAO<Activity, Long> impl
   public int getNumberOfActivitesOnActivityFeed(Identity ownerIdentity) {
     return getActivityFeed(ownerIdentity, 0, -1).size();
   }
+
+  @Override
+  public List<Activity> getUserSpacesActivities(Identity ownerIdentity, int offset, int limit) {
+    return getActivities(getUserSpacesActivitySQLQuery(ownerIdentity, -1, false), offset, limit);
+  }
   
+  public int getNumberOfUserSpacesActivities(Identity ownerIdentity) {
+    return getUserSpacesActivities(ownerIdentity, 0, -1).size();
+  }
+  
+  private String getUserSpacesActivitySQLQuery(Identity ownerIdentity, long time, boolean isNewer) {
+    SpaceStorage spaceStorage = CommonsUtils.getService(SpaceStorage.class);
+    // get spaces where user is member
+    List<Space> spaces = spaceStorage.getMemberSpaces(ownerIdentity.getRemoteId());
+    if (spaces == null || spaces.size() == 0) {
+      return StringUtils.EMPTY;
+    }
+    String[] spaceIds = new String[0];
+    for (Space space : spaces) {
+      spaceIds = (String[]) ArrayUtils.add(spaceIds, space.getId());
+    }
+    //
+    StringBuilder sql = new StringBuilder();
+    sql.append("select s from StreamItem s join s.activity a where ")
+       .append("s.ownerId in ('").append(StringUtils.join(spaceIds, "','")).append("') ");
+    
+    sql.append(" and a.hidden='0'")
+       .append(buildSQLQueryByTime("a.lastUpdated", time, isNewer))
+       .append(")");
+    sql.append(" order by a.lastUpdated desc");
+    //
+    return sql.toString();
+  }
 }
