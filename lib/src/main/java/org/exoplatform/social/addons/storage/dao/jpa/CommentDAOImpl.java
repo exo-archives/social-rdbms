@@ -39,7 +39,7 @@ public class CommentDAOImpl extends SynchronizedGenericDAO<Comment, Long>  imple
     StringBuilder strQuery = new StringBuilder();//DISTINCT
     strQuery.append("select c from Comment c join c.activity a where (a.id ='")
             .append(existingActivity.getId())
-            .append("') and (a.hidden = '0') and (a.locked = '0') order by a.lastUpdated desc");
+            .append("') and (c.hidden = '0') and (c.locked = '0') order by c.lastUpdated desc");
     //
     return getComments(strQuery.toString(), offset, limit);
   }

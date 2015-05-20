@@ -389,6 +389,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
     activity.getComments().remove(comment);
     //
     activityDAO.update(activity);
+    commentDAO.delete(Long.valueOf(commentId));
   }
 
   @Override
