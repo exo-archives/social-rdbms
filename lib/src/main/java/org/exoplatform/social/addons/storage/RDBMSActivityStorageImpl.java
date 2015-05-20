@@ -319,7 +319,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
 
     if (space == null) return;
     //
-    createStreamItem(StreamType.SPACE_MEMBER, activity, owner.getId());
+    createStreamItem(StreamType.SPACE_MEMBER, activity, space.getId());
   }
 
   private void createStreamItem(StreamType streamType, Activity activity, String ownerId){

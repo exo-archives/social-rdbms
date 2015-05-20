@@ -65,11 +65,11 @@ public class Activity extends BaseActivity {
   @Column(name="TEMPLATE_PARAM_VALUE")
   private Map<String, String> templateParams = new LinkedHashMap<String, String>();
 
-  @OneToMany(cascade=CascadeType.ALL, mappedBy="activity", fetch=FetchType.LAZY)
+  @OneToMany(cascade=CascadeType.ALL, orphanRemoval=true, mappedBy="activity", fetch=FetchType.LAZY)
   @OrderBy("posted DESC")
   private List<Comment> comments;
   
-  @OneToMany(cascade=CascadeType.ALL, mappedBy="activity", fetch=FetchType.LAZY)
+  @OneToMany(cascade=CascadeType.ALL, orphanRemoval=true, mappedBy="activity", fetch=FetchType.LAZY)
   @OrderBy("id DESC")
   private List<StreamItem> streamItems;
 

@@ -131,7 +131,7 @@ public class ActivityDAOImpl extends SynchronizedGenericDAO<Activity, Long> impl
     List<Space> spaces = spaceStorage.getMemberSpaces(ownerIdentity.getRemoteId());
     String[] spaceIds = new String[0];
     for (Space space : spaces) {
-      spaceIds = (String[]) ArrayUtils.add(spaceIds, space.getPrettyName());
+      spaceIds = (String[]) ArrayUtils.add(spaceIds, space.getId());
     }
     StringBuilder sql = new StringBuilder();
     sql.append("select s from StreamItem s join s.activity a where ")
