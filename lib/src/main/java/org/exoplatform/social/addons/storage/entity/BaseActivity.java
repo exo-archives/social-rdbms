@@ -18,10 +18,8 @@ public abstract class BaseActivity implements Serializable {
   private String title;
   @Column(length = 36)
   private String titleId;
-  @Temporal(TemporalType.TIMESTAMP)
-  protected Date posted;
-  @Temporal(TemporalType.TIMESTAMP)
-  private Date lastUpdated;
+  protected Long posted;
+  private Long lastUpdated;
   @Column(length = 36)
   private String posterId;// creator
   @Column(length = 36)
@@ -56,16 +54,16 @@ public abstract class BaseActivity implements Serializable {
   public void setTitleId(String titleId) {
     this.titleId = titleId;
   }
-  public Date getPosted() {
+  public Long getPosted() {
     return posted;
   }
-  public void setPosted(Date posted) {
+  public void setPosted(Long posted) {
     this.posted = posted;
   }
-  public Date getLastUpdated() {
+  public Long getLastUpdated() {
     return lastUpdated;
   }
-  public void setLastUpdated(Date lastUpdated) {
+  public void setLastUpdated(Long lastUpdated) {
     this.lastUpdated = lastUpdated;
   }
   public String getPosterId() {

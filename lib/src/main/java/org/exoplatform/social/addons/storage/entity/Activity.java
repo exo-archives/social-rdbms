@@ -74,8 +74,8 @@ public class Activity extends BaseActivity {
   private List<StreamItem> streamItems;
 
   public Activity() {
-    setPosted(new Date());
-    setLastUpdated(new Date());
+    setPosted(new Date().getTime());
+    setLastUpdated(new Date().getTime());
   }
 
   public void setId(Long id) {

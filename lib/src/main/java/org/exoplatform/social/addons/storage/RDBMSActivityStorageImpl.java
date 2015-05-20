@@ -128,6 +128,8 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
     activity.isLocked(activityEntity.getLocked());
     activity.isHidden(activityEntity.getHidden());
     activity.setTitleId(activityEntity.getTitleId());
+    activity.setPostedTime(activityEntity.getPosted());
+    activity.setUpdated(activityEntity.getLastUpdated());
     //
     List<String> commentIds = new ArrayList<String>();
     List<String> replyToIds = new ArrayList<String>();
@@ -165,6 +167,8 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
     //
     activityEntity.setLocked(activity.isLocked());
     activityEntity.setHidden(activity.isHidden());
+    activityEntity.setPosted(activity.getPostedTime());
+    activityEntity.setLastUpdated(activity.getUpdated().getTime());
     //
     return activityEntity;
   }
@@ -180,6 +184,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
     //
     exoComment.isLocked(comment.getLocked().booleanValue());
     exoComment.isHidden(comment.getHidden().booleanValue());
+    exoComment.setUpdated(comment.getLastUpdated());
     //
     
     //
@@ -258,6 +263,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
     commentEntity = commentDAO.create(commentEntity);
     comment.setId(String.valueOf(commentEntity.getId()));
     activityEntity.addComment(commentEntity);
+    activityEntity.setLastUpdated(System.currentTimeMillis());
     activityDAO.update(activityEntity);
     
     //TODO
@@ -632,6 +638,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
     if (existingActivity.getBody() == null) existingActivity.setBody(updatedActivity.getBody());
     
     Activity activityEntity = convertActivityToActivityEntity(existingActivity, null);
+    activityEntity.setLastUpdated(System.currentTimeMillis());
     activityDAO.update(activityEntity);
     
   }
@@ -679,15 +686,13 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
   }
 
   @Override
-  public List<ExoSocialActivity> getSpaceActivities(Identity spaceIdentity, int index, int limit) {
-    // TODO Auto-generated method stub
-    return null;
+  public List<ExoSocialActivity> getSpaceActivities(Identity spaceIdentity, int offset, int limit) {
+    return convertActivityEntitiesToActivities(activityDAO.getUserActivities(spaceIdentity, 0, false, offset, limit));
   }
 
   @Override
-  public List<ExoSocialActivity> getSpaceActivitiesForUpgrade(Identity spaceIdentity, int index, int limit) {
-    // TODO Auto-generated method stub
-    return null;
+  public List<ExoSocialActivity> getSpaceActivitiesForUpgrade(Identity spaceIdentity, int offset, int limit) {
+    return convertActivityEntitiesToActivities(activityDAO.getUserActivities(spaceIdentity, 0, false, offset, limit));
   }
 
   @Override

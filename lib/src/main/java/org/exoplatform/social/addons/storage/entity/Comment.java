@@ -46,8 +46,8 @@ public class Comment extends BaseActivity {
   private Activity activity;
 
   public Comment() {
-    setPosted(new Date());
-    setLastUpdated(new Date());
+    setPosted(new Date().getTime());
+    setLastUpdated(new Date().getTime());
   }
 
   public Long getId() {

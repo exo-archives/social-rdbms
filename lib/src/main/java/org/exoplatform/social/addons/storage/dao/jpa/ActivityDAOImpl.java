@@ -90,6 +90,20 @@ public class ActivityDAOImpl extends SynchronizedGenericDAO<Activity, Long> impl
     return getActivities(strQuery.toString(), offset, limit);
   }
 
+  public List<Activity> getSpaceActivities(Identity owner, long time, boolean isNewer, long offset, long limit) throws ActivityStorageException {
+    StringBuilder strQuery = new StringBuilder();//DISTINCT
+    strQuery.append("select s from StreamItem s join s.activity a where ((a.ownerId ='")
+            .append(owner.getId())
+            .append("') or (s.ownerId = '")
+            .append(owner.getId())
+            .append("' and s.streamType like '%SPACE%')) and (a.hidden = '0')")
+            .append(buildSQLQueryByTime("a.lastUpdated", time, isNewer))
+            .append(" order by a.lastUpdated desc");
+    
+    //
+    return getActivities(strQuery.toString(), offset, limit);
+  }
+  
   public List<Activity> getActivities(Identity owner, Identity viewer, long offset, long limit) throws ActivityStorageException {
     StringBuilder strQuery = new StringBuilder();//DISTINCT
     strQuery.append("select s from StreamItem s join s.activity a where s.ownerId = '")
