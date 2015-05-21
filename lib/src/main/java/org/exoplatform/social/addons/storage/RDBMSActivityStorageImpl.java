@@ -18,6 +18,7 @@ package org.exoplatform.social.addons.storage;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -113,7 +114,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
     
     activity.setId(Long.toString(activityEntity.getId()));
     activity.setLikeIdentityIds(activityEntity.getLikerIds().toArray(new String[]{}));
-    activity.setTemplateParams(activityEntity.getTemplateParams());
+    activity.setTemplateParams(activityEntity.getTemplateParams() != null ? activityEntity.getTemplateParams() : new HashMap<String, String>());
     
     String ownerIdentityId = activityEntity.getOwnerId();
     ActivityStream stream = new ActivityStreamImpl();
@@ -188,7 +189,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
     exoComment.setTitle(comment.getTitle());
     exoComment.setTitleId(comment.getTitleId());
     exoComment.setBody(comment.getBody());
-    exoComment.setTemplateParams(comment.getTemplateParams());
+    exoComment.setTemplateParams(comment.getTemplateParams() != null ? comment.getTemplateParams() : new HashMap<String, String>());
     exoComment.setPosterId(comment.getPosterId());
     //
     exoComment.isLocked(comment.getLocked().booleanValue());
@@ -274,12 +275,17 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
     Comment commentEntity = convertCommentToCommentEntity(comment);
     commentEntity.setActivity(activityEntity);
     commentEntity.setMentionerIds(new HashSet<String>(Arrays.asList(processMentions(comment.getTitle()))));
+    //
+    Identity commenter = identityStorage.findIdentityById(commentEntity.getPosterId());
+    poster(commenter, activityEntity);
+    mention(commenter, activityEntity, processMentions(comment.getTitle()));
+    //
     commentEntity = commentDAO.create(commentEntity);
     comment.setId(String.valueOf(commentEntity.getId()));
-    activityEntity.addComment(commentEntity);
-    activityEntity.setLastUpdated(System.currentTimeMillis());
     List<String> mentioners = new ArrayList<String>();
     activityEntity.setMentionerIds(new HashSet<String>(Arrays.asList(processMentions(activity.getMentionedIds(), comment.getTitle(), mentioners, true))));
+    activityEntity.addComment(commentEntity);
+    activityEntity.setLastUpdated(System.currentTimeMillis());
     activityDAO.update(activityEntity);
     
     //TODO
@@ -308,7 +314,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
       //connection
       //connection(poster, activity);
       //mention
-      mention(owner, activity);
+      mention(owner, activity, processMentions(activity.getTitle()));
     } else {
       //for SPACE
       spaceMembers(owner, activity);
@@ -325,11 +331,9 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
    * @param owner
    * @param activity
    */
-  private void mention(Identity owner, Activity activity) {
-    // calculate mentioners
-    String [] mentions = processMentions(activity.getTitle());
+  private void mention(Identity owner, Activity activity, String [] mentions) {
     for (String mentioner : mentions) {
-      Identity identity = identityStorage.findIdentity(OrganizationIdentityProvider.NAME, mentioner);
+      Identity identity = identityStorage.findIdentityById(mentioner);
       if(identity != null) {
         createStreamItem(StreamType.MENTIONER, activity, identity.getId());
       }

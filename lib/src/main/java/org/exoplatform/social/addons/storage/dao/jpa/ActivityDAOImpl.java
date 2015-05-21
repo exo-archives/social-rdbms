@@ -157,7 +157,7 @@ public class ActivityDAOImpl extends SynchronizedGenericDAO<Activity, Long> impl
     }
     StringBuilder sql = new StringBuilder();
     sql.append("select s from StreamItem s join s.activity a where ")
-       .append(" ((a.ownerId='").append(ownerIdentity.getId()).append("'");
+       .append(" ((s.ownerId='").append(ownerIdentity.getId()).append("'");
     
     if(CollectionUtils.isNotEmpty(spaces)){
       sql.append(" or s.ownerId in ('").append(StringUtils.join(spaceIds, "','")).append("') ");
