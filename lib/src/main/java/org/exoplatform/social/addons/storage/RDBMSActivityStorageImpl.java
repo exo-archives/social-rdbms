@@ -124,6 +124,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
     //
     activity.setActivityStream(stream);
     activity.setStreamOwner(owner.getRemoteId());
+    activity.setPosterId(activityEntity.getPosterId());
     //
     activity.isLocked(activityEntity.getLocked());
     activity.isHidden(activityEntity.getHidden());
@@ -166,7 +167,10 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
     if(activity.getLikeIdentityIds() != null) {
       activityEntity.setLikerIds(new HashSet<String>(Arrays.asList(activity.getLikeIdentityIds())));
     }
-    activityEntity.setTemplateParams(activity.getTemplateParams());
+    Map<String, String> params = activity.getTemplateParams();
+    if (params != null) {
+      activityEntity.setTemplateParams(params);
+    }
     //
     activityEntity.setLocked(activity.isLocked());
     activityEntity.setHidden(activity.isHidden());
@@ -185,6 +189,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
     exoComment.setTitleId(comment.getTitleId());
     exoComment.setBody(comment.getBody());
     exoComment.setTemplateParams(comment.getTemplateParams());
+    exoComment.setPosterId(comment.getPosterId());
     //
     exoComment.isLocked(comment.getLocked().booleanValue());
     exoComment.isHidden(comment.getHidden().booleanValue());
@@ -216,7 +221,9 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
     commentEntity.setTitleId(comment.getTitleId());
     commentEntity.setBody(comment.getBody());
     commentEntity.setPosterId(comment.getUserId());
-    commentEntity.setTemplateParams(comment.getTemplateParams());
+    if (comment.getTemplateParams() != null) {
+      commentEntity.setTemplateParams(comment.getTemplateParams());
+    }
     //
     commentEntity.setLocked(comment.isLocked());
     commentEntity.setHidden(comment.isHidden());
