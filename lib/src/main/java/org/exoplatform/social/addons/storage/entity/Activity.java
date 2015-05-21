@@ -55,6 +55,14 @@ public class Activity extends BaseActivity {
 
   @Column(name="LIKER_ID")
   private Set<String> likerIds = new HashSet<String>();
+  
+  @ElementCollection
+  @CollectionTable(
+    name = "SOC_ACTIVITY_MENTIONERS",
+    joinColumns=@JoinColumn(name = "ACTIVITY_ID")
+  )
+  @Column(name="MENTIONER_ID")
+  private Set<String> mentionerIds = new HashSet<String>();
 
   @ElementCollection
   @JoinTable(
@@ -100,6 +108,14 @@ public class Activity extends BaseActivity {
 
   public void setLikerIds(Set<String> likerIds) {
     this.likerIds = likerIds;
+  }
+  
+  public Set<String> getMentionerIds() {
+    return mentionerIds;
+  }
+
+  public void setMentionerIds(Set<String> mentionerIds) {
+    this.mentionerIds = mentionerIds;
   }
 
   public Map<String, String> getTemplateParams() {
