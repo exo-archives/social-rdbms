@@ -99,15 +99,16 @@ public class ActivityDAOImpl extends SynchronizedGenericDAO<Activity, Long> impl
   }
 
   public List<Activity> getSpaceActivities(Identity owner, long time, boolean isNewer, long offset, long limit) throws ActivityStorageException {
+    SpaceStorage spaceStorage = CommonsUtils.getService(SpaceStorage.class);
+    Space space = spaceStorage.getSpaceByPrettyName(owner.getRemoteId());
     StringBuilder strQuery = new StringBuilder();//DISTINCT
-    strQuery.append("select s from StreamItem s join s.activity a where ((a.ownerId ='")
-            .append(owner.getId())
-            .append("') or (s.ownerId = '")
-            .append(owner.getId())
-            .append("' and s.streamType like '%SPACE%')) and (a.hidden = '0')")
-            .append(buildSQLQueryByTime("a.lastUpdated", time, isNewer))
-            .append(" order by a.lastUpdated desc");
-    
+    if (space != null) {
+      strQuery.append("select s from StreamItem s join s.activity a where s.ownerId ='")
+              .append(space.getId())
+              .append("' and a.hidden = '0'")
+              .append(buildSQLQueryByTime("a.lastUpdated", time, isNewer))
+              .append(" order by a.lastUpdated desc");
+    }
     //
     return getActivities(strQuery.toString(), offset, limit);
   }
@@ -171,6 +172,7 @@ public class ActivityDAOImpl extends SynchronizedGenericDAO<Activity, Long> impl
        .append(")");
     sql.append(" order by a.lastUpdated desc");
     //
+    System.out.println(sql.toString());
     return sql.toString();
   }
 
@@ -242,6 +244,11 @@ public class ActivityDAOImpl extends SynchronizedGenericDAO<Activity, Long> impl
     //
     System.out.println(sql.toString());
     return sql.toString();
+  }
+
+  @Override
+  public int getNumberOfSpaceActivities(Identity spaceIdentity) {
+    return getSpaceActivities(spaceIdentity, 0, false, 0, -1).size();
   }
 
 }

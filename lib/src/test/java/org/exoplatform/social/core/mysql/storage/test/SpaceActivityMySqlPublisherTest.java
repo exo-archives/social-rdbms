@@ -99,10 +99,14 @@ public class SpaceActivityMySqlPublisherTest extends  AbstractCoreTest {
     Thread.sleep(3000);
 
     Identity identity = identityManager.getOrCreateIdentity(SpaceIdentityProvider.NAME, space.getPrettyName(), true);
-    RealtimeListAccess<ExoSocialActivity> listAccess = activityManager.getActivitiesWithListAccess(identity);
+    RealtimeListAccess<ExoSocialActivity> listAccess = activityManager.getActivitiesOfSpaceWithListAccess(identity);
     assertEquals(1, listAccess.getSize());
     List<ExoSocialActivity> activities = listAccess.loadAsList(0, 10);
     tearDownActivityList.add(activities.get(0));
+    
+    listAccess = activityManager.getActivityFeedWithListAccess(rootIdentity);
+    assertEquals(1, listAccess.getSize());
+    assertEquals(1, listAccess.loadAsList(0, 10).size());
 
     ActivityStream activityStream = activities.get(0).getActivityStream();
 

@@ -201,6 +201,9 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
     exoComment.setParentId(comment.getActivity().getId() + "");
     exoComment.setMentionedIds(comment.getMentionerIds().toArray(new String[comment.getMentionerIds().size()]));
     //
+    exoComment.setPostedTime(comment.getPosted());
+    exoComment.setUpdated(comment.getLastUpdated());
+    //
     processActivity(exoComment);
     
     return exoComment;
@@ -230,6 +233,10 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
     //
     commentEntity.setLocked(comment.isLocked());
     commentEntity.setHidden(comment.isHidden());
+    //
+    long commentMillis = (comment.getPostedTime() != null ? comment.getPostedTime() : System.currentTimeMillis());
+    commentEntity.setPosted(commentMillis);
+    commentEntity.setLastUpdated(commentMillis);
     //
     return commentEntity;
   }
@@ -759,14 +766,12 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
 
   @Override
   public int getNumberOfSpaceActivities(Identity spaceIdentity) {
-    // TODO Auto-generated method stub
-    return 0;
+    return getNumberOfSpaceActivitiesForUpgrade(spaceIdentity);
   }
 
   @Override
   public int getNumberOfSpaceActivitiesForUpgrade(Identity spaceIdentity) {
-    // TODO Auto-generated method stub
-    return 0;
+    return activityDAO.getNumberOfSpaceActivities(spaceIdentity);
   }
 
   @Override

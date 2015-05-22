@@ -35,6 +35,8 @@ public interface ActivityDAO extends GenericDAO<Activity, Long> {
   int getNumberOfUserActivities(Identity ownerIdentity);
   
   List<Activity> getSpaceActivities(Identity owner, long time, boolean isNewer, long offset, long limit) throws ActivityStorageException;
+  int getNumberOfSpaceActivities(Identity spaceIdentity);
+  
   List<Activity> getActivities(Identity owner, Identity viewer, long offset, long limit) throws ActivityStorageException;
 
   List<Activity> getActivityFeed(Identity ownerIdentity, int offset, int limit);
