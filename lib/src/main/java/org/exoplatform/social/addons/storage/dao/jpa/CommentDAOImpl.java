@@ -38,21 +38,21 @@ public class CommentDAOImpl extends SynchronizedGenericDAO<Comment, Long>  imple
   
   public List<Comment> getComments(Activity existingActivity, int offset, int limit) {
     // Do not need make query for this case
-    List<Comment> gotComments = new ArrayList<Comment>(); 
-    List<Comment> comments = existingActivity.getComments();
-    int size = comments.size();
-    for (int i = offset; i < size && i < limit; i++) {
-      gotComments.add(comments.get(i));
-    }
+//    List<Comment> gotComments = new ArrayList<Comment>(); 
+//    List<Comment> comments = existingActivity.getComments();
+//    int size = comments.size();
+//    for (int i = offset; i < size && i < limit; i++) {
+//      gotComments.add(comments.get(i));
+//    }
 //    
-//    StringBuilder strQuery = new StringBuilder();//DISTINCT
-//    strQuery.append("select c from Comment c join c.activity a where (a.id ='")
-//            .append(existingActivity.getId())
-//            .append("') and (c.hidden = '0') and (c.locked = '0') order by c.lastUpdated asc");
-//    //
-//    return getComments(strQuery.toString(), offset, limit);
+    StringBuilder strQuery = new StringBuilder();//DISTINCT
+    strQuery.append("select c from Comment c join c.activity a where (a.id ='")
+            .append(existingActivity.getId())
+            .append("') and (c.hidden = '0') and (c.locked = '0') order by c.lastUpdated asc");
     //
-    return gotComments;
+    return getComments(strQuery.toString(), offset, limit);
+    //
+//    return gotComments;
   }
 
   private List<Comment> getComments(String strQuery, long offset, long limit) throws ActivityStorageException {
