@@ -54,18 +54,28 @@ public class ActivityDAOImpl extends SynchronizedGenericDAO<Activity, Long> impl
   }
 
   private List<Activity> getActivities(String strQuery, long offset, long limit) throws ActivityStorageException {
+    return getActivities(strQuery, offset, limit, StreamItem.class);
+  }
+
+  private <E> List<Activity> getActivities(String strQuery, long offset, long limit, Class<E> clazz) throws ActivityStorageException {
     List<Activity> activities = new ArrayList<Activity>();
     if (strQuery == null || strQuery.isEmpty()) {
       return activities;
     }
-    TypedQuery<StreamItem> typeQuery = lifecycleLookup().getCurrentEntityManager().createQuery(strQuery, StreamItem.class);
+    TypedQuery<E> typeQuery = lifecycleLookup().getCurrentEntityManager().createQuery(strQuery, clazz);
     if (limit > 0) {
       typeQuery.setFirstResult((int) offset);
       typeQuery.setMaxResults((int) limit);
     }
-    List<StreamItem> streamItems = typeQuery.getResultList();
-    for (StreamItem streamItem : streamItems) {
-      activities.add(streamItem.getActivity());
+    List<E> ids = typeQuery.getResultList();
+    for (E e : ids) {
+      if (e instanceof Long) {
+        activities.add(find((Long) e));
+      } else if (e instanceof StreamItem) {
+        activities.add(((StreamItem) e).getActivity());
+      } else if (e instanceof Activity) {
+        activities.add((Activity) e);
+      }
     }
     return activities;
   }
@@ -138,7 +148,7 @@ public class ActivityDAOImpl extends SynchronizedGenericDAO<Activity, Long> impl
   }
   
   public List<Activity> getActivityFeed(Identity ownerIdentity, int offset, int limit) {
-    return getActivities(getFeedActivitySQLQuery(ownerIdentity, -1, false), offset, limit);
+    return getActivities(getFeedActivitySQLQuery(ownerIdentity, -1, false), offset, limit, Activity.class);
   }
 
   private String getFeedActivitySQLQuery(Identity ownerIdentity, long time, boolean isNewer) {
@@ -157,7 +167,7 @@ public class ActivityDAOImpl extends SynchronizedGenericDAO<Activity, Long> impl
       spaceIds = (String[]) ArrayUtils.add(spaceIds, space.getId());
     }
     StringBuilder sql = new StringBuilder();
-    sql.append("select s from StreamItem s join s.activity a where ")
+    sql.append("select DISTINCT(a) from StreamItem s join s.activity a where ")
        .append(" ((s.ownerId='").append(ownerIdentity.getId()).append("'");
     
     if(CollectionUtils.isNotEmpty(spaces)){
