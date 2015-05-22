@@ -172,7 +172,6 @@ public class ActivityDAOImpl extends SynchronizedGenericDAO<Activity, Long> impl
        .append(")");
     sql.append(" order by a.lastUpdated desc");
     //
-    System.out.println(sql.toString());
     return sql.toString();
   }
 

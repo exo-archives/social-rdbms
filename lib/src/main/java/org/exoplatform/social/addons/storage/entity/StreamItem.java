@@ -26,6 +26,9 @@ public class StreamItem {
    */
   @Column(length = 36)
   private String     ownerId;
+  
+  @Column(unique = true)
+  private String     unikey;
 
   @Enumerated
   private StreamType streamType;
@@ -61,6 +64,14 @@ public class StreamItem {
     this.ownerId = ownerId;
   }
 
+  public String getUnikey() {
+    return unikey;
+  }
+
+  public void setUnikey(String unikey) {
+    this.unikey = unikey;
+  }
+  
   public StreamType getStreamType() {
     return streamType;
   }

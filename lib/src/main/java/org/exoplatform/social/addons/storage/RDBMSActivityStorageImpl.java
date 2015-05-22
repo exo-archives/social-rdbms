@@ -368,6 +368,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
     
     StreamItem streamItem = new StreamItem(streamType);
     streamItem.setOwnerId(ownerId);
+    streamItem.setUnikey(ownerId + activity.getId());
     activity.addStreamItem(streamItem);
   }
 

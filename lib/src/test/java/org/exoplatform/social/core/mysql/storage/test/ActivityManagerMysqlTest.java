@@ -1190,6 +1190,33 @@ public class ActivityManagerMysqlTest extends AbstractCoreTest {
     assertEquals("count must be: 30", 30, count);
   }
   
+  public void testSaveManyComments() throws Exception {
+    ExoSocialActivity demoActivity = new ExoSocialActivityImpl();
+    demoActivity.setTitle("demo activity");
+    demoActivity.setUserId(demoActivity.getId());
+    activityManager.saveActivityNoReturn(demoIdentity, demoActivity);
+    tearDownActivityList.add(demoActivity);
+    
+    //john comments on demo's activity
+    ExoSocialActivity comment1 = new ExoSocialActivityImpl();
+    comment1.setTitle("john comment 1");
+    comment1.setUserId(johnIdentity.getId());
+    activityManager.saveComment(demoActivity, comment1);
+    
+    ListAccess<ExoSocialActivity> listAccess = activityManager.getActivityFeedWithListAccess(johnIdentity);
+    assertEquals(1, listAccess.getSize());
+    assertEquals(1, listAccess.load(0, 10).length);
+    
+    ExoSocialActivity comment2 = new ExoSocialActivityImpl();
+    comment2.setTitle("john comment 2");
+    comment2.setUserId(johnIdentity.getId());
+    activityManager.saveComment(demoActivity, comment2);
+    
+    listAccess = activityManager.getActivityFeedWithListAccess(johnIdentity);
+    assertEquals(1, listAccess.getSize());
+    assertEquals(1, listAccess.load(0, 10).length);
+  }
+  
   public void testGetLastIdenties() throws Exception {
     List<Identity> lastIds = identityManager.getLastIdentities(1);
     assertEquals(1, lastIds.size());
