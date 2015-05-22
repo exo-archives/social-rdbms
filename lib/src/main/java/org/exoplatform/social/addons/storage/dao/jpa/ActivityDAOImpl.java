@@ -92,7 +92,7 @@ public class ActivityDAOImpl extends SynchronizedGenericDAO<Activity, Long> impl
    */
   public List<Activity> getUserActivities(Identity owner, long time, boolean isNewer, long offset, long limit) throws ActivityStorageException {
     StringBuilder strQuery = new StringBuilder();//DISTINCT
-    strQuery.append("select s from StreamItem s join s.activity a where ((a.ownerId ='")
+    strQuery.append("select DISTINCT(a) from StreamItem s join s.activity a where ((a.ownerId ='")
             .append(owner.getId())
             .append("') or (s.ownerId = '")
             .append(owner.getId())
@@ -100,7 +100,7 @@ public class ActivityDAOImpl extends SynchronizedGenericDAO<Activity, Long> impl
             .append(buildSQLQueryByTime("a.lastUpdated", time, isNewer))
             .append(" order by a.lastUpdated desc");
     //
-    return getActivities(strQuery.toString(), offset, limit);
+    return getActivities(strQuery.toString(), offset, limit, Activity.class);
   }
   
   @Override
@@ -125,7 +125,7 @@ public class ActivityDAOImpl extends SynchronizedGenericDAO<Activity, Long> impl
   
   public List<Activity> getActivities(Identity owner, Identity viewer, long offset, long limit) throws ActivityStorageException {
     StringBuilder strQuery = new StringBuilder();//DISTINCT
-    strQuery.append("select s from StreamItem s join s.activity a where s.ownerId = '")
+    strQuery.append("select DISTINCT(a) from StreamItem s join s.activity a where s.ownerId = '")
             .append(owner.getId())
             .append("' and not s.streamType like '%SPACE%' and (a.ownerId ='")
             .append(owner.getId())
@@ -133,7 +133,7 @@ public class ActivityDAOImpl extends SynchronizedGenericDAO<Activity, Long> impl
             .append(owner.getId())
             .append("') and (a.hidden = '0') order by a.lastUpdated desc");
     //
-    return getActivities(strQuery.toString(), offset, limit);
+    return getActivities(strQuery.toString(), offset, limit, Activity.class);
   }
 
   private String buildSQLQueryByTime(String timeField, long time, boolean isNewer) {
@@ -191,7 +191,7 @@ public class ActivityDAOImpl extends SynchronizedGenericDAO<Activity, Long> impl
 
   @Override
   public List<Activity> getUserSpacesActivities(Identity ownerIdentity, int offset, int limit) {
-    return getActivities(getUserSpacesActivitySQLQuery(ownerIdentity, -1, false), offset, limit);
+    return getActivities(getUserSpacesActivitySQLQuery(ownerIdentity, -1, false), offset, limit, Activity.class);
   }
   
   public int getNumberOfUserSpacesActivities(Identity ownerIdentity) {
@@ -211,7 +211,7 @@ public class ActivityDAOImpl extends SynchronizedGenericDAO<Activity, Long> impl
     }
     //
     StringBuilder sql = new StringBuilder();
-    sql.append("select s from StreamItem s join s.activity a where ")
+    sql.append("select DISTINCT(a) from StreamItem s join s.activity a where ")
        .append("s.ownerId in ('").append(StringUtils.join(spaceIds, "','")).append("') ");
     
     sql.append(" and a.hidden='0'")
@@ -223,7 +223,7 @@ public class ActivityDAOImpl extends SynchronizedGenericDAO<Activity, Long> impl
 
   @Override
   public List<Activity> getActivitiesOfConnections(Identity ownerIdentity, int offset, int limit) {
-    return getActivities(getConnectionsActivitySQLQuery(ownerIdentity, -1, false), offset, limit);
+    return getActivities(getConnectionsActivitySQLQuery(ownerIdentity, -1, false), offset, limit, Activity.class);
   }
 
   @Override
@@ -243,7 +243,7 @@ public class ActivityDAOImpl extends SynchronizedGenericDAO<Activity, Long> impl
       relationshipIds.add(identity.getId());
     }
     StringBuilder sql = new StringBuilder();
-    sql.append("select s from StreamItem s join s.activity a where ")
+    sql.append("select DISTINCT(a) from StreamItem s join s.activity a where ")
        .append("a.posterId in ('").append(StringUtils.join(relationshipIds, "','")).append("') ")
        .append("and s.streamType <> 0");
     

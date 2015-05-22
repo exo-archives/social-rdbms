@@ -368,8 +368,18 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
     
     StreamItem streamItem = new StreamItem(streamType);
     streamItem.setOwnerId(ownerId);
-    streamItem.setUnikey(ownerId + activity.getId());
-    activity.addStreamItem(streamItem);
+    boolean isExist = false;
+    if (activity.getId() != null) {
+      for (StreamItem item : activity.getStreamItems()) {
+        if (item.getOwnerId().equals(ownerId)) {
+          isExist = true;
+          break;
+        }
+      }
+    }
+    if (!isExist) {
+      activity.addStreamItem(streamItem);
+    }
   }
 
   /**
