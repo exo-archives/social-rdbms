@@ -17,6 +17,7 @@
 package org.exoplatform.social.core.mysql.storage.test;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import org.exoplatform.social.core.activity.model.ExoSocialActivity;
@@ -31,7 +32,7 @@ import org.exoplatform.social.core.space.spi.SpaceService;
 import org.exoplatform.social.core.storage.api.ActivityStorage;
 import org.exoplatform.social.core.storage.api.IdentityStorage;
 
-public class ActivityMysqlStorageImplTestCase extends AbstractCoreTest {
+public class RDBMSActivityStorageImplTestCase extends AbstractCoreTest {
   
   private IdentityStorage identityStorage;
   private ActivityStorage activityStorage;
@@ -88,7 +89,7 @@ public class ActivityMysqlStorageImplTestCase extends AbstractCoreTest {
     ExoSocialActivity rs = activityStorageImpl.getActivity(activity.getId());
     
     //
-    assertEquals("demo", rs.getLikeIdentityIds()[0]);
+    assertTrue(Arrays.asList(rs.getLikeIdentityIds()).contains("demo"));
     
     //
     tearDownActivityList.add(activity);
@@ -502,7 +503,7 @@ public class ActivityMysqlStorageImplTestCase extends AbstractCoreTest {
     assertEquals(2, got.getCommentedIds().length);
     assertEquals(3, got.getMentionedIds().length);
     
-    ExoSocialActivity gotComment = activityStorageImpl.getComment(comment3.getId());
+    ExoSocialActivity gotComment = activityStorageImpl.getActivity(comment3.getId());
     assertEquals(1, gotComment.getMentionedIds().length);
     
     activityStorageImpl.deleteComment(activity.getId(), comment3.getId());

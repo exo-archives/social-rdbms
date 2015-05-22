@@ -2223,7 +2223,7 @@ public class ActivityMysqlStorageImpl extends ActivityStorageImpl {
       rs = preparedStatement.executeQuery();
       List<ExoSocialActivity> result = new ArrayList<ExoSocialActivity>();
       while (rs.next()) {
-        ExoSocialActivity comment = getStorage().getComment(rs.getString("_id"));
+        ExoSocialActivity comment = getComment(rs.getString("_id"));
         processActivity(comment);
         result.add(comment);
       }

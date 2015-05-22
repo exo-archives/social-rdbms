@@ -65,7 +65,9 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
   private final IdentityStorage identityStorage;
   private final SpaceStorage spaceStorage;
   private final SortedSet<ActivityProcessor> activityProcessors;
+
   private static final Pattern MENTION_PATTERN = Pattern.compile("@([^\\s]+)|@([^\\s]+)$");
+  public final static String COMMENT_PREFIX = "comment";
   public RDBMSActivityStorageImpl(RelationshipStorage relationshipStorage, 
                                       IdentityStorage identityStorage, 
                                       SpaceStorage spaceStorage,
@@ -112,7 +114,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
     ExoSocialActivity activity = new ExoSocialActivityImpl(activityEntity.getPosterId(), activityEntity.getType(),
                                                            activityEntity.getTitle(), activityEntity.getBody(), false);
     
-    activity.setId(Long.toString(activityEntity.getId()));
+    activity.setId(String.valueOf(activityEntity.getId()));
     activity.setLikeIdentityIds(activityEntity.getLikerIds().toArray(new String[]{}));
     activity.setTemplateParams(activityEntity.getTemplateParams() != null ? activityEntity.getTemplateParams() : new HashMap<String, String>());
     
@@ -140,7 +142,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
       if (!commentIds.contains(comment.getPosterId())) {
         commentIds.add(comment.getPosterId());
       }
-      replyToIds.add(String.valueOf(comment.getId()));
+      replyToIds.add(getExoCommentID(comment.getId()));
     }
     activity.setCommentedIds(commentIds.toArray(new String[commentIds.size()]));
     activity.setReplyToId(replyToIds.toArray(new String[replyToIds.size()]));
@@ -185,7 +187,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
   private ExoSocialActivity convertCommentEntityToComment(Comment comment) {
     ExoSocialActivity exoComment = new ExoSocialActivityImpl(comment.getPosterId(), null,
         comment.getTitle(), comment.getBody(), false);
-    exoComment.setId(String.valueOf(comment.getId()));
+    exoComment.setId(getExoCommentID(comment.getId()));
     exoComment.setTitle(comment.getTitle());
     exoComment.setTitleId(comment.getTitleId());
     exoComment.setBody(comment.getBody());
@@ -216,7 +218,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
   private Comment convertCommentToCommentEntity(ExoSocialActivity comment) {
     Comment commentEntity = new Comment();
     if (comment.getId() != null) {
-      commentEntity = commentDAO.find(Long.valueOf(comment.getId()));
+      commentEntity = commentDAO.find(getCommentID(comment.getId()));
     }
     commentEntity.setTitle(comment.getTitle());
     commentEntity.setTitleId(comment.getTitleId());
@@ -243,9 +245,16 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
   
   @Override
   public ExoSocialActivity getActivity(String activityId) throws ActivityStorageException {
+    if(activityId != null && activityId.startsWith(COMMENT_PREFIX)) {
+      return getComment(activityId);
+    }
     Activity entity = activityDAO.find(Long.valueOf(activityId));
     //
     return convertActivityEntityToActivity(entity);
+  }
+
+  public ExoSocialActivity getComment(String commentId) throws ActivityStorageException {
+    return convertCommentEntityToComment(commentDAO.find(getCommentID(commentId)));
   }
 
   @Override
@@ -269,21 +278,21 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
   }
 
   @Override
-  public void saveComment(ExoSocialActivity activity, ExoSocialActivity comment) throws ActivityStorageException {
+  public void saveComment(ExoSocialActivity activity, ExoSocialActivity eXoComment) throws ActivityStorageException {
     //TODO
     Activity activityEntity = activityDAO.find(Long.valueOf(activity.getId()));
-    Comment commentEntity = convertCommentToCommentEntity(comment);
+    Comment commentEntity = convertCommentToCommentEntity(eXoComment);
     commentEntity.setActivity(activityEntity);
-    commentEntity.setMentionerIds(new HashSet<String>(Arrays.asList(processMentions(comment.getTitle()))));
+    commentEntity.setMentionerIds(new HashSet<String>(Arrays.asList(processMentions(eXoComment.getTitle()))));
     //
     Identity commenter = identityStorage.findIdentityById(commentEntity.getPosterId());
     poster(commenter, activityEntity);
-    mention(commenter, activityEntity, processMentions(comment.getTitle()));
+    mention(commenter, activityEntity, processMentions(eXoComment.getTitle()));
     //
     commentEntity = commentDAO.create(commentEntity);
-    comment.setId(String.valueOf(commentEntity.getId()));
+    eXoComment.setId(getExoCommentID(commentEntity.getId()));
     List<String> mentioners = new ArrayList<String>();
-    activityEntity.setMentionerIds(new HashSet<String>(Arrays.asList(processMentions(activity.getMentionedIds(), comment.getTitle(), mentioners, true))));
+    activityEntity.setMentionerIds(new HashSet<String>(Arrays.asList(processMentions(activity.getMentionedIds(), eXoComment.getTitle(), mentioners, true))));
     activityEntity.addComment(commentEntity);
     activityEntity.setLastUpdated(System.currentTimeMillis());
     activityDAO.update(activityEntity);
@@ -443,7 +452,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
   @Override
   public ExoSocialActivity getParentActivity(ExoSocialActivity comment) throws ActivityStorageException {
     try {
-      Comment commentEntity = commentDAO.find(Long.valueOf(comment.getId()));
+      Comment commentEntity = commentDAO.find(getCommentID(comment.getId()));
       if (commentEntity != null) {
         return convertActivityEntityToActivity(commentEntity.getActivity());
       }
@@ -467,7 +476,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
 
   @Override
   public void deleteComment(String activityId, String commentId) throws ActivityStorageException {
-    Comment comment = commentDAO.find(Long.valueOf(commentId));
+    Comment comment = commentDAO.find(getCommentID(commentId));
     Activity activity = activityDAO.find(Long.valueOf(activityId));
     activity.getComments().remove(comment);
     //
@@ -973,12 +982,15 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
     // TODO Auto-generated method stub
     return 0;
   }
-
-  @Override
-  public ExoSocialActivity getComment(String commentId) throws ActivityStorageException {
-    return convertCommentEntityToComment(commentDAO.find(Long.valueOf(commentId)));
-  }
   
+  private Long getCommentID(String commentId) {
+    return (commentId == null || commentId.trim().isEmpty()) ? null : Long.valueOf(commentId.replace(COMMENT_PREFIX, ""));
+  }
+
+  private String getExoCommentID(Long commentId) {
+    return String.valueOf(COMMENT_PREFIX + commentId);
+  }
+
   private void processActivity(ExoSocialActivity existingActivity) {
     Iterator<ActivityProcessor> it = activityProcessors.iterator();
     while (it.hasNext()) {
