@@ -309,4 +309,44 @@ public class ActivityDAOImpl extends SynchronizedGenericDAO<Activity, Long> impl
     return getOlderOnUserActivities(ownerIdentity, baseActivity, -1).size();
   }
 
+  @Override
+  public List<Activity> getNewerOnUserSpacesActivities(Identity ownerIdentity, ExoSocialActivity baseActivity, int limit) {
+    return getActivities(getUserSpacesActivitySQLQuery(ownerIdentity, baseActivity.getUpdated().getTime(), true), 0, limit, Activity.class);
+  }
+
+  @Override
+  public int getNumberOfNewerOnUserSpacesActivities(Identity ownerIdentity, ExoSocialActivity baseActivity) {
+    return getNewerOnUserSpacesActivities(ownerIdentity, baseActivity, -1).size();
+  }
+
+  @Override
+  public List<Activity> getOlderOnUserSpacesActivities(Identity ownerIdentity, ExoSocialActivity baseActivity, int limit) {
+    return getActivities(getUserSpacesActivitySQLQuery(ownerIdentity, baseActivity.getUpdated().getTime(), false), 0, limit, Activity.class);
+  }
+
+  @Override
+  public int getNumberOfOlderOnUserSpacesActivities(Identity ownerIdentity, ExoSocialActivity baseActivity) {
+    return getOlderOnUserSpacesActivities(ownerIdentity, baseActivity, -1).size();
+  }
+
+  @Override
+  public List<Activity> getNewerOnSpaceActivities(Identity spaceIdentity, ExoSocialActivity baseActivity, int limit) {
+    return getSpaceActivities(spaceIdentity, baseActivity.getUpdated().getTime(), true, 0, limit);
+  }
+
+  @Override
+  public int getNumberOfNewerOnSpaceActivities(Identity spaceIdentity, ExoSocialActivity baseActivity) {
+    return getNewerOnSpaceActivities(spaceIdentity, baseActivity, -1).size();
+  }
+
+  @Override
+  public List<Activity> getOlderOnSpaceActivities(Identity spaceIdentity, ExoSocialActivity baseActivity, int limit) {
+    return getSpaceActivities(spaceIdentity, baseActivity.getUpdated().getTime(), false, 0, limit);
+  }
+
+  @Override
+  public int getNumberOfOlderOnSpaceActivities(Identity spaceIdentity, ExoSocialActivity baseActivity) {
+    return getOlderOnSpaceActivities(spaceIdentity, baseActivity, -1).size();
+  }
+
 }

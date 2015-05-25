@@ -652,26 +652,22 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
 
   @Override
   public int getNumberOfNewerOnUserSpacesActivities(Identity ownerIdentity, ExoSocialActivity baseActivity) {
-    // TODO Auto-generated method stub
-    return 0;
+    return activityDAO.getNumberOfNewerOnUserSpacesActivities(ownerIdentity, baseActivity);
   }
 
   @Override
   public List<ExoSocialActivity> getNewerOnUserSpacesActivities(Identity ownerIdentity, ExoSocialActivity baseActivity, int limit) {
-    // TODO Auto-generated method stub
-    return null;
+    return convertActivityEntitiesToActivities(activityDAO.getNewerOnUserSpacesActivities(ownerIdentity, baseActivity, limit));
   }
 
   @Override
   public int getNumberOfOlderOnUserSpacesActivities(Identity ownerIdentity, ExoSocialActivity baseActivity) {
-    // TODO Auto-generated method stub
-    return 0;
+    return activityDAO.getNumberOfOlderOnUserSpacesActivities(ownerIdentity, baseActivity);
   }
 
   @Override
   public List<ExoSocialActivity> getOlderOnUserSpacesActivities(Identity ownerIdentity, ExoSocialActivity baseActivity, int limit) {
-    // TODO Auto-generated method stub
-    return null;
+    return convertActivityEntitiesToActivities(activityDAO.getOlderOnUserSpacesActivities(ownerIdentity, baseActivity, limit));
   }
 
   @Override
@@ -827,26 +823,22 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
 
   @Override
   public List<ExoSocialActivity> getNewerOnSpaceActivities(Identity spaceIdentity, ExoSocialActivity baseActivity, int limit) {
-    // TODO Auto-generated method stub
-    return null;
+    return convertActivityEntitiesToActivities(activityDAO.getNewerOnSpaceActivities(spaceIdentity, baseActivity, limit));
   }
 
   @Override
   public int getNumberOfNewerOnSpaceActivities(Identity spaceIdentity, ExoSocialActivity baseActivity) {
-    // TODO Auto-generated method stub
-    return 0;
+    return activityDAO.getNumberOfNewerOnSpaceActivities(spaceIdentity, baseActivity);
   }
 
   @Override
   public List<ExoSocialActivity> getOlderOnSpaceActivities(Identity spaceIdentity, ExoSocialActivity baseActivity, int limit) {
-    // TODO Auto-generated method stub
-    return null;
+    return convertActivityEntitiesToActivities(activityDAO.getOlderOnSpaceActivities(spaceIdentity, baseActivity, limit));
   }
 
   @Override
   public int getNumberOfOlderOnSpaceActivities(Identity spaceIdentity, ExoSocialActivity baseActivity) {
-    // TODO Auto-generated method stub
-    return 0;
+    return activityDAO.getNumberOfOlderOnSpaceActivities(spaceIdentity, baseActivity);
   }
 
   @Override

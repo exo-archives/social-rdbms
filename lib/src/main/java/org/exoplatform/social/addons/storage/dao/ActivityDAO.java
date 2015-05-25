@@ -34,6 +34,7 @@ public interface ActivityDAO extends GenericDAO<Activity, Long> {
   // Add customize methods here
   List<Activity> getUserActivities(Identity owner, long time, boolean isNewer, long offset, long limit) throws ActivityStorageException;
   int getNumberOfUserActivities(Identity ownerIdentity);
+  //
   List<Activity> getNewerOnUserActivities(Identity ownerIdentity, ExoSocialActivity baseActivity, int limit);
   int getNumberOfNewerOnUserActivities(Identity ownerIdentity, ExoSocialActivity baseActivity);
   List<Activity> getOlderOnUserActivities(Identity ownerIdentity, ExoSocialActivity baseActivity, int limit);
@@ -41,11 +42,17 @@ public interface ActivityDAO extends GenericDAO<Activity, Long> {
   
   List<Activity> getSpaceActivities(Identity owner, long time, boolean isNewer, long offset, long limit) throws ActivityStorageException;
   int getNumberOfSpaceActivities(Identity spaceIdentity);
+  //
+  List<Activity> getNewerOnSpaceActivities(Identity spaceIdentity, ExoSocialActivity baseActivity, int limit);
+  int getNumberOfNewerOnSpaceActivities(Identity spaceIdentity, ExoSocialActivity baseActivity);
+  List<Activity> getOlderOnSpaceActivities(Identity spaceIdentity, ExoSocialActivity baseActivity, int limit);
+  int getNumberOfOlderOnSpaceActivities(Identity spaceIdentity, ExoSocialActivity baseActivity);
   
   List<Activity> getActivities(Identity owner, Identity viewer, long offset, long limit) throws ActivityStorageException;
 
   List<Activity> getActivityFeed(Identity ownerIdentity, int offset, int limit);
   int getNumberOfActivitesOnActivityFeed(Identity ownerIdentity);
+  //
   List<Activity> getNewerOnActivityFeed(Identity ownerIdentity, ExoSocialActivity baseActivity, int limit);
   int getNumberOfNewerOnActivityFeed(Identity ownerIdentity, ExoSocialActivity baseActivity);
   List<Activity> getOlderOnActivityFeed(Identity ownerIdentity, ExoSocialActivity baseActivity, int limit);
@@ -53,12 +60,20 @@ public interface ActivityDAO extends GenericDAO<Activity, Long> {
   
   List<Activity> getUserSpacesActivities(Identity ownerIdentity, int offset, int limit);
   int getNumberOfUserSpacesActivities(Identity ownerIdentity);
+  //
+  List<Activity> getNewerOnUserSpacesActivities(Identity ownerIdentity, ExoSocialActivity baseActivity, int limit);
+  int getNumberOfNewerOnUserSpacesActivities(Identity ownerIdentity, ExoSocialActivity baseActivity);
+  List<Activity> getOlderOnUserSpacesActivities(Identity ownerIdentity, ExoSocialActivity baseActivity, int limit);
+  int getNumberOfOlderOnUserSpacesActivities(Identity ownerIdentity, ExoSocialActivity baseActivity);
   
   List<Activity> getActivitiesOfConnections(Identity ownerIdentity, int offset, int limit);
   int getNumberOfActivitiesOfConnections(Identity ownerIdentity);
+  //
   List<Activity> getNewerOnActivitiesOfConnections(Identity ownerIdentity, ExoSocialActivity baseActivity, long limit);
   int getNumberOfNewerOnActivitiesOfConnections(Identity ownerIdentity, ExoSocialActivity baseActivity);
   List<Activity> getOlderOnActivitiesOfConnections(Identity ownerIdentity, ExoSocialActivity baseActivity, int limit);
   int getNumberOfOlderOnActivitiesOfConnections(Identity ownerIdentity, ExoSocialActivity baseActivity);
+  
+  
   
 }
