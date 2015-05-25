@@ -527,26 +527,22 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
 
   @Override
   public int getNumberOfNewerOnUserActivities(Identity ownerIdentity, ExoSocialActivity baseActivity) {
-    // TODO Auto-generated method stub
-    return 0;
+    return activityDAO.getNumberOfNewerOnUserActivities(ownerIdentity, baseActivity);
   }
 
   @Override
   public List<ExoSocialActivity> getNewerOnUserActivities(Identity ownerIdentity, ExoSocialActivity baseActivity, int limit) {
-    // TODO Auto-generated method stub
-    return null;
+    return convertActivityEntitiesToActivities(activityDAO.getNewerOnUserActivities(ownerIdentity, baseActivity, limit));
   }
 
   @Override
   public int getNumberOfOlderOnUserActivities(Identity ownerIdentity, ExoSocialActivity baseActivity) {
-    // TODO Auto-generated method stub
-    return 0;
+    return activityDAO.getNumberOfOlderOnUserActivities(ownerIdentity, baseActivity);
   }
 
   @Override
   public List<ExoSocialActivity> getOlderOnUserActivities(Identity ownerIdentity, ExoSocialActivity baseActivity, int limit) {
-    // TODO Auto-generated method stub
-    return null;
+    return convertActivityEntitiesToActivities(activityDAO.getOlderOnUserActivities(ownerIdentity, baseActivity, limit));
   }
 
   @Override

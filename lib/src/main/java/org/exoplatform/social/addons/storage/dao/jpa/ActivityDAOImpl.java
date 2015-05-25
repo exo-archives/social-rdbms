@@ -289,4 +289,24 @@ public class ActivityDAOImpl extends SynchronizedGenericDAO<Activity, Long> impl
     return getOlderOnActivitiesOfConnections(ownerIdentity, baseActivity, -1).size();
   }
 
+  @Override
+  public List<Activity> getNewerOnUserActivities(Identity ownerIdentity, ExoSocialActivity baseActivity, int limit) {
+    return getUserActivities(ownerIdentity, baseActivity.getUpdated().getTime(), true, 0, limit);
+  }
+
+  @Override
+  public int getNumberOfNewerOnUserActivities(Identity ownerIdentity, ExoSocialActivity baseActivity) {
+    return getNewerOnUserActivities(ownerIdentity, baseActivity, -1).size();
+  }
+
+  @Override
+  public List<Activity> getOlderOnUserActivities(Identity ownerIdentity, ExoSocialActivity baseActivity, int limit) {
+    return getUserActivities(ownerIdentity, baseActivity.getUpdated().getTime(), false, 0, limit);
+  }
+
+  @Override
+  public int getNumberOfOlderOnUserActivities(Identity ownerIdentity, ExoSocialActivity baseActivity) {
+    return getOlderOnUserActivities(ownerIdentity, baseActivity, -1).size();
+  }
+
 }

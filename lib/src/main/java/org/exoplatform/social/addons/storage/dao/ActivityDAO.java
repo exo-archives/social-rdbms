@@ -34,6 +34,10 @@ public interface ActivityDAO extends GenericDAO<Activity, Long> {
   // Add customize methods here
   List<Activity> getUserActivities(Identity owner, long time, boolean isNewer, long offset, long limit) throws ActivityStorageException;
   int getNumberOfUserActivities(Identity ownerIdentity);
+  List<Activity> getNewerOnUserActivities(Identity ownerIdentity, ExoSocialActivity baseActivity, int limit);
+  int getNumberOfNewerOnUserActivities(Identity ownerIdentity, ExoSocialActivity baseActivity);
+  List<Activity> getOlderOnUserActivities(Identity ownerIdentity, ExoSocialActivity baseActivity, int limit);
+  int getNumberOfOlderOnUserActivities(Identity ownerIdentity, ExoSocialActivity baseActivity);
   
   List<Activity> getSpaceActivities(Identity owner, long time, boolean isNewer, long offset, long limit) throws ActivityStorageException;
   int getNumberOfSpaceActivities(Identity spaceIdentity);
@@ -56,4 +60,5 @@ public interface ActivityDAO extends GenericDAO<Activity, Long> {
   int getNumberOfNewerOnActivitiesOfConnections(Identity ownerIdentity, ExoSocialActivity baseActivity);
   List<Activity> getOlderOnActivitiesOfConnections(Identity ownerIdentity, ExoSocialActivity baseActivity, int limit);
   int getNumberOfOlderOnActivitiesOfConnections(Identity ownerIdentity, ExoSocialActivity baseActivity);
+  
 }
