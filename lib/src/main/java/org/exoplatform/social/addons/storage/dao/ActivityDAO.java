@@ -52,4 +52,8 @@ public interface ActivityDAO extends GenericDAO<Activity, Long> {
   
   List<Activity> getActivitiesOfConnections(Identity ownerIdentity, int offset, int limit);
   int getNumberOfActivitiesOfConnections(Identity ownerIdentity);
+  List<Activity> getNewerOnActivitiesOfConnections(Identity ownerIdentity, ExoSocialActivity baseActivity, long limit);
+  int getNumberOfNewerOnActivitiesOfConnections(Identity ownerIdentity, ExoSocialActivity baseActivity);
+  List<Activity> getOlderOnActivitiesOfConnections(Identity ownerIdentity, ExoSocialActivity baseActivity, int limit);
+  int getNumberOfOlderOnActivitiesOfConnections(Identity ownerIdentity, ExoSocialActivity baseActivity);
 }

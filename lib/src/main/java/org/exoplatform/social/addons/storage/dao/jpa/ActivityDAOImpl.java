@@ -252,7 +252,6 @@ public class ActivityDAOImpl extends SynchronizedGenericDAO<Activity, Long> impl
        .append(buildSQLQueryByTime("a.lastUpdated", time, isNewer));
     sql.append(" order by a.lastUpdated desc");
     //
-    System.out.println(sql.toString());
     return sql.toString();
   }
 
@@ -279,6 +278,26 @@ public class ActivityDAOImpl extends SynchronizedGenericDAO<Activity, Long> impl
   @Override
   public int getNumberOfOlderOnActivityFeed(Identity ownerIdentity, ExoSocialActivity baseActivity) {
     return getOlderOnActivityFeed(ownerIdentity, baseActivity, -1).size();
+  }
+
+  @Override
+  public List<Activity> getNewerOnActivitiesOfConnections(Identity ownerIdentity, ExoSocialActivity baseActivity, long limit) {
+    return getActivities(getConnectionsActivitySQLQuery(ownerIdentity, baseActivity.getUpdated().getTime(), true), 0, limit, Activity.class);
+  }
+
+  @Override
+  public int getNumberOfNewerOnActivitiesOfConnections(Identity ownerIdentity, ExoSocialActivity baseActivity) {
+    return getNewerOnActivitiesOfConnections(ownerIdentity, baseActivity, -1).size();
+  }
+
+  @Override
+  public List<Activity> getOlderOnActivitiesOfConnections(Identity ownerIdentity, ExoSocialActivity baseActivity, int limit) {
+    return getActivities(getConnectionsActivitySQLQuery(ownerIdentity, baseActivity.getUpdated().getTime(), false), 0, limit, Activity.class);
+  }
+
+  @Override
+  public int getNumberOfOlderOnActivitiesOfConnections(Identity ownerIdentity, ExoSocialActivity baseActivity) {
+    return getOlderOnActivitiesOfConnections(ownerIdentity, baseActivity, -1).size();
   }
 
 }

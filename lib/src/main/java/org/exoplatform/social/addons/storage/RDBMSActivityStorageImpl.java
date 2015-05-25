@@ -601,43 +601,37 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
 
   @Override
   public int getNumberOfActivitiesOfConnections(Identity ownerIdentity) {
-    return activityDAO.getNumberOfActivitiesOfConnections(ownerIdentity);
+    return getNumberOfActivitiesOfConnectionsForUpgrade(ownerIdentity);
   }
 
   @Override
   public int getNumberOfActivitiesOfConnectionsForUpgrade(Identity ownerIdentity) {
-    // TODO Auto-generated method stub
-    return 0;
+    return activityDAO.getNumberOfActivitiesOfConnections(ownerIdentity);
   }
 
   @Override
   public List<ExoSocialActivity> getActivitiesOfIdentity(Identity ownerIdentity, long offset, long limit) {
-    // TODO Auto-generated method stub
-    return null;
+    return getUserActivities(ownerIdentity, offset, limit);
   }
 
   @Override
   public int getNumberOfNewerOnActivitiesOfConnections(Identity ownerIdentity, ExoSocialActivity baseActivity) {
-    // TODO Auto-generated method stub
-    return 0;
+    return activityDAO.getNumberOfNewerOnActivitiesOfConnections(ownerIdentity, baseActivity);
   }
 
   @Override
   public List<ExoSocialActivity> getNewerOnActivitiesOfConnections(Identity ownerIdentity, ExoSocialActivity baseActivity, long limit) {
-    // TODO Auto-generated method stub
-    return null;
+    return convertActivityEntitiesToActivities(activityDAO.getNewerOnActivitiesOfConnections(ownerIdentity, baseActivity, limit));
   }
 
   @Override
   public int getNumberOfOlderOnActivitiesOfConnections(Identity ownerIdentity, ExoSocialActivity baseActivity) {
-    // TODO Auto-generated method stub
-    return 0;
+    return activityDAO.getNumberOfOlderOnActivitiesOfConnections(ownerIdentity, baseActivity);
   }
 
   @Override
   public List<ExoSocialActivity> getOlderOnActivitiesOfConnections(Identity ownerIdentity, ExoSocialActivity baseActivity, int limit) {
-    // TODO Auto-generated method stub
-    return null;
+    return convertActivityEntitiesToActivities(activityDAO.getOlderOnActivitiesOfConnections(ownerIdentity, baseActivity, limit));
   }
 
   @Override
