@@ -42,7 +42,7 @@
   <properties>
     <!-- Platform Project Dependencies -->
     <hibernate.version>4.1.12.Final</hibernate.version>
-    <exoplatform.version>4.2.x-SNAPSHOT</exoplatform.version>
+    <exoplatform.version>4.3.x-SNAPSHOT</exoplatform.version>
     <!-- **************************************** -->
     <!-- Jenkins Settings -->
     <!-- **************************************** -->
