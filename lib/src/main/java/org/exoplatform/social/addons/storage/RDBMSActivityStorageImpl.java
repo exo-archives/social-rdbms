@@ -680,7 +680,9 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
 
   @Override
   public List<ExoSocialActivity> getComments(ExoSocialActivity existingActivity, int offset, int limit) {
-    return convertCommentEntitiesToComments(commentDAO.getComments(activityDAO.find(Long.valueOf(existingActivity.getId())), offset, limit));
+    List<Comment> comments = commentDAO.getComments(activityDAO.find(Long.valueOf(existingActivity.getId())), 0, false, offset, limit);
+    
+    return convertCommentEntitiesToComments(comments);
   }
 
   @Override
@@ -690,26 +692,49 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
 
   @Override
   public int getNumberOfNewerComments(ExoSocialActivity existingActivity, ExoSocialActivity baseComment) {
-    // TODO Auto-generated method stub
-    return 0;
+    // TODO
+    return getNewerComments(existingActivity, baseComment, 0).size();
   }
 
   @Override
   public List<ExoSocialActivity> getNewerComments(ExoSocialActivity existingActivity, ExoSocialActivity baseComment, int limit) {
-    // TODO Auto-generated method stub
-    return null;
+    //
+    return getNewerComments(existingActivity, baseComment.getPostedTime(), limit);
   }
 
   @Override
   public int getNumberOfOlderComments(ExoSocialActivity existingActivity, ExoSocialActivity baseComment) {
-    // TODO Auto-generated method stub
-    return 0;
+    // TODO
+    return getOlderComments(existingActivity, baseComment, 0).size();
   }
 
   @Override
   public List<ExoSocialActivity> getOlderComments(ExoSocialActivity existingActivity, ExoSocialActivity baseComment, int limit) {
-    // TODO Auto-generated method stub
-    return null;
+    return getOlderComments(existingActivity, baseComment.getPostedTime(), limit);
+  }
+
+  @Override
+  public List<ExoSocialActivity> getNewerComments(ExoSocialActivity existingActivity, Long sinceTime, int limit) {
+    List<Comment> comments = commentDAO.getComments(activityDAO.find(Long.valueOf(existingActivity.getId())), sinceTime, true, 0, limit);
+    //
+    return convertCommentEntitiesToComments(comments);
+  }
+
+  @Override
+  public List<ExoSocialActivity> getOlderComments(ExoSocialActivity existingActivity, Long sinceTime, int limit) {
+    List<Comment> comments = commentDAO.getComments(activityDAO.find(Long.valueOf(existingActivity.getId())), sinceTime, false, 0, limit);
+    return convertCommentEntitiesToComments(comments);
+  }
+
+  @Override
+  public int getNumberOfNewerComments(ExoSocialActivity existingActivity, Long sinceTime) {
+    return getNewerComments(existingActivity, sinceTime, 0).size();
+  }
+
+  @Override
+  public int getNumberOfOlderComments(ExoSocialActivity existingActivity, Long sinceTime) {
+    // TODO
+    return getOlderComments(existingActivity, sinceTime, 0).size();
   }
 
   @Override
@@ -960,30 +985,6 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
     return 0;
   }
 
-  @Override
-  public List<ExoSocialActivity> getNewerComments(ExoSocialActivity existingActivity, Long sinceTime, int limit) {
-    // TODO Auto-generated method stub
-    return null;
-  }
-
-  @Override
-  public List<ExoSocialActivity> getOlderComments(ExoSocialActivity existingActivity, Long sinceTime, int limit) {
-    // TODO Auto-generated method stub
-    return null;
-  }
-
-  @Override
-  public int getNumberOfNewerComments(ExoSocialActivity existingActivity, Long sinceTime) {
-    // TODO Auto-generated method stub
-    return 0;
-  }
-
-  @Override
-  public int getNumberOfOlderComments(ExoSocialActivity existingActivity, Long sinceTime) {
-    // TODO Auto-generated method stub
-    return 0;
-  }
-  
   private Long getCommentID(String commentId) {
     return (commentId == null || commentId.trim().isEmpty()) ? null : Long.valueOf(commentId.replace(COMMENT_PREFIX, ""));
   }

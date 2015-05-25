@@ -137,17 +137,6 @@ public class ActivityDAOImpl extends SynchronizedGenericDAO<Activity, Long> impl
     return getActivities(strQuery.toString(), offset, limit, Activity.class);
   }
 
-  private String buildSQLQueryByTime(String timeField, long time, boolean isNewer) {
-    if (time <= 0) return "";
-    StringBuilder sb = new StringBuilder();
-    if (isNewer) {
-      sb.append(" and (").append(timeField).append(" > '").append(time).append("')");
-    } else {
-      sb.append(" and (").append(timeField).append(" < '").append(time).append("')");
-    }
-    return sb.toString();
-  }
-  
   public List<Activity> getActivityFeed(Identity ownerIdentity, int offset, int limit) {
     return getActivities(getFeedActivitySQLQuery(ownerIdentity, -1, false), offset, limit, Activity.class);
   }

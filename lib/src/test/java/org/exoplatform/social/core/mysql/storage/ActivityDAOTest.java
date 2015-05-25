@@ -242,7 +242,7 @@ public class ActivityDAOTest extends AbstractCoreTest {
     //
     activity = activityDao.find(activity.getId());
     
-    List<Comment> demoComments = commentDao.getComments(activity, 0, -1);
+    List<Comment> demoComments = commentDao.getComments(activity, 0, false, 0, -1);
     assertNotNull(demoComments);
     assertEquals(1, demoComments.size());
     

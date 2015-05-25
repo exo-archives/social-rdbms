@@ -30,7 +30,7 @@ import org.exoplatform.social.addons.storage.entity.Comment;
 public interface CommentDAO extends GenericDAO<Comment, Long> {
 
   //Add customize methods here
-  List<Comment> getComments(Activity existingActivity, int offset, int limit);
+  List<Comment> getComments(Activity existingActivity, long time, Boolean isNewer, int offset, int limit);
 
   int getNumberOfComments(Activity existingActivity);
 }

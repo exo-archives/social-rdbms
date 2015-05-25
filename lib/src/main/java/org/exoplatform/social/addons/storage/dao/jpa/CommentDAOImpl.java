@@ -16,7 +16,6 @@
  */
 package org.exoplatform.social.addons.storage.dao.jpa;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import javax.persistence.TypedQuery;
@@ -36,23 +35,15 @@ import org.exoplatform.social.core.storage.ActivityStorageException;
 public class CommentDAOImpl extends SynchronizedGenericDAO<Comment, Long>  implements CommentDAO {
   //implements customize methods here
   
-  public List<Comment> getComments(Activity existingActivity, int offset, int limit) {
-    // Do not need make query for this case
-//    List<Comment> gotComments = new ArrayList<Comment>(); 
-//    List<Comment> comments = existingActivity.getComments();
-//    int size = comments.size();
-//    for (int i = offset; i < size && i < limit; i++) {
-//      gotComments.add(comments.get(i));
-//    }
-//    
-    StringBuilder strQuery = new StringBuilder();//DISTINCT
+  public List<Comment> getComments(Activity existingActivity, long time, Boolean isNewer, int offset, int limit) {
+    StringBuilder strQuery = new StringBuilder();
     strQuery.append("select c from Comment c join c.activity a where (a.id ='")
             .append(existingActivity.getId())
-            .append("') and (c.hidden = '0') and (c.locked = '0') order by c.lastUpdated asc");
+            .append("')")
+            .append(buildSQLQueryByTime("c.lastUpdated", time, isNewer))
+            .append(" and (c.hidden = '0') and (c.locked = '0') order by c.lastUpdated asc");
     //
-    return getComments(strQuery.toString(), offset, limit);
-    //
-//    return gotComments;
+    return  getComments(strQuery.toString(), offset, limit);
   }
 
   private List<Comment> getComments(String strQuery, long offset, long limit) throws ActivityStorageException {
