@@ -19,6 +19,7 @@ package org.exoplatform.social.addons.storage.dao;
 import java.util.List;
 
 import org.exoplatform.social.addons.storage.entity.Activity;
+import org.exoplatform.social.core.activity.model.ExoSocialActivity;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.storage.ActivityStorageException;
 
@@ -41,6 +42,10 @@ public interface ActivityDAO extends GenericDAO<Activity, Long> {
 
   List<Activity> getActivityFeed(Identity ownerIdentity, int offset, int limit);
   int getNumberOfActivitesOnActivityFeed(Identity ownerIdentity);
+  List<Activity> getNewerOnActivityFeed(Identity ownerIdentity, ExoSocialActivity baseActivity, int limit);
+  int getNumberOfNewerOnActivityFeed(Identity ownerIdentity, ExoSocialActivity baseActivity);
+  List<Activity> getOlderOnActivityFeed(Identity ownerIdentity, ExoSocialActivity baseActivity, int limit);
+  int getNumberOfOlderOnActivityFeed(Identity ownerIdentity, ExoSocialActivity baseActivity);
   
   List<Activity> getUserSpacesActivities(Identity ownerIdentity, int offset, int limit);
   int getNumberOfUserSpacesActivities(Identity ownerIdentity);

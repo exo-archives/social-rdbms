@@ -31,6 +31,7 @@ import org.exoplatform.social.addons.storage.dao.ActivityDAO;
 import org.exoplatform.social.addons.storage.dao.jpa.synchronization.SynchronizedGenericDAO;
 import org.exoplatform.social.addons.storage.entity.Activity;
 import org.exoplatform.social.addons.storage.entity.StreamItem;
+import org.exoplatform.social.core.activity.model.ExoSocialActivity;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.space.model.Space;
 import org.exoplatform.social.core.storage.ActivityStorageException;
@@ -258,6 +259,26 @@ public class ActivityDAOImpl extends SynchronizedGenericDAO<Activity, Long> impl
   @Override
   public int getNumberOfSpaceActivities(Identity spaceIdentity) {
     return getSpaceActivities(spaceIdentity, 0, false, 0, -1).size();
+  }
+
+  @Override
+  public List<Activity> getNewerOnActivityFeed(Identity ownerIdentity, ExoSocialActivity baseActivity, int limit) {
+    return getActivities(getFeedActivitySQLQuery(ownerIdentity, baseActivity.getUpdated().getTime(), true), 0, limit, Activity.class);
+  }
+
+  @Override
+  public int getNumberOfNewerOnActivityFeed(Identity ownerIdentity, ExoSocialActivity baseActivity) {
+    return getNewerOnActivityFeed(ownerIdentity, baseActivity, -1).size();
+  }
+
+  @Override
+  public List<Activity> getOlderOnActivityFeed(Identity ownerIdentity, ExoSocialActivity baseActivity,int limit) {
+    return getActivities(getFeedActivitySQLQuery(ownerIdentity, baseActivity.getUpdated().getTime(), false), 0, limit, Activity.class);
+  }
+
+  @Override
+  public int getNumberOfOlderOnActivityFeed(Identity ownerIdentity, ExoSocialActivity baseActivity) {
+    return getOlderOnActivityFeed(ownerIdentity, baseActivity, -1).size();
   }
 
 }

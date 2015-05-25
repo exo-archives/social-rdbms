@@ -286,7 +286,6 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
 
   @Override
   public void saveComment(ExoSocialActivity activity, ExoSocialActivity eXoComment) throws ActivityStorageException {
-    //TODO
     Activity activityEntity = activityDAO.find(Long.valueOf(activity.getId()));
     Comment commentEntity = convertCommentToCommentEntity(eXoComment);
     commentEntity.setActivity(activityEntity);
@@ -304,7 +303,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
     activityEntity.setLastUpdated(System.currentTimeMillis());
     activityDAO.update(activityEntity);
     
-    //TODO
+    //
     activity = convertActivityEntityToActivity(activityEntity);
   }
 
@@ -518,13 +517,12 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
 
   @Override
   public int getNumberOfUserActivities(Identity owner) throws ActivityStorageException {
-    return activityDAO.getNumberOfUserActivities(owner);
+    return getNumberOfUserActivitiesForUpgrade(owner);
   }
 
   @Override
   public int getNumberOfUserActivitiesForUpgrade(Identity owner) throws ActivityStorageException {
-    // TODO Auto-generated method stub
-    return 0;
+    return activityDAO.getNumberOfUserActivities(owner);
   }
 
   @Override
@@ -563,37 +561,32 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
 
   @Override
   public int getNumberOfActivitesOnActivityFeed(Identity ownerIdentity) {
-    return activityDAO.getNumberOfActivitesOnActivityFeed(ownerIdentity);
+    return getNumberOfActivitesOnActivityFeedForUpgrade(ownerIdentity);
   }
 
   @Override
   public int getNumberOfActivitesOnActivityFeedForUpgrade(Identity ownerIdentity) {
-    // TODO Auto-generated method stub
-    return 0;
+    return activityDAO.getNumberOfActivitesOnActivityFeed(ownerIdentity);
   }
 
   @Override
   public int getNumberOfNewerOnActivityFeed(Identity ownerIdentity, ExoSocialActivity baseActivity) {
-    // TODO Auto-generated method stub
-    return 0;
+    return activityDAO.getNumberOfNewerOnActivityFeed(ownerIdentity, baseActivity);
   }
 
   @Override
   public List<ExoSocialActivity> getNewerOnActivityFeed(Identity ownerIdentity, ExoSocialActivity baseActivity, int limit) {
-    // TODO Auto-generated method stub
-    return null;
+    return convertActivityEntitiesToActivities(activityDAO.getNewerOnActivityFeed(ownerIdentity, baseActivity, limit));
   }
 
   @Override
   public int getNumberOfOlderOnActivityFeed(Identity ownerIdentity, ExoSocialActivity baseActivity) {
-    // TODO Auto-generated method stub
-    return 0;
+    return activityDAO.getNumberOfOlderOnActivityFeed(ownerIdentity, baseActivity);
   }
 
   @Override
   public List<ExoSocialActivity> getOlderOnActivityFeed(Identity ownerIdentity, ExoSocialActivity baseActivity, int limit) {
-    // TODO Auto-generated method stub
-    return null;
+    return convertActivityEntitiesToActivities(activityDAO.getOlderOnActivityFeed(ownerIdentity, baseActivity, limit));
   }
 
   @Override
@@ -649,24 +642,22 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
 
   @Override
   public List<ExoSocialActivity> getUserSpacesActivities(Identity ownerIdentity, int offset, int limit) {
-    return convertActivityEntitiesToActivities(activityDAO.getUserSpacesActivities(ownerIdentity, offset, limit));
+    return getUserSpacesActivitiesForUpgrade(ownerIdentity, offset, limit);
   }
 
   @Override
   public List<ExoSocialActivity> getUserSpacesActivitiesForUpgrade(Identity ownerIdentity, int offset, int limit) {
-    // TODO Auto-generated method stub
-    return null;
+    return convertActivityEntitiesToActivities(activityDAO.getUserSpacesActivities(ownerIdentity, offset, limit));
   }
 
   @Override
   public int getNumberOfUserSpacesActivities(Identity ownerIdentity) {
-    return activityDAO.getNumberOfUserSpacesActivities(ownerIdentity);
+    return getNumberOfUserSpacesActivitiesForUpgrade(ownerIdentity);
   }
 
   @Override
   public int getNumberOfUserSpacesActivitiesForUpgrade(Identity ownerIdentity) {
-    // TODO Auto-generated method stub
-    return 0;
+    return activityDAO.getNumberOfUserSpacesActivities(ownerIdentity);
   }
 
   @Override
