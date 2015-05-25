@@ -527,22 +527,22 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
 
   @Override
   public int getNumberOfNewerOnUserActivities(Identity ownerIdentity, ExoSocialActivity baseActivity) {
-    return activityDAO.getNumberOfNewerOnUserActivities(ownerIdentity, baseActivity);
+    return getNumberOfNewerOnUserActivities(ownerIdentity, baseActivity.getUpdated().getTime());
   }
 
   @Override
   public List<ExoSocialActivity> getNewerOnUserActivities(Identity ownerIdentity, ExoSocialActivity baseActivity, int limit) {
-    return convertActivityEntitiesToActivities(activityDAO.getNewerOnUserActivities(ownerIdentity, baseActivity, limit));
+    return getNewerUserActivities(ownerIdentity, baseActivity.getUpdated().getTime(), limit);
   }
 
   @Override
   public int getNumberOfOlderOnUserActivities(Identity ownerIdentity, ExoSocialActivity baseActivity) {
-    return activityDAO.getNumberOfOlderOnUserActivities(ownerIdentity, baseActivity);
+    return getNumberOfOlderOnUserActivities(ownerIdentity, baseActivity.getUpdated().getTime());
   }
 
   @Override
   public List<ExoSocialActivity> getOlderOnUserActivities(Identity ownerIdentity, ExoSocialActivity baseActivity, int limit) {
-    return convertActivityEntitiesToActivities(activityDAO.getOlderOnUserActivities(ownerIdentity, baseActivity, limit));
+    return getOlderUserActivities(ownerIdentity, baseActivity.getUpdated().getTime(), limit);
   }
 
   @Override
@@ -567,22 +567,22 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
 
   @Override
   public int getNumberOfNewerOnActivityFeed(Identity ownerIdentity, ExoSocialActivity baseActivity) {
-    return activityDAO.getNumberOfNewerOnActivityFeed(ownerIdentity, baseActivity);
+    return getNumberOfNewerOnActivityFeed(ownerIdentity, baseActivity.getUpdated().getTime());
   }
 
   @Override
   public List<ExoSocialActivity> getNewerOnActivityFeed(Identity ownerIdentity, ExoSocialActivity baseActivity, int limit) {
-    return convertActivityEntitiesToActivities(activityDAO.getNewerOnActivityFeed(ownerIdentity, baseActivity, limit));
+    return getNewerFeedActivities(ownerIdentity, baseActivity.getUpdated().getTime(), limit);
   }
 
   @Override
   public int getNumberOfOlderOnActivityFeed(Identity ownerIdentity, ExoSocialActivity baseActivity) {
-    return activityDAO.getNumberOfOlderOnActivityFeed(ownerIdentity, baseActivity);
+    return getNumberOfOlderOnActivityFeed(ownerIdentity, baseActivity.getUpdated().getTime());
   }
 
   @Override
   public List<ExoSocialActivity> getOlderOnActivityFeed(Identity ownerIdentity, ExoSocialActivity baseActivity, int limit) {
-    return convertActivityEntitiesToActivities(activityDAO.getOlderOnActivityFeed(ownerIdentity, baseActivity, limit));
+    return getOlderFeedActivities(ownerIdentity, baseActivity.getUpdated().getTime(), limit);
   }
 
   @Override
@@ -612,22 +612,22 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
 
   @Override
   public int getNumberOfNewerOnActivitiesOfConnections(Identity ownerIdentity, ExoSocialActivity baseActivity) {
-    return activityDAO.getNumberOfNewerOnActivitiesOfConnections(ownerIdentity, baseActivity);
+    return getNumberOfNewerOnActivitiesOfConnections(ownerIdentity, baseActivity.getUpdated().getTime());
   }
 
   @Override
   public List<ExoSocialActivity> getNewerOnActivitiesOfConnections(Identity ownerIdentity, ExoSocialActivity baseActivity, long limit) {
-    return convertActivityEntitiesToActivities(activityDAO.getNewerOnActivitiesOfConnections(ownerIdentity, baseActivity, limit));
+    return getNewerActivitiesOfConnections(ownerIdentity, baseActivity.getUpdated().getTime(), (int) limit);
   }
 
   @Override
   public int getNumberOfOlderOnActivitiesOfConnections(Identity ownerIdentity, ExoSocialActivity baseActivity) {
-    return activityDAO.getNumberOfOlderOnActivitiesOfConnections(ownerIdentity, baseActivity);
+    return getNumberOfOlderOnActivitiesOfConnections(ownerIdentity, baseActivity.getUpdated().getTime());
   }
 
   @Override
   public List<ExoSocialActivity> getOlderOnActivitiesOfConnections(Identity ownerIdentity, ExoSocialActivity baseActivity, int limit) {
-    return convertActivityEntitiesToActivities(activityDAO.getOlderOnActivitiesOfConnections(ownerIdentity, baseActivity, limit));
+    return getOlderActivitiesOfConnections(ownerIdentity, baseActivity.getUpdated().getTime(), limit);
   }
 
   @Override
@@ -652,22 +652,22 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
 
   @Override
   public int getNumberOfNewerOnUserSpacesActivities(Identity ownerIdentity, ExoSocialActivity baseActivity) {
-    return activityDAO.getNumberOfNewerOnUserSpacesActivities(ownerIdentity, baseActivity);
+    return getNumberOfNewerOnUserSpacesActivities(ownerIdentity, baseActivity.getUpdated().getTime());
   }
 
   @Override
   public List<ExoSocialActivity> getNewerOnUserSpacesActivities(Identity ownerIdentity, ExoSocialActivity baseActivity, int limit) {
-    return convertActivityEntitiesToActivities(activityDAO.getNewerOnUserSpacesActivities(ownerIdentity, baseActivity, limit));
+    return getNewerUserSpacesActivities(ownerIdentity, baseActivity.getUpdated().getTime(), limit);
   }
 
   @Override
   public int getNumberOfOlderOnUserSpacesActivities(Identity ownerIdentity, ExoSocialActivity baseActivity) {
-    return activityDAO.getNumberOfOlderOnUserSpacesActivities(ownerIdentity, baseActivity);
+    return getNumberOfOlderOnUserSpacesActivities(ownerIdentity, baseActivity.getUpdated().getTime());
   }
 
   @Override
   public List<ExoSocialActivity> getOlderOnUserSpacesActivities(Identity ownerIdentity, ExoSocialActivity baseActivity, int limit) {
-    return convertActivityEntitiesToActivities(activityDAO.getOlderOnUserSpacesActivities(ownerIdentity, baseActivity, limit));
+    return getOlderUserSpacesActivities(ownerIdentity, baseActivity.getUpdated().getTime(), limit);
   }
 
   @Override
@@ -684,7 +684,6 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
 
   @Override
   public int getNumberOfNewerComments(ExoSocialActivity existingActivity, ExoSocialActivity baseComment) {
-    // TODO
     return getNewerComments(existingActivity, baseComment, 0).size();
   }
 
@@ -696,7 +695,6 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
 
   @Override
   public int getNumberOfOlderComments(ExoSocialActivity existingActivity, ExoSocialActivity baseComment) {
-    // TODO
     return getOlderComments(existingActivity, baseComment, 0).size();
   }
 
@@ -725,7 +723,6 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
 
   @Override
   public int getNumberOfOlderComments(ExoSocialActivity existingActivity, Long sinceTime) {
-    // TODO
     return getOlderComments(existingActivity, sinceTime, 0).size();
   }
 
@@ -749,26 +746,22 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
 
   @Override
   public int getNumberOfNewerOnActivityFeed(Identity ownerIdentity, Long sinceTime) {
-    // TODO Auto-generated method stub
-    return 0;
+    return activityDAO.getNumberOfNewerOnActivityFeed(ownerIdentity, sinceTime);
   }
 
   @Override
   public int getNumberOfNewerOnUserActivities(Identity ownerIdentity, Long sinceTime) {
-    // TODO Auto-generated method stub
-    return 0;
+    return activityDAO.getNumberOfNewerOnUserActivities(ownerIdentity, sinceTime);
   }
 
   @Override
   public int getNumberOfNewerOnActivitiesOfConnections(Identity ownerIdentity, Long sinceTime) {
-    // TODO Auto-generated method stub
-    return 0;
+    return activityDAO.getNumberOfNewerOnActivitiesOfConnections(ownerIdentity, sinceTime);
   }
 
   @Override
   public int getNumberOfNewerOnUserSpacesActivities(Identity ownerIdentity, Long sinceTime) {
-    // TODO Auto-generated method stub
-    return 0;
+    return activityDAO.getNumberOfNewerOnUserSpacesActivities(ownerIdentity, sinceTime);
   }
 
   @Override
@@ -823,28 +816,27 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
 
   @Override
   public List<ExoSocialActivity> getNewerOnSpaceActivities(Identity spaceIdentity, ExoSocialActivity baseActivity, int limit) {
-    return convertActivityEntitiesToActivities(activityDAO.getNewerOnSpaceActivities(spaceIdentity, baseActivity, limit));
+    return getNewerSpaceActivities(spaceIdentity, baseActivity.getUpdated().getTime(), limit);
   }
 
   @Override
   public int getNumberOfNewerOnSpaceActivities(Identity spaceIdentity, ExoSocialActivity baseActivity) {
-    return activityDAO.getNumberOfNewerOnSpaceActivities(spaceIdentity, baseActivity);
+    return getNumberOfNewerOnSpaceActivities(spaceIdentity, baseActivity.getUpdated().getTime());
   }
 
   @Override
   public List<ExoSocialActivity> getOlderOnSpaceActivities(Identity spaceIdentity, ExoSocialActivity baseActivity, int limit) {
-    return convertActivityEntitiesToActivities(activityDAO.getOlderOnSpaceActivities(spaceIdentity, baseActivity, limit));
+    return getOlderSpaceActivities(spaceIdentity, baseActivity.getUpdated().getTime(), limit);
   }
 
   @Override
   public int getNumberOfOlderOnSpaceActivities(Identity spaceIdentity, ExoSocialActivity baseActivity) {
-    return activityDAO.getNumberOfOlderOnSpaceActivities(spaceIdentity, baseActivity);
+    return getNumberOfOlderOnSpaceActivities(spaceIdentity, baseActivity.getUpdated().getTime());
   }
 
   @Override
   public int getNumberOfNewerOnSpaceActivities(Identity spaceIdentity, Long sinceTime) {
-    // TODO Auto-generated method stub
-    return 0;
+    return activityDAO.getNumberOfNewerOnSpaceActivities(spaceIdentity, sinceTime);
   }
 
   @Override
@@ -885,92 +877,77 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
 
   @Override
   public List<ExoSocialActivity> getNewerFeedActivities(Identity owner, Long sinceTime, int limit) {
-    // TODO Auto-generated method stub
-    return null;
+    return convertActivityEntitiesToActivities(activityDAO.getNewerOnActivityFeed(owner, sinceTime, limit));
   }
 
   @Override
   public List<ExoSocialActivity> getNewerUserActivities(Identity owner, Long sinceTime, int limit) {
-    // TODO Auto-generated method stub
-    return null;
+    return convertActivityEntitiesToActivities(activityDAO.getNewerOnUserActivities(owner, sinceTime, limit));
   }
 
   @Override
   public List<ExoSocialActivity> getNewerUserSpacesActivities(Identity owner, Long sinceTime, int limit) {
-    // TODO Auto-generated method stub
-    return null;
+    return convertActivityEntitiesToActivities(activityDAO.getNewerOnUserSpacesActivities(owner, sinceTime, limit));
   }
 
   @Override
   public List<ExoSocialActivity> getNewerActivitiesOfConnections(Identity owner, Long sinceTime, int limit) {
-    // TODO Auto-generated method stub
-    return null;
+    return convertActivityEntitiesToActivities(activityDAO.getNewerOnActivitiesOfConnections(owner, sinceTime, limit));
   }
 
   @Override
   public List<ExoSocialActivity> getNewerSpaceActivities(Identity owner, Long sinceTime, int limit) {
-    // TODO Auto-generated method stub
-    return null;
+    return convertActivityEntitiesToActivities(activityDAO.getNewerOnSpaceActivities(owner, sinceTime, limit));
   }
 
   @Override
   public List<ExoSocialActivity> getOlderFeedActivities(Identity owner, Long sinceTime, int limit) {
-    // TODO Auto-generated method stub
-    return null;
+    return convertActivityEntitiesToActivities(activityDAO.getOlderOnActivityFeed(owner, sinceTime, limit));
   }
 
   @Override
   public List<ExoSocialActivity> getOlderUserActivities(Identity owner, Long sinceTime, int limit) {
-    // TODO Auto-generated method stub
-    return null;
+    return convertActivityEntitiesToActivities(activityDAO.getOlderOnUserActivities(owner, sinceTime, limit));
   }
 
   @Override
   public List<ExoSocialActivity> getOlderUserSpacesActivities(Identity owner, Long sinceTime, int limit) {
-    // TODO Auto-generated method stub
-    return null;
+    return convertActivityEntitiesToActivities(activityDAO.getOlderOnUserSpacesActivities(owner, sinceTime, limit));
   }
 
   @Override
   public List<ExoSocialActivity> getOlderActivitiesOfConnections(Identity owner, Long sinceTime, int limit) {
-    // TODO Auto-generated method stub
-    return null;
+    return convertActivityEntitiesToActivities(activityDAO.getOlderOnActivitiesOfConnections(owner, sinceTime, limit));
   }
 
   @Override
   public List<ExoSocialActivity> getOlderSpaceActivities(Identity owner, Long sinceTime, int limit) {
-    // TODO Auto-generated method stub
-    return null;
+    return convertActivityEntitiesToActivities(activityDAO.getOlderOnSpaceActivities(owner, sinceTime, limit));
   }
 
   @Override
   public int getNumberOfOlderOnActivityFeed(Identity ownerIdentity, Long sinceTime) {
-    // TODO Auto-generated method stub
-    return 0;
+    return activityDAO.getNumberOfOlderOnActivityFeed(ownerIdentity, sinceTime);
   }
 
   @Override
   public int getNumberOfOlderOnUserActivities(Identity ownerIdentity, Long sinceTime) {
-    // TODO Auto-generated method stub
-    return 0;
+    return activityDAO.getNumberOfOlderOnUserActivities(ownerIdentity, sinceTime);
   }
 
   @Override
   public int getNumberOfOlderOnActivitiesOfConnections(Identity ownerIdentity, Long sinceTime) {
-    // TODO Auto-generated method stub
-    return 0;
+    return activityDAO.getNumberOfOlderOnActivitiesOfConnections(ownerIdentity, sinceTime);
   }
 
   @Override
   public int getNumberOfOlderOnUserSpacesActivities(Identity ownerIdentity, Long sinceTime) {
-    // TODO Auto-generated method stub
-    return 0;
+    return activityDAO.getNumberOfOlderOnUserSpacesActivities(ownerIdentity, sinceTime);
   }
 
   @Override
   public int getNumberOfOlderOnSpaceActivities(Identity ownerIdentity, Long sinceTime) {
-    // TODO Auto-generated method stub
-    return 0;
+    return activityDAO.getNumberOfOlderOnSpaceActivities(ownerIdentity, sinceTime);
   }
 
   private Long getCommentID(String commentId) {

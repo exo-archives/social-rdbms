@@ -31,7 +31,6 @@ import org.exoplatform.social.addons.storage.dao.ActivityDAO;
 import org.exoplatform.social.addons.storage.dao.jpa.synchronization.SynchronizedGenericDAO;
 import org.exoplatform.social.addons.storage.entity.Activity;
 import org.exoplatform.social.addons.storage.entity.StreamItem;
-import org.exoplatform.social.core.activity.model.ExoSocialActivity;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.space.model.Space;
 import org.exoplatform.social.core.storage.ActivityStorageException;
@@ -250,103 +249,103 @@ public class ActivityDAOImpl extends SynchronizedGenericDAO<Activity, Long> impl
   }
 
   @Override
-  public List<Activity> getNewerOnActivityFeed(Identity ownerIdentity, ExoSocialActivity baseActivity, int limit) {
-    return getActivities(getFeedActivitySQLQuery(ownerIdentity, baseActivity.getUpdated().getTime(), true), 0, limit, Activity.class);
+  public List<Activity> getNewerOnActivityFeed(Identity ownerIdentity, long baseTime, int limit) {
+    return getActivities(getFeedActivitySQLQuery(ownerIdentity, baseTime, true), 0, limit, Activity.class);
   }
 
   @Override
-  public int getNumberOfNewerOnActivityFeed(Identity ownerIdentity, ExoSocialActivity baseActivity) {
-    return getNewerOnActivityFeed(ownerIdentity, baseActivity, -1).size();
+  public int getNumberOfNewerOnActivityFeed(Identity ownerIdentity, long baseTime) {
+    return getNewerOnActivityFeed(ownerIdentity, baseTime, -1).size();
   }
 
   @Override
-  public List<Activity> getOlderOnActivityFeed(Identity ownerIdentity, ExoSocialActivity baseActivity,int limit) {
-    return getActivities(getFeedActivitySQLQuery(ownerIdentity, baseActivity.getUpdated().getTime(), false), 0, limit, Activity.class);
+  public List<Activity> getOlderOnActivityFeed(Identity ownerIdentity, long baseTime,int limit) {
+    return getActivities(getFeedActivitySQLQuery(ownerIdentity, baseTime, false), 0, limit, Activity.class);
   }
 
   @Override
-  public int getNumberOfOlderOnActivityFeed(Identity ownerIdentity, ExoSocialActivity baseActivity) {
-    return getOlderOnActivityFeed(ownerIdentity, baseActivity, -1).size();
+  public int getNumberOfOlderOnActivityFeed(Identity ownerIdentity, long baseTime) {
+    return getOlderOnActivityFeed(ownerIdentity, baseTime, -1).size();
   }
 
   @Override
-  public List<Activity> getNewerOnActivitiesOfConnections(Identity ownerIdentity, ExoSocialActivity baseActivity, long limit) {
-    return getActivities(getConnectionsActivitySQLQuery(ownerIdentity, baseActivity.getUpdated().getTime(), true), 0, limit, Activity.class);
+  public List<Activity> getNewerOnActivitiesOfConnections(Identity ownerIdentity, long baseTime, long limit) {
+    return getActivities(getConnectionsActivitySQLQuery(ownerIdentity, baseTime, true), 0, limit, Activity.class);
   }
 
   @Override
-  public int getNumberOfNewerOnActivitiesOfConnections(Identity ownerIdentity, ExoSocialActivity baseActivity) {
-    return getNewerOnActivitiesOfConnections(ownerIdentity, baseActivity, -1).size();
+  public int getNumberOfNewerOnActivitiesOfConnections(Identity ownerIdentity, long baseTime) {
+    return getNewerOnActivitiesOfConnections(ownerIdentity, baseTime, -1).size();
   }
 
   @Override
-  public List<Activity> getOlderOnActivitiesOfConnections(Identity ownerIdentity, ExoSocialActivity baseActivity, int limit) {
-    return getActivities(getConnectionsActivitySQLQuery(ownerIdentity, baseActivity.getUpdated().getTime(), false), 0, limit, Activity.class);
+  public List<Activity> getOlderOnActivitiesOfConnections(Identity ownerIdentity, long baseTime, int limit) {
+    return getActivities(getConnectionsActivitySQLQuery(ownerIdentity, baseTime, false), 0, limit, Activity.class);
   }
 
   @Override
-  public int getNumberOfOlderOnActivitiesOfConnections(Identity ownerIdentity, ExoSocialActivity baseActivity) {
-    return getOlderOnActivitiesOfConnections(ownerIdentity, baseActivity, -1).size();
+  public int getNumberOfOlderOnActivitiesOfConnections(Identity ownerIdentity, long baseTime) {
+    return getOlderOnActivitiesOfConnections(ownerIdentity, baseTime, -1).size();
   }
 
   @Override
-  public List<Activity> getNewerOnUserActivities(Identity ownerIdentity, ExoSocialActivity baseActivity, int limit) {
-    return getUserActivities(ownerIdentity, baseActivity.getUpdated().getTime(), true, 0, limit);
+  public List<Activity> getNewerOnUserActivities(Identity ownerIdentity, long baseTime, int limit) {
+    return getUserActivities(ownerIdentity, baseTime, true, 0, limit);
   }
 
   @Override
-  public int getNumberOfNewerOnUserActivities(Identity ownerIdentity, ExoSocialActivity baseActivity) {
-    return getNewerOnUserActivities(ownerIdentity, baseActivity, -1).size();
+  public int getNumberOfNewerOnUserActivities(Identity ownerIdentity, long baseTime) {
+    return getNewerOnUserActivities(ownerIdentity, baseTime, -1).size();
   }
 
   @Override
-  public List<Activity> getOlderOnUserActivities(Identity ownerIdentity, ExoSocialActivity baseActivity, int limit) {
-    return getUserActivities(ownerIdentity, baseActivity.getUpdated().getTime(), false, 0, limit);
+  public List<Activity> getOlderOnUserActivities(Identity ownerIdentity, long baseTime, int limit) {
+    return getUserActivities(ownerIdentity, baseTime, false, 0, limit);
   }
 
   @Override
-  public int getNumberOfOlderOnUserActivities(Identity ownerIdentity, ExoSocialActivity baseActivity) {
-    return getOlderOnUserActivities(ownerIdentity, baseActivity, -1).size();
+  public int getNumberOfOlderOnUserActivities(Identity ownerIdentity, long baseTime) {
+    return getOlderOnUserActivities(ownerIdentity, baseTime, -1).size();
   }
 
   @Override
-  public List<Activity> getNewerOnUserSpacesActivities(Identity ownerIdentity, ExoSocialActivity baseActivity, int limit) {
-    return getActivities(getUserSpacesActivitySQLQuery(ownerIdentity, baseActivity.getUpdated().getTime(), true), 0, limit, Activity.class);
+  public List<Activity> getNewerOnUserSpacesActivities(Identity ownerIdentity, long baseTime, int limit) {
+    return getActivities(getUserSpacesActivitySQLQuery(ownerIdentity, baseTime, true), 0, limit, Activity.class);
   }
 
   @Override
-  public int getNumberOfNewerOnUserSpacesActivities(Identity ownerIdentity, ExoSocialActivity baseActivity) {
-    return getNewerOnUserSpacesActivities(ownerIdentity, baseActivity, -1).size();
+  public int getNumberOfNewerOnUserSpacesActivities(Identity ownerIdentity, long baseTime) {
+    return getNewerOnUserSpacesActivities(ownerIdentity, baseTime, -1).size();
   }
 
   @Override
-  public List<Activity> getOlderOnUserSpacesActivities(Identity ownerIdentity, ExoSocialActivity baseActivity, int limit) {
-    return getActivities(getUserSpacesActivitySQLQuery(ownerIdentity, baseActivity.getUpdated().getTime(), false), 0, limit, Activity.class);
+  public List<Activity> getOlderOnUserSpacesActivities(Identity ownerIdentity, long baseTime, int limit) {
+    return getActivities(getUserSpacesActivitySQLQuery(ownerIdentity, baseTime, false), 0, limit, Activity.class);
   }
 
   @Override
-  public int getNumberOfOlderOnUserSpacesActivities(Identity ownerIdentity, ExoSocialActivity baseActivity) {
-    return getOlderOnUserSpacesActivities(ownerIdentity, baseActivity, -1).size();
+  public int getNumberOfOlderOnUserSpacesActivities(Identity ownerIdentity, long baseTime) {
+    return getOlderOnUserSpacesActivities(ownerIdentity, baseTime, -1).size();
   }
 
   @Override
-  public List<Activity> getNewerOnSpaceActivities(Identity spaceIdentity, ExoSocialActivity baseActivity, int limit) {
-    return getSpaceActivities(spaceIdentity, baseActivity.getUpdated().getTime(), true, 0, limit);
+  public List<Activity> getNewerOnSpaceActivities(Identity spaceIdentity, long baseTime, int limit) {
+    return getSpaceActivities(spaceIdentity, baseTime, true, 0, limit);
   }
 
   @Override
-  public int getNumberOfNewerOnSpaceActivities(Identity spaceIdentity, ExoSocialActivity baseActivity) {
-    return getNewerOnSpaceActivities(spaceIdentity, baseActivity, -1).size();
+  public int getNumberOfNewerOnSpaceActivities(Identity spaceIdentity, long baseTime) {
+    return getNewerOnSpaceActivities(spaceIdentity, baseTime, -1).size();
   }
 
   @Override
-  public List<Activity> getOlderOnSpaceActivities(Identity spaceIdentity, ExoSocialActivity baseActivity, int limit) {
-    return getSpaceActivities(spaceIdentity, baseActivity.getUpdated().getTime(), false, 0, limit);
+  public List<Activity> getOlderOnSpaceActivities(Identity spaceIdentity, long baseTime, int limit) {
+    return getSpaceActivities(spaceIdentity, baseTime, false, 0, limit);
   }
 
   @Override
-  public int getNumberOfOlderOnSpaceActivities(Identity spaceIdentity, ExoSocialActivity baseActivity) {
-    return getOlderOnSpaceActivities(spaceIdentity, baseActivity, -1).size();
+  public int getNumberOfOlderOnSpaceActivities(Identity spaceIdentity, long baseTime) {
+    return getOlderOnSpaceActivities(spaceIdentity, baseTime, -1).size();
   }
 
 }
