@@ -1,5 +1,5 @@
 <web-app>
-  <display-name>social-activity-mysql-addons</display-name>
+  <display-name>social-rdbms-addons</display-name>
   <listener>
     <listener-class>org.exoplatform.container.web.PortalContainerConfigOwner</listener-class>
   </listener>

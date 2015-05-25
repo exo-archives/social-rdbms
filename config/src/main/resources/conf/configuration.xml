@@ -41,7 +41,7 @@
             <field name="dependencies">
               <collection type="java.util.ArrayList">
                 <value>
-                  <string>social-activity-mysql-addons</string>
+                  <string>social-rdbms-addons</string>
                 </value>
               </collection>
             </field>

@@ -30,10 +30,10 @@
 			<useProjectArtifact>false</useProjectArtifact>
 			<outputDirectory>/</outputDirectory>
 			<includes>
-				<include>${project.groupId}:social-activity-mysql-addons-webapp:war</include>
+				<include>${project.groupId}:social-rdbms-addons-webapp:war</include>
 			</includes>
 			<scope>provided</scope>
-			<outputFileNameMapping>social-activity-mysql-addons-webapp.war</outputFileNameMapping>
+			<outputFileNameMapping>social-rdbms-addons.war</outputFileNameMapping>
 		</dependencySet>
 		<!-- Libraries -->
 		<dependencySet>

@@ -26,12 +26,12 @@
     <version>4</version>
     <relativePath />
   </parent>
-  <groupId>org.exoplatform.activity-mysql-addons</groupId>
-  <artifactId>social-activity-mysql-addons</artifactId>
+  <groupId>org.exoplatform.addons.social</groupId>
+  <artifactId>social-rdbms-addons</artifactId>
   <version>1.0.x-SNAPSHOT</version>
   <packaging>pom</packaging>
-  <name>Social Activity MySQL Addon</name>
-  <description>Social Activity MySQL Addon</description>
+  <name>Social RDBMS Addon</name>
+  <description>Social RDBMS Addon</description>
   <modules>
     <module>lib</module>
     <module>config</module>
@@ -45,7 +45,7 @@
     <hibernate.version>4.1.12.Final</hibernate.version>
     <org.exoplatform.social.version>4.2.x-SNAPSHOT</org.exoplatform.social.version>
     
-    <argLine>-Xmx1024m -XX:MaxPermSize=512m</argLine>
+    <argLine>-Xmx1024m</argLine>
   </properties>
   <dependencyManagement>
     <dependencies>
@@ -67,13 +67,18 @@
       
       <!-- Our own project modules -->
       <dependency>
-        <groupId>org.exoplatform.activity-mysql-addons</groupId>
-        <artifactId>social-activity-mysql-addons-webapp</artifactId>
+        <groupId>org.exoplatform.addons.social</groupId>
+        <artifactId>social-rdbms-addons-lib</artifactId>
+        <version>${project.version}</version>
+     </dependency>
+      <dependency>
+        <groupId>org.exoplatform.addons.social</groupId>
+        <artifactId>social-rdbms-addons-webapp</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
-        <groupId>org.exoplatform.activity-mysql-addons</groupId>
-        <artifactId>social-activity-mysql-addons-lib</artifactId>
+        <groupId>org.exoplatform.addons.social</groupId>
+        <artifactId>social-rdbms-addons-config</artifactId>
         <version>${project.version}</version>
      </dependency>
 

@@ -21,30 +21,30 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <parent>
-    <artifactId>social-activity-mysql-addons</artifactId>
-    <groupId>org.exoplatform.activity-mysql-addons</groupId>
+    <groupId>org.exoplatform.addons.social</groupId>
+    <artifactId>social-rdbms-addons</artifactId>
     <version>1.0.x-SNAPSHOT</version>
   </parent>
-  <artifactId>social-activity-mysql-addons-bundle</artifactId>
+  <artifactId>social-rdbms-addons-bundle</artifactId>
   <packaging>jar</packaging>
-  <name>Social Activity MySQL Addon - Bundle</name>
-  <description>Social Activity MySQL Addon - Bundle</description>
+  <name>Social RDBMS Addon - Bundle</name>
+  <description>Social RDBMS Addon - Bundle</description>
   <dependencies>
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>social-activity-mysql-addons-config</artifactId>
+      <artifactId>social-rdbms-addons-config</artifactId>
       <version>${project.version}</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>social-activity-mysql-addons-lib</artifactId>
+      <artifactId>social-rdbms-addons-lib</artifactId>
       <version>${project.version}</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>social-activity-mysql-addons-webapp</artifactId>
+      <artifactId>social-rdbms-addons-webapp</artifactId>
       <version>${project.version}</version>
       <type>war</type>
       <scope>provided</scope>
