@@ -40,31 +40,20 @@
   </modules>
 
   <properties>
-    <org.exoplatform.depmgt.version>10-SNAPSHOT</org.exoplatform.depmgt.version>
     <!-- Platform Project Dependencies -->
     <hibernate.version>4.1.12.Final</hibernate.version>
-    <org.exoplatform.social.version>4.2.x-SNAPSHOT</org.exoplatform.social.version>
-    
+    <exoplatform.version>4.2.x-SNAPSHOT</exoplatform.version>
+    <!-- **************************************** -->
+    <!-- Jenkins Settings -->
+    <!-- **************************************** -->
+    <jenkins.job.name>addons-social-rdbms-master-ci</jenkins.job.name>
+    <!-- **************************************** -->
+    <!-- Other Settings -->
+    <!-- **************************************** -->
     <argLine>-Xmx1024m</argLine>
   </properties>
   <dependencyManagement>
     <dependencies>
-      <!-- Import versions from platform project -->
-      <dependency>
-        <groupId>org.exoplatform</groupId>
-        <artifactId>maven-depmgt-pom</artifactId>
-        <version>${org.exoplatform.depmgt.version}</version>
-        <type>pom</type>
-        <scope>import</scope>
-      </dependency>
-      <dependency>
-        <groupId>org.exoplatform.social</groupId>
-        <artifactId>social</artifactId>
-        <version>${org.exoplatform.social.version}</version>
-        <type>pom</type>
-        <scope>import</scope>
-      </dependency>
-      
       <!-- Our own project modules -->
       <dependency>
         <groupId>org.exoplatform.addons.social</groupId>
@@ -82,6 +71,15 @@
         <version>${project.version}</version>
      </dependency>
 
+      <!-- Import versions from platform project -->
+      <dependency>
+        <groupId>org.exoplatform.platform</groupId>
+        <artifactId>platform</artifactId>
+        <version>${exoplatform.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+      
      <dependency>
       <groupId>org.hibernate</groupId>
       <artifactId>hibernate-entitymanager</artifactId>
