@@ -193,6 +193,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
     exoComment.setBody(comment.getBody());
     exoComment.setTemplateParams(comment.getTemplateParams() != null ? comment.getTemplateParams() : new HashMap<String, String>());
     exoComment.setPosterId(comment.getPosterId());
+    exoComment.isComment(true);
     //
     exoComment.isLocked(comment.getLocked().booleanValue());
     exoComment.isHidden(comment.getHidden().booleanValue());
