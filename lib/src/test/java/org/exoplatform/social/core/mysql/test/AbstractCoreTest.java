@@ -17,12 +17,17 @@
 
 package org.exoplatform.social.core.mysql.test;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
 import javax.jcr.Session;
+
+import junit.framework.AssertionFailedError;
 
 import org.apache.commons.lang.ArrayUtils;
 import org.exoplatform.commons.testing.BaseExoTestCase;
@@ -47,6 +52,7 @@ import org.exoplatform.social.core.space.SpaceUtils;
 import org.exoplatform.social.core.space.model.Space;
 import org.exoplatform.social.core.space.spi.SpaceService;
 import org.exoplatform.social.core.storage.impl.ActivityStorageImpl;
+import org.jboss.byteman.contrib.bmunit.BMUnit;
 
 /**
  * @author <a href="mailto:thanhvc@exoplatform.com">Thanh Vu</a>
@@ -74,11 +80,24 @@ public abstract class AbstractCoreTest extends BaseExoTestCase {
   protected Identity demoIdentity;
 
   protected Session session;
+  
+  public static boolean wantCount = false;
+  private static int count;
+  private int maxQuery;
+  private boolean hasByteMan;
 
   @Override
   protected void setUp() throws Exception {
     begin();
     loginUser("root");
+    // If is query number test, init byteman
+    hasByteMan = getClass().isAnnotationPresent(QueryNumberTest.class);
+    if (hasByteMan) {
+      count = 0;
+      maxQuery = 0;
+      BMUnit.loadScriptFile(getClass(), "queryCount", "src/test/resources");
+    }
+    
     identityManager = getService(IdentityManager.class);
     activityManager =  getService(ActivityManager.class);
     activityStorageImpl = getService(ActivityStorageImpl.class);
@@ -100,6 +119,59 @@ public abstract class AbstractCoreTest extends BaseExoTestCase {
   @SuppressWarnings("unchecked")
   public <T> T getService(Class<T> clazz) {
     return (T) getContainer().getComponentInstanceOfType(clazz);
+  }
+  
+  
+//Fork from Junit 3.8.2
+ @Override
+ /**
+  * Override to run the test and assert its state.
+  * @throws Throwable if any exception is thrown
+  */
+ protected void runTest() throws Throwable {
+   String fName = getName();
+   assertNotNull("TestCase.fName cannot be null", fName); // Some VMs crash when calling getMethod(null,null);
+   Method runMethod= null;
+   try {
+     // use getMethod to get all public inherited
+     // methods. getDeclaredMethods returns all
+     // methods of this class but excludes the
+     // inherited ones.
+     runMethod= getClass().getMethod(fName, (Class[])null);
+   } catch (NoSuchMethodException e) {
+     fail("Method \""+fName+"\" not found");
+   }
+   if (!Modifier.isPublic(runMethod.getModifiers())) {
+     fail("Method \""+fName+"\" should be public");
+   }
+
+   try {
+     MaxQueryNumber queryNumber = runMethod.getAnnotation(MaxQueryNumber.class);
+     if (queryNumber != null) {
+       wantCount = true;
+       maxQuery = queryNumber.value();
+     }
+     runMethod.invoke(this);
+   }
+   catch (InvocationTargetException e) {
+     e.fillInStackTrace();
+     throw e.getTargetException();
+   }
+   catch (IllegalAccessException e) {
+     e.fillInStackTrace();
+     throw e;
+   }
+   
+   if (hasByteMan) {
+     if (wantCount && count > maxQuery) {
+       throw new AssertionFailedError(""+ count + " JDBC queries was executed but the maximum is : " + maxQuery);
+     }
+   }
+ }
+
+ // Called by byteman
+ public static void count() {
+   ++count;
   }
 
   /**

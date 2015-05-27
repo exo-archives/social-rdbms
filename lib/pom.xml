@@ -130,6 +130,31 @@
       <artifactId>hsqldb</artifactId>
       <scope>test</scope>
     </dependency>
+    <!-- the byteman sql executor count -->
+    <dependency>
+      <groupId>org.jboss.byteman</groupId>
+      <artifactId>byteman</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.jboss.byteman</groupId>
+      <artifactId>byteman-bmunit</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.jboss.byteman</groupId>
+      <artifactId>byteman-install</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.sun</groupId>
+      <artifactId>tools</artifactId>
+      <version>1.6</version>
+      <scope>system</scope>
+      <systemPath>${toolsjar}</systemPath>
+      <!-- used only by byteman -->
+      <optional>true</optional>
+    </dependency>
   </dependencies>
    <build>
     <plugins>

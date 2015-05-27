@@ -66,7 +66,8 @@ public class SocialSessionLifecycle implements Startable, ComponentRequestLifecy
    */
   private EntityManager openEntityManager() {
     if (session.get() == null) {
-      session.set(emf.createEntityManager());
+      EntityManager em = emf.createEntityManager();
+      session.set(em);
     }
     return session.get();
   }
