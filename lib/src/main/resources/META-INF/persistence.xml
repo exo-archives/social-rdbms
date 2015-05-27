@@ -19,7 +19,7 @@
     </properties>
   </persistence-unit>
 
-  <persistence-unit name="soc-activity-persistence-test" transaction-type="RESOURCE_LOCAL">
+  <persistence-unit name="soc-activity-persistence-h2" transaction-type="RESOURCE_LOCAL">
     <provider>org.hibernate.ejb.HibernatePersistence</provider>
 
     <properties>
