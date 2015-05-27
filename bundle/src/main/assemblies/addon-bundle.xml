@@ -41,6 +41,7 @@
 			<outputDirectory>/</outputDirectory>
 			<includes>
 				<include>${project.groupId}:*:jar</include>
+				<include>org.hibernate:hibernate-entitymanager:jar</include>
 			</includes>
 			<scope>provided</scope>
 			<outputFileNameMapping>${artifact.artifactId}-${artifact.baseVersion}.${artifact.extension}</outputFileNameMapping>
