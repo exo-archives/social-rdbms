@@ -2,6 +2,15 @@
              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
              xsi:schemaLocation="http://java.sun.com/xml/ns/persistence http://java.sun.com/xml/ns/persistence/persistence_2_0.xsd"
              version="2.0">
+             
+  <persistence-unit name="soc-activity-persistence-hsqldb" transaction-type="RESOURCE_LOCAL">
+    <provider>org.hibernate.ejb.HibernatePersistence</provider>
+    <non-jta-data-source>java:comp/env/exo-jcr_portal</non-jta-data-source>
+    <properties>     
+      <property name="hibernate.dialect" value="org.hibernate.dialect.HSQLDialect" />
+      <property name="hibernate.show_sql" value="false" />
+    </properties>
+  </persistence-unit>
 
   <persistence-unit name="soc-activity-persistence" transaction-type="RESOURCE_LOCAL">
     <provider>org.hibernate.ejb.HibernatePersistence</provider>
@@ -18,9 +27,9 @@
       
     </properties>
   </persistence-unit>
-
+  
   <persistence-unit name="soc-activity-persistence-h2" transaction-type="RESOURCE_LOCAL">
-    <provider>org.hibernate.ejb.HibernatePersistence</provider>
+   <provider>org.hibernate.ejb.HibernatePersistence</provider>
 
     <properties>
       <property name="javax.persistence.provider" value="org.hibernate.ejb.HibernatePersistence" />

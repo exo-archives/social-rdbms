@@ -96,7 +96,7 @@ public class ActivityDAOImpl extends SynchronizedGenericDAO<Activity, Long> impl
             .append(owner.getId())
             .append("') or (s.ownerId = '")
             .append(owner.getId())
-            .append("' and not s.streamType like '%SPACE%')) and (a.hidden = '0')")
+            .append("' and not s.streamType like '%SPACE%')) and (a.hidden = " + Boolean.FALSE + ")")
             .append(buildSQLQueryByTime("a.lastUpdated", time, isNewer))
             .append(" order by a.lastUpdated desc");
     //
@@ -115,7 +115,7 @@ public class ActivityDAOImpl extends SynchronizedGenericDAO<Activity, Long> impl
     if (space != null) {
       strQuery.append("select s from StreamItem s join s.activity a where s.ownerId ='")
               .append(space.getId())
-              .append("' and a.hidden = '0'")
+              .append("' and a.hidden = " + Boolean.FALSE)
               .append(buildSQLQueryByTime("a.lastUpdated", time, isNewer))
               .append(" order by a.lastUpdated desc");
     }
@@ -131,7 +131,7 @@ public class ActivityDAOImpl extends SynchronizedGenericDAO<Activity, Long> impl
             .append(owner.getId())
             .append("' or a.ownerId ='")
             .append(owner.getId())
-            .append("') and (a.hidden = '0') order by a.lastUpdated desc");
+            .append("') and (a.hidden = " + Boolean.FALSE + ") order by a.lastUpdated desc");
     //
     return getActivities(strQuery.toString(), offset, limit, Activity.class);
   }
@@ -166,7 +166,7 @@ public class ActivityDAOImpl extends SynchronizedGenericDAO<Activity, Long> impl
       sql.append(" or (a.posterId in ('").append(StringUtils.join(relationshipIds, "','")).append("') ")
          .append("and s.streamType <> 0)");
     }
-    sql.append(") and a.hidden='0'")
+    sql.append(") and a.hidden=" + Boolean.FALSE)
        .append(buildSQLQueryByTime("a.lastUpdated", time, isNewer))
        .append(")");
     sql.append(" order by a.lastUpdated desc");
@@ -203,8 +203,7 @@ public class ActivityDAOImpl extends SynchronizedGenericDAO<Activity, Long> impl
     sql.append("select DISTINCT(a) from StreamItem s join s.activity a where ")
        .append("s.ownerId in ('").append(StringUtils.join(spaceIds, "','")).append("') ");
     
-    sql.append(" and a.hidden='0'")
-       .append(buildSQLQueryByTime("a.lastUpdated", time, isNewer));
+    sql.append(" and a.hidden=" + Boolean.FALSE).append(buildSQLQueryByTime("a.lastUpdated", time, isNewer));
     sql.append(" order by a.lastUpdated desc");
     //
     return sql.toString();
@@ -236,8 +235,7 @@ public class ActivityDAOImpl extends SynchronizedGenericDAO<Activity, Long> impl
        .append("a.posterId in ('").append(StringUtils.join(relationshipIds, "','")).append("') ")
        .append("and s.streamType <> 0");
     
-    sql.append(" and a.hidden='0'")
-       .append(buildSQLQueryByTime("a.lastUpdated", time, isNewer));
+    sql.append(" and a.hidden=" + Boolean.FALSE).append(buildSQLQueryByTime("a.lastUpdated", time, isNewer));
     sql.append(" order by a.lastUpdated desc");
     //
     return sql.toString();

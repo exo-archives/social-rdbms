@@ -41,7 +41,7 @@ public class CommentDAOImpl extends SynchronizedGenericDAO<Comment, Long>  imple
             .append(existingActivity.getId())
             .append("')")
             .append(buildSQLQueryByTime("c.lastUpdated", time, isNewer))
-            .append(" and (c.hidden = '0') and (c.locked = '0') order by c.lastUpdated asc");
+            .append(" and (c.hidden = " + Boolean.FALSE +  ") and (c.locked = " + Boolean.FALSE + ") order by c.lastUpdated asc");
     //
     return  getComments(strQuery.toString(), offset, limit);
   }

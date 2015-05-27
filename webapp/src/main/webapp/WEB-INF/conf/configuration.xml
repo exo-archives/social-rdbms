@@ -29,7 +29,7 @@
       <value-param>
         <name>persistent-unit-param</name>
         <description>The name of persistence unit</description>
-        <value>${exo.social.activity.mdbms:soc-activity-persistence-h2}</value>      
+        <value>${exo.social.activity.rdbms:soc-activity-persistence-hsqldb}</value>      
       </value-param>
     </init-params>
   </component>
