@@ -37,9 +37,9 @@ public class CommentDAOImpl extends SynchronizedGenericDAO<Comment, Long>  imple
   
   public List<Comment> getComments(Activity existingActivity, long time, Boolean isNewer, int offset, int limit) {
     StringBuilder strQuery = new StringBuilder();
-    strQuery.append("select c from Comment c join c.activity a where (a.id ='")
+    strQuery.append("select c from Comment c join c.activity a where (a.id =")
             .append(existingActivity.getId())
-            .append("')")
+            .append(")")
             .append(buildSQLQueryByTime("c.lastUpdated", time, isNewer))
             .append(" and (c.hidden = " + Boolean.FALSE +  ") and (c.locked = " + Boolean.FALSE + ") order by c.lastUpdated asc");
     //
