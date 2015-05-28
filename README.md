@@ -1,9 +1,9 @@
 Social RDBMS Addon
 ==================
 
- The Social RDBMS Addon is eXo-addon use ro version PLF-4.3.x
-- Support use the RDBMS for storage the data of social-intranet.
-- Migrated the data of social-intranet from JCR to RDBMS (No rollback strategy is needed for data migration).
+ The Social RDBMS Addon is an eXo-addon used for version PLF-4.3.x
+- Supports RDBMS for storage layer of social-intranet.
+- Migrates social-intranet data from JCR to RDBMS (No rollback strategy is needed for data migration).
 
 Usage
 =====
@@ -13,28 +13,28 @@ Build from sources
 
 To build add-on from sources use [Maven 3](http://maven.apache.org/download.html).
 
-Clone the project with:
+- Clone the project:
 
     git clone git@github.com:exo-addons/social-rdbms.git
     cd social-rdbms
 
-Build it with
+- Build it:
 
     mvn clean install
 
-If you want to use `liquibase` to check changelog, you need update info your mysql server on social-rdbms/webapp/pom.xml on `liquibase-maven-plugin` and use maven command-line
+- If you want to use `liquibase` (a tool to keep changelog), you need update info your mysql server on social-rdbms/webapp/pom.xml on `liquibase-maven-plugin` and use maven command-line
 
     mvn liquibase:update
     
-Go to packaging bundle file created by last build in `social-rdbms/bundle/target/social-rdbms-addons-bundle-1.0.x-SNAPSHOT.zip`. Use it for deployment to Platform below.
+Go to packaging bundle file created by last build in `social-rdbms/bundle/target/social-rdbms-addons-bundle-1.0.x-SNAPSHOT.zip`. Use it for deployment to Platform as below.
 
 
 Deploy to eXo Platform
 ----------------------
 
-Install [eXo Platform 4.3 Tomcat bundle](http://learn.exoplatform.com/Download-eXo-Platform-Express-Edition-En.html) to some directory, e.g. `/opt/platform-tomcat`.
+Install [eXo Platform 4.3 Tomcat bundle](http://learn.exoplatform.com/Download-eXo-Platform-Express-Edition-En.html) to a directory, e.g. `/opt/platform-tomcat`.
 
-Users of Platform 4.3, and those who installed [Addons Manager](https://github.com/exoplatform/addons-manager) in Platform 4.3, can simple install the add-on from central catalog by command:
+Users of Platform 4.3, and those who installed [Addons Manager](https://github.com/exoplatform/addons-manager) in Platform 4.3, can simply install the add-on from central catalog by command:
 
 ```
 ./addon install social-rdbms
