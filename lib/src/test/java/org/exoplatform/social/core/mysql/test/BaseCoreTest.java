@@ -75,8 +75,8 @@ import org.jboss.byteman.contrib.bmunit.BMUnit;
   @ConfigurationUnit(scope = ContainerScope.PORTAL, path = "conf/standalone/exo.social.test.jcr-configuration.xml"),
   @ConfigurationUnit(scope = ContainerScope.PORTAL, path = "conf/standalone/exo.social.test.portal-configuration.xml")
 })
-public abstract class AbstractCoreTest extends BaseExoTestCase {
-  private final Log LOG = ExoLogger.getLogger(AbstractCoreTest.class);
+public abstract class BaseCoreTest extends BaseExoTestCase {
+  private final Log LOG = ExoLogger.getLogger(BaseCoreTest.class);
   protected SpaceService spaceService;
   protected IdentityManager identityManager;
   protected RelationshipManager relationshipManager;
@@ -97,7 +97,6 @@ public abstract class AbstractCoreTest extends BaseExoTestCase {
 
   @Override
   protected void setUp() throws Exception {
-    begin();
     // If is query number test, init byteman
     hasByteMan = getClass().isAnnotationPresent(QueryNumberTest.class);
     if (hasByteMan) {
@@ -120,8 +119,6 @@ public abstract class AbstractCoreTest extends BaseExoTestCase {
 
   @Override
   protected void tearDown() throws Exception {
-    //
-    end();
   }  
   
   @SuppressWarnings("unchecked")
@@ -301,12 +298,19 @@ public abstract class AbstractCoreTest extends BaseExoTestCase {
   
   protected <T> T doInTransaction(TransactionCallable<T> callable) {
     T result = null;
-    
     try {
       callable.beforeTransactionCompletion();
-      boolean begun = GenericDAOImpl.beginTransaction();
-      result = callable.execute(GenericDAOImpl.lifecycleLookup().getCurrentEntityManager());
-      GenericDAOImpl.endTransaction(begun);
+      boolean begunEM = GenericDAOImpl.startSynchronization();
+      try {
+        boolean begunTx = GenericDAOImpl.beginTransaction();
+        try {
+          result = callable.execute(GenericDAOImpl.lifecycleLookup().getCurrentEntityManager());
+        } finally {
+          GenericDAOImpl.endTransaction(begunTx);
+        }
+      } finally {
+        GenericDAOImpl.stopSynchronization(begunEM);
+      }
     } catch (RuntimeException e) {
       throw e;
     } finally {

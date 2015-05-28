@@ -227,7 +227,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
     commentEntity.setTitle(comment.getTitle());
     commentEntity.setTitleId(comment.getTitleId());
     commentEntity.setBody(comment.getBody());
-    commentEntity.setPosterId(comment.getUserId());
+    commentEntity.setPosterId(comment.getPosterId() != null ? comment.getPosterId() : comment.getUserId());
     if (comment.getTemplateParams() != null) {
       commentEntity.setTemplateParams(comment.getTemplateParams());
     }
