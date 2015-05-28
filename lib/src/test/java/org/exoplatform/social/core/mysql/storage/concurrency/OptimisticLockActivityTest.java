@@ -51,8 +51,7 @@ public class OptimisticLockActivityTest extends AbstractLockOptimisticModeTest {
     doInTransaction(new TransactionVoidCallable() {
       @Override
       public void execute(EntityManager em) {
-        ExoSocialActivity comment = createActivity("comment 1", rootIdentity.getId());
-        comment.isComment(true);
+        ExoSocialActivity comment = oneOfComment("root comment 1", rootIdentity);
         activityStorage.saveComment(createdActivity, comment);
       }
     });
@@ -60,8 +59,7 @@ public class OptimisticLockActivityTest extends AbstractLockOptimisticModeTest {
     doInTransaction(new TransactionVoidCallable() {
       @Override
       public void execute(EntityManager em) {
-        ExoSocialActivity comment = createActivity("comment 2", rootIdentity.getId());
-        comment.isComment(true);
+        ExoSocialActivity comment = oneOfComment("root comment 2", rootIdentity);
         activityStorage.saveComment(createdActivity, comment);
         
       }
@@ -70,7 +68,7 @@ public class OptimisticLockActivityTest extends AbstractLockOptimisticModeTest {
     doInTransaction(new TransactionVoidCallable() {
       @Override
       public void execute(EntityManager em) {
-        ExoSocialActivity comment = createActivity("comment 3", rootIdentity.getId());
+        ExoSocialActivity comment = oneOfComment("root comment 3", rootIdentity);
         comment.isComment(true);
         activityStorage.saveComment(createdActivity, comment);
         
@@ -80,16 +78,6 @@ public class OptimisticLockActivityTest extends AbstractLockOptimisticModeTest {
     List<ExoSocialActivity> got = activityStorage.getComments(createdActivity, 0, 10);
     assertEquals(3, got.size());
   }
-  
-  public void testUpdateActivity() throws Exception {
-    ExoSocialActivity got = activityStorage.getActivity(createdActivity.getId());
-    got.setTitle("Activity title updated 1");
-    activityStorage.updateActivity(got);
-    LOG.info("Updated the title as 'Activity title updated 1'");
-    ExoSocialActivity latest = activityStorage.getActivity(createdActivity.getId());
-    assertEquals("Activity title updated 1", latest.getTitle());
-  }
-  
   
   /**
    * Scenario:

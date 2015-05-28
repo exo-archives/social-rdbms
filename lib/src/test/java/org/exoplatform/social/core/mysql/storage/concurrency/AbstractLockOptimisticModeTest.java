@@ -16,13 +16,9 @@
  */
 package org.exoplatform.social.core.mysql.storage.concurrency;
 
-import java.util.LinkedHashMap;
-import java.util.Map;
-
 import javax.persistence.EntityManager;
 
 import org.exoplatform.social.core.activity.model.ExoSocialActivity;
-import org.exoplatform.social.core.activity.model.ExoSocialActivityImpl;
 import org.exoplatform.social.core.mysql.test.BaseCoreTest;
 
 /**
@@ -51,38 +47,10 @@ public class AbstractLockOptimisticModeTest extends BaseCoreTest {
     doInTransaction(new TransactionCallable<Void>() {
       @Override
       public Void execute(EntityManager em) {
-        String activityTitle = "activity title";
-        ExoSocialActivity activity = createActivity(activityTitle, maryIdentity.getId());
-        createdActivity = activityStorage.saveActivity(johnIdentity, activity);
+        createdActivity = oneOfActivity("john post activity", johnIdentity, false, true);
         return null;
       }
     });
   }
   
-  protected ExoSocialActivity createActivity(String activityTitle, String posterId) {
-    //
-    ExoSocialActivity activity = new ExoSocialActivityImpl();
-    activity.setTitle(activityTitle);
-    activity.setTitleId("TitleID: "+ activity.getTitle());
-    activity.setType("UserActivity");
-    activity.setBody("Body of "+ activity.getTitle());
-    activity.setBodyId("BodyId of "+ activity.getTitle());
-    activity.setLikeIdentityIds(new String[]{"demo", "mary"});
-    activity.setMentionedIds(new String[]{"demo", "john"});
-    activity.setCommentedIds(new String[]{});
-    activity.setReplyToId(new String[]{});
-    activity.setAppId("AppID");
-    activity.setExternalId("External ID");
-    activity.setPosterId(posterId);
-    activity.isComment(false);
-    
-    Map<String, String> templateParams = new LinkedHashMap<String, String>();
-    templateParams.put("key1", "value 1");
-    templateParams.put("key2", "value 2");
-    templateParams.put("key3", "value 3");
-    activity.setTemplateParams(templateParams);
-    
-    return activity;
-  }
-
 }

@@ -24,7 +24,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
@@ -51,6 +54,8 @@ import org.exoplatform.services.organization.User;
 import org.exoplatform.services.security.ConversationState;
 import org.exoplatform.services.security.MembershipEntry;
 import org.exoplatform.social.addons.storage.dao.jpa.GenericDAOImpl;
+import org.exoplatform.social.core.activity.model.ExoSocialActivity;
+import org.exoplatform.social.core.activity.model.ExoSocialActivityImpl;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvider;
 import org.exoplatform.social.core.manager.ActivityManager;
@@ -400,6 +405,158 @@ public abstract class BaseCoreTest extends BaseExoTestCase {
       throw new IllegalStateException(e);
     }
     return result;
+  }
+  
+  protected List<ExoSocialActivity> listOf(int n, Identity poster, boolean isComment, boolean isSave) {
+    List<ExoSocialActivity> list = new LinkedList<ExoSocialActivity>();
+    ExoSocialActivity a = null;
+    for (int i = 0; i < n; i++) {
+      a = ActivityBuilder.getInstance()
+                         .posterId(poster.getId())
+                         .title("title " + i)
+                         .body("body " + i)
+                         .titleId("titleId " + i)
+                         .isComment(isComment)
+                         .take();
+      
+      if (isSave) {
+        activityStorage.saveActivity(poster, a);
+      }
+      list.add(a);
+    }
+    
+    return list;
+  }
+  
+  protected ExoSocialActivity oneOfActivity(String title, final Identity poster, final boolean isComment, boolean isSave) {
+    final ExoSocialActivity a = ActivityBuilder.getInstance()
+                                         .posterId(poster.getId())
+                                         .title(title)
+                                         .body("body ")
+                                         .titleId("titleId ")
+                                         .isComment(isComment)
+                                         .take();
+    
+    
+
+    if (isSave) {
+      doInTransaction(new TransactionCallable<ExoSocialActivity>() {
+        @Override
+        public ExoSocialActivity execute(EntityManager em) {
+          return activityStorage.saveActivity(poster, a);
+        }
+      });
+    }
+    return a;
+  }
+  
+  protected ExoSocialActivity oneOfComment(String title, final Identity commenter) {
+    return ActivityBuilder.getInstance()
+                                         .posterId(commenter.getId())
+                                         .title(title)
+                                         .body("body ")
+                                         .titleId("titleId ")
+                                         .isComment(true)
+                                         .take();
+  }
+
+  protected List<ExoSocialActivity> listOf(int n, Identity streamOwner, Identity poster, boolean isComment, boolean isSave) {
+    List<ExoSocialActivity> list = new LinkedList<ExoSocialActivity>();
+    ExoSocialActivity a = null;
+    Map<String, String> templateParams = new LinkedHashMap<String, String>();
+    templateParams.put("key1", "value 1");
+    templateParams.put("key2", "value 2");
+    templateParams.put("key3", "value 3");
+    
+    for (int i = 0; i < n; i++) {
+      a = ActivityBuilder.getInstance()
+                         .posterId(poster.getId())
+                         .title("title" + i)
+                         .body("body" + i)
+                         .titleId("titleId" + i)
+                         .params(templateParams)
+                         .isComment(isComment)
+                         .take();
+      
+      if (isSave) {
+        activityStorage.saveActivity(streamOwner, a);
+      }
+      list.add(a);
+    }
+    
+    return list;
+  }
+  
+  /**
+   * Activity Builder
+   * @author thanhvc
+   *
+   */
+  public static class ActivityBuilder {
+    /** */
+    final ExoSocialActivity activity;
+    
+    /** */
+    public ActivityBuilder(ExoSocialActivity activity) {
+      this.activity = activity;
+    }
+    
+    public static ActivityBuilder getInstance() {
+      return new ActivityBuilder(new ExoSocialActivityImpl());
+    }
+    
+    public static ActivityBuilder getInstance(ExoSocialActivity activity) {
+      return new ActivityBuilder(activity);
+    }
+    
+    public ActivityBuilder body(String body) {
+      this.activity.setBody(body);
+      return this;
+    }
+    
+    public ActivityBuilder title(String title) {
+      this.activity.setTitle(title);
+      return this;
+    }
+    
+    public ActivityBuilder titleId(String titleId) {
+      this.activity.setTitleId(titleId);
+      return this;
+    }
+    
+    public ActivityBuilder posterId(String posterId) {
+      this.activity.setPosterId(posterId);
+      return this;
+    }
+    
+    public ActivityBuilder isComment(boolean isComment) {
+      this.activity.isComment(isComment);
+      return this;
+    }
+    
+    public ActivityBuilder params(Map<String, String> params) {
+      this.activity.setTemplateParams(params);
+      return this;
+    }
+    
+    public ActivityBuilder commenters(String...commenters) {
+      this.activity.setCommentedIds(commenters);
+      return this;
+    }
+    
+    public ActivityBuilder likers(String...likers) {
+      this.activity.setLikeIdentityIds(likers);
+      return this;
+    }
+    
+    public ActivityBuilder mentioners(String...mentioners) {
+      this.activity.setMentionedIds(mentioners);
+      return this;
+    }
+    
+    public ExoSocialActivity take() {
+      return this.activity;
+    }
   }
   
   
