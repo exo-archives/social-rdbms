@@ -42,6 +42,7 @@
     <!-- Platform Project Dependencies -->
     <hibernate.version>4.1.12.Final</hibernate.version>
     <exoplatform.version>4.3.x-plf-social-rdbms-SNAPSHOT</exoplatform.version>
+    <liquibase.version>3.3.2</liquibase.version>
     <!-- **************************************** -->
     <!-- Jenkins Settings -->
     <!-- **************************************** -->
@@ -83,6 +84,11 @@
       <groupId>org.hibernate</groupId>
       <artifactId>hibernate-entitymanager</artifactId>
       <version>${hibernate.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.liquibase</groupId>
+      <artifactId>liquibase-core</artifactId>
+      <version>${liquibase.version}</version>
     </dependency>
     </dependencies>
   </dependencyManagement>
