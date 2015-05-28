@@ -50,7 +50,7 @@ public class OptimisticLockActivityTest extends AbstractLockOptimisticModeTest {
     
     doInTransaction(new TransactionVoidCallable() {
       @Override
-      public void execute(EntityManager em) {
+      public void execute() {
         ExoSocialActivity comment = oneOfComment("root comment 1", rootIdentity);
         activityStorage.saveComment(createdActivity, comment);
       }
@@ -58,7 +58,7 @@ public class OptimisticLockActivityTest extends AbstractLockOptimisticModeTest {
     
     doInTransaction(new TransactionVoidCallable() {
       @Override
-      public void execute(EntityManager em) {
+      public void execute() {
         ExoSocialActivity comment = oneOfComment("root comment 2", rootIdentity);
         activityStorage.saveComment(createdActivity, comment);
         
@@ -67,7 +67,7 @@ public class OptimisticLockActivityTest extends AbstractLockOptimisticModeTest {
     
     doInTransaction(new TransactionVoidCallable() {
       @Override
-      public void execute(EntityManager em) {
+      public void execute() {
         ExoSocialActivity comment = oneOfComment("root comment 3", rootIdentity);
         comment.isComment(true);
         activityStorage.saveComment(createdActivity, comment);
@@ -91,7 +91,7 @@ public class OptimisticLockActivityTest extends AbstractLockOptimisticModeTest {
     final CountDownLatch latch = new CountDownLatch(1); 
     doInTransaction(new TransactionVoidCallable() {
       @Override
-      public void execute(EntityManager em) {
+      public void execute() {
         //final ExoSocialActivity got = activityStorage.getActivity(createdActivity.getId());
         try {
           executeSync(new VoidCallable() {
@@ -99,7 +99,7 @@ public class OptimisticLockActivityTest extends AbstractLockOptimisticModeTest {
             public void execute() {
               doInTransaction(new TransactionVoidCallable() {
                 @Override
-                public void execute(EntityManager em) {
+                public void execute() {
                   ExoSocialActivity _got = activityStorage.getActivity(createdActivity.getId());
                   _got.setTitle("Activity title updated 1");
                   activityStorage.updateActivity(_got);
@@ -135,7 +135,7 @@ public class OptimisticLockActivityTest extends AbstractLockOptimisticModeTest {
       }
 
       @Override
-      public void execute(EntityManager em) {
+      public void execute() {
         //Here is opening new EntityManager and get latest the status of Activity entity
         LOG.info("Starts to assert the activity title in synchronous mode.");
         ExoSocialActivity latest = activityStorage.getActivity(createdActivity.getId());

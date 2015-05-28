@@ -46,7 +46,7 @@ public class AbstractLockOptimisticModeTest extends BaseCoreTest {
   public void init() {
     doInTransaction(new TransactionCallable<Void>() {
       @Override
-      public Void execute(EntityManager em) {
+      public Void execute() {
         createdActivity = oneOfActivity("john post activity", johnIdentity, false, true);
         return null;
       }

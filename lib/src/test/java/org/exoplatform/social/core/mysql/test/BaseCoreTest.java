@@ -272,7 +272,7 @@ public abstract class BaseCoreTest extends BaseExoTestCase {
    * @param <T>
    */
   protected static interface SessionCallable<T> {
-    T execute(EntityManager em);
+    T execute();
   }
   
   /**
@@ -281,7 +281,7 @@ public abstract class BaseCoreTest extends BaseExoTestCase {
    *
    */
   protected static interface SessionVoidCallable {
-    void execute(EntityManager em);
+    void execute();
   }
   
   protected static abstract class TransactionCallable<T> implements SessionCallable<T> {
@@ -309,7 +309,7 @@ public abstract class BaseCoreTest extends BaseExoTestCase {
       try {
         boolean begunTx = GenericDAOImpl.beginTransaction();
         try {
-          result = callable.execute(GenericDAOImpl.lifecycleLookup().getCurrentEntityManager());
+          result = callable.execute();
         } finally {
           GenericDAOImpl.endTransaction(begunTx);
         }
@@ -328,7 +328,7 @@ public abstract class BaseCoreTest extends BaseExoTestCase {
     try {
       callable.beforeTransactionCompletion();
       boolean begun = GenericDAOImpl.beginTransaction();
-      callable.execute(GenericDAOImpl.lifecycleLookup().getCurrentEntityManager());
+      callable.execute();
       GenericDAOImpl.endTransaction(begun);
     } catch (RuntimeException e) {
       throw e;
@@ -442,7 +442,7 @@ public abstract class BaseCoreTest extends BaseExoTestCase {
     if (isSave) {
       doInTransaction(new TransactionCallable<ExoSocialActivity>() {
         @Override
-        public ExoSocialActivity execute(EntityManager em) {
+        public ExoSocialActivity execute() {
           return activityStorage.saveActivity(poster, a);
         }
       });
