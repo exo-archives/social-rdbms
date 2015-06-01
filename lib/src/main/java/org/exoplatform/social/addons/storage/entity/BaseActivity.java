@@ -5,8 +5,6 @@ import java.io.Serializable;
 import javax.persistence.Column;
 import javax.persistence.MappedSuperclass;
 
-import org.exoplatform.social.core.storage.query.PropertyLiteralExpression;
-
 /**
  * Created by bdechateauvieux on 3/25/15.
  */
@@ -17,7 +15,6 @@ public abstract class BaseActivity implements Serializable {
   /** */
   @Column(length = 2000)
   private String title;
-  public static final PropertyLiteralExpression<String> titleProperty = new PropertyLiteralExpression<String>(String.class, "title");
   
   /** */
   @Column(length = 36)
@@ -25,21 +22,17 @@ public abstract class BaseActivity implements Serializable {
   
   /** */
   protected Long posted;
-  public static final PropertyLiteralExpression<Long> postedProperty = new PropertyLiteralExpression<Long>(Long.class, "posted");
   
   /** */
   private Long lastUpdated;
-  public static final PropertyLiteralExpression<Long> lastUpdatedProperty = new PropertyLiteralExpression<Long>(Long.class, "lastUpdated");
   
   /** */
   @Column(length = 36)
   private String posterId;// creator
-  public static final PropertyLiteralExpression<String> posterIdProperty = new PropertyLiteralExpression<String>(String.class, "posterId");
   
   /** */
   @Column(length = 36)
   private String ownerId;// owner of stream
-  public static final PropertyLiteralExpression<String> ownerIdProperty = new PropertyLiteralExpression<String>(String.class, "ownerId");
   
   /** */
   @Column(length = 255)
@@ -55,11 +48,9 @@ public abstract class BaseActivity implements Serializable {
   
   /** */
   private Boolean locked = false;
-  public static final PropertyLiteralExpression<Boolean> lockedProperty = new PropertyLiteralExpression<Boolean>(Boolean.class, "locked");
   
   /** */
   private Boolean hidden = false;
-  public static final PropertyLiteralExpression<Boolean> hiddenProperty = new PropertyLiteralExpression<Boolean>(Boolean.class, "hidden");
 
   @Deprecated
   @Column(length = 2000)

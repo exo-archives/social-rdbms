@@ -25,11 +25,9 @@ public class StreamItem {
    */
   @Column(length = 36)
   private String ownerId;
-  public static final PropertyLiteralExpression<String> ownerIdProperty = new PropertyLiteralExpression<String>(String.class, "ownerId");
 
   @Enumerated
   private StreamType streamType;
-  public static final PropertyLiteralExpression<String> streamTypeProperty = new PropertyLiteralExpression<String>(String.class, "streamType");
 
   public StreamItem() {
   }

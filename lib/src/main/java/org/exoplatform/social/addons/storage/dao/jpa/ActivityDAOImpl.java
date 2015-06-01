@@ -36,7 +36,9 @@ import org.exoplatform.commons.utils.CommonsUtils;
 import org.exoplatform.social.addons.storage.dao.ActivityDAO;
 import org.exoplatform.social.addons.storage.dao.jpa.synchronization.SynchronizedGenericDAO;
 import org.exoplatform.social.addons.storage.entity.Activity;
+import org.exoplatform.social.addons.storage.entity.Activity_;
 import org.exoplatform.social.addons.storage.entity.StreamItem;
+import org.exoplatform.social.addons.storage.entity.StreamItem_;
 import org.exoplatform.social.addons.storage.entity.StreamType;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.space.model.Space;
@@ -102,17 +104,17 @@ public class ActivityDAOImpl extends SynchronizedGenericDAO<Activity, Long> impl
     CriteriaBuilder cb = em.getCriteriaBuilder();
     CriteriaQuery<Activity> criteria = cb.createQuery(Activity.class);
     Root<Activity> activity = criteria.from(Activity.class);
-    Join<Activity, StreamItem> streamItem = activity.join(Activity.streamItemsProperty.getName());
+    Join<Activity, StreamItem> streamItem = activity.join(Activity_.streamItems);
     
     List<Predicate> predicates = new ArrayList<Predicate>();
-    predicates.add(cb.or(cb.equal(streamItem.get(StreamItem.ownerIdProperty.getName()), owner.getId()), cb.equal(activity.get(Activity.ownerIdProperty.getName()), owner.getId())));
-    predicates.add(cb.notEqual(streamItem.<String>get(StreamItem.streamTypeProperty.getName()), StreamType.SPACE));
-    predicates.add(cb.equal(activity.<Boolean>get(Activity.hiddenProperty.getName()), Boolean.FALSE));
-    predicates.add(cb.equal(activity.<Boolean>get(Activity.lockedProperty.getName()), Boolean.FALSE));
+    predicates.add(cb.equal(streamItem.get(StreamItem_.ownerId), owner.getId()));
+    predicates.add(cb.notEqual(streamItem.<StreamType>get(StreamItem_.streamType), StreamType.SPACE));
+    predicates.add(cb.equal(activity.<Boolean>get(Activity_.hidden), Boolean.FALSE));
+    predicates.add(cb.equal(activity.<Boolean>get(Activity_.locked), Boolean.FALSE));
     
     CriteriaQuery<Activity> select = criteria.select(activity);
     select.where(predicates.toArray(new Predicate[0]));
-    select.orderBy(cb.desc(activity.<Long> get(Activity.lastUpdatedProperty.getName())));
+    select.orderBy(cb.desc(activity.<Long> get(Activity_.lastUpdated)));
 
     TypedQuery<Activity> typedQuery = em.createQuery(select);
     if (limit > 0) {
