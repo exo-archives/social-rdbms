@@ -2,33 +2,34 @@ package org.exoplatform.social.addons.storage.entity;
 
 import javax.persistence.*;
 
+import org.exoplatform.social.core.storage.query.PropertyLiteralExpression;
+
 /**
  * Created by bdechateauvieux on 3/26/15.
  */
 @Entity
 @Table(name = "SOC_STREAM_ITEMS")
-@NamedQuery(
-  name = "getStreamByActivityId",
-  query = "select s from StreamItem s join s.activity A where A.id = :activityId"
-)
+@NamedQuery(name = "getStreamByActivityId", query = "select s from StreamItem s join s.activity A where A.id = :activityId")
 public class StreamItem {
   @Id
   @GeneratedValue
   @Column(name = "STREAM_ITEM_ID")
-  private Long       id;
+  private Long id;
 
   @OneToOne
   @JoinColumn(name = "ACTIVITY_ID")
-  private Activity   activity;
+  private Activity activity;
 
   /**
    * This is id's Identity owner of ActivityStream or SpaceStream
    */
   @Column(length = 36)
-  private String     ownerId;
+  private String ownerId;
+  public static final PropertyLiteralExpression<String> ownerIdProperty = new PropertyLiteralExpression<String>(String.class, "ownerId");
 
   @Enumerated
   private StreamType streamType;
+  public static final PropertyLiteralExpression<String> streamTypeProperty = new PropertyLiteralExpression<String>(String.class, "streamType");
 
   public StreamItem() {
   }
@@ -68,5 +69,5 @@ public class StreamItem {
   public void setStreamType(StreamType streamType) {
     this.streamType = streamType;
   }
-  
+
 }

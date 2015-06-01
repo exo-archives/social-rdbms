@@ -115,13 +115,22 @@ public class RDBMSActivityStorageImplTest extends AbstractCoreTest {
     //
     tearDownActivityList.add(activity);
   }
+  
+  @MaxQueryNumber(516)
+  public void testGetUserActivities() {
+    ExoSocialActivity activity = createActivity(1);
+    //
+    activityStorage.saveActivity(demoIdentity, activity);
+    List<ExoSocialActivity> got = activityStorage.getUserActivities(demoIdentity, 0, 20);
+    assertEquals(1, got.size());
+    tearDownActivityList.addAll(got);
+  }
+  
   @MaxQueryNumber(516)
   public void testGetActivity() {
     ExoSocialActivity activity = createActivity(1);
     //
     activityStorage.saveActivity(demoIdentity, activity);
-    
-    
   }
   @MaxQueryNumber(530)
   public void testGetNewerOnUserActivities() {

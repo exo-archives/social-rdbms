@@ -28,6 +28,7 @@ import org.exoplatform.services.log.Log;
 import org.exoplatform.services.security.ConversationState;
 import org.exoplatform.social.addons.storage.dao.ActivityDAO;
 import org.exoplatform.social.addons.storage.dao.CommentDAO;
+import org.exoplatform.social.addons.storage.dao.jpa.GenericDAOImpl;
 import org.exoplatform.social.addons.storage.entity.Activity;
 import org.exoplatform.social.addons.storage.entity.Comment;
 import org.exoplatform.social.core.identity.model.Identity;
@@ -159,6 +160,7 @@ public class ActivityDAOTest extends AbstractCoreTest {
     //
     return activity;
   }
+  
   
   private Activity saveActivity(Identity ownerIdentity, Activity activity) {
     activity.setOwnerId(ownerIdentity.getId());
@@ -339,5 +341,4 @@ public class ActivityDAOTest extends AbstractCoreTest {
     assertNull(commentDao.find(maryComment.getId()));
     assertEquals(0, activityDao.find(demoActivity.getId()).getComments().size());
   }
-
 }

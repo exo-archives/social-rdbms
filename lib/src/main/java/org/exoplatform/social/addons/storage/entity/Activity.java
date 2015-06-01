@@ -26,6 +26,7 @@ import javax.persistence.OneToMany;
 import javax.persistence.OrderBy;
 import javax.persistence.Table;
 
+import org.exoplatform.social.core.storage.query.PropertyLiteralExpression;
 import org.json.JSONObject;
 
 /**
@@ -44,8 +45,10 @@ public class Activity extends BaseActivity {
   @GeneratedValue(strategy = GenerationType.AUTO)
   @Column(name="ACTIVITY_ID")
   private Long id;
-
+  
+  /** */
   private String type;
+  public static final PropertyLiteralExpression<String> typeProperty = new PropertyLiteralExpression<String>(String.class, "type");
 
   @ElementCollection
   @CollectionTable(
@@ -80,7 +83,9 @@ public class Activity extends BaseActivity {
   @OneToMany(cascade=CascadeType.ALL, orphanRemoval=true, mappedBy="activity", fetch=FetchType.LAZY)
   @OrderBy("id DESC")
   private List<StreamItem> streamItems;
+  public static final PropertyLiteralExpression<List> streamItemsProperty = new PropertyLiteralExpression<List>(List.class, "streamItems");
 
+  /** */
   public Activity() {
     setPosted(new Date().getTime());
     setLastUpdated(new Date().getTime());

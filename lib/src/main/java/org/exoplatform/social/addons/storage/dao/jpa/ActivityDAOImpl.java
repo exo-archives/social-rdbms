@@ -21,7 +21,13 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Join;
+import javax.persistence.criteria.Predicate;
+import javax.persistence.criteria.Root;
 
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.ArrayUtils;
@@ -31,6 +37,7 @@ import org.exoplatform.social.addons.storage.dao.ActivityDAO;
 import org.exoplatform.social.addons.storage.dao.jpa.synchronization.SynchronizedGenericDAO;
 import org.exoplatform.social.addons.storage.entity.Activity;
 import org.exoplatform.social.addons.storage.entity.StreamItem;
+import org.exoplatform.social.addons.storage.entity.StreamType;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.space.model.Space;
 import org.exoplatform.social.core.storage.ActivityStorageException;
@@ -91,16 +98,29 @@ public class ActivityDAOImpl extends SynchronizedGenericDAO<Activity, Long> impl
    * @throws ActivityStorageException
    */
   public List<Activity> getUserActivities(Identity owner, long time, boolean isNewer, long offset, long limit) throws ActivityStorageException {
-    StringBuilder strQuery = new StringBuilder();//DISTINCT
-    strQuery.append("select DISTINCT(a) from StreamItem s join s.activity a where ((a.ownerId ='")
-            .append(owner.getId())
-            .append("') or (s.ownerId = '")
-            .append(owner.getId())
-            .append("' and not s.streamType like '%SPACE%')) and (a.hidden = " + Boolean.FALSE + ")")
-            .append(buildSQLQueryByTime("a.lastUpdated", time, isNewer))
-            .append(" order by a.lastUpdated desc");
-    //
-    return getActivities(strQuery.toString(), offset, limit, Activity.class);
+    EntityManager em = lifecycleLookup().getCurrentEntityManager();
+    CriteriaBuilder cb = em.getCriteriaBuilder();
+    CriteriaQuery<Activity> criteria = cb.createQuery(Activity.class);
+    Root<Activity> activity = criteria.from(Activity.class);
+    Join<Activity, StreamItem> streamItem = activity.join(Activity.streamItemsProperty.getName());
+    
+    List<Predicate> predicates = new ArrayList<Predicate>();
+    predicates.add(cb.or(cb.equal(streamItem.get(StreamItem.ownerIdProperty.getName()), owner.getId()), cb.equal(activity.get(Activity.ownerIdProperty.getName()), owner.getId())));
+    predicates.add(cb.notEqual(streamItem.<String>get(StreamItem.streamTypeProperty.getName()), StreamType.SPACE));
+    predicates.add(cb.equal(activity.<Boolean>get(Activity.hiddenProperty.getName()), Boolean.FALSE));
+    predicates.add(cb.equal(activity.<Boolean>get(Activity.lockedProperty.getName()), Boolean.FALSE));
+    
+    CriteriaQuery<Activity> select = criteria.select(activity);
+    select.where(predicates.toArray(new Predicate[0]));
+    select.orderBy(cb.desc(activity.<Long> get(Activity.lastUpdatedProperty.getName())));
+
+    TypedQuery<Activity> typedQuery = em.createQuery(select);
+    if (limit > 0) {
+      typedQuery.setFirstResult((int) offset);
+      typedQuery.setMaxResults((int) limit);
+    }
+    
+    return typedQuery.getResultList();
   }
   
   @Override
