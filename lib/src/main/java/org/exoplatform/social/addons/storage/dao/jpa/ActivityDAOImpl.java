@@ -34,6 +34,7 @@ import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
 import org.exoplatform.commons.utils.CommonsUtils;
 import org.exoplatform.social.addons.storage.dao.ActivityDAO;
+import org.exoplatform.social.addons.storage.dao.jpa.query.AStreamQueryBuilder;
 import org.exoplatform.social.addons.storage.dao.jpa.synchronization.SynchronizedGenericDAO;
 import org.exoplatform.social.addons.storage.entity.Activity;
 import org.exoplatform.social.addons.storage.entity.Activity_;
@@ -99,30 +100,20 @@ public class ActivityDAOImpl extends SynchronizedGenericDAO<Activity, Long> impl
    * @return
    * @throws ActivityStorageException
    */
-  public List<Activity> getUserActivities(Identity owner, long time, boolean isNewer, long offset, long limit) throws ActivityStorageException {
-    EntityManager em = lifecycleLookup().getCurrentEntityManager();
-    CriteriaBuilder cb = em.getCriteriaBuilder();
-    CriteriaQuery<Activity> criteria = cb.createQuery(Activity.class);
-    Root<Activity> activity = criteria.from(Activity.class);
-    Join<Activity, StreamItem> streamItem = activity.join(Activity_.streamItems);
-    
-    List<Predicate> predicates = new ArrayList<Predicate>();
-    predicates.add(cb.equal(streamItem.get(StreamItem_.ownerId), owner.getId()));
-    predicates.add(cb.notEqual(streamItem.<StreamType>get(StreamItem_.streamType), StreamType.SPACE));
-    predicates.add(cb.equal(activity.<Boolean>get(Activity_.hidden), Boolean.FALSE));
-    predicates.add(cb.equal(activity.<Boolean>get(Activity_.locked), Boolean.FALSE));
-    
-    CriteriaQuery<Activity> select = criteria.select(activity);
-    select.where(predicates.toArray(new Predicate[0]));
-    select.orderBy(cb.desc(activity.<Long> get(Activity_.lastUpdated)));
+  public List<Activity> getUserActivities(Identity owner,
+                                          long time,
+                                          boolean isNewer,
+                                          long offset,
+                                          long limit) throws ActivityStorageException {
 
-    TypedQuery<Activity> typedQuery = em.createQuery(select);
-    if (limit > 0) {
-      typedQuery.setFirstResult((int) offset);
-      typedQuery.setMaxResults((int) limit);
-    }
-    
-    return typedQuery.getResultList();
+    return AStreamQueryBuilder.builder()
+                              .owner(owner)
+                              .offset(offset)
+                              .notEqualType(StreamType.SPACE)
+                              .limit(limit)
+                              .build()
+                              .getResultList();
+
   }
   
   @Override
@@ -130,32 +121,23 @@ public class ActivityDAOImpl extends SynchronizedGenericDAO<Activity, Long> impl
     return getUserActivities(ownerIdentity, 0, false, 0, -1).size();
   }
 
-  public List<Activity> getSpaceActivities(Identity owner, long time, boolean isNewer, long offset, long limit) throws ActivityStorageException {
-    SpaceStorage spaceStorage = CommonsUtils.getService(SpaceStorage.class);
-    Space space = spaceStorage.getSpaceByPrettyName(owner.getRemoteId());
-    StringBuilder strQuery = new StringBuilder();//DISTINCT
-    if (space != null) {
-      strQuery.append("select s from StreamItem s join s.activity a where s.ownerId ='")
-              .append(space.getId())
-              .append("' and a.hidden = " + Boolean.FALSE)
-              .append(buildSQLQueryByTime("a.lastUpdated", time, isNewer))
-              .append(" order by a.lastUpdated desc");
-    }
-    //
-    return getActivities(strQuery.toString(), offset, limit);
+  public List<Activity> getSpaceActivities(Identity spaceOwner, long time, boolean isNewer, long offset, long limit) throws ActivityStorageException {
+    return AStreamQueryBuilder.builder()
+        .owner(spaceOwner)
+        .offset(offset)
+        .limit(limit)
+        .build()
+        .getResultList();
   }
   
   public List<Activity> getActivities(Identity owner, Identity viewer, long offset, long limit) throws ActivityStorageException {
-    StringBuilder strQuery = new StringBuilder();//DISTINCT
-    strQuery.append("select DISTINCT(a) from StreamItem s join s.activity a where s.ownerId = '")
-            .append(owner.getId())
-            .append("' and not s.streamType like '%SPACE%' and (a.ownerId ='")
-            .append(owner.getId())
-            .append("' or a.ownerId ='")
-            .append(owner.getId())
-            .append("') and (a.hidden = " + Boolean.FALSE + ") order by a.lastUpdated desc");
-    //
-    return getActivities(strQuery.toString(), offset, limit, Activity.class);
+    return AStreamQueryBuilder.builder()
+        .owner(owner)
+        .offset(offset)
+        .notEqualType(StreamType.SPACE)
+        .limit(limit)
+        .build()
+        .getResultList();
   }
 
   public List<Activity> getActivityFeed(Identity ownerIdentity, int offset, int limit) {

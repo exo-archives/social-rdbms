@@ -356,12 +356,8 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
     }
   }
 
-  private void spaceMembers(Identity owner, Activity activity) {
-    Space space = spaceStorage.getSpaceByPrettyName(owner.getRemoteId());
-
-    if (space == null) return;
-    //
-    createStreamItem(StreamType.SPACE, activity, space.getId());
+  private void spaceMembers(Identity spaceOwner, Activity activity) {
+    createStreamItem(StreamType.SPACE, activity, spaceOwner.getId());
   }
 
   private void createStreamItem(StreamType streamType, Activity activity, String ownerId){
