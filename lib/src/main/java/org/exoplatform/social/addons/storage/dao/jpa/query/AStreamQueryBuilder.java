@@ -170,7 +170,7 @@ public final class AStreamQueryBuilder {
     //filter hidden = FALSE
     predicates.add(cb.equal(activity.<Boolean>get(Activity_.hidden), Boolean.FALSE));
     
-    CriteriaQuery<Activity> select = criteria.select(activity);
+    CriteriaQuery<Activity> select = criteria.select(activity).distinct(true);
     select.where(predicates.toArray(new Predicate[0]));
     if (this.descOrder) {
       select.orderBy(cb.desc(activity.<Long> get(Activity_.lastUpdated)));
@@ -248,7 +248,7 @@ public final class AStreamQueryBuilder {
     }
     
     
-    CriteriaQuery<Activity> select = criteria.select(activity);
+    CriteriaQuery<Activity> select = criteria.select(activity).distinct(true);
     select.where(predicate);
     if (this.descOrder) {
       select.orderBy(cb.desc(activity.<Long> get(Activity_.lastUpdated)));
@@ -312,7 +312,7 @@ public final class AStreamQueryBuilder {
     //filter hidden = FALSE
     predicates.add(cb.equal(activity.<Boolean>get(Activity_.hidden), Boolean.FALSE));
     
-    CriteriaQuery<Long> select = criteria.select(cb.count(activity));
+    CriteriaQuery<Long> select = criteria.select(cb.countDistinct(activity));
     select.where(predicates.toArray(new Predicate[0]));
 
     return em.createQuery(select);
@@ -378,7 +378,7 @@ public final class AStreamQueryBuilder {
       predicate = cb.equal(activity.<Boolean>get(Activity_.hidden), Boolean.FALSE);
     }
     
-    CriteriaQuery<Long> select = criteria.select(cb.count(activity));
+    CriteriaQuery<Long> select = criteria.select(cb.countDistinct(activity));
     select.where(predicate);
 
     return em.createQuery(select);
