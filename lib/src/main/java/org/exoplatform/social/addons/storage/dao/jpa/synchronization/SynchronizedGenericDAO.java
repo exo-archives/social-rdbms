@@ -67,16 +67,4 @@ public class SynchronizedGenericDAO<E, ID extends Serializable> extends GenericD
       GenericDAOImpl.endTransaction(begun);
     }
   }
-
-  protected String buildSQLQueryByTime(String timeField, long time, boolean isNewer) {
-    if (time <= 0)
-      return "";
-    StringBuilder sb = new StringBuilder();
-    if (isNewer) {
-      sb.append(" and (").append(timeField).append(" > '").append(time).append("')");
-    } else {
-      sb.append(" and (").append(timeField).append(" < '").append(time).append("')");
-    }
-    return sb.toString();
-  }
 }

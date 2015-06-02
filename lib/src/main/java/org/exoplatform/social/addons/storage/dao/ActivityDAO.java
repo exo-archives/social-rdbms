@@ -30,49 +30,267 @@ import org.exoplatform.social.core.storage.ActivityStorageException;
  */
 public interface ActivityDAO extends GenericDAO<Activity, Long> {
 
-  // Add customize methods here
-  List<Activity> getUserActivities(Identity owner, long time, boolean isNewer, long offset, long limit) throws ActivityStorageException;
+  /**
+   * 
+   * @param owner
+   * @param offset
+   * @param limit
+   * @return
+   * @throws ActivityStorageException
+   */
+  List<Activity> getUserActivities(Identity owner, long offset, long limit) throws ActivityStorageException;
+  
+  /**
+   * 
+   * @param ownerIdentity
+   * @return
+   */
   int getNumberOfUserActivities(Identity ownerIdentity);
-  //
-  List<Activity> getNewerOnUserActivities(Identity ownerIdentity, long baseTime, int limit);
-  int getNumberOfNewerOnUserActivities(Identity ownerIdentity, long baseTime);
-  List<Activity> getOlderOnUserActivities(Identity ownerIdentity, long baseTime, int limit);
-  int getNumberOfOlderOnUserActivities(Identity ownerIdentity, long baseTime);
   
-  List<Activity> getSpaceActivities(Identity owner, long time, boolean isNewer, long offset, long limit) throws ActivityStorageException;
+  /**
+   * 
+   * @param ownerIdentity
+   * @param sinceTime
+   * @param limit
+   * @return
+   */
+  List<Activity> getNewerOnUserActivities(Identity ownerIdentity, long sinceTime, int limit);
+  
+  /**
+   * 
+   * @param ownerIdentity
+   * @param sinceTime
+   * @return
+   */
+  int getNumberOfNewerOnUserActivities(Identity ownerIdentity, long sinceTime);
+  
+  /**
+   * 
+   * @param ownerIdentity
+   * @param sinceTime
+   * @param limit
+   * @return
+   */
+  List<Activity> getOlderOnUserActivities(Identity ownerIdentity, long sinceTime, int limit);
+  
+  /**
+   * 
+   * @param ownerIdentity
+   * @param sinceTime
+   * @return
+   */
+  int getNumberOfOlderOnUserActivities(Identity ownerIdentity, long sinceTime);
+  
+  /**
+   * 
+   * @param owner
+   * @param offset
+   * @param limit
+   * @return
+   * @throws ActivityStorageException
+   */
+  List<Activity> getSpaceActivities(Identity owner, long offset, long limit) throws ActivityStorageException;
+  
+  /**
+   * 
+   * @param spaceIdentity
+   * @return
+   */
   int getNumberOfSpaceActivities(Identity spaceIdentity);
-  //
-  List<Activity> getNewerOnSpaceActivities(Identity spaceIdentity, long baseTime, int limit);
-  int getNumberOfNewerOnSpaceActivities(Identity spaceIdentity, long baseTime);
-  List<Activity> getOlderOnSpaceActivities(Identity spaceIdentity, long baseTime, int limit);
-  int getNumberOfOlderOnSpaceActivities(Identity spaceIdentity, long baseTime);
   
+  /**
+   * 
+   * @param spaceIdentity
+   * @param sinceTime
+   * @param limit
+   * @return
+   */
+  List<Activity> getNewerOnSpaceActivities(Identity spaceIdentity, long sinceTime, int limit);
+  
+  /**
+   * 
+   * @param spaceIdentity
+   * @param sinceTime
+   * @return
+   */
+  int getNumberOfNewerOnSpaceActivities(Identity spaceIdentity, long sinceTime);
+  
+  /**
+   * 
+   * @param spaceIdentity
+   * @param sinceTime
+   * @param limit
+   * @return
+   */
+  List<Activity> getOlderOnSpaceActivities(Identity spaceIdentity, long sinceTime, int limit);
+  
+  /**
+   * 
+   * @param spaceIdentity
+   * @param sinceTime
+   * @return
+   */
+  int getNumberOfOlderOnSpaceActivities(Identity spaceIdentity, long sinceTime);
+  
+  /**
+   * 
+   * @param owner
+   * @param viewer
+   * @param offset
+   * @param limit
+   * @return
+   * @throws ActivityStorageException
+   */
   List<Activity> getActivities(Identity owner, Identity viewer, long offset, long limit) throws ActivityStorageException;
 
+  /**
+   * 
+   * @param ownerIdentity
+   * @param offset
+   * @param limit
+   * @return
+   */
   List<Activity> getActivityFeed(Identity ownerIdentity, int offset, int limit);
+  
+  /**
+   * 
+   * @param ownerIdentity
+   * @return
+   */
   int getNumberOfActivitesOnActivityFeed(Identity ownerIdentity);
-  //
-  List<Activity> getNewerOnActivityFeed(Identity ownerIdentity, long baseTime, int limit);
-  int getNumberOfNewerOnActivityFeed(Identity ownerIdentity, long baseTime);
-  List<Activity> getOlderOnActivityFeed(Identity ownerIdentity, long baseTime, int limit);
-  int getNumberOfOlderOnActivityFeed(Identity ownerIdentity, long baseTime);
   
+  /**
+   * 
+   * @param ownerIdentity
+   * @param sinceTime
+   * @param limit
+   * @return
+   */
+  List<Activity> getNewerOnActivityFeed(Identity ownerIdentity, long sinceTime, int limit);
+  
+  /**
+   * 
+   * @param ownerIdentity
+   * @param sinceTime
+   * @return
+   */
+  int getNumberOfNewerOnActivityFeed(Identity ownerIdentity, long sinceTime);
+  
+  /**
+   * 
+   * @param ownerIdentity
+   * @param sinceTime
+   * @param limit
+   * @return
+   */
+  List<Activity> getOlderOnActivityFeed(Identity ownerIdentity, long sinceTime, int limit);
+  
+  /**
+   * 
+   * @param ownerIdentity
+   * @param sinceTime
+   * @return
+   */
+  int getNumberOfOlderOnActivityFeed(Identity ownerIdentity, long sinceTime);
+  
+  /**
+   * 
+   * @param ownerIdentity
+   * @param offset
+   * @param limit
+   * @return
+   */
   List<Activity> getUserSpacesActivities(Identity ownerIdentity, int offset, int limit);
+  
+  /**
+   * 
+   * @param ownerIdentity
+   * @return
+   */
   int getNumberOfUserSpacesActivities(Identity ownerIdentity);
-  //
-  List<Activity> getNewerOnUserSpacesActivities(Identity ownerIdentity, long baseTime, int limit);
-  int getNumberOfNewerOnUserSpacesActivities(Identity ownerIdentity, long baseTime);
-  List<Activity> getOlderOnUserSpacesActivities(Identity ownerIdentity, long baseTime, int limit);
-  int getNumberOfOlderOnUserSpacesActivities(Identity ownerIdentity, long baseTime);
   
+  /**
+   * 
+   * @param ownerIdentity
+   * @param sinceTime
+   * @param limit
+   * @return
+   */
+  List<Activity> getNewerOnUserSpacesActivities(Identity ownerIdentity, long sinceTime, int limit);
+  
+  /**
+   * 
+   * @param ownerIdentity
+   * @param sinceTime
+   * @return
+   */
+  int getNumberOfNewerOnUserSpacesActivities(Identity ownerIdentity, long sinceTime);
+  
+  /**
+   * 
+   * @param ownerIdentity
+   * @param sinceTime
+   * @param limit
+   * @return
+   */
+  List<Activity> getOlderOnUserSpacesActivities(Identity ownerIdentity, long sinceTime, int limit);
+  
+  /**
+   * 
+   * @param ownerIdentity
+   * @param sinceTime
+   * @return
+   */
+  int getNumberOfOlderOnUserSpacesActivities(Identity ownerIdentity, long sinceTime);
+  
+  /**
+   * 
+   * @param ownerIdentity
+   * @param offset
+   * @param limit
+   * @return
+   */
   List<Activity> getActivitiesOfConnections(Identity ownerIdentity, int offset, int limit);
+  
+  /**
+   * 
+   * @param ownerIdentity
+   * @return
+   */
   int getNumberOfActivitiesOfConnections(Identity ownerIdentity);
-  //
-  List<Activity> getNewerOnActivitiesOfConnections(Identity ownerIdentity, long baseTime, long limit);
-  int getNumberOfNewerOnActivitiesOfConnections(Identity ownerIdentity, long baseTime);
-  List<Activity> getOlderOnActivitiesOfConnections(Identity ownerIdentity, long baseTime, int limit);
-  int getNumberOfOlderOnActivitiesOfConnections(Identity ownerIdentity, long baseTime);
   
+  /**
+   * 
+   * @param ownerIdentity
+   * @param sinceTime
+   * @param limit
+   * @return
+   */
+  List<Activity> getNewerOnActivitiesOfConnections(Identity ownerIdentity, long sinceTime, long limit);
   
+  /**
+   * 
+   * @param ownerIdentity
+   * @param sinceTime
+   * @return
+   */
+  int getNumberOfNewerOnActivitiesOfConnections(Identity ownerIdentity, long sinceTime);
+  
+  /**
+   * 
+   * @param ownerIdentity
+   * @param sinceTime
+   * @param limit
+   * @return
+   */
+  List<Activity> getOlderOnActivitiesOfConnections(Identity ownerIdentity, long sinceTime, int limit);
+  
+  /**
+   * 
+   * @param ownerIdentity
+   * @param sinceTime
+   * @return
+   */
+  int getNumberOfOlderOnActivitiesOfConnections(Identity ownerIdentity, long sinceTime);
   
 }

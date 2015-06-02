@@ -18,13 +18,11 @@ package org.exoplatform.social.addons.storage.dao.jpa;
 
 import java.util.List;
 
-import javax.persistence.TypedQuery;
-
 import org.exoplatform.social.addons.storage.dao.CommentDAO;
+import org.exoplatform.social.addons.storage.dao.jpa.query.CommentQueryBuilder;
 import org.exoplatform.social.addons.storage.dao.jpa.synchronization.SynchronizedGenericDAO;
 import org.exoplatform.social.addons.storage.entity.Activity;
 import org.exoplatform.social.addons.storage.entity.Comment;
-import org.exoplatform.social.core.storage.ActivityStorageException;
 
 /**
  * Created by The eXo Platform SAS
@@ -33,35 +31,52 @@ import org.exoplatform.social.core.storage.ActivityStorageException;
  * May 18, 2015  
  */
 public class CommentDAOImpl extends SynchronizedGenericDAO<Comment, Long>  implements CommentDAO {
-  //implements customize methods here
   
-  public List<Comment> getComments(Activity existingActivity, long time, Boolean isNewer, int offset, int limit) {
-    StringBuilder strQuery = new StringBuilder();
-    strQuery.append("select c from Comment c join c.activity a where (a.id =")
-            .append(existingActivity.getId())
-            .append(")")
-            .append(buildSQLQueryByTime("c.lastUpdated", time, isNewer))
-            .append(" and (c.hidden = " + Boolean.FALSE +  ") and (c.locked = " + Boolean.FALSE + ") order by c.lastUpdated asc");
-    //
-    return  getComments(strQuery.toString(), offset, limit);
+  @Override
+  public List<Comment> getComments(Activity existingActivity, int offset, int limit) {
+    
+    return CommentQueryBuilder.builder()
+                              .activityId(existingActivity.getId())
+                              .offset(offset)
+                              .limit(limit)
+                              .build()
+                              .getResultList();
+   
+  }
+  
+  @Override
+  public List<Comment> getNewerOfComments(Activity existingActivity, long sinceTime, int limit) {
+    
+    return CommentQueryBuilder.builder()
+                              .activityId(existingActivity.getId())
+                              .offset(0)
+                              .newer(sinceTime)
+                              .ascOrder()
+                              .limit(limit)
+                              .build()
+                              .getResultList();
+   
+  }
+  
+  @Override
+  public List<Comment> getOlderOfComments(Activity existingActivity, long sinceTime, int limit) {
+    return CommentQueryBuilder.builder()
+                              .activityId(existingActivity.getId())
+                              .offset(0)
+                              .older(sinceTime)
+                              .limit(limit)
+                              .build()
+                              .getResultList();
+   
   }
 
-  private List<Comment> getComments(String strQuery, long offset, long limit) throws ActivityStorageException {
-    TypedQuery<Comment> typeQuery = lifecycleLookup().getCurrentEntityManager().createQuery(strQuery, Comment.class);
-    if (limit > 0) {
-      typeQuery.setFirstResult((int) offset);
-      typeQuery.setMaxResults((int) limit);
-    }
-    return typeQuery.getResultList();
-  }
-
+  @Override
   public int getNumberOfComments(Activity existingActivity) {
-    // TODO: Need use count query
-    try {
-      return existingActivity.getComments().size();
-    } catch (Exception e) {
-      return 0;
-    }
+    return CommentQueryBuilder.builder()
+                              .activityId(existingActivity.getId())
+                              .buildCount()
+                              .getSingleResult()
+                              .intValue();
   }
 
   @Override

@@ -277,7 +277,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
 
   @Override
   public List<ExoSocialActivity> getUserActivitiesForUpgrade(Identity owner, long offset, long limit) throws ActivityStorageException {
-    return convertActivityEntitiesToActivities(activityDAO.getUserActivities(owner, 0, false, offset, limit));
+    return convertActivityEntitiesToActivities(activityDAO.getUserActivities(owner, offset, limit));
   }
 
   @Override
@@ -479,7 +479,6 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
 
   @Override
   public void deleteActivity(String activityId) throws ActivityStorageException {
-    //TODO change streamItem to OneToMany to auto remove StreamItem when remove activity
     List<StreamItem> streamItems = streamItemDAO.findStreamItemByActivityId(Long.valueOf(activityId));
     for (StreamItem streamItem : streamItems) {
       streamItemDAO.delete(streamItem);
@@ -502,13 +501,11 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
 
   @Override
   public List<ExoSocialActivity> getActivitiesOfIdentities(List<Identity> connectionList, long offset, long limit) throws ActivityStorageException {
-    // TODO Auto-generated method stub
     return null;
   }
 
   @Override
   public List<ExoSocialActivity> getActivitiesOfIdentities(List<Identity> connectionList, TimestampType type, long offset, long limit) throws ActivityStorageException {
-    // TODO Auto-generated method stub
     return null;
   }
 
@@ -669,7 +666,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
 
   @Override
   public List<ExoSocialActivity> getComments(ExoSocialActivity existingActivity, int offset, int limit) {
-    List<Comment> comments = commentDAO.getComments(activityDAO.find(Long.valueOf(existingActivity.getId())), 0, false, offset, limit);
+    List<Comment> comments = commentDAO.getComments(activityDAO.find(Long.valueOf(existingActivity.getId())), offset, limit);
     
     return convertCommentEntitiesToComments(comments);
   }
@@ -686,7 +683,6 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
 
   @Override
   public List<ExoSocialActivity> getNewerComments(ExoSocialActivity existingActivity, ExoSocialActivity baseComment, int limit) {
-    //
     return getNewerComments(existingActivity, baseComment.getPostedTime(), limit);
   }
 
@@ -702,14 +698,14 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
 
   @Override
   public List<ExoSocialActivity> getNewerComments(ExoSocialActivity existingActivity, Long sinceTime, int limit) {
-    List<Comment> comments = commentDAO.getComments(activityDAO.find(Long.valueOf(existingActivity.getId())), sinceTime, true, 0, limit);
+    List<Comment> comments = commentDAO.getNewerOfComments(activityDAO.find(Long.valueOf(existingActivity.getId())), sinceTime, limit);
     //
     return convertCommentEntitiesToComments(comments);
   }
 
   @Override
   public List<ExoSocialActivity> getOlderComments(ExoSocialActivity existingActivity, Long sinceTime, int limit) {
-    List<Comment> comments = commentDAO.getComments(activityDAO.find(Long.valueOf(existingActivity.getId())), sinceTime, false, 0, limit);
+    List<Comment> comments = commentDAO.getOlderOfComments(activityDAO.find(Long.valueOf(existingActivity.getId())), sinceTime, limit);
     return convertCommentEntitiesToComments(comments);
   }
 
@@ -763,7 +759,6 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
 
   @Override
   public List<ExoSocialActivity> getActivitiesOfIdentities(ActivityBuilderWhere where, ActivityFilter filter, long offset, long limit) throws ActivityStorageException {
-    // TODO Auto-generated method stub
     return null;
   }
 
@@ -779,35 +774,31 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
 
   @Override
   public List<ExoSocialActivity> getSpaceActivities(Identity spaceIdentity, int offset, int limit) {
-    return convertActivityEntitiesToActivities(activityDAO.getSpaceActivities(spaceIdentity, 0, false, offset, limit));
+    return convertActivityEntitiesToActivities(activityDAO.getSpaceActivities(spaceIdentity, offset, limit));
   }
 
   @Override
   public List<ExoSocialActivity> getSpaceActivitiesForUpgrade(Identity spaceIdentity, int offset, int limit) {
-    return convertActivityEntitiesToActivities(activityDAO.getSpaceActivities(spaceIdentity, 0, true, offset, limit));
+    return convertActivityEntitiesToActivities(activityDAO.getSpaceActivities(spaceIdentity, offset, limit));
   }
 
   @Override
   public List<ExoSocialActivity> getActivitiesByPoster(Identity posterIdentity, int offset, int limit) {
-    // TODO Auto-generated method stub
     return null;
   }
 
   @Override
   public List<ExoSocialActivity> getActivitiesByPoster(Identity posterIdentity, int offset, int limit, String... activityTypes) {
-    // TODO Auto-generated method stub
     return null;
   }
 
   @Override
   public int getNumberOfActivitiesByPoster(Identity posterIdentity) {
-    // TODO Auto-generated method stub
     return 0;
   }
 
   @Override
   public int getNumberOfActivitiesByPoster(Identity ownerIdentity, Identity viewerIdentity) {
-    // TODO Auto-generated method stub
     return 0;
   }
 
@@ -838,37 +829,31 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
 
   @Override
   public int getNumberOfUpdatedOnActivityFeed(Identity owner, ActivityUpdateFilter filter) {
-    // TODO Auto-generated method stub
     return 0;
   }
 
   @Override
   public int getNumberOfUpdatedOnUserActivities(Identity owner, ActivityUpdateFilter filter) {
-    // TODO Auto-generated method stub
     return 0;
   }
 
   @Override
   public int getNumberOfUpdatedOnActivitiesOfConnections(Identity owner, ActivityUpdateFilter filter) {
-    // TODO Auto-generated method stub
     return 0;
   }
 
   @Override
   public int getNumberOfUpdatedOnUserSpacesActivities(Identity owner, ActivityUpdateFilter filter) {
-    // TODO Auto-generated method stub
     return 0;
   }
 
   @Override
   public int getNumberOfUpdatedOnSpaceActivities(Identity owner, ActivityUpdateFilter filter) {
-    // TODO Auto-generated method stub
     return 0;
   }
 
   @Override
   public int getNumberOfMultiUpdated(Identity owner, Map<String, Long> sinceTimes) {
-    // TODO Auto-generated method stub
     return 0;
   }
 

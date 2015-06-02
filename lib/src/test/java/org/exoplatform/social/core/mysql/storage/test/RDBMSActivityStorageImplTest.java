@@ -116,7 +116,7 @@ public class RDBMSActivityStorageImplTest extends AbstractCoreTest {
     tearDownActivityList.add(activity);
   }
   
-  @MaxQueryNumber(516)
+  @MaxQueryNumber(520)
   public void testGetUserActivities() {
     ExoSocialActivity activity = createActivity(1);
     //
@@ -315,7 +315,7 @@ public class RDBMSActivityStorageImplTest extends AbstractCoreTest {
       relationshipManager.delete(rel);
     }
   }
-  @MaxQueryNumber(813)
+  @MaxQueryNumber(835)
   public void testGetNewerOnUserSpacesActivities() throws Exception {
     Space space = this.getSpaceInstance(spaceService, 0);
     tearDownSpaceList.add(space);
@@ -356,7 +356,7 @@ public class RDBMSActivityStorageImplTest extends AbstractCoreTest {
     assertEquals(19, activityStorage.getNewerOnUserSpacesActivities(demoIdentity, baseActivity, 20).size());
     assertEquals(19, activityStorage.getNumberOfNewerOnUserSpacesActivities(demoIdentity, baseActivity));
   }
-  @MaxQueryNumber(801)
+  @MaxQueryNumber(820)
   public void testGetOlderOnUserSpacesActivities() throws Exception {
     Space space = this.getSpaceInstance(spaceService, 0);
     tearDownSpaceList.add(space);

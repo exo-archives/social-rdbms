@@ -17,13 +17,16 @@
 package org.exoplatform.social.addons.storage.dao.jpa.query;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
 import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaBuilder.In;
 import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Join;
+import javax.persistence.criteria.Path;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 
@@ -51,7 +54,10 @@ public final class AStreamQueryBuilder {
   //streamType
   private StreamType type = null;
   private boolean equalType;
-  
+  //memberOfSpaceIds
+  private Collection<String> memberOfSpaceIds;
+  //myConnectionIds
+  private Collection<String> myConnectionIds;
   //order by
   private boolean descOrder = true;
   
@@ -87,6 +93,16 @@ public final class AStreamQueryBuilder {
     return this;
   }
   
+  public AStreamQueryBuilder memberOfSpaceIds(Collection<String> spaceIds) {
+    this.memberOfSpaceIds = spaceIds;
+    return this;
+  }
+  
+  public AStreamQueryBuilder myConnectionIds(Collection<String> connectionIds) {
+    this.myConnectionIds = connectionIds;
+    return this;
+  }
+  
   public AStreamQueryBuilder equalType(StreamType type) {
     this.type = type;
     this.equalType = true;
@@ -108,7 +124,10 @@ public final class AStreamQueryBuilder {
     this.descOrder = true;
     return this;
   }
-  
+  /**
+   * Builds the Typed Query
+   * @return
+   */
   public TypedQuery<Activity> build() {
     EntityManager em = GenericDAOImpl.lifecycleLookup().getCurrentEntityManager();
     CriteriaBuilder cb = em.getCriteriaBuilder();
@@ -120,6 +139,14 @@ public final class AStreamQueryBuilder {
     //owner
     if (this.owner != null) {
       predicates.add(cb.equal(streamItem.get(StreamItem_.ownerId), owner.getId()));
+    }
+    // space members
+    if (this.memberOfSpaceIds != null && memberOfSpaceIds.size() > 0) {
+      predicates.add(addInClause(cb, streamItem.get(StreamItem_.ownerId), memberOfSpaceIds));
+    }
+    
+    if (this.myConnectionIds != null && myConnectionIds.size() > 0) {
+      predicates.add(addInClause(cb, streamItem.get(StreamItem_.ownerId), myConnectionIds));
     }
     
     //type
@@ -140,8 +167,8 @@ public final class AStreamQueryBuilder {
       }
     }
 
+    //filter hidden = FALSE
     predicates.add(cb.equal(activity.<Boolean>get(Activity_.hidden), Boolean.FALSE));
-    predicates.add(cb.equal(activity.<Boolean>get(Activity_.locked), Boolean.FALSE));
     
     CriteriaQuery<Activity> select = criteria.select(activity);
     select.where(predicates.toArray(new Predicate[0]));
@@ -158,5 +185,214 @@ public final class AStreamQueryBuilder {
     }
     
     return typedQuery;
+  }
+  
+  /**
+   * Builds query statement for FEED stream
+   * 
+   * @return
+   */
+  public TypedQuery<Activity> buildFeed() {
+    EntityManager em = GenericDAOImpl.lifecycleLookup().getCurrentEntityManager();
+    CriteriaBuilder cb = em.getCriteriaBuilder();
+    CriteriaQuery<Activity> criteria = cb.createQuery(Activity.class);
+    Root<Activity> activity = criteria.from(Activity.class);
+    Join<Activity, StreamItem> streamItem = activity.join(Activity_.streamItems);
+    
+    Predicate predicate = null;
+    //owner
+    if (this.owner != null) {
+      predicate = cb.equal(streamItem.get(StreamItem_.ownerId), owner.getId());
+    }
+    
+    // space members
+    if (this.memberOfSpaceIds != null && memberOfSpaceIds.size() > 0) {
+      if (predicate != null) {
+        predicate = cb.or(predicate, addInClause(cb, streamItem.get(StreamItem_.ownerId), memberOfSpaceIds));
+      } else {
+        predicate = addInClause(cb, streamItem.get(StreamItem_.ownerId), memberOfSpaceIds);
+      }
+    }
+    
+    if (this.myConnectionIds != null && myConnectionIds.size() > 0) {
+      if (predicate != null) {
+        predicate = cb.or(predicate, addInClause(cb, streamItem.get(StreamItem_.ownerId), myConnectionIds));
+      } else {
+        predicate = addInClause(cb, streamItem.get(StreamItem_.ownerId), myConnectionIds);
+      }
+    }
+    
+    //newer or older
+    if (this.sinceTime > 0) {
+      if (isNewer) {
+        if (predicate != null) {
+          predicate = cb.and(predicate, cb.greaterThan(activity.<Long>get(Activity_.lastUpdated), this.sinceTime));
+        } else {
+          predicate = cb.greaterThan(activity.<Long>get(Activity_.lastUpdated), this.sinceTime);
+        }
+        
+      } else {
+        if (predicate != null) {
+          predicate = cb.and(predicate, cb.lessThan(activity.<Long>get(Activity_.lastUpdated), this.sinceTime));
+        } else {
+          predicate = cb.greaterThan(activity.<Long>get(Activity_.lastUpdated), this.sinceTime);
+        }
+      }
+    }
+
+    //filter hidden = FALSE
+    if (predicate != null) {
+      predicate = cb.and(predicate, cb.equal(activity.<Boolean>get(Activity_.hidden), Boolean.FALSE));
+    } else {
+      predicate = cb.equal(activity.<Boolean>get(Activity_.hidden), Boolean.FALSE);
+    }
+    
+    
+    CriteriaQuery<Activity> select = criteria.select(activity);
+    select.where(predicate);
+    if (this.descOrder) {
+      select.orderBy(cb.desc(activity.<Long> get(Activity_.lastUpdated)));
+    } else {
+      select.orderBy(cb.asc(activity.<Long> get(Activity_.lastUpdated)));
+    }
+
+    TypedQuery<Activity> typedQuery = em.createQuery(select);
+    if (this.limit > 0) {
+      typedQuery.setFirstResult((int) offset);
+      typedQuery.setMaxResults((int) limit);
+    }
+    
+    return typedQuery;
+  }
+  
+  /**
+   * Build count statement to get the number of the activity base on given conditions
+   * 
+   * @return TypedQuery<Long> instance 
+   */
+  public TypedQuery<Long> buildCount() {
+    EntityManager em = GenericDAOImpl.lifecycleLookup().getCurrentEntityManager();
+    CriteriaBuilder cb = em.getCriteriaBuilder();
+    CriteriaQuery<Long> criteria = cb.createQuery(Long.class);
+    Root<Activity> activity = criteria.from(Activity.class);
+    Join<Activity, StreamItem> streamItem = activity.join(Activity_.streamItems);
+    
+    List<Predicate> predicates = new ArrayList<Predicate>();
+    //owner
+    if (this.owner != null) {
+      predicates.add(cb.equal(streamItem.get(StreamItem_.ownerId), owner.getId()));
+    }
+    // space members
+    if (this.memberOfSpaceIds != null && memberOfSpaceIds.size() > 0) {
+      predicates.add(addInClause(cb, streamItem.get(StreamItem_.ownerId), memberOfSpaceIds));
+    }
+    
+    if (this.myConnectionIds != null && myConnectionIds.size() > 0) {
+      predicates.add(addInClause(cb, streamItem.get(StreamItem_.ownerId), myConnectionIds));
+    }
+    
+    //type
+    if (this.type != null) {
+      if (equalType) {
+        predicates.add(cb.equal(streamItem.<StreamType>get(StreamItem_.streamType), this.type));
+      } else {
+        predicates.add(cb.notEqual(streamItem.<StreamType>get(StreamItem_.streamType), this.type));
+      }
+    }
+    
+    //newer or older
+    if (this.sinceTime > 0) {
+      if (isNewer) {
+        predicates.add(cb.greaterThan(activity.<Long>get(Activity_.lastUpdated), this.sinceTime));
+      } else {
+        predicates.add(cb.lessThan(activity.<Long>get(Activity_.lastUpdated), this.sinceTime));
+      }
+    }
+
+    //filter hidden = FALSE
+    predicates.add(cb.equal(activity.<Boolean>get(Activity_.hidden), Boolean.FALSE));
+    
+    CriteriaQuery<Long> select = criteria.select(cb.count(activity));
+    select.where(predicates.toArray(new Predicate[0]));
+
+    return em.createQuery(select);
+  }
+  
+  /**
+   * Build count statement for FEED stream to get the number of the activity base on given conditions
+   * 
+   * @return TypedQuery<Long> instance 
+   */
+  public TypedQuery<Long> buildFeedCount() {
+    EntityManager em = GenericDAOImpl.lifecycleLookup().getCurrentEntityManager();
+    CriteriaBuilder cb = em.getCriteriaBuilder();
+    CriteriaQuery<Long> criteria = cb.createQuery(Long.class);
+    Root<Activity> activity = criteria.from(Activity.class);
+    Join<Activity, StreamItem> streamItem = activity.join(Activity_.streamItems);
+    
+    Predicate predicate = null;
+    //owner
+    if (this.owner != null) {
+      predicate = cb.equal(streamItem.get(StreamItem_.ownerId), owner.getId());
+    }
+    
+    // space members
+    if (this.memberOfSpaceIds != null && memberOfSpaceIds.size() > 0) {
+      if (predicate != null) {
+        predicate = cb.or(predicate, addInClause(cb, streamItem.get(StreamItem_.ownerId), memberOfSpaceIds));
+      } else {
+        predicate = addInClause(cb, streamItem.get(StreamItem_.ownerId), memberOfSpaceIds);
+      }
+    }
+    
+    if (this.myConnectionIds != null && myConnectionIds.size() > 0) {
+      if (predicate != null) {
+        predicate = cb.or(predicate, addInClause(cb, streamItem.get(StreamItem_.ownerId), myConnectionIds));
+      } else {
+        predicate = addInClause(cb, streamItem.get(StreamItem_.ownerId), myConnectionIds);
+      }
+    }
+    
+    //newer or older
+    if (this.sinceTime > 0) {
+      if (isNewer) {
+        if (predicate != null) {
+          predicate = cb.and(predicate, cb.greaterThan(activity.<Long>get(Activity_.lastUpdated), this.sinceTime));
+        } else {
+          predicate = cb.greaterThan(activity.<Long>get(Activity_.lastUpdated), this.sinceTime);
+        }
+        
+      } else {
+        if (predicate != null) {
+          predicate = cb.and(predicate, cb.lessThan(activity.<Long>get(Activity_.lastUpdated), this.sinceTime));
+        } else {
+          predicate = cb.greaterThan(activity.<Long>get(Activity_.lastUpdated), this.sinceTime);
+        }
+      }
+    }
+
+    //filter hidden = FALSE
+    if (predicate != null) {
+      predicate = cb.and(predicate, cb.equal(activity.<Boolean>get(Activity_.hidden), Boolean.FALSE));
+    } else {
+      predicate = cb.equal(activity.<Boolean>get(Activity_.hidden), Boolean.FALSE);
+    }
+    
+    CriteriaQuery<Long> select = criteria.select(cb.count(activity));
+    select.where(predicate);
+
+    return em.createQuery(select);
+  }
+  
+  private <T> Predicate addInClause(CriteriaBuilder cb,
+                                    Path<String> pathColumn,
+                                    Collection<String> values) {
+
+    In<String> in = cb.in(pathColumn);
+    for (String value : values) {
+      in.value(value);
+    }
+    return in;
+
   }
 }
