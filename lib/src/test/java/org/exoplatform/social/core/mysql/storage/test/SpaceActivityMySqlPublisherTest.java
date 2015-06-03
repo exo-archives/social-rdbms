@@ -31,8 +31,10 @@ import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.identity.model.Profile;
 import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvider;
 import org.exoplatform.social.core.identity.provider.SpaceIdentityProvider;
+import org.exoplatform.social.core.manager.RelationshipManager;
 import org.exoplatform.social.core.model.AvatarAttachment;
 import org.exoplatform.social.core.mysql.test.AbstractCoreTest;
+import org.exoplatform.social.core.relationship.model.Relationship;
 import org.exoplatform.social.core.space.impl.DefaultSpaceApplicationHandler;
 import org.exoplatform.social.core.space.model.Space;
 import org.exoplatform.social.core.space.model.Space.UpdatedField;
@@ -49,6 +51,7 @@ public class SpaceActivityMySqlPublisherTest extends  AbstractCoreTest {
   private IdentityStorage identityStorage;
   private SpaceStorage spaceStorage;
   private SpaceActivityPublisher spaceActivityPublisher;
+  private RelationshipManager relationshipManager;
   private List<ExoSocialActivity> tearDownActivityList;
   @Override
   public void setUp() throws Exception {
@@ -57,6 +60,7 @@ public class SpaceActivityMySqlPublisherTest extends  AbstractCoreTest {
     spaceStorage = getService(SpaceStorage.class);
     spaceActivityPublisher = getService(SpaceActivityPublisher.class);
     identityStorage = getService(IdentityStorage.class);
+    relationshipManager = getService(RelationshipManager.class);
     assertNotNull(spaceStorage);
     assertNotNull(spaceActivityPublisher);
     assertNotNull(identityStorage);
@@ -107,6 +111,13 @@ public class SpaceActivityMySqlPublisherTest extends  AbstractCoreTest {
     List<ExoSocialActivity> feed = listAccess.loadAsList(0, 10);
     assertEquals(1, feed.size());
     assertEquals(1, listAccess.getSize());
+    
+    Relationship relationship = relationshipManager.inviteToConnect(rootIdentity, demoIdentity);
+    relationshipManager.confirm(demoIdentity, rootIdentity);
+    
+    listAccess = activityManager.getActivityFeedWithListAccess(demoIdentity);
+    assertEquals(0, listAccess.loadAsList(0, 10).size());
+    assertEquals(0, listAccess.getSize());
 
     ActivityStream activityStream = activities.get(0).getActivityStream();
 
@@ -119,6 +130,7 @@ public class SpaceActivityMySqlPublisherTest extends  AbstractCoreTest {
 
     //clean up
     spaceService.deleteSpace(space);
+    relationshipManager.delete(relationship);
     identityManager.deleteIdentity(rootIdentity);
   }
   
@@ -268,27 +280,21 @@ public class SpaceActivityMySqlPublisherTest extends  AbstractCoreTest {
 
    Identity spaceIdentity = identityManager.getOrCreateIdentity(SpaceIdentityProvider.NAME, space.getPrettyName(), false);
    ListAccess<ExoSocialActivity> spaceActivities = activityManager.getActivitiesOfSpaceWithListAccess(spaceIdentity);
-   ListAccess<ExoSocialActivity> userActivities = activityManager.getActivitiesWithListAccess(rootIdentity);
    ListAccess<ExoSocialActivity> userFeedActivities = activityManager.getActivityFeedWithListAccess(rootIdentity);
    
    assertEquals(0, userFeedActivities.getSize());
-   assertEquals(0, userActivities.getSize());
+   assertEquals(0, spaceActivities.getSize());
    
    //Set space's visibility to PRIVATE
    space.setVisibility(Space.PRIVATE);
    spaceService.saveSpace(space, false);
    
    spaceActivities = activityManager.getActivitiesOfSpaceWithListAccess(spaceIdentity);
-   userActivities = activityManager.getActivitiesWithListAccess(rootIdentity);
    userFeedActivities = activityManager.getActivityFeedWithListAccess(rootIdentity);
    
    //Check space activity stream
    assertEquals(1, spaceActivities.getSize());
    assertEquals(1, spaceActivities.load(0, 10).length);
-   
-   //Check user activity stream
-   assertEquals(1, userActivities.getSize());
-   assertEquals(1, userActivities.load(0, 10).length);
    
    //Check user feed activity stream
    assertEquals(1, userFeedActivities.getSize());
@@ -299,17 +305,12 @@ public class SpaceActivityMySqlPublisherTest extends  AbstractCoreTest {
    spaceService.saveSpace(space, false);
    
    spaceActivities = activityManager.getActivitiesOfSpaceWithListAccess(spaceIdentity);
-   userActivities = activityManager.getActivitiesWithListAccess(rootIdentity);
    userFeedActivities = activityManager.getActivityFeedWithListAccess(rootIdentity);
    
    //Check space activity stream
    assertEquals(0, spaceActivities.getSize());
    assertEquals(0, spaceActivities.load(0, 10).length);
-   
-   //Check user activity stream
-   assertEquals(0, userActivities.getSize());
-   assertEquals(0, userActivities.load(0, 10).length);
-   
+
    //Check user feed activity stream
    assertEquals(0, userFeedActivities.getSize());
    assertEquals(0, userFeedActivities.load(0, 10).length);
