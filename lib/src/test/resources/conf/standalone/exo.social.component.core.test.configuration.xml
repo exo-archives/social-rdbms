@@ -89,6 +89,11 @@
   </component>
   
   <component>
+    <key>org.exoplatform.social.addons.storage.dao.RelationshipDAO</key>
+    <type>org.exoplatform.social.addons.storage.dao.jpa.RelationshipDAOImpl</type>
+  </component>
+  
+  <component>
     <key>org.exoplatform.social.addons.storage.dao.CommentDAO</key>
     <type>org.exoplatform.social.addons.storage.dao.jpa.CommentDAOImpl</type>
   </component>
@@ -135,12 +140,7 @@
   -->
   <component>
     <key>org.exoplatform.social.core.storage.api.RelationshipStorage</key>
-    <type>org.exoplatform.social.core.storage.cache.CachedRelationshipStorage</type>
-  </component>
-
-  <component>
-    <key>org.exoplatform.social.core.storage.impl.RelationshipStorageImpl</key>
-    <type>org.exoplatform.social.core.storage.synchronization.SynchronizedRelationshipStorage</type>
+    <type>org.exoplatform.social.addons.storage.SynchronizedRDBMSRelationshipStorage</type>
   </component>
 
   <!--
