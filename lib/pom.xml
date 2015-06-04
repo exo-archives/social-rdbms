@@ -1,24 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!--
-    Copyright (C) 2003-2014 eXo Platform SAS.
-    
-    This is free software; you can redistribute it and/or modify it
-    under the terms of the GNU Lesser General Public License as
-    published by the Free Software Foundation; either version 2.1 of
-    the License, or (at your option) any later version.
-    
-    This software is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-    Lesser General Public License for more details.
-    
-    You should have received a copy of the GNU Lesser General Public
-    License along with this software; if not, write to the Free
-    Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
-    02110-1301 USA, or see the FSF site: http://www.fsf.org.
-
--->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<!-- Copyright (C) 2003-2014 eXo Platform SAS. This is free software; you 
+  can redistribute it and/or modify it under the terms of the GNU Lesser General 
+  Public License as published by the Free Software Foundation; either version 
+  2.1 of the License, or (at your option) any later version. This software 
+  is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR 
+  PURPOSE. See the GNU Lesser General Public License for more details. You 
+  should have received a copy of the GNU Lesser General Public License along 
+  with this software; if not, write to the Free Software Foundation, Inc., 
+  51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA, or see the FSF site: 
+  http://www.fsf.org. -->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <parent>
     <groupId>org.exoplatform.addons.social</groupId>
@@ -54,7 +47,8 @@
         </exclusion>
       </exclusions>
     </dependency>
-    <!-- These dependency is required to compile but reported as useless by mvn dependency:analyze -->
+    <!-- These dependency is required to compile but reported as useless 
+      by mvn dependency:analyze -->
     <dependency>
       <groupId>org.exoplatform.social</groupId>
       <artifactId>social-component-common</artifactId>
@@ -64,7 +58,7 @@
       <groupId>org.hibernate</groupId>
       <artifactId>hibernate-entitymanager</artifactId>
     </dependency>
-    
+
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
@@ -113,12 +107,12 @@
       <artifactId>exo.portal.component.test.jcr</artifactId>
       <scope>test</scope>
     </dependency>
-		<dependency>
-			<groupId>mysql</groupId>
-			<artifactId>mysql-connector-java</artifactId>
-			<version>5.1.31</version>
-		</dependency>
-	  <!-- The tutorials use the H2 in-memory database -->
+    <dependency>
+      <groupId>mysql</groupId>
+      <artifactId>mysql-connector-java</artifactId>
+      <version>5.1.31</version>
+    </dependency>
+    <!-- The tutorials use the H2 in-memory database -->
     <dependency>
       <groupId>com.h2database</groupId>
       <artifactId>h2</artifactId>
@@ -156,7 +150,7 @@
       <optional>true</optional>
     </dependency>
   </dependencies>
-   <build>
+  <build>
     <plugins>
       <!-- Always cleanup generated sources before compiling -->
       <plugin>
@@ -182,20 +176,20 @@
         <groupId>org.bsc.maven</groupId>
         <artifactId>maven-processor-plugin</artifactId>
         <version>2.0.5</version>
-          <executions>
-            <execution>
-              <id>process</id>
-              <goals>
-                <goal>process</goal>
-              </goals>
-              <phase>generate-sources</phase>
-              <configuration>
-                <processors>                                
-                  <processor>org.hibernate.jpamodelgen.JPAMetaModelEntityProcessor</processor>
-                </processors>
-              </configuration>
-            </execution>
-          </executions>
+        <executions>
+          <execution>
+            <id>process</id>
+            <goals>
+              <goal>process</goal>
+            </goals>
+            <phase>generate-sources</phase>
+            <configuration>
+              <processors>
+                <processor>org.hibernate.jpamodelgen.JPAMetaModelEntityProcessor</processor>
+              </processors>
+            </configuration>
+          </execution>
+        </executions>
         <dependencies>
           <dependency>
             <groupId>org.hibernate</groupId>
@@ -214,7 +208,8 @@
             <goals>
               <goal>compile</goal>
             </goals>
-            <!-- Additional configuration to generate wiki pages from wikbook annotations-->
+            <!-- Additional configuration to generate wiki pages from wikbook 
+              annotations -->
             <configuration>
               <compilerArguments>
                 <sourcepath>${project.build.directory}/templates</sourcepath>
@@ -263,6 +258,49 @@
           </includes>
         </configuration>
       </plugin>
+      <!-- copy persistent for unit test and change the persistent.xml.proper -->
+      <plugin>
+        <artifactId>maven-antrun-plugin</artifactId>
+        <version>${version.antrun.plugin}</version>
+        <executions>
+          <execution>
+            <id>copy-test-persistence</id>
+            <phase>process-test-resources</phase>
+            <configuration>
+              <tasks>
+                <!--backup the "proper" persistence.xml -->
+                <copy
+                  file="${project.build.outputDirectory}/META-INF/persistence.xml"
+                  tofile="${project.build.outputDirectory}/META-INF/persistence.xml.proper" />
+                <!--replace the "proper" persistence.xml with the "test" 
+                  version -->
+                <copy
+                  file="${project.build.testOutputDirectory}/META-INF/persistence.xml"
+                  tofile="${project.build.outputDirectory}/META-INF/persistence.xml" />
+                  <delete file="${project.build.testOutputDirectory}/META-INF/persistence.xml"/>
+              </tasks>
+            </configuration>
+            <goals>
+              <goal>run</goal>
+            </goals>
+          </execution>
+          <execution>
+            <id>restore-persistence</id>
+            <phase>prepare-package</phase>
+            <configuration>
+              <tasks>
+                <!--restore the "proper" persistence.xml -->
+                <copy
+                  file="${project.build.outputDirectory}/META-INF/persistence.xml.proper"
+                  tofile="${project.build.outputDirectory}/META-INF/persistence.xml" />
+              </tasks>
+            </configuration>
+            <goals>
+              <goal>run</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
     </plugins>
   </build>
   <profiles>
@@ -290,6 +328,6 @@
       <properties>
         <toolsjar>${java.home}/../Classes/classes.jar</toolsjar>
       </properties>
-    </profile>  
+    </profile>
   </profiles>
 </project>
