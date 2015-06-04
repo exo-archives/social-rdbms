@@ -265,7 +265,7 @@
         <executions>
           <execution>
             <id>copy-test-persistence</id>
-            <phase>process-test-resources</phase>
+            <phase>process-test-classes</phase>
             <configuration>
               <tasks>
                 <!--backup the "proper" persistence.xml -->
@@ -276,7 +276,7 @@
                   version -->
                 <copy
                   file="${project.build.testOutputDirectory}/META-INF/persistence.xml"
-                  tofile="${project.build.outputDirectory}/META-INF/persistence.xml" />
+                  tofile="${project.build.outputDirectory}/META-INF/persistence.xml" failonerror="Could not find file persistent.xml."/>
                   <delete file="${project.build.testOutputDirectory}/META-INF/persistence.xml"/>
               </tasks>
             </configuration>
