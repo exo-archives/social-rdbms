@@ -114,10 +114,10 @@
         </createTable>
     </changeSet>
     <changeSet author="tuvd@exoplatform.com" id="1432784126706-9">
-        <addPrimaryKey columnNames="ACTIVITY_ID, TEMPLATE_PARAM_KEY" constraintName="PRIMARY" tableName="SOC_ACTIVITY_TEMPLATE_PARAMS"/>
+        <addPrimaryKey columnNames="ACTIVITY_ID, TEMPLATE_PARAM_KEY" constraintName="PK_SOC_ACTIVITY_TEMPLATE_PARAMS" tableName="SOC_ACTIVITY_TEMPLATE_PARAMS"/>
     </changeSet>
     <changeSet author="tuvd@exoplatform.com" id="1432784126706-10">
-        <addPrimaryKey columnNames="COMMENT_ID, TEMPLATE_PARAM_KEY" constraintName="PRIMARY" tableName="SOC_COMMENT_TEMPLATE_PARAMS"/>
+        <addPrimaryKey columnNames="COMMENT_ID, TEMPLATE_PARAM_KEY" constraintName="PK_SOC_COMMENT_TEMPLATE_PARAMS" tableName="SOC_COMMENT_TEMPLATE_PARAMS"/>
     </changeSet>
     <changeSet author="tuvd@exoplatform.com" id="1432784126706-11">
         <addForeignKeyConstraint baseColumnNames="ACTIVITY_ID" baseTableName="SOC_ACTIVITY_LIKERS" constraintName="FK240B6C70BBA54EEF" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="ACTIVITY_ID" referencedTableName="SOC_ACTIVITIES"/>
