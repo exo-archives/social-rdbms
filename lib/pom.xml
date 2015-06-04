@@ -274,10 +274,9 @@
                   tofile="${project.build.outputDirectory}/META-INF/persistence.xml.proper" />
                 <!--replace the "proper" persistence.xml with the "test" 
                   version -->
-                <copy
+                <move
                   file="${project.build.testOutputDirectory}/META-INF/persistence.xml"
                   tofile="${project.build.outputDirectory}/META-INF/persistence.xml" failonerror="Could not find file persistent.xml."/>
-                  <delete file="${project.build.testOutputDirectory}/META-INF/persistence.xml"/>
               </tasks>
             </configuration>
             <goals>
@@ -290,9 +289,9 @@
             <configuration>
               <tasks>
                 <!--restore the "proper" persistence.xml -->
-                <copy
+                <move
                   file="${project.build.outputDirectory}/META-INF/persistence.xml.proper"
-                  tofile="${project.build.outputDirectory}/META-INF/persistence.xml" />
+                  tofile="${project.build.outputDirectory}/META-INF/persistence.xml" failonerror="Could not find file ${project.build.outputDirectory}/META-INF/persistence.xml.proper." />
               </tasks>
             </configuration>
             <goals>
