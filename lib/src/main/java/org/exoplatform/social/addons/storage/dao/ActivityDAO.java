@@ -32,6 +32,13 @@ public interface ActivityDAO extends GenericDAO<Activity, Long> {
 
   /**
    * 
+   * @param likerId
+   * @return
+   */
+  List<Activity> getActivityByLikerId(String likerId);
+  
+  /**
+   * 
    * @param owner
    * @param offset
    * @param limit

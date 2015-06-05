@@ -28,7 +28,6 @@ import org.exoplatform.services.log.Log;
 import org.exoplatform.services.security.ConversationState;
 import org.exoplatform.social.addons.storage.dao.ActivityDAO;
 import org.exoplatform.social.addons.storage.dao.CommentDAO;
-import org.exoplatform.social.addons.storage.dao.jpa.GenericDAOImpl;
 import org.exoplatform.social.addons.storage.entity.Activity;
 import org.exoplatform.social.addons.storage.entity.Comment;
 import org.exoplatform.social.core.identity.model.Identity;
@@ -139,6 +138,29 @@ public class ActivityDAOTest extends AbstractCoreTest {
     assertTrue(activity.getLocked());
     assertFalse(activity.getHidden());
     tearDownActivityList.add(got);
+  }
+  
+  public void testGetActivityByLiker() throws Exception {
+    
+    String activityTitle = "activity title";
+    String johnIdentityId = johnIdentity.getId();
+    Activity activity = createActivity(activityTitle, maryIdentity.getId());
+    Set<String> likers = new HashSet<String>();
+    likers.add(demoIdentity.getRemoteId());
+    activity.setLikerIds(likers);
+    activity.setLocked(true);
+    activity.setPosterId(johnIdentityId);
+    activity.setOwnerId(johnIdentityId);
+    //
+    activity = activityDao.create(activity);
+    List<Activity> got = activityDao.getActivityByLikerId(demoIdentity.getRemoteId());
+    assertNotNull(got);
+    assertEquals(1, got.size());
+    tearDownActivityList.addAll(got);
+    
+    got = activityDao.getActivityByLikerId(maryIdentity.getRemoteId());
+    assertNotNull(got);
+    assertEquals(0, got.size());
   }
   
   private Activity createActivity(String activityTitle, String posterId) {

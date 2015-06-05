@@ -21,13 +21,20 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
+import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Predicate;
+import javax.persistence.criteria.Root;
+import javax.persistence.criteria.SetJoin;
 
 import org.exoplatform.commons.utils.CommonsUtils;
 import org.exoplatform.social.addons.storage.dao.ActivityDAO;
 import org.exoplatform.social.addons.storage.dao.jpa.query.AStreamQueryBuilder;
 import org.exoplatform.social.addons.storage.dao.jpa.synchronization.SynchronizedGenericDAO;
 import org.exoplatform.social.addons.storage.entity.Activity;
+import org.exoplatform.social.addons.storage.entity.Activity_;
 import org.exoplatform.social.addons.storage.entity.StreamType;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.identity.provider.SpaceIdentityProvider;
@@ -45,12 +52,19 @@ import org.exoplatform.social.core.storage.api.SpaceStorage;
  */
 public class ActivityDAOImpl extends SynchronizedGenericDAO<Activity, Long> implements ActivityDAO {
   
-  //Add customize methods here
-
   public List<Activity> getActivityByLikerId(String likerId) {
-    TypedQuery<Activity> query = lifecycleLookup().getCurrentEntityManager().createNamedQuery("getActivitiesByLikerId", Activity.class);
-    query.setParameter("likerId", likerId);
-    return query.getResultList();
+    EntityManager em = lifecycleLookup().getCurrentEntityManager();
+    CriteriaBuilder cb = em.getCriteriaBuilder();
+    //
+    CriteriaQuery<Activity> query = cb.createQuery(Activity.class);
+    Root<Activity> root = query.from(Activity.class);
+    SetJoin<Activity, String> likers = root.join(Activity_.likerIds);
+    Predicate predicate = cb.equal(likers, likerId);
+    //
+    query.select(root).where(predicate).distinct(true).orderBy(cb.desc(root.<Long> get(Activity_.lastUpdated)));
+    //
+    TypedQuery<Activity> typedQuery = em.createQuery(query);
+    return typedQuery.getResultList();
   }
   
   public List<Activity> getActivities(Identity owner, Identity viewer, long offset, long limit) throws ActivityStorageException {

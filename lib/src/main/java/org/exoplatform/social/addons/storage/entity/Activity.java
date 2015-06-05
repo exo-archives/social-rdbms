@@ -53,7 +53,6 @@ public class Activity extends BaseActivity {
     name = "SOC_ACTIVITY_LIKERS",
     joinColumns=@JoinColumn(name = "ACTIVITY_ID")
   )
-
   @Column(name="LIKER_ID")
   private Set<String> likerIds = new HashSet<String>();
   
