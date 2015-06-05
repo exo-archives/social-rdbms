@@ -24,6 +24,7 @@ import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 
 import org.exoplatform.social.addons.storage.dao.jpa.GenericDAOImpl;
+import org.exoplatform.social.addons.storage.entity.RelationshipFilterType;
 import org.exoplatform.social.addons.storage.entity.RelationshipItem;
 import org.exoplatform.social.addons.storage.entity.RelationshipItem_;
 import org.exoplatform.social.core.identity.model.Identity;
@@ -41,6 +42,7 @@ public final class RelationshipQueryBuilder {
   private long offset;
   private long limit;
   private Relationship.Type status = null;
+  private RelationshipFilterType filterType = RelationshipFilterType.ALL;
   
   public static RelationshipQueryBuilder builder() {
     return new RelationshipQueryBuilder();
@@ -53,6 +55,11 @@ public final class RelationshipQueryBuilder {
   
   public RelationshipQueryBuilder status(Relationship.Type status) {
     this.status = status;
+    return this;
+  }
+  
+  public RelationshipQueryBuilder filterType(RelationshipFilterType filterType) {
+    this.filterType = filterType;
     return this;
   }
   
@@ -79,8 +86,21 @@ public final class RelationshipQueryBuilder {
     Predicate predicate = null;
     //owner
     if (this.owner != null) {
-      predicate = cb.equal(relationship.get(RelationshipItem_.receiverId), owner.getId()) ;
-      predicate = cb.or(predicate, cb.equal(relationship.get(RelationshipItem_.senderId), owner.getId()));
+      switch (this.filterType) {
+        case SENDER : {
+          predicate = cb.equal(relationship.get(RelationshipItem_.senderId), owner.getId()) ;
+          break;
+        }
+        case RECEIVER : {
+          predicate = cb.equal(relationship.get(RelationshipItem_.receiverId), owner.getId()) ;
+          break;
+        }
+        default: {
+          predicate = cb.equal(relationship.get(RelationshipItem_.receiverId), owner.getId()) ;
+          predicate = cb.or(predicate, cb.equal(relationship.get(RelationshipItem_.senderId), owner.getId()));
+          break;
+        }
+      }
     }
     //status
     if (this.status != null) {
@@ -112,8 +132,21 @@ public final class RelationshipQueryBuilder {
     Predicate predicate = null;
     //owner
     if (this.owner != null) {
-      predicate = cb.equal(relationship.get(RelationshipItem_.receiverId), owner.getId()) ;
-      predicate = cb.or(predicate, cb.equal(relationship.get(RelationshipItem_.senderId), owner.getId()));
+      switch (this.filterType) {
+        case SENDER : {
+          predicate = cb.equal(relationship.get(RelationshipItem_.senderId), owner.getId()) ;
+          break;
+        }
+        case RECEIVER : {
+          predicate = cb.equal(relationship.get(RelationshipItem_.receiverId), owner.getId()) ;
+          break;
+        }
+        default: {
+          predicate = cb.equal(relationship.get(RelationshipItem_.receiverId), owner.getId()) ;
+          predicate = cb.or(predicate, cb.equal(relationship.get(RelationshipItem_.senderId), owner.getId()));
+          break;
+        }
+      }
     }
     //status
     if (this.status != null) {
@@ -124,5 +157,35 @@ public final class RelationshipQueryBuilder {
     select.where(predicate);
 
     return em.createQuery(select);
+  }
+
+  public TypedQuery<RelationshipItem> buildLastConnections() {
+    EntityManager em = GenericDAOImpl.lifecycleLookup().getCurrentEntityManager();
+    CriteriaBuilder cb = em.getCriteriaBuilder();
+    CriteriaQuery<RelationshipItem> criteria = cb.createQuery(RelationshipItem.class);
+    Root<RelationshipItem> relationship = criteria.from(RelationshipItem.class);
+    
+    Predicate predicate = null;
+    //owner
+    if (this.owner != null) {
+      predicate = cb.equal(relationship.get(RelationshipItem_.receiverId), owner.getId()) ;
+      predicate = cb.or(predicate, cb.equal(relationship.get(RelationshipItem_.senderId), owner.getId()));
+    }
+    //status
+    if (this.status != null) {
+      predicate = cb.and(predicate, cb.equal(relationship.get(RelationshipItem_.status), this.status));
+    }
+    
+    CriteriaQuery<RelationshipItem> select = criteria.select(relationship).distinct(true);
+    select.where(predicate);
+    select.orderBy(cb.desc(relationship.<Long> get(RelationshipItem_.id)));
+
+    TypedQuery<RelationshipItem> typedQuery = em.createQuery(select);
+    if (this.limit > 0) {
+      typedQuery.setFirstResult((int) offset);
+      typedQuery.setMaxResults((int) limit);
+    }
+    
+    return typedQuery;
   }
 }

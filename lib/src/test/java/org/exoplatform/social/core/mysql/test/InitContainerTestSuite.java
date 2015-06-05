@@ -21,6 +21,7 @@ import org.exoplatform.commons.testing.ConfigTestCase;
 import org.exoplatform.social.core.mysql.storage.ActivityDAOTest;
 import org.exoplatform.social.core.mysql.storage.test.ActivityManagerMysqlTest;
 import org.exoplatform.social.core.mysql.storage.test.RDBMSActivityStorageImplTest;
+import org.exoplatform.social.core.mysql.storage.test.RDBMSRelationshipManagerTest;
 import org.exoplatform.social.core.mysql.storage.test.SpaceActivityMySqlPublisherTest;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -30,7 +31,8 @@ import org.junit.runners.Suite.SuiteClasses;
   ActivityDAOTest.class,
   RDBMSActivityStorageImplTest.class,
   ActivityManagerMysqlTest.class,
-  SpaceActivityMySqlPublisherTest.class
+  SpaceActivityMySqlPublisherTest.class,
+  RDBMSRelationshipManagerTest.class
   })
 @ConfigTestCase(AbstractCoreTest.class)
 public class InitContainerTestSuite extends BaseExoContainerTestSuite {

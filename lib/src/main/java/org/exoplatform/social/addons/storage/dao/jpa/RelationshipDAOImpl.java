@@ -24,6 +24,7 @@ import javax.persistence.TypedQuery;
 import org.exoplatform.social.addons.storage.dao.RelationshipDAO;
 import org.exoplatform.social.addons.storage.dao.jpa.query.RelationshipQueryBuilder;
 import org.exoplatform.social.addons.storage.dao.jpa.synchronization.SynchronizedGenericDAO;
+import org.exoplatform.social.addons.storage.entity.RelationshipFilterType;
 import org.exoplatform.social.addons.storage.entity.RelationshipItem;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.relationship.model.Relationship;
@@ -37,14 +38,6 @@ import org.exoplatform.social.core.relationship.model.Relationship.Type;
  */
 public class RelationshipDAOImpl extends SynchronizedGenericDAO<RelationshipItem, Long> implements RelationshipDAO {
 
-  public List<RelationshipItem> getConnections(Identity identity, Relationship.Type status) {
-    return RelationshipQueryBuilder.builder()
-                                   .owner(identity)
-                                   .status(status)
-                                   .build()
-                                   .getResultList();
-  }
-  
   @Override
   public long count(Identity identity, Type status) {
     return RelationshipQueryBuilder.builder()
@@ -65,6 +58,40 @@ public class RelationshipDAOImpl extends SynchronizedGenericDAO<RelationshipItem
     } catch (Exception e) {
       return null;
     }
+  }
+
+  @Override
+  public List<RelationshipItem> getRelationships(Identity identity, Type type, RelationshipFilterType filterType, long offset, long limit) {
+    return RelationshipQueryBuilder.builder()
+                                   .owner(identity)
+                                   .status(type)
+                                   .filterType(filterType)
+                                   .offset(offset)
+                                   .limit(limit)
+                                   .build()
+                                   .getResultList();
+  }
+
+  @Override
+  public int getRelationshipsCount(Identity identity, Type type, RelationshipFilterType filterType) {
+    return RelationshipQueryBuilder.builder()
+                                   .owner(identity)
+                                   .status(type)
+                                   .filterType(filterType)
+                                   .buildCount()
+                                   .getSingleResult()
+                                   .intValue();
+  }
+
+  @Override
+  public List<RelationshipItem> getLastConnections(Identity identity, int limit) {
+    return RelationshipQueryBuilder.builder()
+                                   .owner(identity)
+                                   .status(Relationship.Type.CONFIRMED)
+                                   .offset(0)
+                                   .limit(limit)
+                                   .buildLastConnections()
+                                   .getResultList();
   }
 
 }

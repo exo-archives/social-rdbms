@@ -18,9 +18,11 @@ package org.exoplatform.social.addons.storage.dao;
 
 import java.util.List;
 
+import org.exoplatform.social.addons.storage.entity.RelationshipFilterType;
 import org.exoplatform.social.addons.storage.entity.RelationshipItem;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.relationship.model.Relationship;
+import org.exoplatform.social.core.relationship.model.Relationship.Type;
 
 /**
  * Created by The eXo Platform SAS
@@ -30,15 +32,6 @@ import org.exoplatform.social.core.relationship.model.Relationship;
  */
 public interface RelationshipDAO extends GenericDAO<RelationshipItem, Long> {
 
-  /**
-   * Get all connections of an user
-   * 
-   * @param identity
-   * @param status
-   * @return
-   */
-  List<RelationshipItem> getConnections(Identity identity, Relationship.Type status);
-  
   /**
    * Has the connections
    * 
@@ -56,5 +49,31 @@ public interface RelationshipDAO extends GenericDAO<RelationshipItem, Long> {
    * @return
    */
   RelationshipItem getRelationship(Identity identity1, Identity identity2);
+
+  
+  /**
+   * @param identity
+   * @param type
+   * @param filterType
+   * @param offset
+   * @param limit
+   * @return
+   */
+  List<RelationshipItem> getRelationships(Identity identity, Type type, RelationshipFilterType filterType, long offset, long limit);
+
+  /**
+   * @param identity
+   * @param type
+   * @param filterType
+   * @return
+   */
+  int getRelationshipsCount(Identity identity, Type type, RelationshipFilterType filterType);
+
+  /**
+   * @param identity
+   * @param limit
+   * @return
+   */
+  List<RelationshipItem> getLastConnections(Identity identity, int limit);
 
 }
