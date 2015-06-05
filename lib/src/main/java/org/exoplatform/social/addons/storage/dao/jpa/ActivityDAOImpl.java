@@ -31,6 +31,7 @@ import javax.persistence.criteria.SetJoin;
 
 import org.exoplatform.commons.utils.CommonsUtils;
 import org.exoplatform.social.addons.storage.dao.ActivityDAO;
+import org.exoplatform.social.addons.storage.dao.RelationshipDAO;
 import org.exoplatform.social.addons.storage.dao.jpa.query.AStreamQueryBuilder;
 import org.exoplatform.social.addons.storage.dao.jpa.synchronization.SynchronizedGenericDAO;
 import org.exoplatform.social.addons.storage.entity.Activity;
@@ -38,10 +39,10 @@ import org.exoplatform.social.addons.storage.entity.Activity_;
 import org.exoplatform.social.addons.storage.entity.StreamType;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.identity.provider.SpaceIdentityProvider;
+import org.exoplatform.social.core.relationship.model.Relationship;
 import org.exoplatform.social.core.space.model.Space;
 import org.exoplatform.social.core.storage.ActivityStorageException;
 import org.exoplatform.social.core.storage.api.IdentityStorage;
-import org.exoplatform.social.core.storage.api.RelationshipStorage;
 import org.exoplatform.social.core.storage.api.SpaceStorage;
 
 /**
@@ -51,6 +52,12 @@ import org.exoplatform.social.core.storage.api.SpaceStorage;
  * May 18, 2015  
  */
 public class ActivityDAOImpl extends SynchronizedGenericDAO<Activity, Long> implements ActivityDAO {
+  
+  private final RelationshipDAO relationshipDAO;
+  
+  public ActivityDAOImpl(RelationshipDAO relationshipDAO) {
+    this.relationshipDAO =  relationshipDAO;
+  }
   
   public List<Activity> getActivityByLikerId(String likerId) {
     EntityManager em = lifecycleLookup().getCurrentEntityManager();
@@ -81,7 +88,7 @@ public class ActivityDAOImpl extends SynchronizedGenericDAO<Activity, Long> impl
     return AStreamQueryBuilder.builder()
                               .owner(ownerIdentity)
                               .memberOfSpaceIds(memberOfSpaceIds(ownerIdentity))
-                              .myConnectionIds(myConnectionIds(ownerIdentity))
+                              .connectionSize(ownerIdentity, relationshipDAO.count(ownerIdentity, Relationship.Type.CONFIRMED))
                               .offset(offset)
                               .limit(limit)
                               .buildFeed()
@@ -94,7 +101,7 @@ public class ActivityDAOImpl extends SynchronizedGenericDAO<Activity, Long> impl
     return AStreamQueryBuilder.builder()
                               .owner(ownerIdentity)
                               .memberOfSpaceIds(memberOfSpaceIds(ownerIdentity))
-                              .myConnectionIds(myConnectionIds(ownerIdentity))
+                              .connectionSize(ownerIdentity, relationshipDAO.count(ownerIdentity, Relationship.Type.CONFIRMED))
                               .buildFeedCount().getSingleResult().intValue();
         
   }
@@ -104,7 +111,7 @@ public class ActivityDAOImpl extends SynchronizedGenericDAO<Activity, Long> impl
     return AStreamQueryBuilder.builder()
                               .owner(ownerIdentity)
                               .memberOfSpaceIds(memberOfSpaceIds(ownerIdentity))
-                              .myConnectionIds(myConnectionIds(ownerIdentity))
+                              .connectionSize(ownerIdentity, relationshipDAO.count(ownerIdentity, Relationship.Type.CONFIRMED))
                               .newer(sinceTime)
                               .ascOrder()
                               .offset(0)
@@ -120,7 +127,7 @@ public class ActivityDAOImpl extends SynchronizedGenericDAO<Activity, Long> impl
     return AStreamQueryBuilder.builder()
                               .owner(ownerIdentity)
                               .memberOfSpaceIds(memberOfSpaceIds(ownerIdentity))
-                              .myConnectionIds(myConnectionIds(ownerIdentity))
+                              .connectionSize(ownerIdentity, relationshipDAO.count(ownerIdentity, Relationship.Type.CONFIRMED))
                               .newer(sinceTime)
                               .buildFeedCount()
                               .getSingleResult()
@@ -132,7 +139,7 @@ public class ActivityDAOImpl extends SynchronizedGenericDAO<Activity, Long> impl
     return AStreamQueryBuilder.builder()
                               .owner(ownerIdentity)
                               .memberOfSpaceIds(memberOfSpaceIds(ownerIdentity))
-                              .myConnectionIds(myConnectionIds(ownerIdentity))
+                              .connectionSize(ownerIdentity, relationshipDAO.count(ownerIdentity, Relationship.Type.CONFIRMED))
                               .older(sinceTime)
                               .offset(0)
                               .limit(limit)
@@ -145,7 +152,7 @@ public class ActivityDAOImpl extends SynchronizedGenericDAO<Activity, Long> impl
     return AStreamQueryBuilder.builder()
                               .owner(ownerIdentity)
                               .memberOfSpaceIds(memberOfSpaceIds(ownerIdentity))
-                              .myConnectionIds(myConnectionIds(ownerIdentity))
+                              .connectionSize(ownerIdentity, relationshipDAO.count(ownerIdentity, Relationship.Type.CONFIRMED))
                               .older(sinceTime)
                               .buildFeedCount()
                               .getSingleResult()
@@ -382,10 +389,10 @@ public class ActivityDAOImpl extends SynchronizedGenericDAO<Activity, Long> impl
 
   @Override
   public List<Activity> getActivitiesOfConnections(Identity ownerIdentity, int offset, int limit) {
-    Collection<String> myConnectionIds = myConnectionIds(ownerIdentity);
-    if (myConnectionIds.size() > 0) {
+    long connectionSize = relationshipDAO.count(ownerIdentity, Relationship.Type.CONFIRMED);
+    if (connectionSize > 0) {
       return AStreamQueryBuilder.builder()
-          .myConnectionIds(myConnectionIds)
+          .connectionSize(ownerIdentity, connectionSize)
           .offset(offset)
           .limit(limit)
           .build()
@@ -398,10 +405,10 @@ public class ActivityDAOImpl extends SynchronizedGenericDAO<Activity, Long> impl
 
   @Override
   public int getNumberOfActivitiesOfConnections(Identity ownerIdentity) {
-    Collection<String> myConnectionIds = myConnectionIds(ownerIdentity);
-    if (myConnectionIds.size() > 0) {
+    long connectionSize = relationshipDAO.count(ownerIdentity, Relationship.Type.CONFIRMED);
+    if (connectionSize > 0) {
       return AStreamQueryBuilder.builder()
-                                .myConnectionIds(myConnectionIds)
+                                .connectionSize(ownerIdentity, connectionSize)
                                 .buildCount()
                                 .getSingleResult()
                                 .intValue();
@@ -413,10 +420,10 @@ public class ActivityDAOImpl extends SynchronizedGenericDAO<Activity, Long> impl
 
   @Override
   public List<Activity> getNewerOnActivitiesOfConnections(Identity ownerIdentity, long sinceTime, long limit) {
-    Collection<String> myConnectionIds = myConnectionIds(ownerIdentity);
-    if (myConnectionIds.size() > 0) {
+    long connectionSize = relationshipDAO.count(ownerIdentity, Relationship.Type.CONFIRMED);
+    if (connectionSize > 0) {
       return AStreamQueryBuilder.builder()
-                                .myConnectionIds(myConnectionIds)
+                                .connectionSize(ownerIdentity, connectionSize)
                                 .newer(sinceTime)
                                 .ascOrder()
                                 .offset(0)
@@ -430,10 +437,10 @@ public class ActivityDAOImpl extends SynchronizedGenericDAO<Activity, Long> impl
 
   @Override
   public int getNumberOfNewerOnActivitiesOfConnections(Identity ownerIdentity, long sinceTime) {
-    Collection<String> myConnectionIds = myConnectionIds(ownerIdentity);
-    if (myConnectionIds.size() > 0) {
+    long connectionSize = relationshipDAO.count(ownerIdentity, Relationship.Type.CONFIRMED);
+    if (connectionSize > 0) {
       return AStreamQueryBuilder.builder()
-                                .myConnectionIds(myConnectionIds)
+                                .connectionSize(ownerIdentity, connectionSize)
                                 .newer(sinceTime)
                                 .buildCount()
                                 .getSingleResult()
@@ -449,10 +456,10 @@ public class ActivityDAOImpl extends SynchronizedGenericDAO<Activity, Long> impl
   public List<Activity> getOlderOnActivitiesOfConnections(Identity ownerIdentity,
                                                           long sinceTime,
                                                           int limit) {
-    Collection<String> myConnectionIds = myConnectionIds(ownerIdentity);
-    if (myConnectionIds.size() > 0) {
+    long connectionSize = relationshipDAO.count(ownerIdentity, Relationship.Type.CONFIRMED);
+    if (connectionSize > 0) {
       return AStreamQueryBuilder.builder()
-                                .myConnectionIds(myConnectionIds)
+                                .connectionSize(ownerIdentity, connectionSize)
                                 .older(sinceTime)
                                 .offset(0)
                                 .limit(limit)
@@ -465,10 +472,10 @@ public class ActivityDAOImpl extends SynchronizedGenericDAO<Activity, Long> impl
 
   @Override
   public int getNumberOfOlderOnActivitiesOfConnections(Identity ownerIdentity, long sinceTime) {
-    Collection<String> myConnectionIds = myConnectionIds(ownerIdentity);
-    if (myConnectionIds.size() > 0) {
+    long connectionSize = relationshipDAO.count(ownerIdentity, Relationship.Type.CONFIRMED);
+    if (connectionSize > 0) {
       return AStreamQueryBuilder.builder()
-                                .myConnectionIds(myConnectionIds)
+                                .connectionSize(ownerIdentity, connectionSize)
                                 .older(sinceTime)
                                 .buildCount()
                                 .getSingleResult()
@@ -477,21 +484,6 @@ public class ActivityDAOImpl extends SynchronizedGenericDAO<Activity, Long> impl
     } else {
       return 0;
     }
-  }
-  /**
-   * Gets the list of connections what the given identify connected
-   * @param ownerIdentity
-   * @return
-   */
-  private Collection<String> myConnectionIds(Identity ownerIdentity) {
-    RelationshipStorage relationshipStorage = CommonsUtils.getService(RelationshipStorage.class);
-    //
-    List<Identity> relationships = relationshipStorage.getConnections(ownerIdentity);
-    Collection<String> relationshipIds = new ArrayList<String>(relationships.size());
-    for (Identity identity : relationships) {
-      relationshipIds.add(identity.getId());
-    }
-    return relationshipIds;
   }
 
   /**

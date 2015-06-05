@@ -98,4 +98,31 @@ public final class RelationshipQueryBuilder {
     
     return typedQuery;
   }
+  
+  /**
+   * Builds the Typed Query
+   * @return
+   */
+  public TypedQuery<Long> buildCount() {
+    EntityManager em = GenericDAOImpl.lifecycleLookup().getCurrentEntityManager();
+    CriteriaBuilder cb = em.getCriteriaBuilder();
+    CriteriaQuery<Long> criteria = cb.createQuery(Long.class);
+    Root<RelationshipItem> relationship = criteria.from(RelationshipItem.class);
+    
+    Predicate predicate = null;
+    //owner
+    if (this.owner != null) {
+      predicate = cb.equal(relationship.get(RelationshipItem_.receiverId), owner.getId()) ;
+      predicate = cb.or(predicate, cb.equal(relationship.get(RelationshipItem_.senderId), owner.getId()));
+    }
+    //status
+    if (this.status != null) {
+      predicate = cb.and(predicate, cb.equal(relationship.get(RelationshipItem_.status), this.status));
+    }
+    
+    CriteriaQuery<Long> select = criteria.select(cb.countDistinct(relationship));
+    select.where(predicate);
+
+    return em.createQuery(select);
+  }
 }

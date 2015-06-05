@@ -27,6 +27,7 @@ import org.exoplatform.social.addons.storage.dao.jpa.synchronization.Synchronize
 import org.exoplatform.social.addons.storage.entity.RelationshipItem;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.relationship.model.Relationship;
+import org.exoplatform.social.core.relationship.model.Relationship.Type;
 
 /**
  * Created by The eXo Platform SAS
@@ -42,6 +43,15 @@ public class RelationshipDAOImpl extends SynchronizedGenericDAO<RelationshipItem
                                    .status(status)
                                    .build()
                                    .getResultList();
+  }
+  
+  @Override
+  public long count(Identity identity, Type status) {
+    return RelationshipQueryBuilder.builder()
+                                        .owner(identity)
+                                        .status(status)
+                                        .buildCount()
+                                        .getSingleResult();
   }
 
   @Override

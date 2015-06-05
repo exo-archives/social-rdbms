@@ -29,10 +29,13 @@ import javax.persistence.criteria.Join;
 import javax.persistence.criteria.Path;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
+import javax.persistence.criteria.Subquery;
 
 import org.exoplatform.social.addons.storage.dao.jpa.GenericDAOImpl;
 import org.exoplatform.social.addons.storage.entity.Activity;
 import org.exoplatform.social.addons.storage.entity.Activity_;
+import org.exoplatform.social.addons.storage.entity.RelationshipItem;
+import org.exoplatform.social.addons.storage.entity.RelationshipItem_;
 import org.exoplatform.social.addons.storage.entity.StreamItem;
 import org.exoplatform.social.addons.storage.entity.StreamItem_;
 import org.exoplatform.social.addons.storage.entity.StreamType;
@@ -56,8 +59,9 @@ public final class AStreamQueryBuilder {
   private boolean equalType;
   //memberOfSpaceIds
   private Collection<String> memberOfSpaceIds;
-  //myConnectionIds
-  private Collection<String> myConnectionIds;
+  private Identity myIdentity;
+  //connectionSize
+  private long connectionSize = 0;
   //order by
   private boolean descOrder = true;
   
@@ -98,8 +102,9 @@ public final class AStreamQueryBuilder {
     return this;
   }
   
-  public AStreamQueryBuilder myConnectionIds(Collection<String> connectionIds) {
-    this.myConnectionIds = connectionIds;
+  public AStreamQueryBuilder connectionSize(Identity myIdentity, long connectionSize) {
+    this.myIdentity = myIdentity;
+    this.connectionSize = connectionSize;
     return this;
   }
   
@@ -126,7 +131,11 @@ public final class AStreamQueryBuilder {
   }
   /**
    * Builds the Typed Query
-   * @return
+   * 
+   * 1. My Activity Stream: owner's activities
+   * 2. My Spaces: spaces's activity what ower is member
+   * 3. My Connections: my owner's connections's activity
+   * @return TypedQuery<Activity> instance
    */
   public TypedQuery<Activity> build() {
     EntityManager em = GenericDAOImpl.lifecycleLookup().getCurrentEntityManager();
@@ -145,9 +154,23 @@ public final class AStreamQueryBuilder {
       predicates.add(addInClause(cb, streamItem.get(StreamItem_.ownerId), memberOfSpaceIds));
     }
     
-    if (this.myConnectionIds != null && myConnectionIds.size() > 0) {
-      predicates.add(addInClause(cb, streamItem.get(StreamItem_.ownerId), myConnectionIds));
+    //connections
+    if (this.connectionSize > 0) {
+      Subquery<String> subQuery1 = criteria.subquery(String.class);
+      Root<RelationshipItem> subRoot1 = subQuery1.from(RelationshipItem.class);
+      subQuery1.select(subRoot1.<String>get(RelationshipItem_.receiverId));
+      subQuery1.where(cb.equal(subRoot1.<String>get(RelationshipItem_.senderId), this.myIdentity.getId()));
+      
+      Subquery<String> subQuery2 = criteria.subquery(String.class);
+      Root<RelationshipItem> subRoot2 = subQuery2.from(RelationshipItem.class);
+      subQuery2.select(subRoot2.<String>get(RelationshipItem_.senderId));
+      subQuery2.where(cb.equal(subRoot2.<String>get(RelationshipItem_.receiverId), this.myIdentity.getId()));
+
+      predicates.add(cb.or(cb.in(streamItem.get(StreamItem_.ownerId)).value(subQuery1),
+                           cb.in(streamItem.get(StreamItem_.ownerId)).value(subQuery2)));
+      
     }
+
     
     //type
     if (this.type != null) {
@@ -177,7 +200,8 @@ public final class AStreamQueryBuilder {
     } else {
       select.orderBy(cb.asc(activity.<Long> get(Activity_.lastUpdated)));
     }
-
+    
+   
     TypedQuery<Activity> typedQuery = em.createQuery(select);
     if (this.limit > 0) {
       typedQuery.setFirstResult((int) offset);
@@ -190,7 +214,9 @@ public final class AStreamQueryBuilder {
   /**
    * Builds query statement for FEED stream
    * 
-   * @return
+   * Feed Stream: owner's activities U space's activity U owner's connections's activities
+   * 
+   * @return TypedQuery<Activity> instance
    */
   public TypedQuery<Activity> buildFeed() {
     EntityManager em = GenericDAOImpl.lifecycleLookup().getCurrentEntityManager();
@@ -214,11 +240,23 @@ public final class AStreamQueryBuilder {
       }
     }
     
-    if (this.myConnectionIds != null && myConnectionIds.size() > 0) {
+    if (this.connectionSize > 0) {
+      Subquery<String> subQuery1 = criteria.subquery(String.class);
+      Root<RelationshipItem> subRoot1 = subQuery1.from(RelationshipItem.class);
+      subQuery1.select(subRoot1.<String>get(RelationshipItem_.receiverId));
+      subQuery1.where(cb.equal(subRoot1.<String>get(RelationshipItem_.senderId), this.myIdentity.getId()));
+      
+      Subquery<String> subQuery2 = criteria.subquery(String.class);
+      Root<RelationshipItem> subRoot2 = subQuery2.from(RelationshipItem.class);
+      subQuery2.select(subRoot2.<String>get(RelationshipItem_.senderId));
+      subQuery2.where(cb.equal(subRoot2.<String>get(RelationshipItem_.receiverId), this.myIdentity.getId()));
+
       if (predicate != null) {
-        predicate = cb.or(predicate, addInClause(cb, streamItem.get(StreamItem_.ownerId), myConnectionIds));
+        predicate = cb.or(predicate, cb.or(cb.or(cb.in(streamItem.get(StreamItem_.ownerId)).value(subQuery1),
+                                                 cb.in(streamItem.get(StreamItem_.ownerId)).value(subQuery2))));
       } else {
-        predicate = addInClause(cb, streamItem.get(StreamItem_.ownerId), myConnectionIds);
+        predicate = cb.or(cb.or(cb.in(streamItem.get(StreamItem_.ownerId)).value(subQuery1),
+                                cb.in(streamItem.get(StreamItem_.ownerId)).value(subQuery2)));
       }
     }
     
@@ -268,6 +306,10 @@ public final class AStreamQueryBuilder {
   /**
    * Build count statement to get the number of the activity base on given conditions
    * 
+   * 1. My Activity Stream: owner's activities
+   * 2. My Spaces: spaces's activity what ower is member
+   * 3. My Connections: my owner's connections's activity
+   * 
    * @return TypedQuery<Long> instance 
    */
   public TypedQuery<Long> buildCount() {
@@ -287,8 +329,20 @@ public final class AStreamQueryBuilder {
       predicates.add(addInClause(cb, streamItem.get(StreamItem_.ownerId), memberOfSpaceIds));
     }
     
-    if (this.myConnectionIds != null && myConnectionIds.size() > 0) {
-      predicates.add(addInClause(cb, streamItem.get(StreamItem_.ownerId), myConnectionIds));
+    // relationships
+    if (this.connectionSize > 0) {
+      Subquery<String> subQuery1 = criteria.subquery(String.class);
+      Root<RelationshipItem> subRoot1 = subQuery1.from(RelationshipItem.class);
+      subQuery1.select(subRoot1.<String>get(RelationshipItem_.receiverId));
+      subQuery1.where(cb.equal(subRoot1.<String>get(RelationshipItem_.senderId), this.myIdentity.getId()));
+      
+      Subquery<String> subQuery2 = criteria.subquery(String.class);
+      Root<RelationshipItem> subRoot2 = subQuery2.from(RelationshipItem.class);
+      subQuery2.select(subRoot2.<String>get(RelationshipItem_.senderId));
+      subQuery2.where(cb.equal(subRoot2.<String>get(RelationshipItem_.receiverId), this.myIdentity.getId()));
+
+      predicates.add(cb.or(cb.in(streamItem.get(StreamItem_.ownerId)).value(subQuery1),
+                           cb.in(streamItem.get(StreamItem_.ownerId)).value(subQuery2)));
     }
     
     //type
@@ -345,11 +399,23 @@ public final class AStreamQueryBuilder {
       }
     }
     
-    if (this.myConnectionIds != null && myConnectionIds.size() > 0) {
+    if (this.connectionSize > 0) {
+      Subquery<String> subQuery1 = criteria.subquery(String.class);
+      Root<RelationshipItem> subRoot1 = subQuery1.from(RelationshipItem.class);
+      subQuery1.select(subRoot1.<String>get(RelationshipItem_.receiverId));
+      subQuery1.where(cb.equal(subRoot1.<String>get(RelationshipItem_.senderId), this.myIdentity.getId()));
+      
+      Subquery<String> subQuery2 = criteria.subquery(String.class);
+      Root<RelationshipItem> subRoot2 = subQuery2.from(RelationshipItem.class);
+      subQuery2.select(subRoot2.<String>get(RelationshipItem_.senderId));
+      subQuery2.where(cb.equal(subRoot2.<String>get(RelationshipItem_.receiverId), this.myIdentity.getId()));
+      
       if (predicate != null) {
-        predicate = cb.or(predicate, addInClause(cb, streamItem.get(StreamItem_.ownerId), myConnectionIds));
+        predicate = cb.or(predicate, cb.or(cb.or(cb.in(streamItem.get(StreamItem_.ownerId)).value(subQuery1),
+                                                 cb.in(streamItem.get(StreamItem_.ownerId)).value(subQuery2))));
       } else {
-        predicate = addInClause(cb, streamItem.get(StreamItem_.ownerId), myConnectionIds);
+        predicate = cb.or(cb.or(cb.in(streamItem.get(StreamItem_.ownerId)).value(subQuery1),
+                                cb.in(streamItem.get(StreamItem_.ownerId)).value(subQuery2)));
       }
     }
     

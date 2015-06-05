@@ -38,6 +38,15 @@ public interface RelationshipDAO extends GenericDAO<RelationshipItem, Long> {
    * @return
    */
   List<RelationshipItem> getConnections(Identity identity, Relationship.Type status);
+  
+  /**
+   * Has the connections
+   * 
+   * @param identity
+   * @param status
+   * @return TRUE/FALSE
+   */
+  long count(Identity identity, Relationship.Type status);
 
   /**
    * Get relationship of 2 users
