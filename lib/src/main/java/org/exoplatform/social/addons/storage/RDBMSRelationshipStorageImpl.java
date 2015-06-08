@@ -17,16 +17,29 @@
 package org.exoplatform.social.addons.storage;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.NavigableMap;
+import java.util.Random;
+import java.util.Set;
+import java.util.TreeMap;
 
 import org.exoplatform.social.addons.storage.dao.RelationshipDAO;
 import org.exoplatform.social.addons.storage.entity.RelationshipFilterType;
 import org.exoplatform.social.addons.storage.entity.RelationshipItem;
 import org.exoplatform.social.core.identity.model.Identity;
+import org.exoplatform.social.core.identity.model.Profile;
+import org.exoplatform.social.core.profile.ProfileFilter;
 import org.exoplatform.social.core.relationship.model.Relationship;
+import org.exoplatform.social.core.relationship.model.Relationship.Type;
 import org.exoplatform.social.core.storage.RelationshipStorageException;
 import org.exoplatform.social.core.storage.api.IdentityStorage;
 import org.exoplatform.social.core.storage.impl.RelationshipStorageImpl;
+import org.exoplatform.social.core.storage.impl.StorageUtils;
 
 /**
  * Created by The eXo Platform SAS
@@ -161,10 +174,17 @@ public class RDBMSRelationshipStorageImpl extends RelationshipStorageImpl {
   }
 
   private Identity getIdentityFromRelationshipItem(RelationshipItem item, String ownerId) {
+    Identity identity = null;
     if (ownerId.equals(item.getSenderId())) {
-      return identityStorage.findIdentityById(item.getReceiverId());
+      identity = identityStorage.findIdentityById(item.getReceiverId());
+    } else {
+      identity = identityStorage.findIdentityById(item.getSenderId());
     }
-    return identityStorage.findIdentityById(item.getSenderId());
+    if (identity == null) return null;
+    //load profile
+    Profile profile = identityStorage.loadProfile(identity.getProfile());
+    identity.setProfile(profile);
+    return identity;
   }
   
   private Relationship convertRelationshipItemToRelationship(RelationshipItem item) {
@@ -175,5 +195,168 @@ public class RDBMSRelationshipStorageImpl extends RelationshipStorageImpl {
     relationship.setReceiver(identityStorage.findIdentityById(item.getReceiverId()));
     relationship.setStatus(item.getStatus());
     return relationship;
+  }
+
+  @Override
+  public List<Relationship> getSenderRelationships(String senderId, Type type, List<Identity> listCheckIdentity) throws RelationshipStorageException {
+    Identity sender = identityStorage.findIdentityById(senderId);
+    return getSenderRelationships(sender, type, listCheckIdentity);
+  }
+
+  @Override
+  public boolean hasRelationship(Identity identity1, Identity identity2, String relationshipPath) {
+    Relationship r = getRelationship(identity1, identity2);
+    return r != null && Relationship.Type.CONFIRMED.equals(r.getStatus());
+  }
+
+  @Override
+  public List<Identity> getRelationships(Identity identity, long offset, long limit) throws RelationshipStorageException {
+    return convertRelationshipEntitiesToIdentities(relationshipDAO.getRelationships(identity, null, RelationshipFilterType.ALL, offset, limit), identity.getId());
+  }
+
+  @Override
+  public List<Identity> getConnectionsByFilter(Identity existingIdentity, ProfileFilter profileFilter, long offset, long limit) throws RelationshipStorageException {
+    List<Identity> identities = getConnections(existingIdentity);
+    return RDBMSStorageUtils.getRelationshipsByFilter(identities, profileFilter, offset, limit);
+  }
+
+  @Override
+  public List<Identity> getIncomingByFilter(Identity existingIdentity, ProfileFilter profileFilter, long offset, long limit) throws RelationshipStorageException {
+    if (profileFilter.isEmpty()) {
+      return StorageUtils.sortIdentitiesByFullName(getIncomingRelationships(existingIdentity, offset, limit), true);
+    }
+    //
+    List<Identity> identities = getIncomingRelationships(existingIdentity, 0, -1);
+    return RDBMSStorageUtils.getRelationshipsByFilter(identities, profileFilter, offset, limit);
+  }
+
+  @Override
+  public List<Identity> getOutgoingByFilter(Identity existingIdentity, ProfileFilter profileFilter, long offset, long limit) throws RelationshipStorageException {
+    if (profileFilter.isEmpty()) {
+      return StorageUtils.sortIdentitiesByFullName(getOutgoingRelationships(existingIdentity, offset, limit), true);
+    }
+    //
+    List<Identity> identities = getOutgoingRelationships(existingIdentity, 0, -1);
+    return RDBMSStorageUtils.getRelationshipsByFilter(identities, profileFilter, offset, limit);
+  }
+
+  @Override
+  public int getConnectionsCountByFilter(Identity existingIdentity, ProfileFilter profileFilter) throws RelationshipStorageException {
+    List<Identity> identities = getConnections(existingIdentity);
+    return RDBMSStorageUtils.getRelationshipsCountByFilter(identities, profileFilter);
+  }
+
+  @Override
+  public int getIncomingCountByFilter(Identity existingIdentity, ProfileFilter profileFilter) throws RelationshipStorageException {
+    if (profileFilter.isEmpty()) {
+      return getIncomingRelationshipsCount(existingIdentity);
+    }
+    //
+    List<Identity> identities = getIncomingRelationships(existingIdentity, 0, -1);
+    return RDBMSStorageUtils.getRelationshipsCountByFilter(identities, profileFilter);
+  }
+
+  @Override
+  public int getOutgoingCountByFilter(Identity existingIdentity, ProfileFilter profileFilter) throws RelationshipStorageException {
+    if (profileFilter.isEmpty()) {
+      return getOutgoingRelationshipsCount(existingIdentity);
+    }
+    //
+    List<Identity> identities = getOutgoingRelationships(existingIdentity, 0, -1);
+    return RDBMSStorageUtils.getRelationshipsCountByFilter(identities, profileFilter);
+  }
+
+  @Override
+  public Map<Identity, Integer> getSuggestions(Identity identity, int maxConnections, int maxConnectionsToLoad, int maxSuggestions) throws RelationshipStorageException {
+    if (maxConnectionsToLoad > 0 && maxConnections > maxConnectionsToLoad)
+      maxConnectionsToLoad = maxConnections;
+    // Get identities level 1
+   Set<Identity> relationIdLevel1 = new HashSet<Identity>();
+   int size = getConnectionsCount(identity);
+   // The ideal limit of connection to treat however we could need to go beyond this limit
+   // if we cannot reach the expected amount of suggestions
+   int endIndex;
+   Random random = new Random();
+   List<Identity> connections;
+   if (size > maxConnectionsToLoad && maxConnectionsToLoad > 0 && maxConnections > 0) {
+     // The total amount of connections is bigger than the maximum allowed
+     // We will then load only a random sample to reduce the best we can the 
+     // required time for this task 
+     int startIndex = random.nextInt(size - maxConnectionsToLoad);
+     endIndex = maxConnections;
+     connections= getConnections(identity, startIndex, maxConnectionsToLoad);
+   } else {
+     // The total amount of connections is less than the maximum allowed
+     // We call load everything
+     endIndex = size;
+     connections= getConnections(identity, 0, size);
+   }
+   // we need to load all the connections
+   for (int i = 0; i < connections.size(); i++) {
+     Identity id = connections.get(i);
+     relationIdLevel1.add(id);
+   }
+   relationIdLevel1.remove(identity);
+
+   // Get identities level 2 (suggested Identities)
+   Map<Identity, Integer> suggestedIdentities = new HashMap<Identity, Integer>();
+   Iterator<Identity> it = relationIdLevel1.iterator();
+   for (int j = 0; j < size && it.hasNext(); j++) {
+     Identity id = it.next();
+     // We check if we reach the limit of connections to treat and if we have enough suggestions
+     if (j >= endIndex && suggestedIdentities.size() > maxSuggestions && maxSuggestions > 0)
+       break;
+     int allConnSize = getConnectionsCount(id);
+     int allConnStartIndex = 0;
+     if (allConnSize > maxConnections && maxConnections > 0) {
+       // The current identity has more connections that the allowed amount so we will treat a sample
+       allConnStartIndex = random.nextInt(allConnSize - maxConnections);
+       connections = getConnections(id, allConnStartIndex, maxConnections);
+     } else {
+       // The current identity doesn't have more connections that the allowed amount so we will 
+       // treat all of them
+       connections = getConnections(id, 0, allConnSize);
+     }
+     for (int i = 0; i < connections.size(); i++) {
+       Identity ids = connections.get(i);
+       // We check if the current connection is not already part of the connections of the identity
+       // for which we seek some suggestions
+       if (!relationIdLevel1.contains(ids) && !ids.equals(identity) && !ids.isDeleted()
+            && getRelationship(ids, identity) == null) {
+         Integer commonIdentities = suggestedIdentities.get(ids);
+         if (commonIdentities == null) {
+           commonIdentities = new Integer(1);
+         } else {
+           commonIdentities = new Integer(commonIdentities.intValue() + 1);
+         }
+         suggestedIdentities.put(ids, commonIdentities);
+       }
+     }
+   }
+   NavigableMap<Integer, List<Identity>> groupByCommonConnections = new TreeMap<Integer, List<Identity>>();
+   // This for loop allows to group the suggestions by total amount of common connections
+   for (Identity id : suggestedIdentities.keySet()) {
+     Integer commonIdentities = suggestedIdentities.get(id);
+     List<Identity> ids = groupByCommonConnections.get(commonIdentities);
+     if (ids == null) {
+       ids = new ArrayList<Identity>();
+       groupByCommonConnections.put(commonIdentities, ids);
+     }
+     ids.add(id);
+   }
+   Map<Identity, Integer> suggestions = new LinkedHashMap<Identity, Integer>();
+   int suggestionLeft = maxSuggestions;
+   // We iterate over the suggestions starting from the suggestions with the highest amount of common
+   // connections
+   main: for (Integer key : groupByCommonConnections.descendingKeySet()) {
+     List<Identity> ids = groupByCommonConnections.get(key);
+     for (Identity id : ids) {
+       suggestions.put(id, key);
+       // We stop once we have enough suggestions
+       if (maxSuggestions > 0 && --suggestionLeft == 0)
+         break main;
+     }
+   }
+   return suggestions;
   }
 }
