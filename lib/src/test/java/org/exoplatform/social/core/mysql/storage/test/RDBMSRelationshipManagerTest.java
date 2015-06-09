@@ -242,11 +242,6 @@ public class RDBMSRelationshipManagerTest extends AbstractCoreTest {
     
     assertEquals("maryToRootRelationship.getStatus() must return: " + Relationship.Type.PENDING,
                  Relationship.Type.PENDING, maryToRootRelationship.getStatus());
-    maryToRootRelationship.setStatus(Relationship.Type.IGNORED);
-    relationshipManager.update(maryToRootRelationship);
-    maryToRootRelationship = relationshipManager.get(maryIdentity, rootIdentity);
-    assertEquals("maryToRootRelationship.getStatus() must return: " + Relationship.Type.IGNORED,
-                 Relationship.Type.IGNORED, maryToRootRelationship.getStatus());
     
     tearDownRelationshipList.add(rootToDemoRelationship);
     tearDownRelationshipList.add(maryToRootRelationship);

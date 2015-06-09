@@ -26,13 +26,13 @@ import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.identity.provider.SpaceIdentityProvider;
 import org.exoplatform.social.core.mysql.test.AbstractCoreTest;
 import org.exoplatform.social.core.mysql.test.MaxQueryNumber;
+import org.exoplatform.social.core.mysql.test.QueryNumberTest;
 import org.exoplatform.social.core.relationship.model.Relationship;
 import org.exoplatform.social.core.space.impl.DefaultSpaceApplicationHandler;
 import org.exoplatform.social.core.space.model.Space;
 import org.exoplatform.social.core.space.spi.SpaceService;
 import org.exoplatform.social.core.storage.api.ActivityStorage;
 import org.exoplatform.social.core.storage.api.IdentityStorage;
-import org.exoplatform.social.core.mysql.test.QueryNumberTest;
 
 @QueryNumberTest
 public class RDBMSActivityStorageImplTest extends AbstractCoreTest {
@@ -397,7 +397,7 @@ public class RDBMSActivityStorageImplTest extends AbstractCoreTest {
     assertEquals(4, activityStorage.getOlderOnUserSpacesActivities(demoIdentity, baseActivity, 10).size());
     assertEquals(4, activityStorage.getNumberOfOlderOnUserSpacesActivities(demoIdentity, baseActivity));
   }
-  @MaxQueryNumber(54)
+  @MaxQueryNumber(94)
   public void testGetNewerComments() {
     int totalNumber = 10;
     
@@ -439,7 +439,7 @@ public class RDBMSActivityStorageImplTest extends AbstractCoreTest {
     assertEquals(0, activityStorage.getNewerComments(activity, baseComment, 20).size());
     assertEquals(0, activityStorage.getNumberOfNewerComments(activity, baseComment));
   }
-  @MaxQueryNumber(570)
+  @MaxQueryNumber(610)
   public void testGetOlderComments() {
     int totalNumber = 10;
     

@@ -29,7 +29,6 @@ import java.util.Set;
 import java.util.TreeMap;
 
 import org.exoplatform.social.addons.storage.dao.RelationshipDAO;
-import org.exoplatform.social.addons.storage.entity.RelationshipFilterType;
 import org.exoplatform.social.addons.storage.entity.RelationshipItem;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.identity.model.Profile;
@@ -60,17 +59,27 @@ public class RDBMSRelationshipStorageImpl extends RelationshipStorageImpl {
 
   @Override
   public Relationship saveRelationship(Relationship relationship) throws RelationshipStorageException {
-    if (relationship.getId() == null) {
+    if (relationship.getId() == null) {//create new relationship
       RelationshipItem entity = new RelationshipItem();
       entity.setReceiverId(relationship.getReceiver().getId());
       entity.setSenderId(relationship.getSender().getId());
-      entity.setStatus(relationship.getStatus());
+      entity.setStatus(Relationship.Type.PENDING.equals(relationship.getStatus()) ? Relationship.Type.OUTGOING : relationship.getStatus());
       relationshipDAO.create(entity);
       relationship.setId(Long.toString(entity.getId()));
-    } else {
-      RelationshipItem entity = relationshipDAO.find(Long.valueOf(relationship.getId()));
+      //
+      RelationshipItem symmetricalEntity = new RelationshipItem();
+      symmetricalEntity.setSenderId(relationship.getReceiver().getId());
+      symmetricalEntity.setReceiverId(relationship.getSender().getId());
+      symmetricalEntity.setStatus(Relationship.Type.PENDING.equals(relationship.getStatus()) ? Relationship.Type.INCOMING : relationship.getStatus());
+      relationshipDAO.create(symmetricalEntity);
+    } else {//update an relationship
+      RelationshipItem entity = relationshipDAO.getRelationship(relationship.getSender(), relationship.getReceiver());
       entity.setStatus(relationship.getStatus());
       relationshipDAO.update(entity);
+      //
+      RelationshipItem symmetricalEntity = relationshipDAO.getRelationship(relationship.getReceiver(), relationship.getSender());
+      symmetricalEntity.setStatus(relationship.getStatus());
+      relationshipDAO.update(symmetricalEntity);
     }
     //
     return relationship;
@@ -79,11 +88,17 @@ public class RDBMSRelationshipStorageImpl extends RelationshipStorageImpl {
   @Override
   public void removeRelationship(Relationship relationship) throws RelationshipStorageException {
     relationshipDAO.delete(Long.valueOf(relationship.getId()));
+    RelationshipItem symmetricalEntity = relationshipDAO.getRelationship(relationship.getReceiver(), relationship.getSender());
+    relationshipDAO.delete(Long.valueOf(symmetricalEntity.getId()));
   }
   
   @Override
   public Relationship getRelationship(Identity identity1, Identity identity2) throws RelationshipStorageException {
-    return convertRelationshipItemToRelationship(relationshipDAO.getRelationship(identity1, identity2));
+    RelationshipItem item = relationshipDAO.getRelationship(identity1, identity2);
+    if (item == null) {
+      item = relationshipDAO.getRelationship(identity2, identity1);
+    }
+    return convertRelationshipItemToRelationship(item);
   }
   
   @Override
@@ -98,56 +113,56 @@ public class RDBMSRelationshipStorageImpl extends RelationshipStorageImpl {
   
   @Override
   public List<Identity> getConnections(Identity identity, long offset, long limit) throws RelationshipStorageException {
-    return convertRelationshipEntitiesToIdentities(relationshipDAO.getRelationships(identity, Relationship.Type.CONFIRMED, RelationshipFilterType.ALL, offset, limit), identity.getId());
+    return convertRelationshipEntitiesToIdentities(relationshipDAO.getRelationships(identity, Relationship.Type.CONFIRMED, offset, limit), identity.getId());
   }
   
   @Override
   public int getConnectionsCount(Identity identity) throws RelationshipStorageException {
-    return relationshipDAO.getRelationshipsCount(identity, Relationship.Type.CONFIRMED, RelationshipFilterType.ALL);
+    return relationshipDAO.getRelationshipsCount(identity, Relationship.Type.CONFIRMED);
   }
   
   @Override
   public int getRelationshipsCount(Identity identity) throws RelationshipStorageException {
-    return relationshipDAO.getRelationshipsCount(identity, null, RelationshipFilterType.ALL);
+    return relationshipDAO.getRelationshipsCount(identity, null);
   }
   
   @Override
   public List<Relationship> getRelationships(Identity identity, Relationship.Type type, List<Identity> listCheckIdentity) throws RelationshipStorageException {
-    return getRelationships(identity, type, RelationshipFilterType.ALL);
+    return getRelationships(identity, type);
   }
   
   @Override
   public List<Relationship> getReceiverRelationships(Identity receiver, Relationship.Type type, List<Identity> listCheckIdentity) throws RelationshipStorageException {
-    return getRelationships(receiver, type, RelationshipFilterType.RECEIVER);
+    return getRelationships(receiver, Relationship.Type.INCOMING);
   }
   
   @Override
   public List<Relationship> getSenderRelationships(Identity sender, Relationship.Type type, List<Identity> listCheckIdentity) throws RelationshipStorageException {
-    return getRelationships(sender, type, RelationshipFilterType.SENDER);
+    return getRelationships(sender, Relationship.Type.OUTGOING);
   }
   
-  public List<Relationship> getRelationships(Identity identity, Relationship.Type type, RelationshipFilterType filterType) {
-    return convertRelationshipEntitiesToRelationships(relationshipDAO.getRelationships(identity, type, filterType, 0, -1));
+  public List<Relationship> getRelationships(Identity identity, Relationship.Type type) {
+    return convertRelationshipEntitiesToRelationships(relationshipDAO.getRelationships(identity, type, 0, -1));
   }
   
   @Override
   public List<Identity> getOutgoingRelationships(Identity sender, long offset, long limit) throws RelationshipStorageException {
-    return convertRelationshipEntitiesToIdentities(relationshipDAO.getRelationships(sender, Relationship.Type.PENDING, RelationshipFilterType.SENDER, offset, limit), sender.getId());
+    return convertRelationshipEntitiesToIdentities(relationshipDAO.getRelationships(sender, Relationship.Type.OUTGOING, offset, limit), sender.getId());
   }
   
   @Override
   public int getOutgoingRelationshipsCount(Identity sender) throws RelationshipStorageException {
-    return relationshipDAO.getRelationshipsCount(sender, Relationship.Type.PENDING, RelationshipFilterType.SENDER);
+    return relationshipDAO.getRelationshipsCount(sender, Relationship.Type.OUTGOING);
   }
   
   @Override
   public List<Identity> getIncomingRelationships(Identity receiver, long offset, long limit) throws RelationshipStorageException {
-    return convertRelationshipEntitiesToIdentities(relationshipDAO.getRelationships(receiver, Relationship.Type.PENDING, RelationshipFilterType.RECEIVER, offset, limit), receiver.getId());
+    return convertRelationshipEntitiesToIdentities(relationshipDAO.getRelationships(receiver, Relationship.Type.INCOMING, offset, limit), receiver.getId());
   }
   
   @Override
   public int getIncomingRelationshipsCount(Identity receiver) throws RelationshipStorageException {
-    return relationshipDAO.getRelationshipsCount(receiver, Relationship.Type.PENDING, RelationshipFilterType.RECEIVER);
+    return relationshipDAO.getRelationshipsCount(receiver, Relationship.Type.INCOMING);
   }
   
   @Override
@@ -193,14 +208,14 @@ public class RDBMSRelationshipStorageImpl extends RelationshipStorageImpl {
     Relationship relationship = new Relationship(Long.toString(item.getId()));
     relationship.setSender(identityStorage.findIdentityById(item.getSenderId()));
     relationship.setReceiver(identityStorage.findIdentityById(item.getReceiverId()));
-    relationship.setStatus(item.getStatus());
+    relationship.setStatus(Relationship.Type.CONFIRMED.equals(item.getStatus()) ? item.getStatus() : Relationship.Type.PENDING);
     return relationship;
   }
 
   @Override
   public List<Relationship> getSenderRelationships(String senderId, Type type, List<Identity> listCheckIdentity) throws RelationshipStorageException {
     Identity sender = identityStorage.findIdentityById(senderId);
-    return getSenderRelationships(sender, type, listCheckIdentity);
+    return getSenderRelationships(sender, Relationship.Type.OUTGOING, listCheckIdentity);
   }
 
   @Override
@@ -211,7 +226,7 @@ public class RDBMSRelationshipStorageImpl extends RelationshipStorageImpl {
 
   @Override
   public List<Identity> getRelationships(Identity identity, long offset, long limit) throws RelationshipStorageException {
-    return convertRelationshipEntitiesToIdentities(relationshipDAO.getRelationships(identity, null, RelationshipFilterType.ALL, offset, limit), identity.getId());
+    return convertRelationshipEntitiesToIdentities(relationshipDAO.getRelationships(identity, null, offset, limit), identity.getId());
   }
 
   @Override

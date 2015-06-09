@@ -18,7 +18,6 @@ package org.exoplatform.social.addons.storage.dao;
 
 import java.util.List;
 
-import org.exoplatform.social.addons.storage.entity.RelationshipFilterType;
 import org.exoplatform.social.addons.storage.entity.RelationshipItem;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.relationship.model.Relationship;
@@ -54,20 +53,18 @@ public interface RelationshipDAO extends GenericDAO<RelationshipItem, Long> {
   /**
    * @param identity
    * @param type
-   * @param filterType
    * @param offset
    * @param limit
    * @return
    */
-  List<RelationshipItem> getRelationships(Identity identity, Type type, RelationshipFilterType filterType, long offset, long limit);
+  List<RelationshipItem> getRelationships(Identity identity, Type type, long offset, long limit);
 
   /**
    * @param identity
    * @param type
-   * @param filterType
    * @return
    */
-  int getRelationshipsCount(Identity identity, Type type, RelationshipFilterType filterType);
+  int getRelationshipsCount(Identity identity, Type type);
 
   /**
    * @param identity

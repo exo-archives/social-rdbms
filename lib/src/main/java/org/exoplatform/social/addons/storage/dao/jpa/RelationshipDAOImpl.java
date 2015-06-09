@@ -18,13 +18,11 @@ package org.exoplatform.social.addons.storage.dao.jpa;
 
 import java.util.List;
 
-import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
 
 import org.exoplatform.social.addons.storage.dao.RelationshipDAO;
 import org.exoplatform.social.addons.storage.dao.jpa.query.RelationshipQueryBuilder;
 import org.exoplatform.social.addons.storage.dao.jpa.synchronization.SynchronizedGenericDAO;
-import org.exoplatform.social.addons.storage.entity.RelationshipFilterType;
 import org.exoplatform.social.addons.storage.entity.RelationshipItem;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.relationship.model.Relationship;
@@ -49,10 +47,10 @@ public class RelationshipDAOImpl extends SynchronizedGenericDAO<RelationshipItem
 
   @Override
   public RelationshipItem getRelationship(Identity identity1, Identity identity2) {
-    //TODO : need to improve
-    EntityManager em = GenericDAOImpl.lifecycleLookup().getCurrentEntityManager();
-    TypedQuery<RelationshipItem> query =
-        em.createQuery("SELECT r FROM RelationshipItem r WHERE (r.senderId='" + identity1.getId() + "' AND r.receiverId='" + identity2.getId() + "') OR (r.receiverId='" + identity1.getId() + "' AND r.senderId='" + identity2.getId() + "')", RelationshipItem.class);
+    TypedQuery<RelationshipItem> query = RelationshipQueryBuilder.builder()
+                                                                 .sender(identity1)
+                                                                 .receiver(identity2)
+                                                                 .buildSingleRelationship();
     try {
       return query.getSingleResult();
     } catch (Exception e) {
@@ -61,11 +59,10 @@ public class RelationshipDAOImpl extends SynchronizedGenericDAO<RelationshipItem
   }
 
   @Override
-  public List<RelationshipItem> getRelationships(Identity identity, Type type, RelationshipFilterType filterType, long offset, long limit) {
+  public List<RelationshipItem> getRelationships(Identity identity, Type type, long offset, long limit) {
     return RelationshipQueryBuilder.builder()
                                    .owner(identity)
                                    .status(type)
-                                   .filterType(filterType)
                                    .offset(offset)
                                    .limit(limit)
                                    .build()
@@ -73,11 +70,10 @@ public class RelationshipDAOImpl extends SynchronizedGenericDAO<RelationshipItem
   }
 
   @Override
-  public int getRelationshipsCount(Identity identity, Type type, RelationshipFilterType filterType) {
+  public int getRelationshipsCount(Identity identity, Type type) {
     return RelationshipQueryBuilder.builder()
                                    .owner(identity)
                                    .status(type)
-                                   .filterType(filterType)
                                    .buildCount()
                                    .getSingleResult()
                                    .intValue();

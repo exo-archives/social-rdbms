@@ -6,15 +6,16 @@
    <provider>org.hibernate.ejb.HibernatePersistence</provider>
 
     <properties>
-      <property name="javax.persistence.provider" value="org.hibernate.ejb.HibernatePersistence" />
-      <property name="javax.persistence.jdbc.driver" value="org.hsqldb.jdbcDriver" />
-      <property name="javax.persistence.jdbc.url" value="jdbc:h2:mem:db1;DB_CLOSE_DELAY=-1;MVCC=TRUE" />
-      <property name="javax.persistence.jdbc.user" value="sa" />
-      <property name="javax.persistence.jdbc.password" value="" />
+      <property name="javax.persistence.jdbc.driver" value="com.mysql.jdbc.Driver" />
+      <property name="javax.persistence.jdbc.url" value="jdbc:mysql://localhost:3306/exo_social?autoReconnect=true" />
+      <property name="javax.persistence.jdbc.user" value="root" />
+      <property name="javax.persistence.jdbc.password" value="exo" />
 
-      <property name="hibernate.dialect" value="org.hibernate.dialect.H2Dialect" />
       <property name="hibernate.show_sql" value="false" />
       <property name="hibernate.hbm2ddl.auto" value="create" />
+      <property name="hibernate.dialect" value="org.hibernate.dialect.MySQLDialect" />
+      
     </properties>
+
   </persistence-unit>
 </persistence>
