@@ -46,7 +46,7 @@
   </dependencies>
   
   <build>
-    <finalName>social-rdbms-addons-webapp</finalName>
+    <finalName>social-rdbms-addons</finalName>
     
     <plugins>
 			<plugin>

@@ -1,0 +1,114 @@
+package org.exoplatform.social.addons.storage.entity;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.Table;
+import javax.persistence.UniqueConstraint;
+
+@Entity
+@Table(name = "SOC_PROFILE", uniqueConstraints = @UniqueConstraint(columnNames = { "identityId" }))
+public class ProfileItem {
+
+  @Id
+  @GeneratedValue(strategy = GenerationType.AUTO)
+  @Column(name="PROFILE_ID")
+  private Long id;
+
+  @Column(length = 36, name="identityId")
+  private String identityId;
+  private String fullName;
+  private String firstName;
+  private String lastName;
+  private String position;
+  //join all value of experiences in to one value, separate by comma
+  private String skills;
+  private String positions;
+  private String organizations;
+  private String jobsDescription;
+
+  public ProfileItem() {
+  }
+
+  public Long getId() {
+    return id;
+  }
+
+  public void setId(Long id) {
+    this.id = id;
+  }
+
+  public String getIdentityId() {
+    return identityId;
+  }
+
+  public void setIdentityId(String identityId) {
+    this.identityId = identityId;
+  }
+
+  public String getFullName() {
+    return fullName;
+  }
+
+  public void setFullName(String fullName) {
+    this.fullName = fullName;
+  }
+
+  public String getFirstName() {
+    return firstName;
+  }
+
+  public void setFirstName(String firstName) {
+    this.firstName = firstName;
+  }
+
+  public String getLastName() {
+    return lastName;
+  }
+
+  public void setLastName(String lastName) {
+    this.lastName = lastName;
+  }
+
+  public String getPosition() {
+    return position;
+  }
+
+  public void setPosition(String position) {
+    this.position = position;
+  }
+
+  public String getSkills() {
+    return skills;
+  }
+
+  public void setSkills(String skills) {
+    this.skills = skills;
+  }
+
+  public String getPositions() {
+    return positions;
+  }
+
+  public void setPositions(String positions) {
+    this.positions = positions;
+  }
+
+  public String getOrganizations() {
+    return organizations;
+  }
+
+  public void setOrganizations(String organizations) {
+    this.organizations = organizations;
+  }
+
+  public String getJobsDescription() {
+    return jobsDescription;
+  }
+
+  public void setJobsDescription(String jobsDescription) {
+    this.jobsDescription = jobsDescription;
+  }
+}

@@ -44,6 +44,11 @@
     <type>org.exoplatform.social.addons.storage.dao.jpa.StreamItemDAOImpl</type>
   </component>
   
+  <component>
+    <key>org.exoplatform.social.addons.storage.dao.ProfileItemDAO</key>
+    <type>org.exoplatform.social.addons.storage.dao.jpa.ProfileItemDAOImpl</type>
+  </component>
+  
    <component>
     <key>org.exoplatform.social.addons.storage.dao.RelationshipDAO</key>
     <type>org.exoplatform.social.addons.storage.dao.jpa.RelationshipDAOImpl</type>
@@ -72,4 +77,14 @@
   <component>
     <type>org.exoplatform.social.core.storage.cache.CachedActivityStorage</type>
   </component>
+
+  <external-component-plugins>
+    <target-component>org.exoplatform.social.core.manager.IdentityManager</target-component>
+    <component-plugin>
+      <name>ProfileUpdateImpl</name>
+      <set-method>registerProfileListener</set-method>
+      <type>org.exoplatform.social.addons.profile.ProfileUpdateImpl</type>
+    </component-plugin>
+  </external-component-plugins>
+
 </configuration>
