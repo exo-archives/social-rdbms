@@ -22,6 +22,9 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import org.exoplatform.commons.utils.ListAccess;
+import org.exoplatform.social.addons.storage.dao.RelationshipDAO;
+import org.exoplatform.social.addons.storage.dao.jpa.GenericDAOImpl;
+import org.exoplatform.social.addons.storage.entity.RelationshipItem;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvider;
 import org.exoplatform.social.core.manager.IdentityManager;
@@ -45,12 +48,10 @@ public class RDBMSRelationshipManagerTest extends AbstractCoreTest {
                    ghostIdentity,
                    paulIdentity;
 
-  private List<Relationship> tearDownRelationshipList;
 
   @Override
   protected void setUp() throws Exception {
     super.setUp();
-    tearDownRelationshipList = new ArrayList<Relationship>();
     relationshipManager = (RelationshipManager) getContainer().getComponentInstanceOfType(RelationshipManager.class);
     identityManager = (IdentityManager) getContainer().getComponentInstanceOfType(IdentityManager.class);
     assertNotNull("relationshipManager must not be null", relationshipManager);
@@ -65,8 +66,13 @@ public class RDBMSRelationshipManagerTest extends AbstractCoreTest {
 
   @Override
   protected void tearDown() throws Exception {
-    for (Relationship relationship : tearDownRelationshipList) {
-      relationshipManager.delete(relationship);
+    if(GenericDAOImpl.lifecycleLookup().getCurrentEntityManager().getTransaction().isActive())
+      GenericDAOImpl.lifecycleLookup().getCurrentEntityManager().getTransaction().commit();
+    
+    RelationshipDAO relationshipDAO = getService(RelationshipDAO.class);
+    List<RelationshipItem> items = relationshipDAO.findAll();
+    for (RelationshipItem item : items) {
+      relationshipDAO.delete(item.getId());
     }
 
     identityManager.deleteIdentity(rootIdentity);
@@ -91,8 +97,6 @@ public class RDBMSRelationshipManagerTest extends AbstractCoreTest {
 
     assertEquals(1, senderRelationships.size());
     assertEquals(1, receiverRelationships.size());
-
-    tearDownRelationshipList.addAll(senderRelationships);
   }
 
   /**
@@ -124,9 +128,6 @@ public class RDBMSRelationshipManagerTest extends AbstractCoreTest {
     assertNotNull("johnRelationships must not be null", johnRelationships);
     assertEquals("johnRelationships.size() mut return: 1", 1, johnRelationships.size());
     
-    tearDownRelationshipList.add(rootToDemoRelationship);
-    tearDownRelationshipList.add(maryToRootRelationship);
-    tearDownRelationshipList.add(rootToJohnRelationship);
   }
   
   /**
@@ -164,9 +165,6 @@ public class RDBMSRelationshipManagerTest extends AbstractCoreTest {
     assertNotNull("rootConfirmedRelationships must not be null", rootConfirmedRelationships);
     assertEquals("rootConfirmedRelationships.size() must return: 1", 1, rootConfirmedRelationships.size());
     
-    tearDownRelationshipList.add(rootToDemoRelationship);
-    tearDownRelationshipList.add(maryToRootRelationship);
-    tearDownRelationshipList.add(rootToJohnRelationship);
   }
   
   /**
@@ -192,9 +190,6 @@ public class RDBMSRelationshipManagerTest extends AbstractCoreTest {
     assertEquals("rootToJohnRelationship.getStatus() must return: ", Relationship.Type.CONFIRMED, 
                  rootToJohnRelationship.getStatus());
     
-    tearDownRelationshipList.add(rootToDemoRelationship);
-    tearDownRelationshipList.add(maryToRootRelationship);
-    tearDownRelationshipList.add(rootToJohnRelationship);
   }
   
   /**
@@ -243,9 +238,6 @@ public class RDBMSRelationshipManagerTest extends AbstractCoreTest {
     assertEquals("maryToRootRelationship.getStatus() must return: " + Relationship.Type.PENDING,
                  Relationship.Type.PENDING, maryToRootRelationship.getStatus());
     
-    tearDownRelationshipList.add(rootToDemoRelationship);
-    tearDownRelationshipList.add(maryToRootRelationship);
-    tearDownRelationshipList.add(rootToJohnRelationship);
   }
   
   /**
@@ -274,9 +266,6 @@ public class RDBMSRelationshipManagerTest extends AbstractCoreTest {
     assertEquals("rootToJohnRelationship.getStatus() must return: " + Relationship.Type.PENDING,
                  Relationship.Type.PENDING, rootToJohnRelationship.getStatus());
     
-    tearDownRelationshipList.add(rootToDemoRelationship);
-    tearDownRelationshipList.add(maryToRootRelationship);
-    tearDownRelationshipList.add(rootToJohnRelationship);
   }
   
   /**
@@ -289,7 +278,6 @@ public class RDBMSRelationshipManagerTest extends AbstractCoreTest {
     Relationship relationship1 = relationshipManager.inviteToConnect(rootIdentity, demoIdentity);
     Relationship relationship2 = relationshipManager.inviteToConnect(rootIdentity, demoIdentity);
     assertEquals("relationShip1 and relationShip2 must be the same",relationship1.getId(), relationship2.getId());
-    tearDownRelationshipList.add(relationship1);
   }
   
   /**
@@ -309,7 +297,6 @@ public class RDBMSRelationshipManagerTest extends AbstractCoreTest {
     
     assertEquals("relationShip1 and relationShip2 must be the same",relationship1.getId(), relationship2.getId());
     
-    tearDownRelationshipList.add(relationship1);
   }
   
   /**
@@ -343,9 +330,6 @@ public class RDBMSRelationshipManagerTest extends AbstractCoreTest {
     assertEquals("rootToJohnRelationship.getStatus() must return: " + Relationship.Type.CONFIRMED,
                  Relationship.Type.CONFIRMED, rootToJohnRelationship.getStatus());
     
-    tearDownRelationshipList.add(rootToDemoRelationship);
-    tearDownRelationshipList.add(maryToRootRelationship);
-    tearDownRelationshipList.add(rootToJohnRelationship);
   }
   
   /**
@@ -433,9 +417,6 @@ public class RDBMSRelationshipManagerTest extends AbstractCoreTest {
     assertNotNull("maryIncoming must not be null", maryIncoming);
     assertEquals("maryIncoming.getSize() must return: 0", 0, maryIncoming.getSize());
     
-    tearDownRelationshipList.add(rootToDemoRelationship);
-    tearDownRelationshipList.add(maryToDemoRelationship);
-    tearDownRelationshipList.add(johnToDemoRelationship);
   }
   
   /**
@@ -471,10 +452,6 @@ public class RDBMSRelationshipManagerTest extends AbstractCoreTest {
     assertNotNull("demoOutgoing must not be null", demoOutgoing);
     assertEquals("demoOutgoing.getSize() must return: 1", 1, demoOutgoing.getSize());
     
-    tearDownRelationshipList.add(rootToDemoRelationship);
-    tearDownRelationshipList.add(maryToDemoRelationship);
-    tearDownRelationshipList.add(demoToJohnRelationship);
-    tearDownRelationshipList.add(rootToMaryRelationship);
   }
   
   /**
@@ -512,9 +489,6 @@ public class RDBMSRelationshipManagerTest extends AbstractCoreTest {
                  Relationship.Type.PENDING, Relationship.Type.PENDING,
                  relationshipManager.getStatus(rootIdentity, johnIdentity));
     
-    tearDownRelationshipList.add(rootToDemoRelationship);
-    tearDownRelationshipList.add(maryToRootRelationship);
-    tearDownRelationshipList.add(rootToJohnRelationship);
   }
   
   /**
@@ -540,9 +514,6 @@ public class RDBMSRelationshipManagerTest extends AbstractCoreTest {
     assertNotNull("johnRelationships must not be null", johnRelationships);
     assertEquals("johnRelationships.getSize() must return: 1", 1, johnRelationships.getSize());
     
-    tearDownRelationshipList.add(rootToDemoRelationship);
-    tearDownRelationshipList.add(maryToRootRelationship);
-    tearDownRelationshipList.add(rootToJohnRelationship);
   }
   
   /**
@@ -559,7 +530,6 @@ public class RDBMSRelationshipManagerTest extends AbstractCoreTest {
     assertEquals("rootToDemoRelationship.getSender() must return: " + rootIdentity, rootIdentity, rootToDemoRelationship.getSender());
     assertEquals("rootToDemoRelationship.getReceiver() must return: " + demoIdentity, demoIdentity, rootToDemoRelationship.getReceiver());
     
-    tearDownRelationshipList.add(rootToDemoRelationship);
   }
   
   /**
@@ -637,9 +607,6 @@ public class RDBMSRelationshipManagerTest extends AbstractCoreTest {
     assertNotNull("johnPendingRelationships must not be null", johnPendingRelationships);
     assertEquals("johnPendingRelationships.size() must return: 0", 0, johnPendingRelationships.size());
     
-    tearDownRelationshipList.add(rootToDemoRelationship);
-    tearDownRelationshipList.add(maryToRootRelationship);
-    tearDownRelationshipList.add(rootToJohnRelationship);
   }
   
   /**
@@ -669,9 +636,6 @@ public class RDBMSRelationshipManagerTest extends AbstractCoreTest {
     assertNotNull("johnPendingRelationships must not be null", johnPendingRelationships);
     assertEquals("johnPendingRelationships.size() must return: 1", 1, johnPendingRelationships.size());
     
-    tearDownRelationshipList.add(rootToDemoRelationship);
-    tearDownRelationshipList.add(maryToRootRelationship);
-    tearDownRelationshipList.add(rootToJohnRelationship);
   }
   
   /**
@@ -707,9 +671,6 @@ public class RDBMSRelationshipManagerTest extends AbstractCoreTest {
     assertNotNull("johnPendingRelationships must not be null", johnPendingRelationships);
     assertEquals("johnPendingRelationships.size() must return: 1", 1, johnPendingRelationships.size());
     
-    tearDownRelationshipList.add(rootToDemoRelationship);
-    tearDownRelationshipList.add(maryToRootRelationship);
-    tearDownRelationshipList.add(rootToJohnRelationship);
   }
   
   /**
@@ -749,9 +710,6 @@ public class RDBMSRelationshipManagerTest extends AbstractCoreTest {
     assertNotNull("johnContacts must not be null", johnContacts);
     assertEquals("johnContacts.size() must return: 1", 1, johnContacts.size());
     
-    tearDownRelationshipList.add(rootToDemoRelationship);
-    tearDownRelationshipList.add(maryToRootRelationship);
-    tearDownRelationshipList.add(rootToJohnRelationship);
   }
   
   /**
@@ -785,9 +743,6 @@ public class RDBMSRelationshipManagerTest extends AbstractCoreTest {
     assertNotNull("johnContacts must not be null", johnContacts);
     assertEquals("johnContacts.size() must return: 1", 1, johnContacts.size());
     
-    tearDownRelationshipList.add(rootToDemoRelationship);
-    tearDownRelationshipList.add(maryToRootRelationship);
-    tearDownRelationshipList.add(rootToJohnRelationship);
   }
   
   /**
@@ -817,9 +772,6 @@ public class RDBMSRelationshipManagerTest extends AbstractCoreTest {
     assertNotNull("johnRelationships must not be null", johnRelationships);
     assertEquals("johnRelationships.size() must return: 1", 1, johnRelationships.size());
     
-    tearDownRelationshipList.add(rootToDemoRelationship);
-    tearDownRelationshipList.add(maryToRootRelationship);
-    tearDownRelationshipList.add(rootToJohnRelationship);
   }
   
   /**
@@ -837,9 +789,6 @@ public class RDBMSRelationshipManagerTest extends AbstractCoreTest {
     assertNotNull("rootRelationships must not be null", rootRelationships);
     assertEquals("rootRelationships.size() must return: 3", 3, rootRelationships.size());
     
-    tearDownRelationshipList.add(rootToDemoRelationship);
-    tearDownRelationshipList.add(maryToRootRelationship);
-    tearDownRelationshipList.add(rootToJohnRelationship);
   }
   
   /**
@@ -861,9 +810,6 @@ public class RDBMSRelationshipManagerTest extends AbstractCoreTest {
     assertNotNull("rootConnections must not be null", rootConnections);
     assertEquals("rootConnections.size() must return: 3", 3, rootConnections.size());
     
-    tearDownRelationshipList.add(rootToDemoRelationship);
-    tearDownRelationshipList.add(maryToRootRelationship);
-    tearDownRelationshipList.add(rootToJohnRelationship);
   }
   
   /**
@@ -899,7 +845,6 @@ public class RDBMSRelationshipManagerTest extends AbstractCoreTest {
     assertNotNull("rootToDemoRelationship must not be null", rootToDemoRelationship);
     assertEquals("rootToDemoRelationship.getStatus() must return: " + Relationship.Type.CONFIRMED, Relationship.Type.CONFIRMED, rootToDemoRelationship.getStatus());
     
-    tearDownRelationshipList.add(rootToDemoRelationship);
   }
   
   /**
@@ -923,9 +868,6 @@ public class RDBMSRelationshipManagerTest extends AbstractCoreTest {
     assertNotNull("rootRelationships must not be null", rootRelationships);
     assertEquals("rootRelationships.size() must return: 1", 1, rootRelationships.size());
     
-    tearDownRelationshipList.add(rootToDemoRelationship);
-    tearDownRelationshipList.add(maryToRootRelationship);
-    tearDownRelationshipList.add(rootToJohnRelationship);
   }
   
   /**
@@ -946,7 +888,6 @@ public class RDBMSRelationshipManagerTest extends AbstractCoreTest {
                  + Relationship.Type.PENDING, Relationship.Type.CONFIRMED
                  , relationshipManager.getRelationshipStatus(rootToDemoRelationship, rootIdentity));
     
-    tearDownRelationshipList.add(rootToDemoRelationship);
   }
   
   /**
@@ -967,7 +908,6 @@ public class RDBMSRelationshipManagerTest extends AbstractCoreTest {
                  Relationship.Type.CONFIRMED, Relationship.Type.CONFIRMED, 
                  relationshipManager.getConnectionStatus(rootIdentity, demoIdentity));
     
-    tearDownRelationshipList.add(rootToDemoRelationship);
   }
   
   /**
@@ -983,7 +923,6 @@ public class RDBMSRelationshipManagerTest extends AbstractCoreTest {
     assertNotNull("foundRelationship.getId() must not be null", foundRelationship.getId());
     assertEquals(foundRelationship.getId(), invitedRelationship.getId());
 
-    tearDownRelationshipList.add(invitedRelationship);
   }
 
   /**
@@ -1000,9 +939,6 @@ public class RDBMSRelationshipManagerTest extends AbstractCoreTest {
     assertNotNull("foundListRelationships must not be null", foundListRelationships);
     assertEquals(3, foundListRelationships.size());
 
-    tearDownRelationshipList.add(johnDemoRelationship);
-    tearDownRelationshipList.add(johnMaryRelationship);
-    tearDownRelationshipList.add(johnRootRelationship);
   }
 
   /**
@@ -1022,9 +958,6 @@ public class RDBMSRelationshipManagerTest extends AbstractCoreTest {
     List<Relationship> listMaryRequireValidationRelationship = relationshipManager.getIncoming(maryIdentity);
     assertEquals(1, listMaryRequireValidationRelationship.size());
 
-    tearDownRelationshipList.add(johnDemoRelationship);
-    tearDownRelationshipList.add(johnMaryRelationship);
-    tearDownRelationshipList.add(johnRootRelationship);
   }
 
   /**
@@ -1050,10 +983,6 @@ public class RDBMSRelationshipManagerTest extends AbstractCoreTest {
     List<Relationship> listRelationshipNotConfirm = relationshipManager.getIncoming(demoIdentity, listIdentities);
     assertEquals(2, listRelationshipNotConfirm.size());
 
-    tearDownRelationshipList.add(johnDemoRelationship);
-    tearDownRelationshipList.add(johnMaryRelationship);
-    tearDownRelationshipList.add(johnRootRelationship);
-    tearDownRelationshipList.add(maryDemoRelationship);
   }
 
   /**
@@ -1077,9 +1006,6 @@ public class RDBMSRelationshipManagerTest extends AbstractCoreTest {
     List<Relationship> contactsList = relationshipManager.getConfirmed(johnIdentity);
     assertEquals(3, contactsList.size());
 
-    tearDownRelationshipList.add(johnDemoRelationship);
-    tearDownRelationshipList.add(johnMaryRelationship);
-    tearDownRelationshipList.add(johnRootRelationship);
   }
 
   /**
@@ -1104,9 +1030,6 @@ public class RDBMSRelationshipManagerTest extends AbstractCoreTest {
 
     List<Relationship> contactsList = relationshipManager.getConfirmed(johnIdentity, listIdentities);
     assertEquals(3, contactsList.size());
-    tearDownRelationshipList.add(johnDemoRelationship);
-    tearDownRelationshipList.add(johnMaryRelationship);
-    tearDownRelationshipList.add(johnRootRelationship);
   }
 
   /**
@@ -1119,7 +1042,6 @@ public class RDBMSRelationshipManagerTest extends AbstractCoreTest {
     relationshipManager.save(testRelationship);
     assertNotNull("testRelationship.getId() must not be null", testRelationship.getId());
 
-    tearDownRelationshipList.add(testRelationship);
   }
 
   /**
@@ -1163,7 +1085,6 @@ public class RDBMSRelationshipManagerTest extends AbstractCoreTest {
     assertEquals(1, senderRelationships.size());
     assertEquals(1, receiverRelationships.size());
 
-    tearDownRelationshipList.addAll(senderRelationships);
   }
 
   /**
@@ -1184,7 +1105,6 @@ public class RDBMSRelationshipManagerTest extends AbstractCoreTest {
     assertEquals(1, senderRelationships.size());
     assertEquals(1, receiverRelationships.size());
 
-    tearDownRelationshipList.addAll(senderRelationships);
   }
 
   /**
@@ -1241,11 +1161,6 @@ public class RDBMSRelationshipManagerTest extends AbstractCoreTest {
     assertEquals(2, demoRelationships.size());
     assertEquals(0, johnRelationships.size());
 
-    tearDownRelationshipList.add(rootDemo);
-    tearDownRelationshipList.add(rootJohn);
-    tearDownRelationshipList.add(rootMary);
-    tearDownRelationshipList.add(demoMary);
-    tearDownRelationshipList.add(demoJohn);
   }
 
   /**
@@ -1263,7 +1178,6 @@ public class RDBMSRelationshipManagerTest extends AbstractCoreTest {
     rootDemo = relationshipManager.inviteToConnect(rootIdentity, demoIdentity);
     assertNotNull("rootDemo.getId() must not be null", rootDemo.getId());
     assertEquals(rootDemo.getStatus(), Relationship.Type.PENDING);
-    tearDownRelationshipList.add(rootDemo);
 
     Relationship rootMary = relationshipManager.get(rootIdentity, maryIdentity);
     Relationship.Type rootMaryStatus = relationshipManager.getStatus(maryIdentity, rootIdentity);
@@ -1272,7 +1186,6 @@ public class RDBMSRelationshipManagerTest extends AbstractCoreTest {
     rootMary = relationshipManager.inviteToConnect(rootIdentity, maryIdentity);
     assertNotNull("rootMary.getId() must not be null", rootMary.getId());
     assertEquals(Relationship.Type.PENDING, rootMary.getStatus());
-    tearDownRelationshipList.add(rootMary);
 
     Relationship rootJohn = relationshipManager.get(rootIdentity, johnIdentity);
     assertNull("rootJohn must be null", rootJohn);
@@ -1280,7 +1193,6 @@ public class RDBMSRelationshipManagerTest extends AbstractCoreTest {
     rootJohn = relationshipManager.inviteToConnect(rootIdentity, johnIdentity);
     assertNotNull("rootJohn.getId() must not be null", rootJohn.getId());
     assertEquals(Relationship.Type.PENDING, rootJohn.getStatus());
-    tearDownRelationshipList.add(rootJohn);
 
     Relationship demoMary = relationshipManager.get(demoIdentity, maryIdentity);
     Relationship.Type demoMaryStatus = relationshipManager.getStatus(maryIdentity, demoIdentity);
@@ -1289,7 +1201,6 @@ public class RDBMSRelationshipManagerTest extends AbstractCoreTest {
     demoMary = relationshipManager.inviteToConnect(demoIdentity, maryIdentity);
     assertNotNull("demoMary.getId() must not be null", demoMary.getId());
     assertEquals(Relationship.Type.PENDING, demoMary.getStatus());
-    tearDownRelationshipList.add(demoMary);
   }
   
 
@@ -1310,10 +1221,7 @@ public class RDBMSRelationshipManagerTest extends AbstractCoreTest {
      ListAccess<Identity> contactsList = relationshipManager.getConnections(johnIdentity);
      assertEquals(3, contactsList.getSize());
      
-     tearDownRelationshipList.add(johnDemoRelationship);
-     tearDownRelationshipList.add(johnMaryRelationship);
-     tearDownRelationshipList.add(johnRootRelationship);
-  }
+     }
 
   public void testOldGetSuggestions() throws Exception {
     Relationship maryToGhostRelationship = relationshipManager.inviteToConnect(ghostIdentity, maryIdentity);
@@ -1363,11 +1271,6 @@ public class RDBMSRelationshipManagerTest extends AbstractCoreTest {
     assertEquals(1, first.getValue().intValue());
     assertEquals(paulIdentity.getRemoteId(), first.getKey().getRemoteId());
 
-    tearDownRelationshipList.add(maryToDemoRelationship);
-    tearDownRelationshipList.add(johnToDemoRelationship);
-    tearDownRelationshipList.add(maryToGhostRelationship);
-    tearDownRelationshipList.add(ghostToJohnRelationship);
-    tearDownRelationshipList.add(paulToDemoRelationship);
   }
 
   public void testGetSuggestions() throws Exception {
@@ -1415,10 +1318,6 @@ public class RDBMSRelationshipManagerTest extends AbstractCoreTest {
     suggestions = relationshipManager.getSuggestions(ghostIdentity, -1, -1, 10); 
     assertEquals(1, suggestions.size());
 
-    tearDownRelationshipList.add(maryToDemoRelationship);
-    tearDownRelationshipList.add(johnToDemoRelationship);
-    tearDownRelationshipList.add(maryToGhostRelationship);
-    tearDownRelationshipList.add(ghostToJohnRelationship);
   }
 
   public void testGetSuggestionsWithParams() throws Exception {
@@ -1471,11 +1370,6 @@ public class RDBMSRelationshipManagerTest extends AbstractCoreTest {
     assertFalse(suggestions.containsKey(ghostIdentity));
     assertEquals(2, suggestions.size());
 
-    tearDownRelationshipList.add(maryToGhostRelationship);
-    tearDownRelationshipList.add(maryToDemoRelationship);
-    tearDownRelationshipList.add(paulToMaryRelationship);
-    tearDownRelationshipList.add(johnToMaryRelationship);
-    tearDownRelationshipList.add(rootToMaryRelationship);
   }
   
   public void testGetLastConnections() throws Exception {
@@ -1498,9 +1392,5 @@ public class RDBMSRelationshipManagerTest extends AbstractCoreTest {
     assertEquals(4, identities.size());
     assertEquals(johnIdentity.getRemoteId(), identities.get(0).getRemoteId());
     
-    tearDownRelationshipList.add(maryToGhostRelationship);
-    tearDownRelationshipList.add(maryToDemoRelationship);
-    tearDownRelationshipList.add(paulToMaryRelationship);
-    tearDownRelationshipList.add(johnToMaryRelationship);
   }
 }
