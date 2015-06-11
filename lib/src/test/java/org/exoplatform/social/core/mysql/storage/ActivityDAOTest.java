@@ -90,10 +90,6 @@ public class ActivityDAOTest extends AbstractCoreTest {
       }
     }
 
-    identityManager.deleteIdentity(rootIdentity);
-    identityManager.deleteIdentity(johnIdentity);
-    identityManager.deleteIdentity(maryIdentity);
-    identityManager.deleteIdentity(demoIdentity);
     identityManager.deleteIdentity(ghostIdentity);
     identityManager.deleteIdentity(jameIdentity);
     identityManager.deleteIdentity(raulIdentity);

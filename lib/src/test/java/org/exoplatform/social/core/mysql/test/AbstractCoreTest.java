@@ -124,12 +124,16 @@ public abstract class AbstractCoreTest extends BaseExoTestCase {
   protected void tearDown() throws Exception {
     
     ProfileItemDAO dao = getService(ProfileItemDAO.class);
-    if(GenericDAOImpl.lifecycleLookup().getCurrentEntityManager().getTransaction().isActive())
-      GenericDAOImpl.lifecycleLookup().getCurrentEntityManager().getTransaction().commit();
+    
     List<ProfileItem> items = dao.findAll();
     for (ProfileItem item : items) {
       dao.delete(item.getId());
     }
+    
+    identityManager.deleteIdentity(rootIdentity);
+    identityManager.deleteIdentity(johnIdentity);
+    identityManager.deleteIdentity(maryIdentity);
+    identityManager.deleteIdentity(demoIdentity);
     
     //
     end();

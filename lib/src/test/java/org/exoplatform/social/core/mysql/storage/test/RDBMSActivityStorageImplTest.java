@@ -65,10 +65,7 @@ public class RDBMSActivityStorageImplTest extends AbstractCoreTest {
     for (ExoSocialActivity activity : tearDownActivityList) {
       activityStorage.deleteActivity(activity.getId());
     }
-    identityStorage.deleteIdentity(rootIdentity);
-    identityStorage.deleteIdentity(johnIdentity);
-    identityStorage.deleteIdentity(maryIdentity);
-    identityStorage.deleteIdentity(demoIdentity);
+    
     //
     for (Space space : tearDownSpaceList) {
       Identity spaceIdentity = identityStorage.findIdentity(SpaceIdentityProvider.NAME, space.getPrettyName());

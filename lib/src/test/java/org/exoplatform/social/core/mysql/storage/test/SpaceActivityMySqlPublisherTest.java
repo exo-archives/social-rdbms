@@ -46,7 +46,7 @@ import org.exoplatform.social.core.storage.api.SpaceStorage;
  * Unit Tests for {@link SpaceActivityPublisher}
  * @author hoat_le
  */
-public class SpaceActivityMySqlPublisherTest extends  AbstractCoreTest {
+public class SpaceActivityMySqlPublisherTest extends AbstractCoreTest {
   private final Log LOG = ExoLogger.getLogger(SpaceActivityMySqlPublisherTest.class);
   private IdentityStorage identityStorage;
   private SpaceStorage spaceStorage;
@@ -83,8 +83,6 @@ public class SpaceActivityMySqlPublisherTest extends  AbstractCoreTest {
    * @throws Exception
    */
   public void testSpaceCreation() throws Exception {
-    Identity rootIdentity = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, "root", true);
-
     Space space = new Space();
     space.setDisplayName("Toto");
     space.setPrettyName(space.getDisplayName());
@@ -131,7 +129,6 @@ public class SpaceActivityMySqlPublisherTest extends  AbstractCoreTest {
     //clean up
     spaceService.deleteSpace(space);
     relationshipManager.delete(relationship);
-    identityManager.deleteIdentity(rootIdentity);
   }
   
   /**
@@ -139,8 +136,6 @@ public class SpaceActivityMySqlPublisherTest extends  AbstractCoreTest {
   * @throws Exception
   */
  public void testSpaceUpdated() throws Exception {
-   Identity rootIdentity = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, "root", false);
-   identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, "demo", false);
 
    Space space = new Space();
    space.setDisplayName("Toto");
@@ -255,13 +250,10 @@ public class SpaceActivityMySqlPublisherTest extends  AbstractCoreTest {
    //clean up
    activityManager.deleteActivity(activityId);
    spaceService.deleteSpace(space);
-   identityManager.deleteIdentity(rootIdentity);
    
    
  }
  public void testSpaceHidden() throws Exception {
-   Identity rootIdentity = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, "root", true);
-
    //Create a hidden space
    Space space = new Space();
    space.setDisplayName("Toto");
@@ -317,7 +309,6 @@ public class SpaceActivityMySqlPublisherTest extends  AbstractCoreTest {
 
    //clean up
    spaceService.deleteSpace(space);
-   identityManager.deleteIdentity(rootIdentity);
  }
 
 }

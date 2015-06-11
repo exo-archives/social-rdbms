@@ -62,10 +62,7 @@ public class ActivityManagerMysqlTest extends AbstractCoreTest {
     super.setUp();
     tearDownActivityList = new ArrayList<ExoSocialActivity>();
     tearDownSpaceList = new ArrayList<Space>();
-    rootIdentity = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, "root", false);
-    johnIdentity = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, "john", false);
-    maryIdentity = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, "mary", false);
-    demoIdentity = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, "demo", false);
+    
     ghostIdentity = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, "ghost", true);
     raulIdentity = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, "raul", true);
     jameIdentity = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, "jame", true);
@@ -85,10 +82,6 @@ public class ActivityManagerMysqlTest extends AbstractCoreTest {
     //RealtimeListAccess<ExoSocialActivity> demoActivities = activityManager.getActivitiesOfUserSpacesWithListAccess(demoIdentity);
     //assertEquals(0, demoActivities.getSize());
     
-    identityManager.deleteIdentity(rootIdentity);
-    identityManager.deleteIdentity(johnIdentity);
-    identityManager.deleteIdentity(maryIdentity);
-    identityManager.deleteIdentity(demoIdentity);
     identityManager.deleteIdentity(ghostIdentity);
     identityManager.deleteIdentity(jameIdentity);
     identityManager.deleteIdentity(raulIdentity);

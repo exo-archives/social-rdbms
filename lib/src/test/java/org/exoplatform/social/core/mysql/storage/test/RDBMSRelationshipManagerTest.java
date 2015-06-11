@@ -52,12 +52,7 @@ public class RDBMSRelationshipManagerTest extends AbstractCoreTest {
   private RelationshipManager relationshipManager;
   private IdentityManager identityManager;
 
-  private Identity rootIdentity,
-                   johnIdentity,
-                   maryIdentity,
-                   demoIdentity,
-                   ghostIdentity,
-                   paulIdentity;
+  private Identity ghostIdentity, paulIdentity;
 
 
   @Override
@@ -67,10 +62,7 @@ public class RDBMSRelationshipManagerTest extends AbstractCoreTest {
     identityManager = getService(IdentityManager.class);
     assertNotNull("relationshipManager must not be null", relationshipManager);
     assertNotNull("identityManager must not be null", identityManager);
-    rootIdentity = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, "root", true);
-    johnIdentity = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, "john", true);
-    maryIdentity = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, "mary", true);
-    demoIdentity = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, "demo", true);
+    
     ghostIdentity = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, "ghost", true);
     paulIdentity = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, "paul", true);
     //
@@ -88,11 +80,7 @@ public class RDBMSRelationshipManagerTest extends AbstractCoreTest {
     for (RelationshipItem item : items) {
       relationshipDAO.delete(item.getId());
     }
-
-    identityManager.deleteIdentity(rootIdentity);
-    identityManager.deleteIdentity(johnIdentity);
-    identityManager.deleteIdentity(maryIdentity);
-    identityManager.deleteIdentity(demoIdentity);
+    
     identityManager.deleteIdentity(ghostIdentity);
     identityManager.deleteIdentity(paulIdentity);
 
