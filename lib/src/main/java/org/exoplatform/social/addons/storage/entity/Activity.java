@@ -33,12 +33,6 @@ import org.json.JSONObject;
  */
 @Entity
 @Table(name = "SOC_ACTIVITIES")
-@NamedQueries({
-  @NamedQuery(
-    name = "getActivitiesByLikerId",
-    query = "select a from Activity a join a.likerIds likers where likers = :likerId"
-  )
-})
 public class Activity extends BaseActivity {
   @Id
   @GeneratedValue(strategy = GenerationType.AUTO)

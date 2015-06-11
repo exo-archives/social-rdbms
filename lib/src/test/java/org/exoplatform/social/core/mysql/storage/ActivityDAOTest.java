@@ -136,29 +136,6 @@ public class ActivityDAOTest extends AbstractCoreTest {
     tearDownActivityList.add(got);
   }
   
-  public void testGetActivityByLiker() throws Exception {
-    
-    String activityTitle = "activity title";
-    String johnIdentityId = johnIdentity.getId();
-    Activity activity = createActivity(activityTitle, maryIdentity.getId());
-    Set<String> likers = new HashSet<String>();
-    likers.add(demoIdentity.getRemoteId());
-    activity.setLikerIds(likers);
-    activity.setLocked(true);
-    activity.setPosterId(johnIdentityId);
-    activity.setOwnerId(johnIdentityId);
-    //
-    activity = activityDao.create(activity);
-    List<Activity> got = activityDao.getActivityByLikerId(demoIdentity.getRemoteId());
-    assertNotNull(got);
-    assertEquals(1, got.size());
-    tearDownActivityList.addAll(got);
-    
-    got = activityDao.getActivityByLikerId(maryIdentity.getRemoteId());
-    assertNotNull(got);
-    assertEquals(0, got.size());
-  }
-  
   private Activity createActivity(String activityTitle, String posterId) {
     Activity activity = new Activity();
     // test for reserving order of map values for i18n activity

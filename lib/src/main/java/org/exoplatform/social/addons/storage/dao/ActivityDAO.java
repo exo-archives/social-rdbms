@@ -29,13 +29,6 @@ import org.exoplatform.social.core.storage.ActivityStorageException;
  * May 18, 2015  
  */
 public interface ActivityDAO extends GenericDAO<Activity, Long> {
-
-  /**
-   * 
-   * @param likerId
-   * @return
-   */
-  List<Activity> getActivityByLikerId(String likerId);
   
   /**
    * 
