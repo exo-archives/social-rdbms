@@ -22,16 +22,27 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import org.exoplatform.commons.utils.ListAccess;
+import org.exoplatform.services.organization.OrganizationService;
+import org.exoplatform.services.organization.User;
+import org.exoplatform.services.organization.UserHandler;
+import org.exoplatform.services.security.ConversationState;
+import org.exoplatform.services.security.IdentityRegistry;
 import org.exoplatform.social.addons.storage.dao.RelationshipDAO;
 import org.exoplatform.social.addons.storage.dao.jpa.GenericDAOImpl;
 import org.exoplatform.social.addons.storage.entity.RelationshipItem;
 import org.exoplatform.social.core.identity.model.Identity;
+import org.exoplatform.social.core.identity.model.Profile;
+import org.exoplatform.social.core.identity.model.Profile.UpdateType;
 import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvider;
 import org.exoplatform.social.core.manager.IdentityManager;
 import org.exoplatform.social.core.manager.RelationshipManager;
 import org.exoplatform.social.core.mysql.test.AbstractCoreTest;
+import org.exoplatform.social.core.profile.ProfileFilter;
 import org.exoplatform.social.core.relationship.model.Relationship;
 import org.exoplatform.social.core.relationship.model.Relationship.Type;
+
+import com.google.caja.util.Lists;
+import com.google.caja.util.Maps;
 
 /**
  * Unit Tests for {@link RelationshipManager}
@@ -52,8 +63,8 @@ public class RDBMSRelationshipManagerTest extends AbstractCoreTest {
   @Override
   protected void setUp() throws Exception {
     super.setUp();
-    relationshipManager = (RelationshipManager) getContainer().getComponentInstanceOfType(RelationshipManager.class);
-    identityManager = (IdentityManager) getContainer().getComponentInstanceOfType(IdentityManager.class);
+    relationshipManager = getService(RelationshipManager.class);
+    identityManager = getService(IdentityManager.class);
     assertNotNull("relationshipManager must not be null", relationshipManager);
     assertNotNull("identityManager must not be null", identityManager);
     rootIdentity = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, "root", true);
@@ -62,6 +73,9 @@ public class RDBMSRelationshipManagerTest extends AbstractCoreTest {
     demoIdentity = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, "demo", true);
     ghostIdentity = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, "ghost", true);
     paulIdentity = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, "paul", true);
+    //
+    org.exoplatform.services.security.Identity identity = getService(IdentityRegistry.class).getIdentity("root");
+    ConversationState.setCurrent(new ConversationState(identity));
   }
 
   @Override
@@ -98,7 +112,86 @@ public class RDBMSRelationshipManagerTest extends AbstractCoreTest {
     assertEquals(1, senderRelationships.size());
     assertEquals(1, receiverRelationships.size());
   }
+  
+  public void testGetConnectionsByFilter() throws Exception {
+    relationshipManager.inviteToConnect(johnIdentity, demoIdentity);
+    relationshipManager.inviteToConnect(johnIdentity, maryIdentity);
+    relationshipManager.inviteToConnect(rootIdentity, maryIdentity);
+    //
+    relationshipManager.confirm(johnIdentity, demoIdentity);
+    relationshipManager.confirm(johnIdentity, maryIdentity);
+    relationshipManager.confirm(rootIdentity, maryIdentity);
+    
+    ProfileFilter filter = new ProfileFilter();
+    ListAccess<Identity> listAccess = relationshipManager.getConnectionsByFilter(maryIdentity, filter);
+    Identity[] identities = listAccess.load(0, 10);
+    assertEquals(2, identities.length);
+    
+    filter.setName("John");
+    listAccess = relationshipManager.getConnectionsByFilter(maryIdentity, filter);
+    
+    identities = listAccess.load(0, 10);
+    assertEquals(1, identities.length);
+    assertTrue(identities[0].getProfile().getFullName().indexOf("John") >= 0);
+    //
+    relationshipManager.inviteToConnect(maryIdentity, demoIdentity);
+    relationshipManager.confirm(demoIdentity, maryIdentity);
 
+    Profile profile = demoIdentity.getProfile();
+    profile.setProperty(Profile.POSITION, "Business Development Manager");
+    profile.setProperty(Profile.LAST_NAME, "my test");
+    profile.setListUpdateTypes(new ArrayList<UpdateType>());
+    identityManager.updateProfile(profile);
+    //
+//    filter.setName("");
+//    filter.setPosition("manager");
+//    listAccess = relationshipManager.getConnectionsByFilter(maryIdentity, filter);
+//    identities = listAccess.load(0, 10);
+//    assertEquals(1, identities.length);
+//    assertTrue(identities[0].getProfile().getPosition().toLowerCase().indexOf("manager") >= 0);
+//    assertTrue(String.valueOf(identities[0].getProfile().getProperty(Profile.LAST_NAME))
+//                     .toLowerCase().indexOf("test") >= 0);
+  }
+  
+  public void TestPerfomanceGetConnectionsByFilter() throws Exception {
+    UserHandler handler = getService(OrganizationService.class).getUserHandler();
+    User user;
+    String key = "abc_test";
+
+    for (int i = 0; i < 100; i++) {
+      user = handler.createUserInstance(key + i);
+      user.setPassword("gtn");
+      user.setEmail(key + i + "@mail.com");
+      user.setFirstName("abc" + " " + i);
+      user.setLastName("gtn");
+      if (i % 5 == 0) {
+        user.setLastName("foo");
+      }
+      handler.createUser(user, true);
+    }
+    //
+    Identity identity;
+    for (int i = 0; i < 100; i++) {
+      identity = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, key + i, true);
+      relationshipManager.inviteToConnect(demoIdentity, identity);
+      relationshipManager.confirm(identity, demoIdentity);
+    }
+    //
+    ProfileFilter filter = new ProfileFilter();
+    filter.setName("abc");
+    long t = System.currentTimeMillis();
+    ListAccess<Identity> listAccess = relationshipManager.getConnectionsByFilter(demoIdentity, filter);
+    Identity[] identities = listAccess.load(0, 110);
+    LOG.info("Time to load " + identities.length + " identities: " + (System.currentTimeMillis() - t) + "ms");
+    assertEquals(100, identities.length);
+    t = System.currentTimeMillis();
+    filter.setName("foo");
+    listAccess = relationshipManager.getConnectionsByFilter(demoIdentity, filter);
+    identities = listAccess.load(0, 110);
+    LOG.info("Time to load " + identities.length + " identities: " + (System.currentTimeMillis() - t) + "ms");
+    assertEquals(20, identities.length);
+  }
+  
   /**
    * Test {@link RelationshipManager#getAll(Identity, List)}
    * 
@@ -127,7 +220,6 @@ public class RDBMSRelationshipManagerTest extends AbstractCoreTest {
     List<Relationship> johnRelationships = relationshipManager.getAll(johnIdentity, listIdentities);
     assertNotNull("johnRelationships must not be null", johnRelationships);
     assertEquals("johnRelationships.size() mut return: 1", 1, johnRelationships.size());
-    
   }
   
   /**
@@ -142,11 +234,11 @@ public class RDBMSRelationshipManagerTest extends AbstractCoreTest {
     listIdentities.add(demoIdentity);
     listIdentities.add(johnIdentity);
     listIdentities.add(maryIdentity);
-    
+
     Relationship rootToDemoRelationship = relationshipManager.inviteToConnect(rootIdentity, demoIdentity);
     Relationship maryToRootRelationship = relationshipManager.inviteToConnect(maryIdentity, rootIdentity);
     Relationship rootToJohnRelationship = relationshipManager.inviteToConnect(rootIdentity, johnIdentity);
-    
+
     List<Relationship> rootPendingRelationships = relationshipManager.getAll(rootIdentity, Relationship.Type.PENDING, listIdentities);
     assertNotNull("rootPendingRelationships must not be null", rootPendingRelationships);
     assertEquals("rootPendingRelationships.size() must return: 3", 3, rootPendingRelationships.size());
@@ -175,7 +267,6 @@ public class RDBMSRelationshipManagerTest extends AbstractCoreTest {
    */
   public void testGet() throws Exception {
     Relationship rootToDemoRelationship = relationshipManager.inviteToConnect(rootIdentity, demoIdentity);
-    Relationship maryToRootRelationship = relationshipManager.inviteToConnect(maryIdentity, rootIdentity);
     Relationship rootToJohnRelationship = relationshipManager.inviteToConnect(rootIdentity, johnIdentity);
     
     rootToDemoRelationship = relationshipManager.get(rootIdentity, demoIdentity);
@@ -1392,5 +1483,65 @@ public class RDBMSRelationshipManagerTest extends AbstractCoreTest {
     assertEquals(4, identities.size());
     assertEquals(johnIdentity.getRemoteId(), identities.get(0).getRemoteId());
     
+  }
+  
+  public void testGetRelationshipProfiles() throws Exception {
+    initProfile("demo", "Demo", "Gtn", "Demo Dupont", "developer", "male", "exo");
+    initProfile("ghost", "Ghost", "Gtn", "Ghost Knight", "worker", "female", "exo");
+    initProfile("paul", "Paul", "Walker", "Paul Walker", "worker", "male", "VTV");
+    
+    Relationship maryToGhostRelationship = relationshipManager.inviteToConnect(ghostIdentity, maryIdentity);
+    Relationship maryToDemoRelationship = relationshipManager.inviteToConnect(demoIdentity, maryIdentity);
+    Relationship paulToMaryRelationship = relationshipManager.inviteToConnect(paulIdentity, maryIdentity);
+    Relationship maryToJohnRelationship = relationshipManager.inviteToConnect(maryIdentity, johnIdentity);
+    
+    ProfileFilter filter = new ProfileFilter();
+    filter.setName("Gtn");
+    ListAccess<Identity> identities = relationshipManager.getConnectionsByFilter(maryIdentity, filter);
+    assertEquals(0, identities.getSize());
+    assertEquals(0, identities.load(0, 10).length);
+    
+    relationshipManager.confirm(maryIdentity, ghostIdentity);
+    relationshipManager.confirm(maryIdentity, paulIdentity);
+    relationshipManager.confirm(maryIdentity, demoIdentity);
+    
+    identities = relationshipManager.getConnectionsByFilter(maryIdentity, filter);
+    assertEquals(2, identities.getSize());
+    assertEquals(2, identities.load(0, 10).length);
+    assertEquals(demoIdentity.getRemoteId(), identities.load(0, 10)[0].getRemoteId());
+    assertEquals(ghostIdentity.getRemoteId(), identities.load(0, 10)[1].getRemoteId());
+    
+    filter.setName("");
+    filter.setPosition("developer");
+    identities = relationshipManager.getConnectionsByFilter(maryIdentity, filter);
+    assertEquals(1, identities.getSize());
+    assertEquals(1, identities.load(0, 10).length);
+    
+    filter.setPosition("");
+    filter.setCompany("exo");
+    identities = relationshipManager.getConnectionsByFilter(maryIdentity, filter);
+    assertEquals(2, identities.getSize());
+    assertEquals(2, identities.load(0, 10).length);
+  }
+  
+  private Profile initProfile(String userName, String firstName, String lastName, String fullName,
+                              String position, String gender, String company) throws Exception {
+    Identity identity = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, userName, true);
+    Profile profile = identity.getProfile();
+    profile.setProperty(Profile.FIRST_NAME, firstName);
+    profile.setProperty(Profile.LAST_NAME, lastName);
+    profile.setProperty(Profile.FULL_NAME, fullName);
+    profile.setProperty(Profile.POSITION, position);
+    profile.setProperty(Profile.GENDER, gender);
+    Map<String, String> xp = Maps.newHashMap();
+    List<Map<String, String>> xps = Lists.newArrayList();
+    xp.put(Profile.EXPERIENCES_COMPANY, company);
+    xps.add(xp);
+    profile.setProperty(Profile.EXPERIENCES, xps);
+    profile.setListUpdateTypes(Lists.newArrayList(Profile.UpdateType.CONTACT));
+    identityManager.updateProfile(profile);
+    identity.setProfile(profile);
+    identityManager.updateIdentity(identity);
+    return profile;
   }
 }

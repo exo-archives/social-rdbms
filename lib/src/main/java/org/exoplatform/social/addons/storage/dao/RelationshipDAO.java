@@ -20,6 +20,7 @@ import java.util.List;
 
 import org.exoplatform.social.addons.storage.entity.RelationshipItem;
 import org.exoplatform.social.core.identity.model.Identity;
+import org.exoplatform.social.core.profile.ProfileFilter;
 import org.exoplatform.social.core.relationship.model.Relationship;
 import org.exoplatform.social.core.relationship.model.Relationship.Type;
 
@@ -72,5 +73,9 @@ public interface RelationshipDAO extends GenericDAO<RelationshipItem, Long> {
    * @return
    */
   List<RelationshipItem> getLastConnections(Identity identity, int limit);
+
+  List<RelationshipItem> getRelationshipsByFilter(Identity existingIdentity, ProfileFilter profileFilter, Type type, long offset, long limit);
+
+  int getRelationshipsByFilterCount(Identity identity, ProfileFilter profileFilter, Type type);
 
 }

@@ -16,6 +16,7 @@
  */
 package org.exoplatform.social.addons.storage;
 
+import org.exoplatform.social.addons.storage.dao.ProfileItemDAO;
 import org.exoplatform.social.addons.storage.dao.RelationshipDAO;
 import org.exoplatform.social.addons.storage.dao.jpa.GenericDAOImpl;
 import org.exoplatform.social.core.relationship.model.Relationship;
@@ -30,8 +31,8 @@ import org.exoplatform.social.core.storage.api.IdentityStorage;
  */
 public class SynchronizedRDBMSRelationshipStorage extends RDBMSRelationshipStorageImpl {
 
-  public SynchronizedRDBMSRelationshipStorage(IdentityStorage identityStorage, RelationshipDAO relationshipDAO) {
-    super(identityStorage, relationshipDAO);
+  public SynchronizedRDBMSRelationshipStorage(IdentityStorage identityStorage, RelationshipDAO relationshipDAO, ProfileItemDAO profileItemDAO) {
+    super(identityStorage, relationshipDAO, profileItemDAO);
   }
   
   @Override

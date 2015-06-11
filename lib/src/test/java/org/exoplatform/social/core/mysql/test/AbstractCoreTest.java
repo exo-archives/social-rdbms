@@ -78,7 +78,7 @@ import org.jboss.byteman.contrib.bmunit.BMUnit;
   @ConfigurationUnit(scope = ContainerScope.PORTAL, path = "conf/standalone/exo.social.test.portal-configuration.xml")
 })
 public abstract class AbstractCoreTest extends BaseExoTestCase {
-  private final Log LOG = ExoLogger.getLogger(AbstractCoreTest.class);
+  protected final Log LOG = ExoLogger.getLogger(AbstractCoreTest.class);
   protected SpaceService spaceService;
   protected IdentityManager identityManager;
   protected RelationshipManager relationshipManager;

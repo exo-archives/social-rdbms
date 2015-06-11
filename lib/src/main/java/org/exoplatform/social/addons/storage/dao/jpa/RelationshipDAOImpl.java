@@ -25,6 +25,7 @@ import org.exoplatform.social.addons.storage.dao.jpa.query.RelationshipQueryBuil
 import org.exoplatform.social.addons.storage.dao.jpa.synchronization.SynchronizedGenericDAO;
 import org.exoplatform.social.addons.storage.entity.RelationshipItem;
 import org.exoplatform.social.core.identity.model.Identity;
+import org.exoplatform.social.core.profile.ProfileFilter;
 import org.exoplatform.social.core.relationship.model.Relationship;
 import org.exoplatform.social.core.relationship.model.Relationship.Type;
 
@@ -89,5 +90,26 @@ public class RelationshipDAOImpl extends SynchronizedGenericDAO<RelationshipItem
                                    .buildLastConnections()
                                    .getResultList();
   }
+  
+  public List<RelationshipItem> getRelationshipsByFilter(Identity existingIdentity, ProfileFilter profileFilter, Type type, long offset, long limit) {
+    return RelationshipQueryBuilder.builder()
+                                   .owner(existingIdentity)
+                                   .status(type)
+                                   .offset(0)
+                                   .limit(limit)
+                                   .filter(profileFilter)
+                                   .buildFilter()
+                                   .getResultList();
+  }
 
+  @Override
+  public int getRelationshipsByFilterCount(Identity identity, ProfileFilter profileFilter, Type type) {
+    return RelationshipQueryBuilder.builder()
+                                   .owner(identity)
+                                   .status(type)
+                                   .filter(profileFilter)
+                                   .buildFilterCount()
+                                   .getSingleResult()
+                                   .intValue();
+  }
 }

@@ -6,10 +6,12 @@ import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
 import javax.persistence.NamedQuery;
 import javax.persistence.Table;
 
-import org.exoplatform.social.core.relationship.model.Relationship.Type;;
+import org.exoplatform.social.core.relationship.model.Relationship.Type;
 
 @Entity
 @Table(name = "SOC_RELATIONSHIPS")
@@ -26,6 +28,10 @@ public class RelationshipItem {
   
   @Column(length = 36)
   private String receiverId;
+  
+  @ManyToOne
+  @JoinColumn(name="PROFILE_ID")
+  private ProfileItem receiver;
   
   @Enumerated
   private Type status;
@@ -71,4 +77,11 @@ public class RelationshipItem {
     this.status = status;
   }
 
+  public ProfileItem getReceiver() {
+    return receiver;
+  }
+
+  public void setReceiver(ProfileItem receiver) {
+    this.receiver = receiver;
+  }
 }

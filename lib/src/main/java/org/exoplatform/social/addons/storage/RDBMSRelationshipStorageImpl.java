@@ -28,6 +28,7 @@ import java.util.Random;
 import java.util.Set;
 import java.util.TreeMap;
 
+import org.exoplatform.social.addons.storage.dao.ProfileItemDAO;
 import org.exoplatform.social.addons.storage.dao.RelationshipDAO;
 import org.exoplatform.social.addons.storage.entity.RelationshipItem;
 import org.exoplatform.social.core.identity.model.Identity;
@@ -38,7 +39,6 @@ import org.exoplatform.social.core.relationship.model.Relationship.Type;
 import org.exoplatform.social.core.storage.RelationshipStorageException;
 import org.exoplatform.social.core.storage.api.IdentityStorage;
 import org.exoplatform.social.core.storage.impl.RelationshipStorageImpl;
-import org.exoplatform.social.core.storage.impl.StorageUtils;
 
 /**
  * Created by The eXo Platform SAS
@@ -49,12 +49,14 @@ import org.exoplatform.social.core.storage.impl.StorageUtils;
 public class RDBMSRelationshipStorageImpl extends RelationshipStorageImpl {
   
   private final RelationshipDAO relationshipDAO;
+  private final ProfileItemDAO profileItemDAO;
   private final IdentityStorage identityStorage;
 
-  public RDBMSRelationshipStorageImpl(IdentityStorage identityStorage, RelationshipDAO relationshipDAO) {
+  public RDBMSRelationshipStorageImpl(IdentityStorage identityStorage, RelationshipDAO relationshipDAO, ProfileItemDAO profileItemDAO) {
     super(identityStorage);
     this.relationshipDAO = relationshipDAO;
     this.identityStorage = identityStorage;
+    this.profileItemDAO = profileItemDAO;
   }
 
   @Override
@@ -64,13 +66,18 @@ public class RDBMSRelationshipStorageImpl extends RelationshipStorageImpl {
       entity.setReceiverId(relationship.getReceiver().getId());
       entity.setSenderId(relationship.getSender().getId());
       entity.setStatus(Relationship.Type.PENDING.equals(relationship.getStatus()) ? Relationship.Type.OUTGOING : relationship.getStatus());
+      entity.setReceiver(profileItemDAO.findProfileItemByIdentityId(relationship.getReceiver().getId()));
+      //
       relationshipDAO.create(entity);
       relationship.setId(Long.toString(entity.getId()));
+
       //
       RelationshipItem symmetricalEntity = new RelationshipItem();
       symmetricalEntity.setSenderId(relationship.getReceiver().getId());
       symmetricalEntity.setReceiverId(relationship.getSender().getId());
       symmetricalEntity.setStatus(Relationship.Type.PENDING.equals(relationship.getStatus()) ? Relationship.Type.INCOMING : relationship.getStatus());
+      symmetricalEntity.setReceiver(profileItemDAO.findProfileItemByIdentityId(relationship.getSender().getId()));
+      //
       relationshipDAO.create(symmetricalEntity);
     } else {//update an relationship
       RelationshipItem entity = relationshipDAO.getRelationship(relationship.getSender(), relationship.getReceiver());
@@ -126,7 +133,7 @@ public class RDBMSRelationshipStorageImpl extends RelationshipStorageImpl {
     return relationshipDAO.getRelationshipsCount(identity, null);
   }
   
-  @Override
+  @Override//TODO need review again
   public List<Relationship> getRelationships(Identity identity, Relationship.Type type, List<Identity> listCheckIdentity) throws RelationshipStorageException {
     return getRelationships(identity, type);
   }
@@ -231,54 +238,32 @@ public class RDBMSRelationshipStorageImpl extends RelationshipStorageImpl {
 
   @Override
   public List<Identity> getConnectionsByFilter(Identity existingIdentity, ProfileFilter profileFilter, long offset, long limit) throws RelationshipStorageException {
-    List<Identity> identities = getConnections(existingIdentity);
-    return RDBMSStorageUtils.getRelationshipsByFilter(identities, profileFilter, offset, limit);
+    return convertRelationshipEntitiesToIdentities(relationshipDAO.getRelationshipsByFilter(existingIdentity, profileFilter, Relationship.Type.CONFIRMED, offset, limit), existingIdentity.getId());
   }
 
   @Override
   public List<Identity> getIncomingByFilter(Identity existingIdentity, ProfileFilter profileFilter, long offset, long limit) throws RelationshipStorageException {
-    if (profileFilter.isEmpty()) {
-      return StorageUtils.sortIdentitiesByFullName(getIncomingRelationships(existingIdentity, offset, limit), true);
-    }
-    //
-    List<Identity> identities = getIncomingRelationships(existingIdentity, 0, -1);
-    return RDBMSStorageUtils.getRelationshipsByFilter(identities, profileFilter, offset, limit);
+    return convertRelationshipEntitiesToIdentities(relationshipDAO.getRelationshipsByFilter(existingIdentity, profileFilter, Relationship.Type.INCOMING, offset, limit), existingIdentity.getId());
   }
 
   @Override
   public List<Identity> getOutgoingByFilter(Identity existingIdentity, ProfileFilter profileFilter, long offset, long limit) throws RelationshipStorageException {
-    if (profileFilter.isEmpty()) {
-      return StorageUtils.sortIdentitiesByFullName(getOutgoingRelationships(existingIdentity, offset, limit), true);
-    }
-    //
-    List<Identity> identities = getOutgoingRelationships(existingIdentity, 0, -1);
-    return RDBMSStorageUtils.getRelationshipsByFilter(identities, profileFilter, offset, limit);
+    return convertRelationshipEntitiesToIdentities(relationshipDAO.getRelationshipsByFilter(existingIdentity, profileFilter, Relationship.Type.OUTGOING, offset, limit), existingIdentity.getId());
   }
 
   @Override
   public int getConnectionsCountByFilter(Identity existingIdentity, ProfileFilter profileFilter) throws RelationshipStorageException {
-    List<Identity> identities = getConnections(existingIdentity);
-    return RDBMSStorageUtils.getRelationshipsCountByFilter(identities, profileFilter);
+    return relationshipDAO.getRelationshipsByFilterCount(existingIdentity, profileFilter, Relationship.Type.CONFIRMED);
   }
 
   @Override
   public int getIncomingCountByFilter(Identity existingIdentity, ProfileFilter profileFilter) throws RelationshipStorageException {
-    if (profileFilter.isEmpty()) {
-      return getIncomingRelationshipsCount(existingIdentity);
-    }
-    //
-    List<Identity> identities = getIncomingRelationships(existingIdentity, 0, -1);
-    return RDBMSStorageUtils.getRelationshipsCountByFilter(identities, profileFilter);
+    return relationshipDAO.getRelationshipsByFilterCount(existingIdentity, profileFilter, Relationship.Type.INCOMING);
   }
 
   @Override
   public int getOutgoingCountByFilter(Identity existingIdentity, ProfileFilter profileFilter) throws RelationshipStorageException {
-    if (profileFilter.isEmpty()) {
-      return getOutgoingRelationshipsCount(existingIdentity);
-    }
-    //
-    List<Identity> identities = getOutgoingRelationships(existingIdentity, 0, -1);
-    return RDBMSStorageUtils.getRelationshipsCountByFilter(identities, profileFilter);
+    return relationshipDAO.getRelationshipsByFilterCount(existingIdentity, profileFilter, Relationship.Type.OUTGOING);
   }
 
   @Override

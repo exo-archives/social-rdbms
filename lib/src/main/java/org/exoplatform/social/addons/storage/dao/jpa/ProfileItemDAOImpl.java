@@ -36,7 +36,7 @@ import org.exoplatform.social.addons.storage.entity.ProfileItem_;
 public class ProfileItemDAOImpl extends SynchronizedGenericDAO<ProfileItem, Long> implements ProfileItemDAO {
 
   public ProfileItem findProfileItemByIdentityId(final String identityId) {
-    EntityManager em = GenericDAOImpl.lifecycleLookup().getCurrentEntityManager();
+    EntityManager em = lifecycleLookup().getCurrentEntityManager();
     CriteriaBuilder cb = em.getCriteriaBuilder();
     CriteriaQuery<ProfileItem> criteria = cb.createQuery(ProfileItem.class);
     Root<ProfileItem> root = criteria.from(ProfileItem.class);
