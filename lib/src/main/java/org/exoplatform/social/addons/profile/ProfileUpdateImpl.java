@@ -81,7 +81,7 @@ public class ProfileUpdateImpl extends ProfileListenerPlugin {
     profileItem.setFirstName(getProfileSimpleValue(p, Profile.FIRST_NAME));
     profileItem.setLastName(getProfileSimpleValue(p, Profile.LAST_NAME));
     profileItem.setFullName(getProfileSimpleValue(p, Profile.FULL_NAME));
-    profileItem.setPosition(getProfileSimpleValue(p, Profile.POSITION));
+    profileItem.setPositions(getProfileSimpleValue(p, Profile.POSITION));
     // process for experiences
     putExperienceData(profileItem, p);
     //
@@ -107,7 +107,7 @@ public class ProfileUpdateImpl extends ProfileListenerPlugin {
         putExperienceData(skills, experience, Profile.EXPERIENCES_SKILLS);
       }
       profileItem.setOrganizations(organizations.toString());
-      profileItem.setPositions(positions.toString());
+      profileItem.setPositions(positions.append(" ").append(profileItem.getPositions()).toString());
       profileItem.setJobsDescription(jobsDescription.toString());
       profileItem.setSkills(skills.toString());
     }
@@ -117,7 +117,7 @@ public class ProfileUpdateImpl extends ProfileListenerPlugin {
     String value = srcExperience.get(key);
     value = (value != null) ? value : "";
     if (!value.isEmpty() && append.length() > 0) {
-      append.append(",");
+      append.append(" ");
     }
     append.append(value);
   }

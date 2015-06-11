@@ -274,8 +274,7 @@ public final class RelationshipQueryBuilder {
       }
       //
       if (!position.isEmpty()) {
-        Predicate pPosition = cb.like(receiver.get(ProfileItem_.position), position);
-        pFilter = appendPredicate(cb, pFilter, cb.or(pPosition, cb.like(receiver.get(ProfileItem_.positions), position)));
+        pFilter = appendPredicate(cb, pFilter, cb.like(receiver.get(ProfileItem_.positions), position));
       }
       //
       if (!skills.isEmpty()) {
@@ -291,7 +290,6 @@ public final class RelationshipQueryBuilder {
         Predicate pAll = cb.like(receiver.get(ProfileItem_.fullName), all);
         pAll = cb.or(pAll, cb.like(receiver.get(ProfileItem_.firstName), all));
         pAll = cb.or(pAll, cb.like(receiver.get(ProfileItem_.lastName), all));
-        pAll = cb.or(pAll, cb.like(receiver.get(ProfileItem_.position), all));
         pAll = cb.or(pAll, cb.like(receiver.get(ProfileItem_.skills), all));
         pAll = cb.or(pAll, cb.like(receiver.get(ProfileItem_.positions), all));
         pAll = cb.or(pAll, cb.like(receiver.get(ProfileItem_.organizations), all));

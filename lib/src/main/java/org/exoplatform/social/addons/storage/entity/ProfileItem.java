@@ -22,7 +22,6 @@ public class ProfileItem {
   private String fullName;
   private String firstName;
   private String lastName;
-  private String position;
   //join all value of experiences in to one value, separate by comma
   private String skills;
   private String positions;
@@ -70,14 +69,6 @@ public class ProfileItem {
 
   public void setLastName(String lastName) {
     this.lastName = lastName;
-  }
-
-  public String getPosition() {
-    return position;
-  }
-
-  public void setPosition(String position) {
-    this.position = position;
   }
 
   public String getSkills() {
