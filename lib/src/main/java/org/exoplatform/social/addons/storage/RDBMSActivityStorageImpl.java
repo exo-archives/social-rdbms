@@ -255,6 +255,9 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
   
   @Override
   public ExoSocialActivity getActivity(String activityId) throws ActivityStorageException {
+    if (activityId == null || activityId.isEmpty()) {
+      return null;
+    }
     if(activityId != null && activityId.startsWith(COMMENT_PREFIX)) {
       return getComment(activityId);
     }
