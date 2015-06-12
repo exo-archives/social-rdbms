@@ -1272,23 +1272,38 @@ public class ActivityManagerMysqlTest extends AbstractCoreTest {
 
   public void testMentionActivity() throws Exception {
     ExoSocialActivity activity = new ExoSocialActivityImpl();
-    activity.setTitle("hello @demo @john");
+    activity.setTitle("hello");
     activity.setUserId(rootIdentity.getId());
     activityManager.saveActivityNoReturn(rootIdentity, activity);
     tearDownActivityList.add(activity);
     
+    ExoSocialActivity got = activityManager.getActivity(activity.getId());
+    assertEquals(0, got.getMentionedIds().length);
+
     RealtimeListAccess<ExoSocialActivity> demoActivityFeed = activityManager.getActivityFeedWithListAccess(demoIdentity);
+    assertEquals(0, demoActivityFeed.getSize());
+    assertEquals(0, demoActivityFeed.load(0, 10).length);
+    
+    ExoSocialActivity comment = new ExoSocialActivityImpl();
+    comment.setTitle("mary mention @demo @john");
+    comment.setUserId(maryIdentity.getId());
+    activityManager.saveComment(activity, comment);
+    
+    got = activityManager.getActivity(activity.getId());
+    assertEquals(2, got.getMentionedIds().length);
+    
+    demoActivityFeed = activityManager.getActivityFeedWithListAccess(demoIdentity);
     assertEquals(1, demoActivityFeed.getSize());
     assertEquals(1, demoActivityFeed.load(0, 10).length);
     
-//    ExoSocialActivity comment = new ExoSocialActivityImpl();
-//    comment.setTitle("mary mention @demo @john");
-//    comment.setUserId(maryIdentity.getId());
-//    activityManager.saveComment(activity, comment);
-//    
-//    demoActivityFeed = activityManager.getActivityFeedWithListAccess(demoIdentity);
-//    assertEquals(1, demoActivityFeed.getSize());
-//    assertEquals(1, demoActivityFeed.load(0, 10).length);
+    activityManager.deleteComment(activity, comment);
+    
+    got = activityManager.getActivity(activity.getId());
+    assertEquals(0, got.getMentionedIds().length);
+    
+    demoActivityFeed = activityManager.getActivityFeedWithListAccess(demoIdentity);
+    assertEquals(0, demoActivityFeed.getSize());
+    assertEquals(0, demoActivityFeed.load(0, 10).length);
   }
   
   /**

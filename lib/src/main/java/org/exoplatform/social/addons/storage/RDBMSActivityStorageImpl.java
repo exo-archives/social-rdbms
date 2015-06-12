@@ -23,6 +23,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.regex.Matcher;
@@ -293,14 +294,44 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
     //
     commentEntity = commentDAO.create(commentEntity);
     eXoComment.setId(getExoCommentID(commentEntity.getId()));
-    List<String> mentioners = new ArrayList<String>();
-    activityEntity.setMentionerIds(new HashSet<String>(Arrays.asList(processMentions(activity.getMentionedIds(), eXoComment.getTitle(), mentioners, true))));
+    //
+    activityEntity.setMentionerIds(processMentionOfComment(activityEntity, commentEntity, activity.getMentionedIds(), processMentions(eXoComment.getTitle()), true));
     activityEntity.addComment(commentEntity);
     activityEntity.setLastUpdated(System.currentTimeMillis());
     activityDAO.update(activityEntity);
-    
     //
     activity = convertActivityEntityToActivity(activityEntity);
+  }
+  
+  private Set<String> processMentionOfComment(Activity activityEntity, Comment commentEntity, String[] activityMentioners, String[] commentMentioners, boolean isAdded) {
+    Set<String> mentioners = new HashSet<String>(Arrays.asList(activityMentioners));
+    if (commentMentioners.length == 0) return mentioners;
+    //
+    for (String mentioner : commentMentioners) {
+      if (!mentioners.contains(mentioner) && isAdded) {
+        mentioners.add(mentioner);
+      }
+      if (mentioners.contains(mentioner) && !isAdded) {
+        if (isAllowedToRemove(activityEntity, commentEntity, mentioner)) {
+          mentioners.remove(mentioner);
+        }
+      }
+    }
+    return mentioners;
+  }
+  
+  private boolean isAllowedToRemove(Activity activity, Comment comment, String mentioner) {
+    if (ArrayUtils.contains(processMentions(activity.getTitle()), mentioner)) {
+      return false;
+    }
+    List<Comment> comments = activity.getComments();
+    comments.remove(comment);
+    for (Comment cmt : comments) {
+      if (ArrayUtils.contains(cmt.getMentionerIds().toArray(new String[cmt.getMentionerIds().size()]), mentioner)) {
+        return false;
+      }
+    }
+    return true;
   }
   
   @Override
@@ -357,65 +388,6 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
     return mentionerIds;
   }
   
-  private String[] processMentions(String[] mentionerIds, String title, List<String> addedOrRemovedIds, boolean isAdded) {
-    if (title == null || title.length() == 0) {
-      return ArrayUtils.EMPTY_STRING_ARRAY;
-    }
-    
-    Matcher matcher = MENTION_PATTERN.matcher(title);
-    while (matcher.find()) {
-      String remoteId = matcher.group().substring(1);
-      if (!USER_NAME_VALIDATOR_REGEX.matcher(remoteId).matches()) {
-        continue;
-      }
-      Identity identity = identityStorage.findIdentity(OrganizationIdentityProvider.NAME, remoteId);
-      // if not the right mention then ignore
-      if (identity != null) { 
-        String mentionStr = identity.getId() + MENTION_CHAR; // identityId@
-        mentionerIds = isAdded ? add(mentionerIds, mentionStr, addedOrRemovedIds) : remove(mentionerIds, mentionStr, addedOrRemovedIds);
-      }
-    }
-    return mentionerIds;
-  }
-  
-  private String[] add(String[] mentionerIds, String mentionStr, List<String> addedOrRemovedIds) {
-    if (ArrayUtils.toString(mentionerIds).indexOf(mentionStr) == -1) { // the first mention
-      addedOrRemovedIds.add(mentionStr.replace(MENTION_CHAR, ""));
-      return (String[]) ArrayUtils.add(mentionerIds, mentionStr + 1);
-    }
-    
-    String storedId = null;
-    for (String mentionerId : mentionerIds) {
-      if (mentionerId.indexOf(mentionStr) != -1) {
-        mentionerIds = (String[]) ArrayUtils.removeElement(mentionerIds, mentionerId);
-        storedId = mentionStr + (Integer.parseInt(mentionerId.split(MENTION_CHAR)[1]) + 1);
-        break;
-      }
-    }
-    
-    addedOrRemovedIds.add(mentionStr.replace(MENTION_CHAR, ""));
-    mentionerIds = (String[]) ArrayUtils.add(mentionerIds, storedId);
-    return mentionerIds;
-  }
-  
-  private String[] remove(String[] mentionerIds, String mentionStr, List<String> addedOrRemovedIds) {
-    for (String mentionerId : mentionerIds) {
-      if (mentionerId.indexOf(mentionStr) != -1) {
-        int numStored = Integer.parseInt(mentionerId.split(MENTION_CHAR)[1]) - 1;
-        
-        if (numStored == 0) {
-          addedOrRemovedIds.add(mentionStr.replace(MENTION_CHAR, ""));
-          return (String[]) ArrayUtils.removeElement(mentionerIds, mentionerId);
-        }
-
-        mentionerIds = (String[]) ArrayUtils.removeElement(mentionerIds, mentionerId);
-        mentionerIds = (String[]) ArrayUtils.add(mentionerIds, mentionStr + numStored);
-        break;
-      }
-    }
-    return mentionerIds;
-  }
-  
   @Override
   public ExoSocialActivity getParentActivity(ExoSocialActivity comment) throws ActivityStorageException {
     try {
@@ -441,8 +413,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
     Activity activity = activityDAO.find(Long.valueOf(activityId));
     activity.getComments().remove(comment);
     //
-    List<String> mentioners = new ArrayList<String>();
-    activity.setMentionerIds(new HashSet<String>(Arrays.asList(processMentions(activity.getMentionerIds().toArray(new String[activity.getMentionerIds().size()]), comment.getTitle(), mentioners, false))));
+    activity.setMentionerIds(processMentionOfComment(activity, comment, activity.getMentionerIds().toArray(new String[activity.getMentionerIds().size()]), processMentions(comment.getTitle()), false));
     //
     activityDAO.update(activity);
   }
