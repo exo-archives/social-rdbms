@@ -18,6 +18,7 @@
             <column name="body" type="LONGTEXT"/>
             <column name="bodyId" type="VARCHAR(36)"/>
             <column name="externalId" type="VARCHAR(36)"/>
+            <column name="providerId" type="VARCHAR(36)"/>
             <column name="hidden" type="BIT"/>
             <column name="lastUpdated" type="BIGINT"/>
             <column name="locked" type="BIT"/>

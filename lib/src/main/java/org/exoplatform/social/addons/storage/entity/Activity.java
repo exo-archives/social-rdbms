@@ -68,6 +68,10 @@ public class Activity extends BaseActivity {
   @OneToMany(cascade=CascadeType.ALL, orphanRemoval=true, mappedBy="activity", fetch=FetchType.LAZY)
   @OrderBy("posted DESC")
   private List<Comment> comments;
+  
+  /** */
+  @Column(length = 36)
+  private String providerId;
 
   /** */
   public Activity() {
@@ -139,6 +143,14 @@ public class Activity extends BaseActivity {
     return id;
   }
 
+  public String getProviderId() {
+    return providerId;
+  }
+  
+  public void setProviderId(String providerId) {
+    this.providerId = providerId;
+  }
+  
   @Override
   public String toString() {
     return new JSONObject(this).toString();

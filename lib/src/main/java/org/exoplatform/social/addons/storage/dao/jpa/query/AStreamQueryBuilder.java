@@ -262,7 +262,7 @@ public final class AStreamQueryBuilder {
         if (predicate != null) {
           predicate = cb.and(predicate, cb.lessThan(activity.<Long>get(Activity_.lastUpdated), this.sinceTime));
         } else {
-          predicate = cb.greaterThan(activity.<Long>get(Activity_.lastUpdated), this.sinceTime);
+          predicate = cb.lessThan(activity.<Long>get(Activity_.lastUpdated), this.sinceTime);
         }
       }
     }
@@ -424,7 +424,7 @@ public final class AStreamQueryBuilder {
         if (predicate != null) {
           predicate = cb.and(predicate, cb.lessThan(activity.<Long>get(Activity_.lastUpdated), this.sinceTime));
         } else {
-          predicate = cb.greaterThan(activity.<Long>get(Activity_.lastUpdated), this.sinceTime);
+          predicate = cb.lessThan(activity.<Long>get(Activity_.lastUpdated), this.sinceTime);
         }
       }
     }
