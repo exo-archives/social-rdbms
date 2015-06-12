@@ -38,6 +38,7 @@ import org.exoplatform.social.addons.storage.entity.Comment_;
 import org.exoplatform.social.addons.storage.entity.RelationshipItem;
 import org.exoplatform.social.addons.storage.entity.RelationshipItem_;
 import org.exoplatform.social.core.identity.model.Identity;
+import org.exoplatform.social.core.relationship.model.Relationship;
 
 /**
  * Created by The eXo Platform SAS
@@ -216,9 +217,22 @@ public final class AStreamQueryBuilder {
     Root<Activity> activity = criteria.from(Activity.class);
     
     Predicate predicate = null;
+    
     //owner
     if (this.owner != null) {
       predicate = cb.equal(activity.get(Activity_.posterId), owner.getId());
+    }
+    
+    //comment
+    Subquery<Activity> commentQuery = criteria.subquery(Activity.class);
+    Root<Comment> subRootComment = commentQuery.from(Comment.class);
+    commentQuery.select(subRootComment.<Activity>get(Comment_.activity));
+    commentQuery.where(cb.equal(subRootComment.<String>get(Comment_.posterId), this.owner.getId()));
+    
+    if (predicate != null) {
+      predicate = cb.or(predicate, cb.or(cb.in(activity).value(commentQuery)));
+    } else {
+      predicate = cb.in(activity).value(commentQuery);
     }
     
     // space members
@@ -234,12 +248,16 @@ public final class AStreamQueryBuilder {
       Subquery<String> subQuery1 = criteria.subquery(String.class);
       Root<RelationshipItem> subRoot1 = subQuery1.from(RelationshipItem.class);
       subQuery1.select(subRoot1.<String>get(RelationshipItem_.receiverId));
-      subQuery1.where(cb.equal(subRoot1.<String>get(RelationshipItem_.senderId), this.myIdentity.getId()));
+      subQuery1.where(cb.and(cb.equal(subRoot1.<String>get(RelationshipItem_.senderId), this.myIdentity.getId()),
+                             cb.equal(subRoot1.<Relationship.Type>get(RelationshipItem_.status), Relationship.Type.CONFIRMED)));
+      
+      Predicate posterConnection = cb.and(cb.in(activity.get(Activity_.posterId)).value(subQuery1));
+      Predicate ownerConnection = cb.and(cb.in(activity.get(Activity_.ownerId)).value(subQuery1));
       
       if (predicate != null) {
-        predicate = cb.or(predicate, cb.or(cb.in(activity.get(Activity_.posterId)).value(subQuery1)));
+        predicate = cb.or(predicate, cb.and(posterConnection, ownerConnection));
       } else {
-        predicate = cb.or(cb.in(activity.get(Activity_.posterId)).value(subQuery1));
+        predicate = cb.and(posterConnection, ownerConnection);
       }
     }
     
@@ -367,16 +385,16 @@ public final class AStreamQueryBuilder {
     }
     
     //comment
-//    Subquery<Long> commentQuery = criteria.subquery(Long.class);
-//    Root<Comment> subRootComment = commentQuery.from(Comment.class);
-//    commentQuery.select(subRootComment.<Long>get(Comment_.activity));
-//    commentQuery.where(cb.equal(subRootComment.<String>get(Comment_.posterId), this.owner.getId()));
-//    
-//    if (predicate != null) {
-//      predicate = cb.or(predicate, cb.or(cb.in(activity.get(Activity_.id)).value(commentQuery)));
-//    } else {
-//      predicate = cb.or(cb.in(activity.get(Activity_.id)).value(commentQuery));
-//    }
+    Subquery<Activity> commentQuery = criteria.subquery(Activity.class);
+    Root<Comment> subRootComment = commentQuery.from(Comment.class);
+    commentQuery.select(subRootComment.<Activity>get(Comment_.activity));
+    commentQuery.where(cb.equal(subRootComment.<String>get(Comment_.posterId), this.owner.getId()));
+    
+    if (predicate != null) {
+      predicate = cb.or(predicate, cb.or(cb.in(activity).value(commentQuery)));
+    } else {
+      predicate = cb.in(activity).value(commentQuery);
+    }
     
     //mention
     
@@ -393,13 +411,16 @@ public final class AStreamQueryBuilder {
       Subquery<String> subQuery1 = criteria.subquery(String.class);
       Root<RelationshipItem> subRoot1 = subQuery1.from(RelationshipItem.class);
       subQuery1.select(subRoot1.<String>get(RelationshipItem_.receiverId));
-      subQuery1.where(cb.equal(subRoot1.<String>get(RelationshipItem_.senderId), this.myIdentity.getId()));
+      subQuery1.where(cb.and(cb.equal(subRoot1.<String>get(RelationshipItem_.senderId), this.myIdentity.getId()),
+                             cb.equal(subRoot1.<Relationship.Type>get(RelationshipItem_.status), Relationship.Type.CONFIRMED)));
+      
+      Predicate posterConnection = cb.and(cb.in(activity.get(Activity_.posterId)).value(subQuery1));
+      Predicate ownerConnection = cb.and(cb.in(activity.get(Activity_.ownerId)).value(subQuery1));
       
       if (predicate != null) {
-        predicate = cb.or(predicate, cb.and(cb.in(activity.get(Activity_.posterId)).value(subQuery1),
-                                           cb.notEqual(activity.<String>get(Activity_.providerId), "SPACE")));
+        predicate = cb.or(predicate, cb.and(posterConnection, ownerConnection));
       } else {
-        predicate = cb.or(cb.in(activity.get(Activity_.posterId)).value(subQuery1));
+        predicate = cb.and(posterConnection, ownerConnection);
       }
     }
     
