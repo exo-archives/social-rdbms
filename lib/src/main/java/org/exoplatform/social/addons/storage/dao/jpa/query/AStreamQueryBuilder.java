@@ -145,7 +145,9 @@ public final class AStreamQueryBuilder {
     List<Predicate> predicates = new ArrayList<Predicate>();
     //owner
     if (this.owner != null) {
-      predicates.add(cb.equal(activity.get(Activity_.posterId), owner.getId()));
+      Predicate pOwner = cb.equal(activity.get(Activity_.posterId), owner.getId());
+      pOwner = cb.or(pOwner, cb.equal(activity.get(Activity_.ownerId), owner.getId()));
+      predicates.add(pOwner);
     }
     // space members
     if (this.memberOfSpaceIds != null && memberOfSpaceIds.size() > 0) {
@@ -157,10 +159,13 @@ public final class AStreamQueryBuilder {
       Subquery<String> subQuery1 = criteria.subquery(String.class);
       Root<RelationshipItem> subRoot1 = subQuery1.from(RelationshipItem.class);
       subQuery1.select(subRoot1.<String>get(RelationshipItem_.receiverId));
-      subQuery1.where(cb.equal(subRoot1.<String>get(RelationshipItem_.senderId), this.myIdentity.getId()));
+      subQuery1.where(cb.and(cb.equal(subRoot1.<String>get(RelationshipItem_.senderId), this.myIdentity.getId()),
+                             cb.equal(subRoot1.<Relationship.Type>get(RelationshipItem_.status), Relationship.Type.CONFIRMED)));
       
-      predicates.add(cb.in(activity.get(Activity_.posterId)).value(subQuery1));
+      Predicate posterConnection = cb.and(cb.in(activity.get(Activity_.posterId)).value(subQuery1));
+      Predicate ownerConnection = cb.and(cb.in(activity.get(Activity_.ownerId)).value(subQuery1));
       
+      predicates.add(cb.and(posterConnection, ownerConnection));
     }
 
     
@@ -221,6 +226,7 @@ public final class AStreamQueryBuilder {
     //owner
     if (this.owner != null) {
       predicate = cb.equal(activity.get(Activity_.posterId), owner.getId());
+      predicate = cb.or(predicate, cb.equal(activity.get(Activity_.ownerId), owner.getId()));
     }
     
     //comment
@@ -322,7 +328,9 @@ public final class AStreamQueryBuilder {
     List<Predicate> predicates = new ArrayList<Predicate>();
     //owner
     if (this.owner != null) {
-      predicates.add(cb.equal(activity.get(Activity_.posterId), owner.getId()));
+      Predicate pOwner = cb.equal(activity.get(Activity_.posterId), owner.getId());
+      pOwner = cb.or(pOwner, cb.equal(activity.get(Activity_.ownerId), owner.getId()));
+      predicates.add(pOwner);
     }
     // space members
     if (this.memberOfSpaceIds != null && memberOfSpaceIds.size() > 0) {
@@ -382,6 +390,7 @@ public final class AStreamQueryBuilder {
     //owner
     if (this.owner != null) {
       predicate = cb.equal(activity.get(Activity_.posterId), owner.getId());
+      predicate = cb.or(predicate, cb.equal(activity.get(Activity_.ownerId), owner.getId()));
     }
     
     //comment
