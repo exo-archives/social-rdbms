@@ -51,6 +51,10 @@ public abstract class BaseActivity implements Serializable {
   
   /** */
   private Boolean hidden = false;
+  
+  /** */
+  @Column(length = 36)
+  private String providerId;
 
   @Deprecated
   @Column(length = 2000)
@@ -138,5 +142,11 @@ public abstract class BaseActivity implements Serializable {
   }
   public void setPriority(float priority) {
     this.priority = priority;
+  }
+  public String getProviderId() {
+    return providerId;
+  }
+  public void setProviderId(String providerId) {
+    this.providerId = providerId;
   }
 }

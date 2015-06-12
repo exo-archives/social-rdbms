@@ -20,8 +20,6 @@ import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.JoinTable;
 import javax.persistence.MapKeyColumn;
-import javax.persistence.NamedQueries;
-import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
 import javax.persistence.OrderBy;
 import javax.persistence.Table;
@@ -70,10 +68,6 @@ public class Activity extends BaseActivity {
   @OneToMany(cascade=CascadeType.ALL, orphanRemoval=true, mappedBy="activity", fetch=FetchType.LAZY)
   @OrderBy("posted DESC")
   private List<Comment> comments;
-  
-  @OneToMany(cascade=CascadeType.ALL, orphanRemoval=true, mappedBy="activity", fetch=FetchType.LAZY)
-  @OrderBy("id DESC")
-  private List<StreamItem> streamItems;
 
   /** */
   public Activity() {
@@ -141,26 +135,6 @@ public class Activity extends BaseActivity {
     this.comments.add(comment);
   }
   
-  public List<StreamItem> getStreamItems() {
-    return streamItems;
-  }
-
-  public void setStreamItems(List<StreamItem> streamItems) {
-    this.streamItems = streamItems;
-  }
-
-  /**
-   * Adds the stream item entity to this activity
-   * @param item the stream item
-   */
-  public void addStreamItem(StreamItem item) {
-    if (this.streamItems == null) {
-      this.streamItems = new ArrayList<StreamItem>();
-    }
-    item.setActivity(this);
-    this.streamItems.add(item);
-  }
-
   public Long getId() {
     return id;
   }

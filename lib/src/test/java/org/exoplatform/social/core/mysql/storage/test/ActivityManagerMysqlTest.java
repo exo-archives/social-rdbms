@@ -815,7 +815,9 @@ public class ActivityManagerMysqlTest extends AbstractCoreTest {
 
     relationshipManager.confirm(demoIdentity, maryIdentity);
     demoActivityFeed = activityManager.getActivityFeedWithListAccess(demoIdentity);
+    System.out.println("===============================");
     assertEquals("demoActivityFeed.getSize() must return 11", 11, demoActivityFeed.getSize());
+    System.out.println("===============================");
     assertEquals(11, demoActivityFeed.load(0, 15).length);
     assertEquals(6, demoActivityFeed.load(5, 15).length);
     

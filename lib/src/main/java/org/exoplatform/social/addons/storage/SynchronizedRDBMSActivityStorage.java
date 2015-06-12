@@ -18,7 +18,6 @@ package org.exoplatform.social.addons.storage;
 
 import org.exoplatform.social.addons.storage.dao.ActivityDAO;
 import org.exoplatform.social.addons.storage.dao.CommentDAO;
-import org.exoplatform.social.addons.storage.dao.StreamItemDAO;
 import org.exoplatform.social.addons.storage.dao.jpa.GenericDAOImpl;
 import org.exoplatform.social.core.activity.model.ExoSocialActivity;
 import org.exoplatform.social.core.identity.model.Identity;
@@ -39,8 +38,8 @@ public class SynchronizedRDBMSActivityStorage extends RDBMSActivityStorageImpl {
   public SynchronizedRDBMSActivityStorage(RelationshipStorage relationshipStorage, 
                                           IdentityStorage identityStorage, 
                                           SpaceStorage spaceStorage,
-                                          ActivityDAO activityDAO, StreamItemDAO streamItemDAO, CommentDAO commentDAO) {
-    super(relationshipStorage, identityStorage, spaceStorage, activityDAO, streamItemDAO, commentDAO);
+                                          ActivityDAO activityDAO, CommentDAO commentDAO) {
+    super(relationshipStorage, identityStorage, spaceStorage, activityDAO, commentDAO);
   }
   
   @Override
