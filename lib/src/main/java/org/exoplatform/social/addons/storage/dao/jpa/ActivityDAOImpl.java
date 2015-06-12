@@ -53,7 +53,6 @@ public class ActivityDAOImpl extends SynchronizedGenericDAO<Activity, Long> impl
     return AStreamQueryBuilder.builder()
                               .owner(owner)
                               .offset(offset)
-                              .notEqualType("SPACE")
                               .limit(limit)
                               .build()
                               .getResultList();
@@ -141,7 +140,6 @@ public class ActivityDAOImpl extends SynchronizedGenericDAO<Activity, Long> impl
 
     return AStreamQueryBuilder.builder()
                               .owner(owner)
-                              .notEqualType("SPACE")
                               .offset(offset)
                               .limit(limit)
                               .build()
@@ -153,7 +151,6 @@ public class ActivityDAOImpl extends SynchronizedGenericDAO<Activity, Long> impl
   public int getNumberOfUserActivities(Identity ownerIdentity) {
     return AStreamQueryBuilder.builder()
                               .owner(ownerIdentity)
-                              .notEqualType("SPACE")
                               .buildCount()
                               .getSingleResult()
                               .intValue();
@@ -163,7 +160,6 @@ public class ActivityDAOImpl extends SynchronizedGenericDAO<Activity, Long> impl
   public List<Activity> getNewerOnUserActivities(Identity ownerIdentity, long sinceTime, int limit) {
     return AStreamQueryBuilder.builder()
                               .owner(ownerIdentity)
-                              .notEqualType("SPACE")
                               .newer(sinceTime)
                               .ascOrder()
                               .offset(0)
@@ -177,7 +173,6 @@ public class ActivityDAOImpl extends SynchronizedGenericDAO<Activity, Long> impl
   public int getNumberOfNewerOnUserActivities(Identity ownerIdentity, long sinceTime) {
     return AStreamQueryBuilder.builder()
                               .owner(ownerIdentity)
-                              .notEqualType("SPACE")
                               .newer(sinceTime)
                               .buildCount()
                               .getSingleResult()
@@ -188,7 +183,6 @@ public class ActivityDAOImpl extends SynchronizedGenericDAO<Activity, Long> impl
   public List<Activity> getOlderOnUserActivities(Identity ownerIdentity, long sinceTime, int limit) {
     return AStreamQueryBuilder.builder()
                               .owner(ownerIdentity)
-                              .notEqualType("SPACE")
                               .older(sinceTime)
                               .offset(0)
                               .limit(limit)
@@ -200,7 +194,6 @@ public class ActivityDAOImpl extends SynchronizedGenericDAO<Activity, Long> impl
   public int getNumberOfOlderOnUserActivities(Identity ownerIdentity, long sinceTime) {
     return AStreamQueryBuilder.builder()
                               .owner(ownerIdentity)
-                              .notEqualType("SPACE")
                               .older(sinceTime)
                               .buildCount()
                               .getSingleResult()

@@ -815,9 +815,7 @@ public class ActivityManagerMysqlTest extends AbstractCoreTest {
 
     relationshipManager.confirm(demoIdentity, maryIdentity);
     demoActivityFeed = activityManager.getActivityFeedWithListAccess(demoIdentity);
-    System.out.println("===============================");
     assertEquals("demoActivityFeed.getSize() must return 11", 11, demoActivityFeed.getSize());
-    System.out.println("===============================");
     assertEquals(11, demoActivityFeed.load(0, 15).length);
     assertEquals(6, demoActivityFeed.load(5, 15).length);
     
@@ -1272,34 +1270,26 @@ public class ActivityManagerMysqlTest extends AbstractCoreTest {
     assertEquals(id1, lastIds.get(0));
   }
 
-  /**
-   *
-   */
-  /*public void testAddProviders() {
-    activityManager.addProcessor(new FakeProcessor(10));
-    activityManager.addProcessor(new FakeProcessor(9));
-    activityManager.addProcessor(new FakeProcessor(8));
-
+  public void testMentionActivity() throws Exception {
     ExoSocialActivity activity = new ExoSocialActivityImpl();
-    activity.setTitle("Hello");
-    activityManager.processActivitiy(activity);
-    //just verify that we run in priority order
-    assertEquals("Hello-8-9-10", activity.getTitle());
+    activity.setTitle("hello @demo @john");
+    activity.setUserId(rootIdentity.getId());
+    activityManager.saveActivityNoReturn(rootIdentity, activity);
+    tearDownActivityList.add(activity);
+    
+    RealtimeListAccess<ExoSocialActivity> demoActivityFeed = activityManager.getActivityFeedWithListAccess(demoIdentity);
+    assertEquals(1, demoActivityFeed.getSize());
+    assertEquals(1, demoActivityFeed.load(0, 10).length);
+    
+//    ExoSocialActivity comment = new ExoSocialActivityImpl();
+//    comment.setTitle("mary mention @demo @john");
+//    comment.setUserId(maryIdentity.getId());
+//    activityManager.saveComment(activity, comment);
+//    
+//    demoActivityFeed = activityManager.getActivityFeedWithListAccess(demoIdentity);
+//    assertEquals(1, demoActivityFeed.getSize());
+//    assertEquals(1, demoActivityFeed.load(0, 10).length);
   }
-
-
-  class FakeProcessor extends BaseActivityProcessorPlugin {
-    public FakeProcessor(int priority) {
-      super(null);
-      super.priority = priority;
-    }
-
-    @Override
-    public void processActivity(ExoSocialActivity activity) {
-      activity.setTitle(activity.getTitle() + "-" + priority);
-    }
-  }
-*/
   
   /**
    * Populates activity.

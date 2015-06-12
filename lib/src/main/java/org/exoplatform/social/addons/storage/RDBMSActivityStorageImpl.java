@@ -29,7 +29,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.commons.lang.ArrayUtils;
-import org.exoplatform.commons.utils.CommonsUtils;
 import org.exoplatform.container.component.BaseComponentPlugin;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
@@ -46,8 +45,6 @@ import org.exoplatform.social.core.activity.model.ExoSocialActivity;
 import org.exoplatform.social.core.activity.model.ExoSocialActivityImpl;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvider;
-import org.exoplatform.social.core.identity.provider.SpaceIdentityProvider;
-import org.exoplatform.social.core.relationship.model.Relationship;
 import org.exoplatform.social.core.storage.ActivityStorageException;
 import org.exoplatform.social.core.storage.api.IdentityStorage;
 import org.exoplatform.social.core.storage.api.RelationshipStorage;
@@ -292,7 +289,6 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
     commentEntity.setMentionerIds(new HashSet<String>(Arrays.asList(processMentions(eXoComment.getTitle()))));
     //
     Identity commenter = identityStorage.findIdentityById(commentEntity.getPosterId());
-    saveStreamItemForCommenter(commenter, activityEntity);
     mention(commenter, activityEntity, processMentions(eXoComment.getTitle()));
     //
     commentEntity = commentDAO.create(commentEntity);
@@ -307,51 +303,18 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
     activity = convertActivityEntityToActivity(activityEntity);
   }
   
-  private void saveStreamItemForCommenter(Identity commenter, Activity activityEntity) {
-    Identity posterActivity = identityStorage.findIdentityById(activityEntity.getPosterId());
-    Identity ownerActivity = identityStorage.findIdentityById(activityEntity.getOwnerId());
-    if (! SpaceIdentityProvider.NAME.equals(ownerActivity.getProviderId()) && ! hasRelationship(commenter, posterActivity)) {
-      poster(commenter, activityEntity);
-    }
-  }
-  
-  private boolean hasRelationship(Identity identity1, Identity identity2) {
-    RelationshipStorage relationshipStorage = CommonsUtils.getService(RelationshipStorage.class);
-    Relationship relationship = relationshipStorage.getRelationship(identity1, identity2);
-    return relationship != null && relationship.getStatus().equals(Relationship.Type.CONFIRMED);
-  }
-
   @Override
   public ExoSocialActivity saveActivity(Identity owner, ExoSocialActivity activity) throws ActivityStorageException {
     Activity entity = convertActivityToActivityEntity(activity, owner.getId());
     //
     entity.setOwnerId(owner.getId());
     entity.setProviderId(owner.getProviderId());
-    saveStreamItem(owner, entity);
     //
     activityDAO.create(entity);
     activity.setId(Long.toString(entity.getId()));
     //
     
     return activity;
-  }
-
-  private void saveStreamItem(Identity owner, Activity activity) {
-    //create StreamItem
-    if (OrganizationIdentityProvider.NAME.equals(owner.getProviderId())) {
-      //poster
-      poster(owner, activity);
-      //connection
-      //connection(poster, activity);
-      //mention
-      mention(owner, activity, processMentions(activity.getTitle()));
-    } else {
-      //for SPACE
-      spaceMembers(owner, activity);
-    }
-  }
-
-  private void poster(Identity owner, Activity activity) {
   }
 
   /**
@@ -367,27 +330,6 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
       }
     }
   }
-
-  private void spaceMembers(Identity spaceOwner, Activity activity) {
-  }
-
-//  private void createStreamItem(StreamType streamType, Activity activity, String ownerId){
-//    
-//    StreamItem streamItem = new StreamItem(streamType);
-//    streamItem.setOwnerId(ownerId);
-//    boolean isExist = false;
-//    if (activity.getId() != null) {
-//      for (StreamItem item : activity.getStreamItems()) {
-//        if (item.getOwnerId().equals(ownerId)) {
-//          isExist = true;
-//          break;
-//        }
-//      }
-//    }
-//    if (!isExist) {
-//      activity.addStreamItem(streamItem);
-//    }
-//  }
 
   /**
    * Processes Mentioners who has been mentioned via the Activity.

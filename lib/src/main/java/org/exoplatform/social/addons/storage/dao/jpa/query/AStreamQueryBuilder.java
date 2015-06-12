@@ -53,9 +53,6 @@ public final class AStreamQueryBuilder {
   //newer or older
   private long sinceTime = 0;
   private boolean isNewer = false;
-  //streamType
-  private String type = null;
-  private boolean equalType;
   //memberOfSpaceIds
   private Collection<String> memberOfSpaceIds;
   private Identity myIdentity;
@@ -107,18 +104,6 @@ public final class AStreamQueryBuilder {
     return this;
   }
   
-  public AStreamQueryBuilder equalType(String type) {
-    this.type = type;
-    this.equalType = true;
-    return this;
-  }
-  
-  public AStreamQueryBuilder notEqualType(String type) {
-    this.type = type;
-    this.equalType = false;
-    return this;
-  }
-  
   public AStreamQueryBuilder ascOrder() {
     this.descOrder = false;
     return this;
@@ -166,16 +151,6 @@ public final class AStreamQueryBuilder {
       Predicate ownerConnection = cb.and(cb.in(activity.get(Activity_.ownerId)).value(subQuery1));
       
       predicates.add(cb.and(posterConnection, ownerConnection));
-    }
-
-    
-    //type
-    if (this.type != null) {
-      if (equalType) {
-        predicates.add(cb.equal(activity.<String>get(Activity_.providerId), this.type));
-      } else {
-        predicates.add(cb.notEqual(activity.<String>get(Activity_.providerId), this.type));
-      }
     }
     
     //newer or older
@@ -239,6 +214,13 @@ public final class AStreamQueryBuilder {
       predicate = cb.or(predicate, cb.or(cb.in(activity).value(commentQuery)));
     } else {
       predicate = cb.in(activity).value(commentQuery);
+    }
+
+    //mention
+    if (predicate != null) {
+      predicate = cb.or(predicate, cb.isMember(this.owner.getId(), activity.get(Activity_.mentionerIds)));
+    } else {
+      predicate = cb.isMember(this.owner.getId(), activity.get(Activity_.mentionerIds));
     }
     
     // space members
@@ -348,15 +330,6 @@ public final class AStreamQueryBuilder {
       
     }
     
-    //type
-    if (this.type != null) {
-      if (equalType) {
-        predicates.add(cb.equal(activity.<String>get(Activity_.providerId), this.type));
-      } else {
-        predicates.add(cb.notEqual(activity.<String>get(Activity_.providerId), this.type));
-      }
-    }
-    
     //newer or older
     if (this.sinceTime > 0) {
       if (isNewer) {
@@ -406,6 +379,11 @@ public final class AStreamQueryBuilder {
     }
     
     //mention
+    if (predicate != null) {
+      predicate = cb.or(predicate, cb.isMember(this.owner.getId(), activity.get(Activity_.mentionerIds)));
+    } else {
+      predicate = cb.isMember(this.owner.getId(), activity.get(Activity_.mentionerIds));
+    }
     
     // space members
     if (this.memberOfSpaceIds != null && memberOfSpaceIds.size() > 0) {
