@@ -73,6 +73,10 @@
     <type>org.exoplatform.social.core.storage.cache.CachedActivityStorage</type>
   </component>
 
+  <component>
+    <type>org.exoplatform.social.addons.updater.ActivityMigrationService</type>
+  </component>
+
   <external-component-plugins>
     <target-component>org.exoplatform.social.core.manager.IdentityManager</target-component>
     <component-plugin>
@@ -81,5 +85,48 @@
       <type>org.exoplatform.social.addons.profile.ProfileUpdateImpl</type>
     </component-plugin>
   </external-component-plugins>
+
+  <external-component-plugins>
+    <target-component>org.exoplatform.services.jcr.RepositoryService</target-component>
+    <component-plugin>
+      <name>add.social.nodeType</name>
+      <set-method>addPlugin</set-method>
+      <type>org.exoplatform.services.jcr.impl.AddNodeTypePlugin</type>
+      <init-params>
+        <values-param>
+          <name>autoCreatedInNewRepository</name>
+          <description>Node types configuration file</description>
+          <value>jar:/conf/portal/activity-updater-nodetypes.xml</value>
+        </values-param>
+      </init-params>
+    </component-plugin>
+  </external-component-plugins>
+	
+	<external-component-plugins>
+		<target-component>org.exoplatform.commons.chromattic.ChromatticManager</target-component>
+		<component-plugin>
+			<name>chromattic</name>
+			<set-method>addLifeCycle</set-method>
+			<type>org.exoplatform.commons.chromattic.ChromatticLifeCycle</type>
+			<init-params>
+				<value-param>
+          <name>domain-name</name>
+          <value>soc</value>
+        </value-param>
+        <value-param>
+          <name>workspace-name</name>
+          <value>social</value>
+        </value-param>
+        <value-param profiles="all,minimal">
+          <name>workspace-name</name>
+          <value>social</value>
+        </value-param>
+				<values-param>
+					<name>entities</name>
+					<value>org.exoplatform.social.addons.updater.ActivityUpdaterEntity</value>
+				</values-param>
+			</init-params>
+		</component-plugin>
+	</external-component-plugins>
 
 </configuration>
