@@ -303,6 +303,7 @@ public class RDBMSActivityStorageImplTest extends AbstractCoreTest {
     Relationship maryRootRelationship = relationshipManager.inviteToConnect(maryIdentity, rootIdentity);
     relationshipManager.confirm(maryIdentity, rootIdentity);
     relationships.add(maryRootRelationship);
+  
     
     baseActivity = activityStorage.getActivitiesOfIdentity(rootIdentity, 0, 10).get(0);
     assertEquals(4, activityStorage.getOlderOnActivitiesOfConnections(maryIdentity, baseActivity, 10).size());
@@ -548,7 +549,9 @@ public class RDBMSActivityStorageImplTest extends AbstractCoreTest {
     for (int i = 0; i < number; i++) {
       ExoSocialActivity activity = new ExoSocialActivityImpl();
       activity.setTitle("activity title " + i);
+      activity.setUserId(owner.getId());
       activityStorage.saveActivity(owner, activity);
+      LOG.info("owner = " + owner.getRemoteId() + " PostedTime = " + activity.getPostedTime());
       tearDownActivityList.add(activity);
     }
   }

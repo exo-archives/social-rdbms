@@ -28,43 +28,43 @@ import org.exoplatform.social.addons.storage.dao.jpa.GenericDAOImpl;
  */
 public class SynchronizedGenericDAO<E, ID extends Serializable> extends GenericDAOImpl<E, ID> {
   
-  @Override
-  public E create(E entity) {
-    boolean begun = GenericDAOImpl.beginTransaction();
-    try {
-      return super.create(entity);
-    } finally {
-      GenericDAOImpl.endTransaction(begun);
-    }
-  }
-  
-  @Override
-  public E update(E entity) {
-    boolean begun = GenericDAOImpl.beginTransaction();
-    try {
-      return super.update(entity);
-    } finally {
-      GenericDAOImpl.endTransaction(begun);
-    }
-  }
-  
-  @Override
-  public void delete(E entity) {
-    boolean begun = GenericDAOImpl.beginTransaction();
-    try {
-      super.delete(entity);
-    } finally {
-      GenericDAOImpl.endTransaction(begun);
-    }
-  }
-  
-  @Override
-  public void delete(ID id) {
-    boolean begun = GenericDAOImpl.beginTransaction();
-    try {
-      super.delete(id);
-    } finally {
-      GenericDAOImpl.endTransaction(begun);
-    }
-  }
+//  @Override
+//  public E create(E entity) {
+//    boolean begun = GenericDAOImpl.beginTransaction();
+//    try {
+//      return super.create(entity);
+//    } finally {
+//      GenericDAOImpl.endTransaction(begun);
+//    }
+//  }
+//  
+//  @Override
+//  public E update(E entity) {
+//    boolean begun = GenericDAOImpl.beginTransaction();
+//    try {
+//      return super.update(entity);
+//    } finally {
+//      GenericDAOImpl.endTransaction(begun);
+//    }
+//  }
+//  
+//  @Override
+//  public void delete(E entity) {
+//    boolean begun = GenericDAOImpl.beginTransaction();
+//    try {
+//      super.delete(entity);
+//    } finally {
+//      GenericDAOImpl.endTransaction(begun);
+//    }
+//  }
+//  
+//  @Override
+//  public void delete(ID id) {
+//    boolean begun = GenericDAOImpl.beginTransaction();
+//    try {
+//      super.delete(id);
+//    } finally {
+//      GenericDAOImpl.endTransaction(begun);
+//    }
+//  }
 }

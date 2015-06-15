@@ -25,13 +25,18 @@
 
   <component>
     <type>org.exoplatform.social.addons.storage.session.SocialSessionLifecycle</type>
+  </component>
+  
+  <component>
+    <key>org.exoplatform.commons.api.jpa.EntityManagerService</key>
+    <type>org.exoplatform.commons.api.jpa.EntityManagerService</type>
     <init-params>    
       <value-param>
-        <name>persistent-unit-param</name>
+        <name>persistence.unit.name</name>
         <description>The name of persistence unit</description>
-        <value>${exo.social.activity.rdbms:soc-activity-persistence-hsqldb}</value>      
+        <value>soc-activity-persistence-h2</value>      
       </value-param>
-    </init-params>
+    </init-params>    
   </component>
   
   <component>

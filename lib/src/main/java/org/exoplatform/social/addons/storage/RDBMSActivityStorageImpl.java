@@ -410,6 +410,8 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
   @Override
   public void deleteComment(String activityId, String commentId) throws ActivityStorageException {
     Comment comment = commentDAO.find(getCommentID(commentId));
+    commentDAO.delete(comment.getId());
+    //
     Activity activity = activityDAO.find(Long.valueOf(activityId));
     activity.getComments().remove(comment);
     //

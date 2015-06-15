@@ -28,6 +28,11 @@
       <artifactId>log4j</artifactId>
       <optional>true</optional>
     </dependency>
+    <!-- common dependencies -->
+    <dependency>
+        <groupId>org.exoplatform.commons</groupId>
+        <artifactId>commons-api</artifactId>
+    </dependency>
     <!-- social dependencies -->
     <dependency>
       <groupId>org.exoplatform.social</groupId>
