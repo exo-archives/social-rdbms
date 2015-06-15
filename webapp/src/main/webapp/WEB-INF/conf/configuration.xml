@@ -34,7 +34,7 @@
       <value-param>
         <name>persistence.unit.name</name>
         <description>The name of persistence unit</description>
-        <value>soc-activity-persistence-h2</value>      
+        <value>soc-activity-persistence</value>      
       </value-param>
     </init-params>    
   </component>
