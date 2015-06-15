@@ -169,6 +169,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
       activityEntity.setTemplateParams(params);
     }
     //
+    activity.setPostedTime(System.currentTimeMillis());
     activityEntity.setLocked(activity.isLocked());
     activityEntity.setHidden(activity.isHidden());
     activityEntity.setPosted(activity.getPostedTime());

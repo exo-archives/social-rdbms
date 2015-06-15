@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import org.exoplatform.services.organization.OrganizationService;
 import org.exoplatform.social.core.activity.model.ExoSocialActivity;
 import org.exoplatform.social.core.activity.model.ExoSocialActivityImpl;
 import org.exoplatform.social.core.identity.model.Identity;
@@ -41,12 +42,14 @@ public class RDBMSActivityStorageImplTest extends AbstractCoreTest {
   
   private List<ExoSocialActivity> tearDownActivityList;
   private List<Space> tearDownSpaceList;
+  private OrganizationService orgService;
 
   @Override
   protected void setUp() throws Exception {
     super.setUp();
     identityStorage = getService(IdentityStorage.class);
     activityStorage = getService(ActivityStorage.class);
+    orgService = getService(OrganizationService.class);
     
     assertNotNull(identityStorage);
     assertNotNull(activityStorage);
@@ -281,6 +284,7 @@ public class RDBMSActivityStorageImplTest extends AbstractCoreTest {
     relationships.add(maryDemoRelationship);
     
     baseActivity = activityStorage.getActivitiesOfIdentity(demoIdentity, 0, 10).get(0);
+    LOG.info("demo::sinceTime = " + baseActivity.getPostedTime());
     assertEquals(0, activityStorage.getOlderOnActivitiesOfConnections(maryIdentity, baseActivity, 10).size());
     assertEquals(0, activityStorage.getNumberOfOlderOnActivitiesOfConnections(maryIdentity, baseActivity));
     
@@ -293,6 +297,7 @@ public class RDBMSActivityStorageImplTest extends AbstractCoreTest {
     relationships.add(maryJohnRelationship);
     
     baseActivity = activityStorage.getActivitiesOfIdentity(johnIdentity, 0, 10).get(0);
+    LOG.info("john::sinceTime = " + baseActivity.getPostedTime());
     assertEquals(2, activityStorage.getOlderOnActivitiesOfConnections(maryIdentity, baseActivity, 10).size());
     assertEquals(2, activityStorage.getNumberOfOlderOnActivitiesOfConnections(maryIdentity, baseActivity));
     
@@ -306,6 +311,7 @@ public class RDBMSActivityStorageImplTest extends AbstractCoreTest {
   
     
     baseActivity = activityStorage.getActivitiesOfIdentity(rootIdentity, 0, 10).get(0);
+    LOG.info("root::sinceTime = " + baseActivity.getPostedTime());    
     assertEquals(4, activityStorage.getOlderOnActivitiesOfConnections(maryIdentity, baseActivity, 10).size());
     assertEquals(4, activityStorage.getNumberOfOlderOnActivitiesOfConnections(maryIdentity, baseActivity));
     
@@ -553,6 +559,7 @@ public class RDBMSActivityStorageImplTest extends AbstractCoreTest {
       activityStorage.saveActivity(owner, activity);
       LOG.info("owner = " + owner.getRemoteId() + " PostedTime = " + activity.getPostedTime());
       tearDownActivityList.add(activity);
+      sleep(5);
     }
   }
   

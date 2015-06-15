@@ -72,8 +72,8 @@ public class RDBMSRelationshipManagerTest extends AbstractCoreTest {
 
   @Override
   protected void tearDown() throws Exception {
-    if(GenericDAOImpl.lifecycleLookup().getEntityManager().getTransaction().isActive())
-      GenericDAOImpl.lifecycleLookup().getEntityManager().getTransaction().commit();
+    if(GenericDAOImpl.lifecycleLookup().getCurrentEntityManager().getTransaction().isActive())
+      GenericDAOImpl.lifecycleLookup().getCurrentEntityManager().getTransaction().commit();
     
     RelationshipDAO relationshipDAO = getService(RelationshipDAO.class);
     List<RelationshipItem> items = relationshipDAO.findAll();

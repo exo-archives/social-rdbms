@@ -927,6 +927,7 @@ public class ActivityManagerMysqlTest extends AbstractCoreTest {
       assertNotNull("comment.getId() must not be null", comment.getId());
 
       comments.add(comment);
+      sleep(5);
     }
 
     RealtimeListAccess<ExoSocialActivity> listAccess = activityManager.getCommentsWithListAccess(activity);

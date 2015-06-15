@@ -41,7 +41,7 @@ public class SocialSessionLifecycle {
     this.service = service;
   }
   
-  public EntityManager getEntityManager() {
+  public EntityManager getCurrentEntityManager() {
     return service.getEntityManager();
   }
   
@@ -70,7 +70,7 @@ public class SocialSessionLifecycle {
    */
   public boolean isActive() {
     if(!hasSynchronization()) return false;
-    return getEntityManager().getTransaction().isActive();
+    return getCurrentEntityManager().getTransaction().isActive();
   }
   
   public void startRequest(ExoContainer container) {

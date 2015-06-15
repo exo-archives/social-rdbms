@@ -79,14 +79,4 @@ public class CommentDAOImpl extends SynchronizedGenericDAO<Comment, Long>  imple
                               .intValue();
   }
 
-  @Override
-  public void delete(Comment entity) {
-    throw new UnsupportedOperationException("Can not support this method, it replace by remove comment entity from activity entity");
-  }
-
-  @Override
-  public void delete(Long id) {
-    throw new UnsupportedOperationException("Can not support this method, it replace by remove comment entity from activity entity");
-  }
-
 }

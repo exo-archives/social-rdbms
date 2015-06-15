@@ -320,7 +320,7 @@ public abstract class AbstractCoreTest extends BaseExoTestCase {
     try {
       callable.beforeTransactionCompletion();
       boolean begun = GenericDAOImpl.beginTransaction();
-      result = callable.execute(GenericDAOImpl.lifecycleLookup().getEntityManager());
+      result = callable.execute(GenericDAOImpl.lifecycleLookup().getCurrentEntityManager());
       GenericDAOImpl.endTransaction(begun);
     } catch (RuntimeException e) {
       throw e;
@@ -334,7 +334,7 @@ public abstract class AbstractCoreTest extends BaseExoTestCase {
     try {
       callable.beforeTransactionCompletion();
       boolean begun = GenericDAOImpl.beginTransaction();
-      callable.execute(GenericDAOImpl.lifecycleLookup().getEntityManager());
+      callable.execute(GenericDAOImpl.lifecycleLookup().getCurrentEntityManager());
       GenericDAOImpl.endTransaction(begun);
     } catch (RuntimeException e) {
       throw e;
