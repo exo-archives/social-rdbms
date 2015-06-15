@@ -23,7 +23,6 @@ import org.exoplatform.management.jmx.annotations.NameTemplate;
 import org.exoplatform.management.jmx.annotations.Property;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
-import org.exoplatform.social.addons.storage.SynchronizedRDBMSActivityStorage;
 import org.exoplatform.social.addons.storage.dao.ActivityDAO;
 import org.exoplatform.social.core.activity.model.ExoSocialActivity;
 import org.exoplatform.social.core.activity.model.ExoSocialActivityImpl;
@@ -37,6 +36,7 @@ import org.exoplatform.social.core.chromattic.utils.ActivityIterator;
 import org.exoplatform.social.core.identity.model.ActiveIdentityFilter;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvider;
+import org.exoplatform.social.core.storage.api.ActivityStorage;
 import org.exoplatform.social.core.storage.api.IdentityStorage;
 import org.exoplatform.social.core.storage.impl.AbstractStorage;
 import org.exoplatform.social.core.storage.impl.ActivityStorageImpl;
@@ -52,7 +52,7 @@ public class ActivityMigrationService extends AbstractStorage implements Startab
 
   private static final Log LOG = ExoLogger.getLogger(ActivityMigrationService.class);
   private IdentityStorage identityStorage;
-  private SynchronizedRDBMSActivityStorage activityStorage;
+  private ActivityStorage activityStorage;
   private ActivityStorageImpl activityJCRStorage;
   private ActivityDAO activityDAO;
   private ActivityEntity currenActivity = null;
@@ -79,7 +79,7 @@ public class ActivityMigrationService extends AbstractStorage implements Startab
       }
       this.identityStorage = CommonsUtils.getService(IdentityStorage.class);
       this.activityJCRStorage = CommonsUtils.getService(ActivityStorageImpl.class);
-      this.activityStorage = CommonsUtils.getService(SynchronizedRDBMSActivityStorage.class);
+      this.activityStorage = CommonsUtils.getService(ActivityStorage.class);
       // doing with group administrators and active users
       List<String> activeUsers = getAdminAndActiveUsers();
       for (String userName : activeUsers) {
