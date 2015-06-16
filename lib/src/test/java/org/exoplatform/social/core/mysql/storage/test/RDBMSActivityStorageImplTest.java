@@ -20,7 +20,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import org.exoplatform.services.organization.OrganizationService;
 import org.exoplatform.social.core.activity.model.ExoSocialActivity;
 import org.exoplatform.social.core.activity.model.ExoSocialActivityImpl;
 import org.exoplatform.social.core.identity.model.Identity;
@@ -372,11 +371,15 @@ public class RDBMSActivityStorageImplTest extends AbstractCoreTest {
       activity.setTitle("activity title " + i);
       activity.setUserId(demoIdentity.getId());
       activityStorage.saveActivity(spaceIdentity, activity);
+      LOG.info("user = " + demoIdentity.getRemoteId() + " activity's postedTime = " + activity.getPostedTime());
+      sleep(10);
       tearDownActivityList.add(activity);
       if (i == 4) {
         baseActivity = activity;
       }
     }
+    
+    LOG.info("user = " + demoIdentity.getRemoteId() + " sinceTime = " + baseActivity.getPostedTime());
     
     assertEquals(4, activityStorage.getOlderOnUserSpacesActivities(demoIdentity, baseActivity, 10).size());
     assertEquals(4, activityStorage.getNumberOfOlderOnUserSpacesActivities(demoIdentity, baseActivity));
@@ -393,6 +396,7 @@ public class RDBMSActivityStorageImplTest extends AbstractCoreTest {
       activity.setTitle("activity title " + i);
       activity.setUserId(demoIdentity.getId());
       activityStorage.saveActivity(spaceIdentity2, activity);
+      sleep(10);
       tearDownActivityList.add(activity);
     }
     
