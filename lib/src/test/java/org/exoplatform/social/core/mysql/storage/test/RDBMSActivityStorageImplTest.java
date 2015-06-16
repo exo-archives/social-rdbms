@@ -42,14 +42,12 @@ public class RDBMSActivityStorageImplTest extends AbstractCoreTest {
   
   private List<ExoSocialActivity> tearDownActivityList;
   private List<Space> tearDownSpaceList;
-  private OrganizationService orgService;
 
   @Override
   protected void setUp() throws Exception {
     super.setUp();
     identityStorage = getService(IdentityStorage.class);
     activityStorage = getService(ActivityStorage.class);
-    orgService = getService(OrganizationService.class);
     
     assertNotNull(identityStorage);
     assertNotNull(activityStorage);
@@ -559,7 +557,7 @@ public class RDBMSActivityStorageImplTest extends AbstractCoreTest {
       activityStorage.saveActivity(owner, activity);
       LOG.info("owner = " + owner.getRemoteId() + " PostedTime = " + activity.getPostedTime());
       tearDownActivityList.add(activity);
-      sleep(5);
+      sleep(10);
     }
   }
   

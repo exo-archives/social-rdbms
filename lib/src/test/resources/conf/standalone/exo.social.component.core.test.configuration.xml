@@ -83,7 +83,7 @@
       <value-param>
         <name>persistence.unit.name</name>
         <description>The name of persistence unit</description>
-        <value>soc-activity-persistence-h2</value>      
+        <value>${persistence.unit.name:soc-activity-persistence-h2}</value>      
       </value-param>
     </init-params>    
   </component>
@@ -121,7 +121,7 @@
 
   <component>
     <key>org.exoplatform.social.core.storage.api.ActivityStorage</key>
-    <type>org.exoplatform.social.addons.storage.RDBMSActivityStorageImpl</type>
+    <type>org.exoplatform.social.addons.storage.SynchronizedRDBMSActivityStorage</type>
   </component>
   
   <component>
@@ -177,7 +177,7 @@
   -->
   <component>
     <key>org.exoplatform.social.core.storage.api.RelationshipStorage</key>
-    <type>org.exoplatform.social.addons.storage.RDBMSRelationshipStorageImpl</type>
+    <type>org.exoplatform.social.addons.storage.SynchronizedRDBMSRelationshipStorage</type>
   </component>
 
   <!--
