@@ -23,8 +23,8 @@ import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Root;
 
 import org.exoplatform.social.addons.storage.dao.ProfileItemDAO;
-import org.exoplatform.social.addons.storage.entity.ProfileItem;
-import org.exoplatform.social.addons.storage.entity.ProfileItem_;
+import org.exoplatform.social.addons.storage.entity.Profile;
+import org.exoplatform.social.addons.storage.entity.Profile_;
 
 /**
  * Created by The eXo Platform SAS
@@ -32,17 +32,17 @@ import org.exoplatform.social.addons.storage.entity.ProfileItem_;
  *          exo@exoplatform.com
  * June 09, 2015  
  */
-public class ProfileItemDAOImpl extends GenericDAOImpl<ProfileItem, Long> implements ProfileItemDAO {
+public class ProfileItemDAOImpl extends GenericDAOImpl<Profile, Long> implements ProfileItemDAO {
 
-  public ProfileItem findProfileItemByIdentityId(final String identityId) {
+  public Profile findProfileItemByIdentityId(final String identityId) {
     EntityManager em = lifecycleLookup().getCurrentEntityManager();
     CriteriaBuilder cb = em.getCriteriaBuilder();
-    CriteriaQuery<ProfileItem> criteria = cb.createQuery(ProfileItem.class);
-    Root<ProfileItem> root = criteria.from(ProfileItem.class);
-    CriteriaQuery<ProfileItem> select = criteria.select(root);
-    select.where(cb.equal(root.get(ProfileItem_.identityId), identityId));
+    CriteriaQuery<Profile> criteria = cb.createQuery(Profile.class);
+    Root<Profile> root = criteria.from(Profile.class);
+    CriteriaQuery<Profile> select = criteria.select(root);
+    select.where(cb.equal(root.get(Profile_.identityId), identityId));
     //
-    TypedQuery<ProfileItem> typedQuery = em.createQuery(select);
+    TypedQuery<Profile> typedQuery = em.createQuery(select);
     return typedQuery.getSingleResult();
   }
 

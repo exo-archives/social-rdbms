@@ -9,15 +9,15 @@ import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
 
 @Entity
-@Table(name = "SOC_PROFILE", uniqueConstraints = @UniqueConstraint(columnNames = { "identityId" }))
-public class ProfileItem {
+@Table(name = "SOC_PROFILES", uniqueConstraints = @UniqueConstraint(columnNames = { "IDENTITY_ID" }))
+public class Profile {
 
   @Id
   @GeneratedValue(strategy = GenerationType.AUTO)
   @Column(name="PROFILE_ID")
   private Long id;
 
-  @Column(length = 36, name="identityId")
+  @Column(length = 36, name="IDENTITY_ID")
   private String identityId;
   private String fullName;
   private String firstName;
@@ -28,7 +28,7 @@ public class ProfileItem {
   private String organizations;
   private String jobsDescription;
 
-  public ProfileItem() {
+  public Profile() {
   }
 
   public Long getId() {

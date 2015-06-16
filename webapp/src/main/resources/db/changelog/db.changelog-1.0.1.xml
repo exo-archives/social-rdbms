@@ -10,7 +10,7 @@
   <property name="autoIncrement" value="false" dbms="oracle,postgresql"/>    
 
 	  <changeSet author="binhdv@exoplatform.com" id="1.0.1-1">
-        <createTable tableName="SOC_PROFILE">
+        <createTable tableName="SOC_PROFILES">
             <column autoIncrement="true" name="PROFILE_ID" type="BIGINT">
                 <constraints primaryKey="true"/>
             </column>

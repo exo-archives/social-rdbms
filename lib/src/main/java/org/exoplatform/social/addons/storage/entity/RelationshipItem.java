@@ -31,7 +31,7 @@ public class RelationshipItem {
   
   @ManyToOne
   @JoinColumn(name="PROFILE_ID")
-  private ProfileItem receiver;
+  private Profile receiver;
   
   @Enumerated
   private Type status;
@@ -77,11 +77,11 @@ public class RelationshipItem {
     this.status = status;
   }
 
-  public ProfileItem getReceiver() {
+  public Profile getReceiver() {
     return receiver;
   }
 
-  public void setReceiver(ProfileItem receiver) {
+  public void setReceiver(Profile receiver) {
     this.receiver = receiver;
   }
 }

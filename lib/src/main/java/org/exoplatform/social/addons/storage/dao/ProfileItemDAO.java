@@ -16,7 +16,7 @@
  */
 package org.exoplatform.social.addons.storage.dao;
 
-import org.exoplatform.social.addons.storage.entity.ProfileItem;
+import org.exoplatform.social.addons.storage.entity.Profile;
 
 /**
  * Created by The eXo Platform SAS
@@ -24,7 +24,7 @@ import org.exoplatform.social.addons.storage.entity.ProfileItem;
  *          exo@exoplatform.com
  * June 09, 2015  
  */
-public interface ProfileItemDAO extends GenericDAO<ProfileItem, Long> {
+public interface ProfileItemDAO extends GenericDAO<Profile, Long> {
 
-  ProfileItem findProfileItemByIdentityId(String identityId);
+  Profile findProfileItemByIdentityId(String identityId);
 }

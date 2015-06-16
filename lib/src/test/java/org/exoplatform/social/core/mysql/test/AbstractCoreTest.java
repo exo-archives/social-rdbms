@@ -52,7 +52,7 @@ import org.exoplatform.services.security.ConversationState;
 import org.exoplatform.services.security.MembershipEntry;
 import org.exoplatform.social.addons.storage.dao.ProfileItemDAO;
 import org.exoplatform.social.addons.storage.dao.jpa.GenericDAOImpl;
-import org.exoplatform.social.addons.storage.entity.ProfileItem;
+import org.exoplatform.social.addons.storage.entity.Profile;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvider;
 import org.exoplatform.social.core.manager.ActivityManager;
@@ -125,8 +125,8 @@ public abstract class AbstractCoreTest extends BaseExoTestCase {
     
     ProfileItemDAO dao = getService(ProfileItemDAO.class);
     
-    List<ProfileItem> items = dao.findAll();
-    for (ProfileItem item : items) {
+    List<Profile> items = dao.findAll();
+    for (Profile item : items) {
       dao.delete(item.getId());
     }
     

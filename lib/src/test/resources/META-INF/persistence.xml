@@ -7,7 +7,7 @@
    
    <class>org.exoplatform.social.addons.storage.entity.Activity</class>
    <class>org.exoplatform.social.addons.storage.entity.Comment</class>
-   <class>org.exoplatform.social.addons.storage.entity.ProfileItem</class>
+   <class>org.exoplatform.social.addons.storage.entity.Profile</class>
    <class>org.exoplatform.social.addons.storage.entity.RelationshipItem</class>
 
     <properties>

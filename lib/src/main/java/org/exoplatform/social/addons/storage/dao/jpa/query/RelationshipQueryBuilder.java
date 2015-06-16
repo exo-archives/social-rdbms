@@ -37,8 +37,8 @@ import javax.persistence.criteria.Root;
 
 import org.apache.commons.lang.StringEscapeUtils;
 import org.exoplatform.social.addons.storage.dao.jpa.GenericDAOImpl;
-import org.exoplatform.social.addons.storage.entity.ProfileItem;
-import org.exoplatform.social.addons.storage.entity.ProfileItem_;
+import org.exoplatform.social.addons.storage.entity.Profile;
+import org.exoplatform.social.addons.storage.entity.Profile_;
 import org.exoplatform.social.addons.storage.entity.RelationshipItem;
 import org.exoplatform.social.addons.storage.entity.RelationshipItem_;
 import org.exoplatform.social.core.identity.model.Identity;
@@ -221,11 +221,11 @@ public final class RelationshipQueryBuilder {
     CriteriaBuilder cb = em.getCriteriaBuilder();
     CriteriaQuery<RelationshipItem> criteria = cb.createQuery(RelationshipItem.class);
     Root<RelationshipItem> relationship = criteria.from(RelationshipItem.class);
-    Join<RelationshipItem, ProfileItem> receiver = relationship.join(RelationshipItem_.receiver);
+    Join<RelationshipItem, Profile> receiver = relationship.join(RelationshipItem_.receiver);
     //
     CriteriaQuery<RelationshipItem> select = criteria.select(relationship);
     select.where(buildPredicateFilter(cb, receiver, relationship));
-    select.orderBy(cb.asc(receiver.get(ProfileItem_.fullName)));
+    select.orderBy(cb.asc(receiver.get(Profile_.fullName)));
     //
     TypedQuery<RelationshipItem> typedQuery = em.createQuery(select);
     if (this.limit > 0) {
@@ -241,7 +241,7 @@ public final class RelationshipQueryBuilder {
     CriteriaBuilder cb = em.getCriteriaBuilder();
     CriteriaQuery<Long> criteria = cb.createQuery(Long.class);
     Root<RelationshipItem> relationship = criteria.from(RelationshipItem.class);
-    Join<RelationshipItem, ProfileItem> receiver = relationship.join(RelationshipItem_.receiver);
+    Join<RelationshipItem, Profile> receiver = relationship.join(RelationshipItem_.receiver);
     CriteriaQuery<Long> select = criteria.select(cb.countDistinct(relationship));
     //
     select.where(buildPredicateFilter(cb, receiver, relationship));
@@ -249,7 +249,7 @@ public final class RelationshipQueryBuilder {
     return em.createQuery(select);
   }
   
-  private Predicate buildPredicateFilter(CriteriaBuilder cb, Join<RelationshipItem, ProfileItem> receiver, Root<RelationshipItem> relationship) {
+  private Predicate buildPredicateFilter(CriteriaBuilder cb, Join<RelationshipItem, Profile> receiver, Root<RelationshipItem> relationship) {
     Predicate predicate = null;
     // owner
     if (this.owner != null) {
@@ -268,32 +268,32 @@ public final class RelationshipQueryBuilder {
       String company = addPercentToStringInput(StringEscapeUtils.escapeHtml(profileFilter.getCompany()));
       //
       if (!inputName.isEmpty()) {
-        Predicate pName = cb.like(receiver.get(ProfileItem_.fullName), inputName);
-        pName = cb.or(pName, cb.like(receiver.get(ProfileItem_.firstName), inputName));
-        pFilter = cb.or(pName, cb.like(receiver.get(ProfileItem_.lastName), inputName));
+        Predicate pName = cb.like(receiver.get(Profile_.fullName), inputName);
+        pName = cb.or(pName, cb.like(receiver.get(Profile_.firstName), inputName));
+        pFilter = cb.or(pName, cb.like(receiver.get(Profile_.lastName), inputName));
       }
       //
       if (!position.isEmpty()) {
-        pFilter = appendPredicate(cb, pFilter, cb.like(receiver.get(ProfileItem_.positions), position));
+        pFilter = appendPredicate(cb, pFilter, cb.like(receiver.get(Profile_.positions), position));
       }
       //
       if (!skills.isEmpty()) {
-        pFilter = appendPredicate(cb, pFilter, cb.like(receiver.get(ProfileItem_.skills), skills));
+        pFilter = appendPredicate(cb, pFilter, cb.like(receiver.get(Profile_.skills), skills));
       }
       if (!company.isEmpty()) {
-        pFilter = appendPredicate(cb, pFilter, cb.like(receiver.get(ProfileItem_.organizations), company));
+        pFilter = appendPredicate(cb, pFilter, cb.like(receiver.get(Profile_.organizations), company));
       }
 
       String all = profileFilter.getAll();
       if (all != null && !all.trim().isEmpty()) {
         all = escapeSpecialCharacter(all.trim()).toLowerCase();
-        Predicate pAll = cb.like(receiver.get(ProfileItem_.fullName), all);
-        pAll = cb.or(pAll, cb.like(receiver.get(ProfileItem_.firstName), all));
-        pAll = cb.or(pAll, cb.like(receiver.get(ProfileItem_.lastName), all));
-        pAll = cb.or(pAll, cb.like(receiver.get(ProfileItem_.skills), all));
-        pAll = cb.or(pAll, cb.like(receiver.get(ProfileItem_.positions), all));
-        pAll = cb.or(pAll, cb.like(receiver.get(ProfileItem_.organizations), all));
-        pAll = cb.or(pAll, cb.like(receiver.get(ProfileItem_.jobsDescription), all));
+        Predicate pAll = cb.like(receiver.get(Profile_.fullName), all);
+        pAll = cb.or(pAll, cb.like(receiver.get(Profile_.firstName), all));
+        pAll = cb.or(pAll, cb.like(receiver.get(Profile_.lastName), all));
+        pAll = cb.or(pAll, cb.like(receiver.get(Profile_.skills), all));
+        pAll = cb.or(pAll, cb.like(receiver.get(Profile_.positions), all));
+        pAll = cb.or(pAll, cb.like(receiver.get(Profile_.organizations), all));
+        pAll = cb.or(pAll, cb.like(receiver.get(Profile_.jobsDescription), all));
         //
         pFilter = appendPredicate(cb, pFilter, pAll);
       }

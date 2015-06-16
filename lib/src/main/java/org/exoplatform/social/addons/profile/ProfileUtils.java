@@ -5,14 +5,13 @@ import java.util.Map;
 
 import org.exoplatform.commons.utils.CommonsUtils;
 import org.exoplatform.social.addons.storage.dao.ProfileItemDAO;
-import org.exoplatform.social.addons.storage.entity.ProfileItem;
 import org.exoplatform.social.core.identity.model.Profile;
 
 public class ProfileUtils {
 
   public static void createOrUpdateProfile(Profile profile, boolean isUpdate) {
     ProfileItemDAO itemDAO = CommonsUtils.getService(ProfileItemDAO.class);
-    ProfileItem profileItem = convertProfile(profile);
+    org.exoplatform.social.addons.storage.entity.Profile profileItem = convertProfile(profile);
     //
     if (isUpdate) {
       Long id = itemDAO.findProfileItemByIdentityId(profile.getIdentity().getId()).getId();
@@ -23,8 +22,8 @@ public class ProfileUtils {
     }
   }
   
-  private static ProfileItem convertProfile(Profile p) {
-    ProfileItem profileItem = new ProfileItem();
+  private static org.exoplatform.social.addons.storage.entity.Profile convertProfile(Profile p) {
+    org.exoplatform.social.addons.storage.entity.Profile profileItem = new org.exoplatform.social.addons.storage.entity.Profile();
     profileItem.setIdentityId(p.getIdentity().getId());
     profileItem.setFirstName(getProfileSimpleValue(p, Profile.FIRST_NAME));
     profileItem.setLastName(getProfileSimpleValue(p, Profile.LAST_NAME));
@@ -41,7 +40,7 @@ public class ProfileUtils {
     return (o != null) ? String.valueOf(o) : "";
   }
   
-  private static void putExperienceData(ProfileItem profileItem, Profile p) {
+  private static void putExperienceData(org.exoplatform.social.addons.storage.entity.Profile profileItem, Profile p) {
     List<Map<String, String>> experiences = (List<Map<String, String>>) p.getProperty(Profile.EXPERIENCES);
     if (experiences != null) {
       StringBuilder skills = new StringBuilder();
