@@ -258,48 +258,6 @@
           </includes>
         </configuration>
       </plugin>
-      <!-- copy persistent for unit test and change the persistent.xml.proper -->
-      <plugin>
-        <artifactId>maven-antrun-plugin</artifactId>
-        <version>${version.antrun.plugin}</version>
-        <executions>
-          <execution>
-            <id>copy-test-persistence</id>
-            <phase>process-test-classes</phase>
-            <configuration>
-              <tasks>
-                <!--backup the "proper" persistence.xml -->
-                <copy
-                  file="${project.build.outputDirectory}/META-INF/persistence.xml"
-                  tofile="${project.build.outputDirectory}/META-INF/persistence.xml.proper" />
-                <!--replace the "proper" persistence.xml with the "test" 
-                  version -->
-                <move
-                  file="${project.build.testOutputDirectory}/META-INF/persistence.xml"
-                  tofile="${project.build.outputDirectory}/META-INF/persistence.xml" failonerror="Could not find file persistent.xml."/>
-              </tasks>
-            </configuration>
-            <goals>
-              <goal>run</goal>
-            </goals>
-          </execution>
-          <execution>
-            <id>restore-persistence</id>
-            <phase>prepare-package</phase>
-            <configuration>
-              <tasks>
-                <!--restore the "proper" persistence.xml -->
-                <move
-                  file="${project.build.outputDirectory}/META-INF/persistence.xml.proper"
-                  tofile="${project.build.outputDirectory}/META-INF/persistence.xml" failonerror="Could not find file ${project.build.outputDirectory}/META-INF/persistence.xml.proper." />
-              </tasks>
-            </configuration>
-            <goals>
-              <goal>run</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
     </plugins>
   </build>
   <profiles>
