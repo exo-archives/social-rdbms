@@ -111,6 +111,12 @@
   <component>
     <type>org.exoplatform.social.addons.updater.ActivityMigrationService</type>
   </component>
+  <component>
+    <type>org.exoplatform.social.addons.updater.RelationshipMigrationService</type>
+  </component>
+  <component>
+    <type>org.exoplatform.social.addons.updater.ProfileMigrationService</type>
+  </component>
 
    <!--
     Activity storage components.

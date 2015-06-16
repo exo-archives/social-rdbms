@@ -6,7 +6,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import javax.jcr.Node;
@@ -15,14 +14,10 @@ import javax.jcr.RepositoryException;
 
 import org.chromattic.core.api.ChromatticSessionImpl;
 import org.exoplatform.commons.utils.CommonsUtils;
-import org.exoplatform.container.PortalContainer;
-import org.exoplatform.container.component.RequestLifeCycle;
 import org.exoplatform.management.annotations.Managed;
 import org.exoplatform.management.annotations.ManagedDescription;
 import org.exoplatform.management.jmx.annotations.NameTemplate;
 import org.exoplatform.management.jmx.annotations.Property;
-import org.exoplatform.services.log.ExoLogger;
-import org.exoplatform.services.log.Log;
 import org.exoplatform.social.addons.storage.dao.ActivityDAO;
 import org.exoplatform.social.core.activity.model.ExoSocialActivity;
 import org.exoplatform.social.core.activity.model.ExoSocialActivityImpl;
@@ -31,98 +26,84 @@ import org.exoplatform.social.core.chromattic.entity.ActivityListEntity;
 import org.exoplatform.social.core.chromattic.entity.ActivityParameters;
 import org.exoplatform.social.core.chromattic.entity.HidableEntity;
 import org.exoplatform.social.core.chromattic.entity.IdentityEntity;
-import org.exoplatform.social.core.chromattic.entity.ProviderEntity;
 import org.exoplatform.social.core.chromattic.utils.ActivityIterator;
 import org.exoplatform.social.core.identity.model.ActiveIdentityFilter;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvider;
 import org.exoplatform.social.core.storage.api.ActivityStorage;
 import org.exoplatform.social.core.storage.api.IdentityStorage;
-import org.exoplatform.social.core.storage.impl.AbstractStorage;
 import org.exoplatform.social.core.storage.impl.ActivityStorageImpl;
 import org.exoplatform.social.core.storage.streams.StreamConfig;
-import org.picocontainer.Startable;
 
 import com.google.caja.util.Lists;
 
 @Managed
 @ManagedDescription("Social migration activities from JCR to MYSQl service.")
-@NameTemplate({@Property(key = "service", value = "social"), @Property(key = "view", value = "migration") })
-public class ActivityMigrationService extends AbstractStorage implements Startable {
+@NameTemplate({@Property(key = "service", value = "social"), @Property(key = "view", value = "migration-activities") })
+public class ActivityMigrationService extends AbstractMigrationService<ExoSocialActivity> {
 
-  private static final Log LOG = ExoLogger.getLogger(ActivityMigrationService.class);
-  private IdentityStorage identityStorage;
-  private ActivityStorage activityStorage;
-  private ActivityStorageImpl activityJCRStorage;
-  private ActivityDAO activityDAO;
+  private final ActivityDAO activityDAO;
+  private final ActivityStorage activityStorage;
+  private final ActivityStorageImpl activityJCRStorage;
+
   private ActivityEntity currenActivity = null;
   private ActivityEntity lastActivity = null;
   private String lastUserProcess = null;
   private boolean forkStop = false;
   
-  public ActivityMigrationService() {
-    super();
+  public ActivityMigrationService(ActivityDAO activityDAO,
+                                  ActivityStorage activityStorage,
+                                  ActivityStorageImpl activityJCRStorage,
+                                  IdentityStorage identityStorage,
+                                  RelationshipMigrationService relationshipMigration) {
+    super(identityStorage);
+    this.activityDAO = activityDAO;
+    this.activityStorage = activityStorage;
+    this.activityJCRStorage = activityJCRStorage;
   }
 
-  @Override
   @Managed
-  @ManagedDescription("Manual to start run miguration database of activities from JCR to MYSQL.")
-  public void start() {
-    forkStop = false;
-    //
-    this.activityDAO = CommonsUtils.getService(ActivityDAO.class);
-    RequestLifeCycle.begin(PortalContainer.getInstance());
-    try {
-      beforeMigration();
-      if(lastUserProcess == null && activityDAO.count() > 0) {
+  @ManagedDescription("Manual to start run miguration data of activities from JCR to MYSQL.")
+  public void doMigration() throws Exception {
+    if(lastUserProcess == null && activityDAO.count() > 0) {
+      return;
+    }
+    // doing with group administrators and active users
+    List<String> activeUsers = getAdminAndActiveUsers();
+    for (String userName : activeUsers) {
+      if(forkStop) {
         return;
       }
-      this.identityStorage = CommonsUtils.getService(IdentityStorage.class);
-      this.activityJCRStorage = CommonsUtils.getService(ActivityStorageImpl.class);
-      this.activityStorage = CommonsUtils.getService(ActivityStorage.class);
-      // doing with group administrators and active users
-      List<String> activeUsers = getAdminAndActiveUsers();
-      for (String userName : activeUsers) {
-        if(forkStop) {
-          return;
-        }
-        //
-        migrationByUser(userName, null);
+      //
+      migrationByUser(userName, null);
+    }
+    // doing with normal users
+    boolean isSkip = (lastUserProcess != null);
+    Iterator<IdentityEntity> allIdentityEntity = getAllIdentityEntity().values().iterator();
+    while (allIdentityEntity.hasNext()) {
+      if(forkStop) {
+        return;
       }
-      // doing with normal users
-      boolean isSkip = (lastUserProcess != null);
-      Iterator<IdentityEntity> allIdentityEntity = getAllIdentityEntity().values().iterator();
-      while (allIdentityEntity.hasNext()) {
-        if(forkStop) {
-          return;
+      IdentityEntity identityEntity = (IdentityEntity) allIdentityEntity.next();
+      if (isSkip) {
+        if (lastUserProcess.equals(identityEntity.getRemoteId())) {
+          isSkip = false;
         }
-        IdentityEntity identityEntity = (IdentityEntity) allIdentityEntity.next();
-        if (isSkip) {
-          if (lastUserProcess.equals(identityEntity.getRemoteId())) {
-            isSkip = false;
-          }
-          continue;
-        }
-        if(activeUsers.contains(identityEntity.getRemoteId())) {
-          continue;
-        }
-        //
-        migrationByUser(null, identityEntity);
+        continue;
+      }
+      if(activeUsers.contains(identityEntity.getRemoteId())) {
+        continue;
       }
       //
-      afterMigration();
-    } catch (Exception e) {
-      LOG.error("Failed to run migration activities from JCR to Mysql.", e);
-    } finally {
-      RequestLifeCycle.end();
+      migrationByUser(null, identityEntity);
     }
   }
 
   @Override
   @Managed
-  @ManagedDescription("Manual to stop run miguration database of activities from JCR to MYSQL.")
+  @ManagedDescription("Manual to stop run miguration data of activities from JCR to MYSQL.")
   public void stop() {
-    forkStop = true;
+    super.stop();
   }
 
   private void migrationByUser(String userName, IdentityEntity identityEntity) throws Exception {
@@ -152,20 +133,26 @@ public class ActivityMigrationService extends AbstractStorage implements Startab
       LOG.info("Mirgration activity: " + activityEntity.getName());
       //
       ExoSocialActivity activity = activityJCRStorage.getActivity(activityEntity.getId());
-      //activity.getActivityStream().getId()
+      //
       IdentityEntity activityIdentity = activityEntity.getIdentity();
       Identity owner = new Identity(activityIdentity.getProviderId(), activityIdentity.getRemoteId());
       owner.setId(activityIdentity.getId());
       //
+      String oldId = activity.getId();
       activity.setId(null);
       activityStorage.saveActivity(owner, activity);
+      //
+      doBroadcastListener(activity, oldId);
       //
       List<ActivityEntity> commentEntities = activityEntity.getComments();
       for (ActivityEntity commentEntity : commentEntities) {
         ExoSocialActivity comment = fillCommentFromEntity(commentEntity);
         //
+        oldId = comment.getId();
         comment.setId(null);
         activityStorage.saveComment(activity, comment);
+        //
+        doBroadcastListener(comment, oldId);
       }
       //
       if(currenActivity != null) {
@@ -179,26 +166,30 @@ public class ActivityMigrationService extends AbstractStorage implements Startab
                            count, identityEntity.getRemoteId(), System.currentTimeMillis() - t));
   }
 
-  private void beforeMigration() throws Exception {
+  private void doBroadcastListener(ExoSocialActivity activity, String oldId) {
+    String newId = activity.getId();
+    activity.setId(oldId);
+    broadcastListener(activity, newId);
+    activity.setId(newId);
+  }
+
+  protected void beforeMigration() throws Exception {
     LOG.info("Stating to migration activities from JCR to MYSQL........");
-    try {
-      NodeIterator iterator = nodes("SELECT * FROM soc:activityUpdater");
-      if (iterator.hasNext()) {
-        String currentUUID = iterator.nextNode().getUUID();
-        lastActivity = _findById(ActivityEntity.class, currentUUID);
-        if (lastActivity != null) {
-          lastUserProcess = lastActivity.getPosterIdentity().getRemoteId();
-        }
+    NodeIterator iterator = nodes("SELECT * FROM soc:activityUpdater");
+    if (iterator.hasNext()) {
+      String currentUUID = iterator.nextNode().getUUID();
+      lastActivity = _findById(ActivityEntity.class, currentUUID);
+      if (lastActivity != null) {
+        lastUserProcess = lastActivity.getPosterIdentity().getRemoteId();
       }
-    } finally {
-     
     }
   }
 
-  private void afterMigration() throws Exception {
+  protected void afterMigration() throws Exception {
     if(currenActivity != null) {
       _removeMixin(currenActivity, ActivityUpdaterEntity.class);
     }
+    //TODO: need remove  all old activities
     LOG.info("Done to migration activities from JCR to MYSQL");
   }
 
@@ -227,18 +218,6 @@ public class ActivityMigrationService extends AbstractStorage implements Startab
       }
     }
     return users;
-  }
-
-  @SuppressWarnings("unchecked")
-  private Map<String, IdentityEntity> getAllIdentityEntity() {
-    ProviderEntity providerEntity;
-    try {
-      providerEntity = getProviderRoot().getProviders().get(OrganizationIdentityProvider.NAME);
-    } catch (Exception ex) {
-      lifeCycle.getProviderRoot().set(null);
-      providerEntity = getProviderRoot().getProviders().get(OrganizationIdentityProvider.NAME);
-    }
-    return (providerEntity != null) ? providerEntity.getIdentities() : new HashMap<String, IdentityEntity>();
   }
 
   private ExoSocialActivity fillCommentFromEntity(ActivityEntity activityEntity) {

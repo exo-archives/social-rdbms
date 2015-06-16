@@ -73,9 +73,15 @@
     <type>org.exoplatform.social.core.storage.cache.CachedActivityStorage</type>
   </component>
 
-  <component>
-    <type>org.exoplatform.social.addons.updater.ActivityMigrationService</type>
-  </component>
+	<component>
+		<type>org.exoplatform.social.addons.updater.ActivityMigrationService</type>
+	</component>
+	<component>
+		<type>org.exoplatform.social.addons.updater.RelationshipMigrationService</type>
+	</component>
+	<component>
+		<type>org.exoplatform.social.addons.updater.ProfileMigrationService</type>
+	</component>
 
   <external-component-plugins>
     <target-component>org.exoplatform.social.core.manager.IdentityManager</target-component>
