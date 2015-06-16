@@ -24,6 +24,7 @@ import javax.persistence.EntityManager;
 import org.apache.log4j.Logger;
 import org.exoplatform.commons.api.jpa.EntityManagerService;
 import org.exoplatform.container.ExoContainer;
+import org.exoplatform.container.ExoContainerContext;
 
 /**
  * Created by The eXo Platform SAS
@@ -73,14 +74,20 @@ public class SocialSessionLifecycle {
     return getCurrentEntityManager().getTransaction().isActive();
   }
   
-  public void startRequest(ExoContainer container) {
-    log.debug("startRequest::EntityManager is stared!");
-    service.startRequest(container);
+  public boolean startRequest() {
+    if (!hasSynchronization()) {
+      log.debug("startRequest::EntityManager is stared!");
+      service.startRequest(ExoContainerContext.getCurrentContainer());
+      return true;
+    }
+    return false;
   }
 
-  public void endRequest(ExoContainer container) {
-    log.debug("endRequest::EntityManager is closed!");
-    service.endRequest(container);
+  public void endRequest(boolean requestClose) {
+    if (requestClose && hasSynchronization()) {
+      log.debug("endRequest::EntityManager is closed!");
+      service.endRequest(ExoContainerContext.getCurrentContainer());
+    }
   }
 
 }

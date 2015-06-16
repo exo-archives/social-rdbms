@@ -19,8 +19,6 @@ package org.exoplatform.social.core.mysql.storage.concurrency;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 
-import javax.persistence.EntityManager;
-
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 import org.exoplatform.social.core.activity.model.ExoSocialActivity;

@@ -22,7 +22,6 @@ import javax.persistence.TypedQuery;
 
 import org.exoplatform.social.addons.storage.dao.RelationshipDAO;
 import org.exoplatform.social.addons.storage.dao.jpa.query.RelationshipQueryBuilder;
-import org.exoplatform.social.addons.storage.dao.jpa.synchronization.SynchronizedGenericDAO;
 import org.exoplatform.social.addons.storage.entity.RelationshipItem;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.profile.ProfileFilter;
@@ -35,7 +34,7 @@ import org.exoplatform.social.core.relationship.model.Relationship.Type;
  *          exo@exoplatform.com
  * Jun 4, 2015  
  */
-public class RelationshipDAOImpl extends SynchronizedGenericDAO<RelationshipItem, Long> implements RelationshipDAO {
+public class RelationshipDAOImpl extends GenericDAOImpl<RelationshipItem, Long> implements RelationshipDAO {
 
   @Override
   public long count(Identity identity, Type status) {

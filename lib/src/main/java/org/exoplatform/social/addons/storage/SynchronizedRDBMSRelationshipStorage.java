@@ -39,12 +39,7 @@ public class SynchronizedRDBMSRelationshipStorage extends RDBMSRelationshipStora
   public Relationship saveRelationship(final Relationship relationship) throws RelationshipStorageException {
     boolean begunEM = GenericDAOImpl.startSynchronization();
     try {
-      boolean begunTx = GenericDAOImpl.beginTransaction();
-      try {
-        return super.saveRelationship(relationship);
-      } finally {
-        GenericDAOImpl.endTransaction(begunTx);
-      }
+      return super.saveRelationship(relationship);
     } finally {
       GenericDAOImpl.stopSynchronization(begunEM);
     }

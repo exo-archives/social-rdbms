@@ -25,7 +25,6 @@ import org.exoplatform.commons.utils.CommonsUtils;
 import org.exoplatform.social.addons.storage.dao.ActivityDAO;
 import org.exoplatform.social.addons.storage.dao.RelationshipDAO;
 import org.exoplatform.social.addons.storage.dao.jpa.query.AStreamQueryBuilder;
-import org.exoplatform.social.addons.storage.dao.jpa.synchronization.SynchronizedGenericDAO;
 import org.exoplatform.social.addons.storage.entity.Activity;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.identity.provider.SpaceIdentityProvider;
@@ -41,7 +40,7 @@ import org.exoplatform.social.core.storage.api.SpaceStorage;
  *          exo@exoplatform.com
  * May 18, 2015  
  */
-public class ActivityDAOImpl extends SynchronizedGenericDAO<Activity, Long> implements ActivityDAO {
+public class ActivityDAOImpl extends GenericDAOImpl<Activity, Long> implements ActivityDAO {
   
   private final RelationshipDAO relationshipDAO;
   

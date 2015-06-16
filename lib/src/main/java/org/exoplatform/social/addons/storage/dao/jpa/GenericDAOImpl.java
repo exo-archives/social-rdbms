@@ -27,7 +27,6 @@ import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Root;
 
 import org.exoplatform.commons.utils.CommonsUtils;
-import org.exoplatform.container.ExoContainerContext;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 import org.exoplatform.social.addons.storage.dao.GenericDAO;
@@ -148,60 +147,9 @@ public class GenericDAOImpl<E,ID extends Serializable> implements GenericDAO<E, 
    */
   public static boolean startSynchronization() {
     SocialSessionLifecycle lc = lifecycleLookup();
-    if (!lc.hasSynchronization()) {
-      lc.startRequest(ExoContainerContext.getCurrentContainer());
-      return true;
-    }
-    return false;
+    return lc.startRequest();
   }
   
-  /**
-   * Begins the synchronization transaction of EntityManager
-   * 
-   * @return
-   */
-  public static boolean beginTransaction() {
-    if (!lifecycleLookup().isActive()) {
-      lifecycleLookup().getCurrentEntityManager().getTransaction().begin();
-      return true;
-    }
-    
-    return false;
-    
-  }
-  
-  /**
-   * Rollback the synchronization transaction of EntityManager
-   * 
-   * @return
-   */
-  public static void rollbackTransaction() {
-    if (lifecycleLookup().isActive()) {
-      lifecycleLookup().getCurrentEntityManager().getTransaction().rollback();;
-    }
-    
-  }
-  
-  /**
-   * Ends the synchronization transaction of EntityManager
-   * Handle the rollback if there is any exception
-   * 
-   * @return
-   */
-  public static void endTransaction(boolean closeRequest) {
-    if (lifecycleLookup().isActive()) {
-      if (closeRequest) {
-        try {
-          lifecycleLookup().getCurrentEntityManager().getTransaction().commit();
-        } catch (Exception e) {
-          if (lifecycleLookup().isActive()) {
-            lifecycleLookup().getCurrentEntityManager().getTransaction().rollback();
-          }
-        }
-      }
-    }
-    
-  }
   /**
    * Synchronize the persistence context to the underlying database.
    * Note: Inside the transaction scope
@@ -218,16 +166,11 @@ public class GenericDAOImpl<E,ID extends Serializable> implements GenericDAO<E, 
    */
   public static void stopSynchronization(boolean requestClose) {
     SocialSessionLifecycle lc = lifecycleLookup();
-    if (requestClose) {
-      lc.endRequest(ExoContainerContext.getCurrentContainer());
-    }
+    lc.endRequest(requestClose);
   }
 
   public static SocialSessionLifecycle lifecycleLookup() {
     return CommonsUtils.getService(SocialSessionLifecycle.class);
   }
-
-  
-  
 
 }

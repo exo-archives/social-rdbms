@@ -16,8 +16,6 @@
  */
 package org.exoplatform.social.core.mysql.storage.concurrency;
 
-import javax.persistence.EntityManager;
-
 import org.exoplatform.social.core.activity.model.ExoSocialActivity;
 import org.exoplatform.social.core.mysql.test.BaseCoreTest;
 

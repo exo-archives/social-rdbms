@@ -44,18 +44,11 @@ public class SynchronizedRDBMSActivityStorage extends RDBMSActivityStorageImpl {
   
   @Override
   public ExoSocialActivity saveActivity(final Identity owner, final ExoSocialActivity activity) throws ActivityStorageException {
-    //the samples for start synchronize the EntityManager
-    //this one is following the session-per-operation pattern
-    boolean begunEM = GenericDAOImpl.startSynchronization();
+    boolean begun = GenericDAOImpl.startSynchronization();
     try {
-      boolean begunTx = GenericDAOImpl.beginTransaction();
-      try {
         return super.saveActivity(owner, activity);
-      } finally {
-        GenericDAOImpl.endTransaction(begunTx);
-      }
     } finally {
-      GenericDAOImpl.stopSynchronization(begunEM);
+      GenericDAOImpl.stopSynchronization(begun);
     }
   }
   
@@ -63,12 +56,7 @@ public class SynchronizedRDBMSActivityStorage extends RDBMSActivityStorageImpl {
   public void updateActivity(ExoSocialActivity existingActivity) throws ActivityStorageException {
     boolean begunEM = GenericDAOImpl.startSynchronization();
     try {
-      boolean begunTx = GenericDAOImpl.beginTransaction();
-      try {
-        super.updateActivity(existingActivity);
-      } finally {
-        GenericDAOImpl.endTransaction(begunTx);
-      }
+      super.updateActivity(existingActivity);
     } finally {
       GenericDAOImpl.stopSynchronization(begunEM);
     }
@@ -78,46 +66,30 @@ public class SynchronizedRDBMSActivityStorage extends RDBMSActivityStorageImpl {
   public void deleteActivity(String activityId) throws ActivityStorageException {
     boolean begunEM = GenericDAOImpl.startSynchronization();
     try {
-      boolean begunTx = GenericDAOImpl.beginTransaction();
-      try {
-        super.deleteActivity(activityId);
-      } finally {
-        GenericDAOImpl.endTransaction(begunTx);
-      }
+      super.deleteActivity(activityId);
     } finally {
       GenericDAOImpl.stopSynchronization(begunEM);
     }
-    
   }
   
   @Override
   public void saveComment(ExoSocialActivity activity, ExoSocialActivity eXoComment) throws ActivityStorageException {
     boolean begunEM = GenericDAOImpl.startSynchronization();
     try {
-      boolean begunTx = GenericDAOImpl.beginTransaction();
-      try {
         super.saveComment(activity, eXoComment);
-      } finally {
-        GenericDAOImpl.endTransaction(begunTx);
-      }
     } finally {
       GenericDAOImpl.stopSynchronization(begunEM);
     }
   }
+  
   @Override
   public void deleteComment(String activityId, String commentId) throws ActivityStorageException {
-    boolean begunEM = GenericDAOImpl.startSynchronization();
+    boolean begun = GenericDAOImpl.startSynchronization();
     try {
-      boolean begunTx = GenericDAOImpl.beginTransaction();
-      try {
-        super.deleteComment(activityId, commentId);
-      } finally {
-        GenericDAOImpl.endTransaction(begunTx);
-      }
+      super.deleteComment(activityId, commentId);
     } finally {
-      GenericDAOImpl.stopSynchronization(begunEM);
+      GenericDAOImpl.stopSynchronization(begun);
     }
-    
   }
 
 }

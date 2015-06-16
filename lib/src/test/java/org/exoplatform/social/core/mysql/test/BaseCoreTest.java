@@ -36,7 +36,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 import javax.jcr.Session;
-import javax.persistence.EntityManager;
 
 import junit.framework.AssertionFailedError;
 
@@ -183,68 +182,7 @@ public abstract class BaseCoreTest extends BaseExoTestCase {
  public static void count() {
    ++count;
   }
-
-  /**
-   * Creates new space with out init apps.
-   *
-   * @param space
-   * @param creator
-   * @param invitedGroupId
-   * @return
-   * @since 1.2.0-GA
-   */
-  protected Space createSpaceNonInitApps(Space space, String creator, String invitedGroupId) {
-    // Creates new space by creating new group
-    String groupId = null;
-    try {
-      groupId = SpaceUtils.createGroup(space.getDisplayName(), creator);
-    } catch (SpaceException e) {
-      LOG.error("Error while creating group", e);
-    }
-
-    if (invitedGroupId != null) {
-      // Invites user in group join to new created space.
-      // Gets users in group and then invites user to join into space.
-      OrganizationService org = (OrganizationService) ExoContainerContext.getCurrentContainer().getComponentInstanceOfType(OrganizationService.class);
-      try {
-        ListAccess<User> groupMembersAccess = org.getUserHandler().findUsersByGroupId(invitedGroupId);
-        List<User> users = Arrays.asList(groupMembersAccess.load(0, groupMembersAccess.getSize()));
-
-        for (User user : users) {
-          String userId = user.getUserName();
-          if (!userId.equals(creator)) {
-            String[] invitedUsers = space.getInvitedUsers();
-            if (!ArrayUtils.contains(invitedUsers, userId)) {
-              invitedUsers = (String[]) ArrayUtils.add(invitedUsers, userId);
-              space.setInvitedUsers(invitedUsers);
-            }
-          }
-        }
-      } catch (Exception e) {
-        LOG.error("Failed to invite users from group " + invitedGroupId, e);
-      }
-    }
-    String[] managers = new String[] { creator };
-    space.setManagers(managers);
-    space.setGroupId(groupId);
-    space.setUrl(space.getPrettyName());
-    try {
-      spaceService.createSpace(space, creator);
-    } catch (Exception e) {
-      LOG.warn("Error while saving space", e);
-    }
-    return space;
-  }
-
-  protected void loginUser(String userId) {
-    MembershipEntry membershipEntry = new MembershipEntry("/platform/user", "*");
-    Collection<MembershipEntry> membershipEntries = new ArrayList<MembershipEntry>();
-    membershipEntries.add(membershipEntry);
-    org.exoplatform.services.security.Identity identity = new org.exoplatform.services.security.Identity(userId, membershipEntries);
-    ConversationState state = new ConversationState(identity);
-    ConversationState.setCurrent(state);
-  }
-  
+ 
   /** Concurrency area**/
   private final ExecutorService executorService = Executors.newSingleThreadExecutor();
   
@@ -307,12 +245,7 @@ public abstract class BaseCoreTest extends BaseExoTestCase {
       callable.beforeTransactionCompletion();
       boolean begunEM = GenericDAOImpl.startSynchronization();
       try {
-        boolean begunTx = GenericDAOImpl.beginTransaction();
-        try {
           result = callable.execute();
-        } finally {
-          GenericDAOImpl.endTransaction(begunTx);
-        }
       } finally {
         GenericDAOImpl.stopSynchronization(begunEM);
       }
@@ -327,9 +260,9 @@ public abstract class BaseCoreTest extends BaseExoTestCase {
   protected void doInTransaction(TransactionVoidCallable callable) {
     try {
       callable.beforeTransactionCompletion();
-      boolean begun = GenericDAOImpl.beginTransaction();
+      boolean begunEM = GenericDAOImpl.startSynchronization();
       callable.execute();
-      GenericDAOImpl.endTransaction(begun);
+      GenericDAOImpl.stopSynchronization(begunEM);
     } catch (RuntimeException e) {
       throw e;
     } finally {
