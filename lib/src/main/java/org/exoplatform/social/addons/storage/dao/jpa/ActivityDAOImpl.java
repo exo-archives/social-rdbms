@@ -16,23 +16,14 @@
  */
 package org.exoplatform.social.addons.storage.dao.jpa;
 
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
-import org.exoplatform.commons.utils.CommonsUtils;
 import org.exoplatform.social.addons.storage.dao.ActivityDAO;
-import org.exoplatform.social.addons.storage.dao.RelationshipDAO;
 import org.exoplatform.social.addons.storage.dao.jpa.query.AStreamQueryBuilder;
 import org.exoplatform.social.addons.storage.entity.Activity;
 import org.exoplatform.social.core.identity.model.Identity;
-import org.exoplatform.social.core.identity.provider.SpaceIdentityProvider;
-import org.exoplatform.social.core.relationship.model.Relationship;
-import org.exoplatform.social.core.space.model.Space;
 import org.exoplatform.social.core.storage.ActivityStorageException;
-import org.exoplatform.social.core.storage.api.IdentityStorage;
-import org.exoplatform.social.core.storage.api.SpaceStorage;
 
 /**
  * Created by The eXo Platform SAS
@@ -41,12 +32,6 @@ import org.exoplatform.social.core.storage.api.SpaceStorage;
  * May 18, 2015  
  */
 public class ActivityDAOImpl extends GenericDAOImpl<Activity, Long> implements ActivityDAO {
-  
-  private final RelationshipDAO relationshipDAO;
-  
-  public ActivityDAOImpl(RelationshipDAO relationshipDAO) {
-    this.relationshipDAO =  relationshipDAO;
-  }
   
   public List<Activity> getActivities(Identity owner, Identity viewer, long offset, long limit) throws ActivityStorageException {
     return AStreamQueryBuilder.builder()
@@ -57,50 +42,47 @@ public class ActivityDAOImpl extends GenericDAOImpl<Activity, Long> implements A
                               .getResultList();
   }
 
-  public List<Activity> getActivityFeed(Identity ownerIdentity, int offset, int limit) {
+  public List<Activity> getActivityFeed(Identity ownerIdentity, int offset, int limit, long nbConnections, List<String> spaceIds) {
     return AStreamQueryBuilder.builder()
                               .owner(ownerIdentity)
-                              .memberOfSpaceIds(memberOfSpaceIds(ownerIdentity))
-                              .connectionSize(ownerIdentity, relationshipDAO.count(ownerIdentity, Relationship.Type.CONFIRMED))
+                              .memberOfSpaceIds(spaceIds)
+                              .connectionSize(ownerIdentity, nbConnections)
                               .offset(offset)
                               .limit(limit)
                               .buildFeed()
                               .getResultList();
-    
   }
 
-
-  public int getNumberOfActivitesOnActivityFeed(Identity ownerIdentity) {
+  public int getNumberOfActivitesOnActivityFeed(Identity ownerIdentity, long nbConnections, List<String> spaceIds) {
     return AStreamQueryBuilder.builder()
                               .owner(ownerIdentity)
-                              .memberOfSpaceIds(memberOfSpaceIds(ownerIdentity))
-                              .connectionSize(ownerIdentity, relationshipDAO.count(ownerIdentity, Relationship.Type.CONFIRMED))
+                              .memberOfSpaceIds(spaceIds)
+                              .connectionSize(ownerIdentity, nbConnections)
                               .buildFeedCount().getSingleResult().intValue();
         
   }
   
   @Override
-  public List<Activity> getNewerOnActivityFeed(Identity ownerIdentity, long sinceTime, int limit) {
+  public List<Activity> getNewerOnActivityFeed(Identity ownerIdentity, long sinceTime, int limit, long nbConnections, List<String> spaceIds) {
     return AStreamQueryBuilder.builder()
                               .owner(ownerIdentity)
-                              .memberOfSpaceIds(memberOfSpaceIds(ownerIdentity))
-                              .connectionSize(ownerIdentity, relationshipDAO.count(ownerIdentity, Relationship.Type.CONFIRMED))
+                              .memberOfSpaceIds(spaceIds)
+                              .connectionSize(ownerIdentity, nbConnections)
                               .newer(sinceTime)
                               .ascOrder()
                               .offset(0)
                               .limit(limit)
                               .buildFeed()
                               .getResultList();
-    
   }
 
   
   @Override
-  public int getNumberOfNewerOnActivityFeed(Identity ownerIdentity, long sinceTime) {
+  public int getNumberOfNewerOnActivityFeed(Identity ownerIdentity, long sinceTime, long nbConnections, List<String> spaceIds) {
     return AStreamQueryBuilder.builder()
                               .owner(ownerIdentity)
-                              .memberOfSpaceIds(memberOfSpaceIds(ownerIdentity))
-                              .connectionSize(ownerIdentity, relationshipDAO.count(ownerIdentity, Relationship.Type.CONFIRMED))
+                              .memberOfSpaceIds(spaceIds)
+                              .connectionSize(ownerIdentity, nbConnections)
                               .newer(sinceTime)
                               .buildFeedCount()
                               .getSingleResult()
@@ -108,11 +90,11 @@ public class ActivityDAOImpl extends GenericDAOImpl<Activity, Long> implements A
   }
 
   @Override
-  public List<Activity> getOlderOnActivityFeed(Identity ownerIdentity, long sinceTime,int limit) {
+  public List<Activity> getOlderOnActivityFeed(Identity ownerIdentity, long sinceTime,int limit, long nbConnections, List<String> spaceIds) {
     return AStreamQueryBuilder.builder()
                               .owner(ownerIdentity)
-                              .memberOfSpaceIds(memberOfSpaceIds(ownerIdentity))
-                              .connectionSize(ownerIdentity, relationshipDAO.count(ownerIdentity, Relationship.Type.CONFIRMED))
+                              .memberOfSpaceIds(spaceIds)
+                              .connectionSize(ownerIdentity, nbConnections)
                               .older(sinceTime)
                               .offset(0)
                               .limit(limit)
@@ -121,11 +103,11 @@ public class ActivityDAOImpl extends GenericDAOImpl<Activity, Long> implements A
   }
 
   @Override
-  public int getNumberOfOlderOnActivityFeed(Identity ownerIdentity, long sinceTime) {
+  public int getNumberOfOlderOnActivityFeed(Identity ownerIdentity, long sinceTime, long nbConnections, List<String> spaceIds) {
     return AStreamQueryBuilder.builder()
                               .owner(ownerIdentity)
-                              .memberOfSpaceIds(memberOfSpaceIds(ownerIdentity))
-                              .connectionSize(ownerIdentity, relationshipDAO.count(ownerIdentity, Relationship.Type.CONFIRMED))
+                              .memberOfSpaceIds(spaceIds)
+                              .connectionSize(ownerIdentity, nbConnections)
                               .older(sinceTime)
                               .buildFeedCount()
                               .getSingleResult()
@@ -198,8 +180,6 @@ public class ActivityDAOImpl extends GenericDAOImpl<Activity, Long> implements A
                               .getSingleResult()
                               .intValue();
   }
-  
-  
 
   public List<Activity> getSpaceActivities(Identity spaceOwner, long offset, long limit) throws ActivityStorageException {
     return AStreamQueryBuilder.builder()
@@ -261,11 +241,10 @@ public class ActivityDAOImpl extends GenericDAOImpl<Activity, Long> implements A
   }
 
   @Override
-  public List<Activity> getUserSpacesActivities(Identity ownerIdentity, int offset, int limit) {
-    Collection<String> memberOfSpaceIds = memberOfSpaceIds(ownerIdentity);
-    if (memberOfSpaceIds.size() > 0) {
+  public List<Activity> getUserSpacesActivities(Identity ownerIdentity, int offset, int limit, List<String> spaceIds) {
+    if (spaceIds.size() > 0) {
       return AStreamQueryBuilder.builder()
-                                .memberOfSpaceIds(memberOfSpaceIds)
+                                .memberOfSpaceIds(spaceIds)
                                 .offset(offset)
                                 .limit(limit)
                                 .build()
@@ -275,11 +254,10 @@ public class ActivityDAOImpl extends GenericDAOImpl<Activity, Long> implements A
     }
   }
   
-  public int getNumberOfUserSpacesActivities(Identity ownerIdentity) {
-    Collection<String> memberOfSpaceIds = memberOfSpaceIds(ownerIdentity);
-    if (memberOfSpaceIds.size() > 0) {
+  public int getNumberOfUserSpacesActivities(Identity ownerIdentity, List<String> spaceIds) {
+    if (spaceIds.size() > 0) {
       return AStreamQueryBuilder.builder()
-                                .memberOfSpaceIds(memberOfSpaceIds)
+                                .memberOfSpaceIds(spaceIds)
                                 .buildCount()
                                 .getSingleResult()
                                 .intValue();
@@ -291,11 +269,10 @@ public class ActivityDAOImpl extends GenericDAOImpl<Activity, Long> implements A
   @Override
   public List<Activity> getNewerOnUserSpacesActivities(Identity ownerIdentity,
                                                        long sinceTime,
-                                                       int limit) {
-    Collection<String> memberOfSpaceIds = memberOfSpaceIds(ownerIdentity);
-    if (memberOfSpaceIds.size() > 0) {
+                                                       int limit, List<String> spaceIds) {
+    if (spaceIds.size() > 0) {
       return AStreamQueryBuilder.builder()
-                                .memberOfSpaceIds(memberOfSpaceIds)
+                                .memberOfSpaceIds(spaceIds)
                                 .newer(sinceTime)
                                 .ascOrder()
                                 .offset(0)
@@ -308,11 +285,10 @@ public class ActivityDAOImpl extends GenericDAOImpl<Activity, Long> implements A
   }
 
   @Override
-  public int getNumberOfNewerOnUserSpacesActivities(Identity ownerIdentity, long sinceTime) {
-    Collection<String> memberOfSpaceIds = memberOfSpaceIds(ownerIdentity);
-    if (memberOfSpaceIds.size() > 0) {
+  public int getNumberOfNewerOnUserSpacesActivities(Identity ownerIdentity, long sinceTime, List<String> spaceIds) {
+    if (spaceIds.size() > 0) {
       return AStreamQueryBuilder.builder()
-                                .memberOfSpaceIds(memberOfSpaceIds)
+                                .memberOfSpaceIds(spaceIds)
                                 .newer(sinceTime)
                                 .buildCount()
                                 .getSingleResult()
@@ -323,11 +299,10 @@ public class ActivityDAOImpl extends GenericDAOImpl<Activity, Long> implements A
   }
 
   @Override
-  public List<Activity> getOlderOnUserSpacesActivities(Identity ownerIdentity, long sinceTime, int limit) {
-    Collection<String> memberOfSpaceIds = memberOfSpaceIds(ownerIdentity);
-    if (memberOfSpaceIds.size() > 0) {
+  public List<Activity> getOlderOnUserSpacesActivities(Identity ownerIdentity, long sinceTime, int limit, List<String> spaceIds) {
+    if (spaceIds.size() > 0) {
       return AStreamQueryBuilder.builder()
-                                .memberOfSpaceIds(memberOfSpaceIds)
+                                .memberOfSpaceIds(spaceIds)
                                 .older(sinceTime)
                                 .offset(0)
                                 .limit(limit)
@@ -339,11 +314,10 @@ public class ActivityDAOImpl extends GenericDAOImpl<Activity, Long> implements A
   }
 
   @Override
-  public int getNumberOfOlderOnUserSpacesActivities(Identity ownerIdentity, long sinceTime) {
-    Collection<String> memberOfSpaceIds = memberOfSpaceIds(ownerIdentity);
-    if (memberOfSpaceIds.size() > 0) {
+  public int getNumberOfOlderOnUserSpacesActivities(Identity ownerIdentity, long sinceTime, List<String> spaceIds) {
+    if (spaceIds.size() > 0) {
       return AStreamQueryBuilder.builder()
-                                .memberOfSpaceIds(memberOfSpaceIds)
+                                .memberOfSpaceIds(spaceIds)
                                 .older(sinceTime)
                                 .buildCount()
                                 .getSingleResult()
@@ -355,11 +329,10 @@ public class ActivityDAOImpl extends GenericDAOImpl<Activity, Long> implements A
   }
 
   @Override
-  public List<Activity> getActivitiesOfConnections(Identity ownerIdentity, int offset, int limit) {
-    long connectionSize = relationshipDAO.count(ownerIdentity, Relationship.Type.CONFIRMED);
-    if (connectionSize > 0) {
+  public List<Activity> getActivitiesOfConnections(Identity ownerIdentity, int offset, int limit, long nbConnections) {
+    if (nbConnections > 0) {
       return AStreamQueryBuilder.builder()
-          .connectionSize(ownerIdentity, connectionSize)
+          .connectionSize(ownerIdentity, nbConnections)
           .offset(offset)
           .limit(limit)
           .build()
@@ -371,11 +344,10 @@ public class ActivityDAOImpl extends GenericDAOImpl<Activity, Long> implements A
   }
 
   @Override
-  public int getNumberOfActivitiesOfConnections(Identity ownerIdentity) {
-    long connectionSize = relationshipDAO.count(ownerIdentity, Relationship.Type.CONFIRMED);
-    if (connectionSize > 0) {
+  public int getNumberOfActivitiesOfConnections(Identity ownerIdentity, long nbConnections) {
+    if (nbConnections > 0) {
       return AStreamQueryBuilder.builder()
-                                .connectionSize(ownerIdentity, connectionSize)
+                                .connectionSize(ownerIdentity, nbConnections)
                                 .buildCount()
                                 .getSingleResult()
                                 .intValue();
@@ -386,11 +358,10 @@ public class ActivityDAOImpl extends GenericDAOImpl<Activity, Long> implements A
   }
 
   @Override
-  public List<Activity> getNewerOnActivitiesOfConnections(Identity ownerIdentity, long sinceTime, long limit) {
-    long connectionSize = relationshipDAO.count(ownerIdentity, Relationship.Type.CONFIRMED);
-    if (connectionSize > 0) {
+  public List<Activity> getNewerOnActivitiesOfConnections(Identity ownerIdentity, long sinceTime, long limit, long nbConnections) {
+    if (nbConnections > 0) {
       return AStreamQueryBuilder.builder()
-                                .connectionSize(ownerIdentity, connectionSize)
+                                .connectionSize(ownerIdentity, nbConnections)
                                 .newer(sinceTime)
                                 .ascOrder()
                                 .offset(0)
@@ -403,11 +374,10 @@ public class ActivityDAOImpl extends GenericDAOImpl<Activity, Long> implements A
   }
 
   @Override
-  public int getNumberOfNewerOnActivitiesOfConnections(Identity ownerIdentity, long sinceTime) {
-    long connectionSize = relationshipDAO.count(ownerIdentity, Relationship.Type.CONFIRMED);
-    if (connectionSize > 0) {
+  public int getNumberOfNewerOnActivitiesOfConnections(Identity ownerIdentity, long sinceTime, long nbConnections) {
+    if (nbConnections > 0) {
       return AStreamQueryBuilder.builder()
-                                .connectionSize(ownerIdentity, connectionSize)
+                                .connectionSize(ownerIdentity, nbConnections)
                                 .newer(sinceTime)
                                 .buildCount()
                                 .getSingleResult()
@@ -420,13 +390,10 @@ public class ActivityDAOImpl extends GenericDAOImpl<Activity, Long> implements A
   }
 
   @Override
-  public List<Activity> getOlderOnActivitiesOfConnections(Identity ownerIdentity,
-                                                          long sinceTime,
-                                                          int limit) {
-    long connectionSize = relationshipDAO.count(ownerIdentity, Relationship.Type.CONFIRMED);
-    if (connectionSize > 0) {
+  public List<Activity> getOlderOnActivitiesOfConnections(Identity ownerIdentity, long sinceTime, int limit, long nbConnections) {
+    if (nbConnections > 0) {
       return AStreamQueryBuilder.builder()
-                                .connectionSize(ownerIdentity, connectionSize)
+                                .connectionSize(ownerIdentity, nbConnections)
                                 .older(sinceTime)
                                 .offset(0)
                                 .limit(limit)
@@ -438,11 +405,10 @@ public class ActivityDAOImpl extends GenericDAOImpl<Activity, Long> implements A
   }
 
   @Override
-  public int getNumberOfOlderOnActivitiesOfConnections(Identity ownerIdentity, long sinceTime) {
-    long connectionSize = relationshipDAO.count(ownerIdentity, Relationship.Type.CONFIRMED);
-    if (connectionSize > 0) {
+  public int getNumberOfOlderOnActivitiesOfConnections(Identity ownerIdentity, long sinceTime, long nbConnections) {
+    if (nbConnections > 0) {
       return AStreamQueryBuilder.builder()
-                                .connectionSize(ownerIdentity, connectionSize)
+                                .connectionSize(ownerIdentity, nbConnections)
                                 .older(sinceTime)
                                 .buildCount()
                                 .getSingleResult()
@@ -451,41 +417,6 @@ public class ActivityDAOImpl extends GenericDAOImpl<Activity, Long> implements A
     } else {
       return 0;
     }
-  }
-
-  /**
-   * Gets the list of spaceIds what the given identify is member
-   * @param ownerIdentity
-   * @return
-   */
-  private List<String> memberOfSpaceIds(Identity ownerIdentity) {
-
-    List<String> identitiesId = new ArrayList<String>();
-    long offset = 0;
-    long limit = 30;
-    int loaded = loadIdRange(ownerIdentity, offset, offset + limit, identitiesId);
-    while (loaded == limit) {
-      loaded = loadIdRange(ownerIdentity, offset, offset + limit, identitiesId);
-      offset += limit;
-    }
-
-    return identitiesId;
-
-  }
-  
-  private int loadIdRange(Identity ownerIdentity, long offset, long limit, List<String> result) {
-    SpaceStorage spaceStorage = CommonsUtils.getService(SpaceStorage.class);
-    IdentityStorage identityStorage = CommonsUtils.getService(IdentityStorage.class);
-    
-    List<Space> spaces = spaceStorage.getAccessibleSpaces(ownerIdentity.getRemoteId(), offset, limit);
-    Identity identity = null;
-    for (Space space : spaces) {
-      identity = identityStorage.findIdentity(SpaceIdentityProvider.NAME, space.getPrettyName());
-      if (identity != null) {
-        result.add(identity.getId());
-      }
-    }
-    return spaces.size();
   }
 
 }

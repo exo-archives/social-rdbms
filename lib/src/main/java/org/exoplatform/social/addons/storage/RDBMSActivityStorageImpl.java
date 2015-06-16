@@ -35,6 +35,7 @@ import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 import org.exoplatform.social.addons.storage.dao.ActivityDAO;
 import org.exoplatform.social.addons.storage.dao.CommentDAO;
+import org.exoplatform.social.addons.storage.dao.RelationshipDAO;
 import org.exoplatform.social.addons.storage.entity.Activity;
 import org.exoplatform.social.addons.storage.entity.Comment;
 import org.exoplatform.social.core.ActivityProcessor;
@@ -46,6 +47,9 @@ import org.exoplatform.social.core.activity.model.ExoSocialActivity;
 import org.exoplatform.social.core.activity.model.ExoSocialActivityImpl;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvider;
+import org.exoplatform.social.core.identity.provider.SpaceIdentityProvider;
+import org.exoplatform.social.core.relationship.model.Relationship;
+import org.exoplatform.social.core.space.model.Space;
 import org.exoplatform.social.core.storage.ActivityStorageException;
 import org.exoplatform.social.core.storage.api.IdentityStorage;
 import org.exoplatform.social.core.storage.api.RelationshipStorage;
@@ -58,6 +62,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
   private static final Log LOG = ExoLogger.getLogger(RDBMSActivityStorageImpl.class);
   private final ActivityDAO activityDAO;
   private final CommentDAO commentDAO;
+  private final RelationshipDAO relationshipDAO;
   private final IdentityStorage identityStorage;
   private final SpaceStorage spaceStorage;
   private final SortedSet<ActivityProcessor> activityProcessors;
@@ -68,7 +73,8 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
                                       IdentityStorage identityStorage, 
                                       SpaceStorage spaceStorage,
                                       ActivityDAO activityDAO,
-                                      CommentDAO commentDAO) {
+                                      CommentDAO commentDAO,
+                                      RelationshipDAO relationshipDAO) {
     
     super(relationshipStorage, identityStorage, spaceStorage);
     //
@@ -78,6 +84,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
     this.activityDAO = activityDAO;
     this.commentDAO = commentDAO;
     this.spaceStorage = spaceStorage;
+    this.relationshipDAO = relationshipDAO;
   }
   
   private static Comparator<ActivityProcessor> processorComparator() {
@@ -468,7 +475,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
 
   @Override
   public List<ExoSocialActivity> getActivityFeedForUpgrade(Identity ownerIdentity, int offset, int limit) {
-    return convertActivityEntitiesToActivities(activityDAO.getActivityFeed(ownerIdentity, offset, limit));
+    return convertActivityEntitiesToActivities(activityDAO.getActivityFeed(ownerIdentity, offset, limit, getNumberOfConnections(ownerIdentity), memberOfSpaceIds(ownerIdentity)));
   }
 
   @Override
@@ -478,7 +485,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
 
   @Override
   public int getNumberOfActivitesOnActivityFeedForUpgrade(Identity ownerIdentity) {
-    return activityDAO.getNumberOfActivitesOnActivityFeed(ownerIdentity);
+    return activityDAO.getNumberOfActivitesOnActivityFeed(ownerIdentity, getNumberOfConnections(ownerIdentity), memberOfSpaceIds(ownerIdentity));
   }
 
   @Override
@@ -508,7 +515,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
 
   @Override
   public List<ExoSocialActivity> getActivitiesOfConnectionsForUpgrade(Identity ownerIdentity, int offset, int limit) {
-    return convertActivityEntitiesToActivities(activityDAO.getActivitiesOfConnections(ownerIdentity, offset, limit));
+    return convertActivityEntitiesToActivities(activityDAO.getActivitiesOfConnections(ownerIdentity, offset, limit, getNumberOfConnections(ownerIdentity)));
   }
 
   @Override
@@ -518,7 +525,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
 
   @Override
   public int getNumberOfActivitiesOfConnectionsForUpgrade(Identity ownerIdentity) {
-    return activityDAO.getNumberOfActivitiesOfConnections(ownerIdentity);
+    return activityDAO.getNumberOfActivitiesOfConnections(ownerIdentity, getNumberOfConnections(ownerIdentity));
   }
 
   @Override
@@ -553,7 +560,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
 
   @Override
   public List<ExoSocialActivity> getUserSpacesActivitiesForUpgrade(Identity ownerIdentity, int offset, int limit) {
-    return convertActivityEntitiesToActivities(activityDAO.getUserSpacesActivities(ownerIdentity, offset, limit));
+    return convertActivityEntitiesToActivities(activityDAO.getUserSpacesActivities(ownerIdentity, offset, limit, memberOfSpaceIds(ownerIdentity)));
   }
 
   @Override
@@ -563,7 +570,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
 
   @Override
   public int getNumberOfUserSpacesActivitiesForUpgrade(Identity ownerIdentity) {
-    return activityDAO.getNumberOfUserSpacesActivities(ownerIdentity);
+    return activityDAO.getNumberOfUserSpacesActivities(ownerIdentity, memberOfSpaceIds(ownerIdentity));
   }
 
   @Override
@@ -661,7 +668,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
 
   @Override
   public int getNumberOfNewerOnActivityFeed(Identity ownerIdentity, Long sinceTime) {
-    return activityDAO.getNumberOfNewerOnActivityFeed(ownerIdentity, sinceTime);
+    return activityDAO.getNumberOfNewerOnActivityFeed(ownerIdentity, sinceTime, getNumberOfConnections(ownerIdentity), memberOfSpaceIds(ownerIdentity));
   }
 
   @Override
@@ -671,12 +678,12 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
 
   @Override
   public int getNumberOfNewerOnActivitiesOfConnections(Identity ownerIdentity, Long sinceTime) {
-    return activityDAO.getNumberOfNewerOnActivitiesOfConnections(ownerIdentity, sinceTime);
+    return activityDAO.getNumberOfNewerOnActivitiesOfConnections(ownerIdentity, sinceTime, getNumberOfConnections(ownerIdentity));
   }
 
   @Override
   public int getNumberOfNewerOnUserSpacesActivities(Identity ownerIdentity, Long sinceTime) {
-    return activityDAO.getNumberOfNewerOnUserSpacesActivities(ownerIdentity, sinceTime);
+    return activityDAO.getNumberOfNewerOnUserSpacesActivities(ownerIdentity, sinceTime, memberOfSpaceIds(ownerIdentity));
   }
 
   @Override
@@ -781,7 +788,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
 
   @Override
   public List<ExoSocialActivity> getNewerFeedActivities(Identity owner, Long sinceTime, int limit) {
-    return convertActivityEntitiesToActivities(activityDAO.getNewerOnActivityFeed(owner, sinceTime, limit));
+    return convertActivityEntitiesToActivities(activityDAO.getNewerOnActivityFeed(owner, sinceTime, limit, getNumberOfConnections(owner), memberOfSpaceIds(owner)));
   }
 
   @Override
@@ -791,12 +798,12 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
 
   @Override
   public List<ExoSocialActivity> getNewerUserSpacesActivities(Identity owner, Long sinceTime, int limit) {
-    return convertActivityEntitiesToActivities(activityDAO.getNewerOnUserSpacesActivities(owner, sinceTime, limit));
+    return convertActivityEntitiesToActivities(activityDAO.getNewerOnUserSpacesActivities(owner, sinceTime, limit, memberOfSpaceIds(owner)));
   }
 
   @Override
   public List<ExoSocialActivity> getNewerActivitiesOfConnections(Identity owner, Long sinceTime, int limit) {
-    return convertActivityEntitiesToActivities(activityDAO.getNewerOnActivitiesOfConnections(owner, sinceTime, limit));
+    return convertActivityEntitiesToActivities(activityDAO.getNewerOnActivitiesOfConnections(owner, sinceTime, limit, getNumberOfConnections(owner)));
   }
 
   @Override
@@ -806,7 +813,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
 
   @Override
   public List<ExoSocialActivity> getOlderFeedActivities(Identity owner, Long sinceTime, int limit) {
-    return convertActivityEntitiesToActivities(activityDAO.getOlderOnActivityFeed(owner, sinceTime, limit));
+    return convertActivityEntitiesToActivities(activityDAO.getOlderOnActivityFeed(owner, sinceTime, limit, getNumberOfConnections(owner), memberOfSpaceIds(owner)));
   }
 
   @Override
@@ -816,12 +823,12 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
 
   @Override
   public List<ExoSocialActivity> getOlderUserSpacesActivities(Identity owner, Long sinceTime, int limit) {
-    return convertActivityEntitiesToActivities(activityDAO.getOlderOnUserSpacesActivities(owner, sinceTime, limit));
+    return convertActivityEntitiesToActivities(activityDAO.getOlderOnUserSpacesActivities(owner, sinceTime, limit, memberOfSpaceIds(owner)));
   }
 
   @Override
   public List<ExoSocialActivity> getOlderActivitiesOfConnections(Identity owner, Long sinceTime, int limit) {
-    return convertActivityEntitiesToActivities(activityDAO.getOlderOnActivitiesOfConnections(owner, sinceTime, limit));
+    return convertActivityEntitiesToActivities(activityDAO.getOlderOnActivitiesOfConnections(owner, sinceTime, limit, getNumberOfConnections(owner)));
   }
 
   @Override
@@ -831,7 +838,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
 
   @Override
   public int getNumberOfOlderOnActivityFeed(Identity ownerIdentity, Long sinceTime) {
-    return activityDAO.getNumberOfOlderOnActivityFeed(ownerIdentity, sinceTime);
+    return activityDAO.getNumberOfOlderOnActivityFeed(ownerIdentity, sinceTime, getNumberOfConnections(ownerIdentity), memberOfSpaceIds(ownerIdentity));
   }
 
   @Override
@@ -841,12 +848,12 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
 
   @Override
   public int getNumberOfOlderOnActivitiesOfConnections(Identity ownerIdentity, Long sinceTime) {
-    return activityDAO.getNumberOfOlderOnActivitiesOfConnections(ownerIdentity, sinceTime);
+    return activityDAO.getNumberOfOlderOnActivitiesOfConnections(ownerIdentity, sinceTime, getNumberOfConnections(ownerIdentity));
   }
 
   @Override
   public int getNumberOfOlderOnUserSpacesActivities(Identity ownerIdentity, Long sinceTime) {
-    return activityDAO.getNumberOfOlderOnUserSpacesActivities(ownerIdentity, sinceTime);
+    return activityDAO.getNumberOfOlderOnUserSpacesActivities(ownerIdentity, sinceTime, memberOfSpaceIds(ownerIdentity));
   }
 
   @Override
@@ -871,5 +878,48 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
         LOG.warn("activity processing failed ");
       }
     }
+  }
+  
+  /**
+   * Return the number of connections of owner
+   * 
+   * @param owner
+   * @return
+   */
+  private long getNumberOfConnections(Identity owner) {
+    return relationshipDAO.count(owner, Relationship.Type.CONFIRMED);
+  }
+  
+  /**
+   * Gets the list of spaceIds what the given identify is member
+   * 
+   * @param ownerIdentity
+   * @return
+   */
+  private List<String> memberOfSpaceIds(Identity ownerIdentity) {
+
+    List<String> identitiesId = new ArrayList<String>();
+    long offset = 0;
+    long limit = 30;
+    int loaded = loadIdRange(ownerIdentity, offset, offset + limit, identitiesId);
+    while (loaded == limit) {
+      loaded = loadIdRange(ownerIdentity, offset, offset + limit, identitiesId);
+      offset += limit;
+    }
+
+    return identitiesId;
+
+  }
+  
+  private int loadIdRange(Identity ownerIdentity, long offset, long limit, List<String> result) {
+    List<Space> spaces = spaceStorage.getAccessibleSpaces(ownerIdentity.getRemoteId(), offset, limit);
+    Identity identity = null;
+    for (Space space : spaces) {
+      identity = identityStorage.findIdentity(SpaceIdentityProvider.NAME, space.getPrettyName());
+      if (identity != null) {
+        result.add(identity.getId());
+      }
+    }
+    return spaces.size();
   }
 }
