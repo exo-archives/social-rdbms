@@ -2,8 +2,6 @@ package org.exoplatform.social.addons.updater;
 
 import java.util.Iterator;
 
-import javax.jcr.Node;
-
 import org.exoplatform.management.annotations.Managed;
 import org.exoplatform.management.annotations.ManagedDescription;
 import org.exoplatform.management.jmx.annotations.NameTemplate;
@@ -66,13 +64,13 @@ public class RelationshipMigrationService extends AbstractMigrationService<Relat
       identityFrom.setId(identityEntity.getId());
       //
       Iterator<RelationshipEntity> it = identityEntity.getRelationship().getRelationships().values().iterator();
-      c2 =+ migrateRelationshipEntity(it, identityFrom, false, Relationship.Type.CONFIRMED);
+      c2 += migrateRelationshipEntity(it, identityFrom, false, Relationship.Type.CONFIRMED);
       //
       it = identityEntity.getSender().getRelationships().values().iterator();
-      c2 =+ migrateRelationshipEntity(it, identityFrom, false, Relationship.Type.OUTGOING);
+      c2 += migrateRelationshipEntity(it, identityFrom, false, Relationship.Type.OUTGOING);
       //
       it = identityEntity.getReceiver().getRelationships().values().iterator();
-      c2 =+ migrateRelationshipEntity(it, identityFrom, true, Relationship.Type.INCOMING);
+      c2 += migrateRelationshipEntity(it, identityFrom, true, Relationship.Type.INCOMING);
       //
       sessionLifecycle.flush();
       ++count;
@@ -105,11 +103,17 @@ public class RelationshipMigrationService extends AbstractMigrationService<Relat
     Iterator<IdentityEntity> allIdentityEntity = getAllIdentityEntity().values().iterator();
     while (allIdentityEntity.hasNext()) {
       IdentityEntity identityEntity = (IdentityEntity) allIdentityEntity.next();
-      Node identityNode = (Node) getSession().getJCRSession().getItem(identityEntity.getPath());
-      identityNode.getNode("soc:relationship").remove();
-      identityNode.getNode("soc:receiver").remove();
-      identityNode.getNode("soc:sender").remove();
-      getSession().getJCRSession().save();
+      //
+      removeRelationshipEntity(identityEntity.getRelationship().getRelationships().values().iterator());
+      removeRelationshipEntity(identityEntity.getSender().getRelationships().values().iterator());
+      removeRelationshipEntity(identityEntity.getReceiver().getRelationships().values().iterator());
+    }
+  }
+  
+  private void removeRelationshipEntity(Iterator<RelationshipEntity> it) {
+    while (it.hasNext()) {
+      RelationshipEntity relationshipEntity = it.next();
+      getSession().remove(relationshipEntity);
     }
   }
   
