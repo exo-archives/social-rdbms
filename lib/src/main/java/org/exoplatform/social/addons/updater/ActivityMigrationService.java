@@ -19,6 +19,8 @@ import org.exoplatform.management.annotations.ManagedDescription;
 import org.exoplatform.management.jmx.annotations.NameTemplate;
 import org.exoplatform.management.jmx.annotations.Property;
 import org.exoplatform.social.addons.storage.dao.ActivityDAO;
+import org.exoplatform.social.addons.storage.dao.jpa.GenericDAOImpl;
+import org.exoplatform.social.addons.storage.session.SocialSessionLifecycle;
 import org.exoplatform.social.core.activity.model.ExoSocialActivity;
 import org.exoplatform.social.core.activity.model.ExoSocialActivityImpl;
 import org.exoplatform.social.core.chromattic.entity.ActivityEntity;
@@ -128,6 +130,7 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
     }
     long t = System.currentTimeMillis();
     int count = 0;
+    SocialSessionLifecycle sessionLifecycle = GenericDAOImpl.lifecycleLookup();
     while (activityIterator.hasNext()) {
       ActivityEntity activityEntity = activityIterator.next();
       LOG.info("Mirgration activity: " + activityEntity.getName());
@@ -141,6 +144,7 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
       String oldId = activity.getId();
       activity.setId(null);
       activityStorage.saveActivity(owner, activity);
+      sessionLifecycle.flush();
       //
       doBroadcastListener(activity, oldId);
       //
@@ -151,6 +155,7 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
         oldId = comment.getId();
         comment.setId(null);
         activityStorage.saveComment(activity, comment);
+        sessionLifecycle.flush();
         //
         doBroadcastListener(comment, oldId);
       }

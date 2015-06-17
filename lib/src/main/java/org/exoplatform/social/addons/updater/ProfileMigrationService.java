@@ -8,6 +8,8 @@ import org.exoplatform.management.jmx.annotations.NameTemplate;
 import org.exoplatform.management.jmx.annotations.Property;
 import org.exoplatform.social.addons.profile.ProfileUtils;
 import org.exoplatform.social.addons.storage.dao.ProfileItemDAO;
+import org.exoplatform.social.addons.storage.dao.jpa.GenericDAOImpl;
+import org.exoplatform.social.addons.storage.session.SocialSessionLifecycle;
 import org.exoplatform.social.core.chromattic.entity.IdentityEntity;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.identity.model.Profile;
@@ -45,6 +47,7 @@ public class ProfileMigrationService extends AbstractMigrationService<Profile> {
     long t = System.currentTimeMillis();
     int count = 0;
     Iterator<IdentityEntity> allIdentityEntity = getAllIdentityEntity().values().iterator();
+    SocialSessionLifecycle sessionLifecycle = GenericDAOImpl.lifecycleLookup();
     while (allIdentityEntity.hasNext()) {
       if(forkStop) {
         return;
@@ -55,6 +58,7 @@ public class ProfileMigrationService extends AbstractMigrationService<Profile> {
       Identity identity = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, identityEntity.getRemoteId(), true);
       //
       ProfileUtils.createOrUpdateProfile(identity.getProfile(), false);
+      sessionLifecycle.flush();
       ++count;
     }
     LOG.info(String.format("Done to migration %s profiles from JCR to MYSQL on %s(ms)", count, (System.currentTimeMillis() - t)));
