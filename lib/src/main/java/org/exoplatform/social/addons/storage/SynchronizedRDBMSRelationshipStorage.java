@@ -40,21 +40,31 @@ public class SynchronizedRDBMSRelationshipStorage extends RDBMSRelationshipStora
   
   @Override
   public Relationship saveRelationship(final Relationship relationship) throws RelationshipStorageException {
-    boolean begunEM = GenericDAOImpl.startSynchronization();
+    boolean begun = GenericDAOImpl.startSynchronization();
     try {
-      return super.saveRelationship(relationship);
+      boolean begunTx = GenericDAOImpl.startTx();
+      try {
+        return super.saveRelationship(relationship);
+      } finally {
+        GenericDAOImpl.endTx(begunTx);
+      }
     } finally {
-      GenericDAOImpl.stopSynchronization(begunEM);
+      GenericDAOImpl.stopSynchronization(begun);
     }
   }
   
   @Override
   public void removeRelationship(Relationship relationship) throws RelationshipStorageException {
-    boolean begunEM = GenericDAOImpl.startSynchronization();
+    boolean begun = GenericDAOImpl.startSynchronization();
     try {
-      super.removeRelationship(relationship);
+      boolean begunTx = GenericDAOImpl.startTx();
+      try {
+        super.removeRelationship(relationship);
+      } finally {
+        GenericDAOImpl.endTx(begunTx);
+      }
     } finally {
-      GenericDAOImpl.stopSynchronization(begunEM);
+      GenericDAOImpl.stopSynchronization(begun);
     }
   }
   

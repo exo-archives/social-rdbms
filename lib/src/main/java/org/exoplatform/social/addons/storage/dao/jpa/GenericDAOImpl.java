@@ -26,6 +26,7 @@ import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Root;
 
+import org.exoplatform.commons.api.jpa.EntityManagerService;
 import org.exoplatform.commons.utils.CommonsUtils;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
@@ -151,6 +152,21 @@ public class GenericDAOImpl<E,ID extends Serializable> implements GenericDAO<E, 
   }
   
   /**
+   * Starts the transaction if it isn't existing
+   * 
+   * @return
+   */
+  public static boolean startTx() {
+    SocialSessionLifecycle lc = lifecycleLookup();
+    if (!lc.isActive()) {
+      lc.getCurrentEntityManager().getTransaction().begin();
+      LOG.debug("started new transaction");
+      return true;
+    }
+    return false;
+  }
+  
+  /**
    * Synchronize the persistence context to the underlying database.
    * Note: Inside the transaction scope
    * @return
@@ -167,6 +183,25 @@ public class GenericDAOImpl<E,ID extends Serializable> implements GenericDAO<E, 
   public static void stopSynchronization(boolean requestClose) {
     SocialSessionLifecycle lc = lifecycleLookup();
     lc.endRequest(requestClose);
+  }
+  
+  /**
+   * Stops the transaction
+   * 
+   * @param requestClose
+   */
+  public static void endTx(boolean requestClose) {
+   
+    SocialSessionLifecycle lc = lifecycleLookup();
+    try {
+      
+      if (requestClose && lc.isActive()) {
+        lc.getCurrentEntityManager().getTransaction().commit();
+        LOG.debug("commited transaction");
+      }
+    } catch (RuntimeException e) {
+      lc.getCurrentEntityManager().getTransaction().rollback();
+    }
   }
 
   public static SocialSessionLifecycle lifecycleLookup() {

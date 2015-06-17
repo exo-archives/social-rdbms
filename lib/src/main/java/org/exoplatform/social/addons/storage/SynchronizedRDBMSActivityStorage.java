@@ -49,7 +49,12 @@ public class SynchronizedRDBMSActivityStorage extends RDBMSActivityStorageImpl {
   public ExoSocialActivity saveActivity(final Identity owner, final ExoSocialActivity activity) throws ActivityStorageException {
     boolean begun = GenericDAOImpl.startSynchronization();
     try {
+      boolean begunTx = GenericDAOImpl.startTx();
+      try {
         return super.saveActivity(owner, activity);
+      } finally {
+        GenericDAOImpl.endTx(begunTx);
+      }
     } finally {
       GenericDAOImpl.stopSynchronization(begun);
     }
@@ -57,31 +62,46 @@ public class SynchronizedRDBMSActivityStorage extends RDBMSActivityStorageImpl {
   
   @Override
   public void updateActivity(ExoSocialActivity existingActivity) throws ActivityStorageException {
-    boolean begunEM = GenericDAOImpl.startSynchronization();
+    boolean begun = GenericDAOImpl.startSynchronization();
     try {
-      super.updateActivity(existingActivity);
+      boolean begunTx = GenericDAOImpl.startTx();
+      try {
+        super.updateActivity(existingActivity);
+      } finally {
+        GenericDAOImpl.endTx(begunTx);
+      }
     } finally {
-      GenericDAOImpl.stopSynchronization(begunEM);
+      GenericDAOImpl.stopSynchronization(begun);
     }
   }
   
   @Override
   public void deleteActivity(String activityId) throws ActivityStorageException {
-    boolean begunEM = GenericDAOImpl.startSynchronization();
+    boolean begun = GenericDAOImpl.startSynchronization();
     try {
-      super.deleteActivity(activityId);
+      boolean begunTx = GenericDAOImpl.startTx();
+      try {
+        super.deleteActivity(activityId);
+      } finally {
+        GenericDAOImpl.endTx(begunTx);
+      }
     } finally {
-      GenericDAOImpl.stopSynchronization(begunEM);
+      GenericDAOImpl.stopSynchronization(begun);
     }
   }
   
   @Override
   public void saveComment(ExoSocialActivity activity, ExoSocialActivity eXoComment) throws ActivityStorageException {
-    boolean begunEM = GenericDAOImpl.startSynchronization();
+    boolean begun = GenericDAOImpl.startSynchronization();
     try {
+      boolean begunTx = GenericDAOImpl.startTx();
+      try {
         super.saveComment(activity, eXoComment);
+      } finally {
+        GenericDAOImpl.endTx(begunTx);
+      }
     } finally {
-      GenericDAOImpl.stopSynchronization(begunEM);
+      GenericDAOImpl.stopSynchronization(begun);
     }
   }
   
@@ -89,7 +109,12 @@ public class SynchronizedRDBMSActivityStorage extends RDBMSActivityStorageImpl {
   public void deleteComment(String activityId, String commentId) throws ActivityStorageException {
     boolean begun = GenericDAOImpl.startSynchronization();
     try {
-      super.deleteComment(activityId, commentId);
+      boolean begunTx = GenericDAOImpl.startTx();
+      try {
+        super.deleteComment(activityId, commentId);
+      } finally {
+        GenericDAOImpl.endTx(begunTx);
+      }
     } finally {
       GenericDAOImpl.stopSynchronization(begun);
     }
