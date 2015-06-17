@@ -23,8 +23,7 @@ import javax.persistence.EntityManager;
 
 import org.apache.log4j.Logger;
 import org.exoplatform.commons.api.jpa.EntityManagerService;
-import org.exoplatform.container.ExoContainer;
-import org.exoplatform.container.ExoContainerContext;
+import org.exoplatform.container.component.RequestLifeCycle;
 
 /**
  * Created by The eXo Platform SAS
@@ -77,7 +76,7 @@ public class SocialSessionLifecycle {
   public boolean startRequest() {
     if (!hasSynchronization()) {
       log.debug("startRequest::EntityManager is stared!");
-      service.startRequest(ExoContainerContext.getCurrentContainer());
+      RequestLifeCycle.begin(service);
       return true;
     }
     return false;
@@ -86,7 +85,7 @@ public class SocialSessionLifecycle {
   public void endRequest(boolean requestClose) {
     if (requestClose && hasSynchronization()) {
       log.debug("endRequest::EntityManager is closed!");
-      service.endRequest(ExoContainerContext.getCurrentContainer());
+      RequestLifeCycle.end();
     }
   }
 

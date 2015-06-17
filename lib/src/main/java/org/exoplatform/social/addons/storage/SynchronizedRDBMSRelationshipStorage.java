@@ -16,9 +16,12 @@
  */
 package org.exoplatform.social.addons.storage;
 
+import java.util.List;
+
 import org.exoplatform.social.addons.storage.dao.ProfileItemDAO;
 import org.exoplatform.social.addons.storage.dao.RelationshipDAO;
 import org.exoplatform.social.addons.storage.dao.jpa.GenericDAOImpl;
+import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.relationship.model.Relationship;
 import org.exoplatform.social.core.storage.RelationshipStorageException;
 import org.exoplatform.social.core.storage.api.IdentityStorage;
@@ -40,6 +43,46 @@ public class SynchronizedRDBMSRelationshipStorage extends RDBMSRelationshipStora
     boolean begunEM = GenericDAOImpl.startSynchronization();
     try {
       return super.saveRelationship(relationship);
+    } finally {
+      GenericDAOImpl.stopSynchronization(begunEM);
+    }
+  }
+  
+  @Override
+  public void removeRelationship(Relationship relationship) throws RelationshipStorageException {
+    boolean begunEM = GenericDAOImpl.startSynchronization();
+    try {
+      super.removeRelationship(relationship);
+    } finally {
+      GenericDAOImpl.stopSynchronization(begunEM);
+    }
+  }
+  
+  @Override
+  public List<Identity> getConnections(Identity identity, long offset, long limit) throws RelationshipStorageException {
+    boolean begunEM = GenericDAOImpl.startSynchronization();
+    try {
+      return super.getConnections(identity, offset, limit);
+    } finally {
+      GenericDAOImpl.stopSynchronization(begunEM);
+    }
+  }
+  
+  @Override
+  public int getConnectionsCount(Identity identity) throws RelationshipStorageException {
+    boolean begunEM = GenericDAOImpl.startSynchronization();
+    try {
+      return super.getConnectionsCount(identity);
+    } finally {
+      GenericDAOImpl.stopSynchronization(begunEM);
+    }
+  }
+  
+  @Override
+  public int getRelationshipsCount(Identity identity) throws RelationshipStorageException {
+    boolean begunEM = GenericDAOImpl.startSynchronization();
+    try {
+      return super.getRelationshipsCount(identity);
     } finally {
       GenericDAOImpl.stopSynchronization(begunEM);
     }
