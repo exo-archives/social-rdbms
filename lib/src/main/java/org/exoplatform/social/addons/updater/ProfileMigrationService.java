@@ -42,6 +42,8 @@ public class ProfileMigrationService extends AbstractMigrationService<Profile> {
       return;
     }
     LOG.info("Stating to migration profiles from JCR to MYSQL........");
+    long t = System.currentTimeMillis();
+    int count = 0;
     Iterator<IdentityEntity> allIdentityEntity = getAllIdentityEntity().values().iterator();
     while (allIdentityEntity.hasNext()) {
       if(forkStop) {
@@ -53,7 +55,9 @@ public class ProfileMigrationService extends AbstractMigrationService<Profile> {
       Identity identity = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, identityEntity.getRemoteId(), true);
       //
       ProfileUtils.createOrUpdateProfile(identity.getProfile(), false);
+      ++count;
     }
+    LOG.info(String.format("Done to migration %s profiles from JCR to MYSQL on %s(ms)", count, (System.currentTimeMillis() - t)));
   }
 
   @Override

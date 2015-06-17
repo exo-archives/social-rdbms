@@ -18,7 +18,7 @@ import org.picocontainer.Startable;
 import com.google.common.collect.Maps;
 
 public abstract class AbstractMigrationService<T>  extends AbstractStorage implements Startable {
-  protected static Log LOG;
+  protected Log LOG;
   protected final IdentityStorage identityStorage;
   protected boolean forkStop = false;
   protected Map<String, RDBMSMigrationListener<T>> listeners = Maps.newConcurrentMap();

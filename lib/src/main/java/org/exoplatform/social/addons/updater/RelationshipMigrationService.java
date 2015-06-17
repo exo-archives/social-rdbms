@@ -44,6 +44,8 @@ public class RelationshipMigrationService extends AbstractMigrationService<Relat
       return;
     }
     LOG.info("Stating to migration relationships from JCR to MYSQL........");
+    long t = System.currentTimeMillis();
+    int count = 0;
     Iterator<IdentityEntity> allIdentityEntity = getAllIdentityEntity().values().iterator();
     while (allIdentityEntity.hasNext()) {
       if(forkStop) {
@@ -52,6 +54,8 @@ public class RelationshipMigrationService extends AbstractMigrationService<Relat
       IdentityEntity identityEntity = (IdentityEntity) allIdentityEntity.next();
       //
       LOG.info("Migration relationship for user: " + identityEntity.getRemoteId());
+      long t1 = System.currentTimeMillis();
+      int c2 = 0;
       Identity identityFrom = new Identity(OrganizationIdentityProvider.NAME, identityEntity.getRemoteId());
       identityFrom.setId(identityEntity.getId());
       //
@@ -69,8 +73,12 @@ public class RelationshipMigrationService extends AbstractMigrationService<Relat
         }
         //
         relationshipStorage.saveRelationship(relationship);
+        ++c2;
       }
+      LOG.info(String.format("Done to migration %s relationships for user %s from JCR to MYSQL on %s(ms)", c2, identityEntity.getRemoteId(), (System.currentTimeMillis() - t1)));
+      ++count;
     }
+    LOG.info(String.format("Done to migration relationships of %s users from JCR to MYSQL on %s(ms)", count,  (System.currentTimeMillis() - t)));
   }
 
   @Override
