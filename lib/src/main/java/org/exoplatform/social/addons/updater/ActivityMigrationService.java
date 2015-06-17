@@ -13,14 +13,13 @@ import javax.jcr.NodeIterator;
 import javax.jcr.RepositoryException;
 
 import org.chromattic.core.api.ChromatticSessionImpl;
+import org.exoplatform.commons.api.jpa.EntityManagerService;
 import org.exoplatform.commons.utils.CommonsUtils;
 import org.exoplatform.management.annotations.Managed;
 import org.exoplatform.management.annotations.ManagedDescription;
 import org.exoplatform.management.jmx.annotations.NameTemplate;
 import org.exoplatform.management.jmx.annotations.Property;
 import org.exoplatform.social.addons.storage.dao.ActivityDAO;
-import org.exoplatform.social.addons.storage.dao.jpa.GenericDAOImpl;
-import org.exoplatform.social.addons.storage.session.SocialSessionLifecycle;
 import org.exoplatform.social.core.activity.model.ExoSocialActivity;
 import org.exoplatform.social.core.activity.model.ExoSocialActivityImpl;
 import org.exoplatform.social.core.chromattic.entity.ActivityEntity;
@@ -52,6 +51,7 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
   private ActivityEntity lastActivity = null;
   private String lastUserProcess = null;
   private boolean forkStop = false;
+  private static final int LIMIT_THRESHOLD = 100;
   
   public ActivityMigrationService(ActivityDAO activityDAO,
                                   ActivityStorage activityStorage,
@@ -130,7 +130,7 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
     }
     long t = System.currentTimeMillis();
     int count = 0;
-    SocialSessionLifecycle sessionLifecycle = GenericDAOImpl.lifecycleLookup();
+    EntityManagerService entityManager = CommonsUtils.getService(EntityManagerService.class);
     while (activityIterator.hasNext()) {
       ActivityEntity activityEntity = activityIterator.next();
       LOG.info("Mirgration activity: " + activityEntity.getName());
@@ -144,7 +144,7 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
       String oldId = activity.getId();
       activity.setId(null);
       activityStorage.saveActivity(owner, activity);
-      sessionLifecycle.flush();
+      entityManager.getEntityManager().flush();
       //
       doBroadcastListener(activity, oldId);
       //
@@ -155,7 +155,7 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
         oldId = comment.getId();
         comment.setId(null);
         activityStorage.saveComment(activity, comment);
-        sessionLifecycle.flush();
+        entityManager.getEntityManager().flush();
         //
         doBroadcastListener(comment, oldId);
       }
@@ -166,6 +166,11 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
       _getMixin(activityEntity, ActivityUpdaterEntity.class, true);
       currenActivity = activityEntity;
       ++count;
+      //
+      if(count % LIMIT_THRESHOLD == 0) {
+        entityManager.endRequest(null);
+        entityManager.startRequest(null);
+      }
     }
     LOG.info(String.format("Done migration %s activities for user %s on %s(ms) ",
                            count, identityEntity.getRemoteId(), System.currentTimeMillis() - t));
@@ -194,6 +199,8 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
     if(currenActivity != null) {
       _removeMixin(currenActivity, ActivityUpdaterEntity.class);
     }
+    isDone = true;
+    
     //TODO: need remove  all old activities
     LOG.info("Done to migration activities from JCR to MYSQL");
   }

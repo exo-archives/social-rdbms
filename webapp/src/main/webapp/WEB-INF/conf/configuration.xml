@@ -73,15 +73,33 @@
     <type>org.exoplatform.social.core.storage.cache.CachedActivityStorage</type>
   </component>
 
-	<component>
-		<type>org.exoplatform.social.addons.updater.ActivityMigrationService</type>
-	</component>
-	<component>
-		<type>org.exoplatform.social.addons.updater.RelationshipMigrationService</type>
-	</component>
-	<component>
-		<type>org.exoplatform.social.addons.updater.ProfileMigrationService</type>
-	</component>
+  <component>
+    <key>org.exoplatform.social.addons.updater.RDBMSMigrationManager</key>
+    <type>org.exoplatform.social.addons.updater.RDBMSMigrationManager</type>
+    <init-params>
+      <value-param>
+        <name>async-execution</name>
+        <value>true</value>
+      </value-param>
+      <value-param>
+        <name>thread-number</name>
+        <value>5</value>
+      </value-param>
+      <value-param>
+        <name>keepAliveTime</name> <!-- Time in seconds -->
+        <value>10</value>
+      </value-param>
+    </init-params>
+  </component>
+  <component>
+    <type>org.exoplatform.social.addons.updater.ActivityMigrationService</type>
+  </component>
+  <component>
+    <type>org.exoplatform.social.addons.updater.RelationshipMigrationService</type>
+  </component>
+  <component>
+    <type>org.exoplatform.social.addons.updater.ProfileMigrationService</type>
+  </component>
 
   <external-component-plugins>
     <target-component>org.exoplatform.social.core.manager.IdentityManager</target-component>
@@ -108,70 +126,70 @@
     </component-plugin>
   </external-component-plugins>
 
-	<external-component-plugins>
-		<target-component>org.exoplatform.commons.chromattic.ChromatticManager</target-component>
-		<component-plugin>
-			<name>chromattic</name>
-			<set-method>addLifeCycle</set-method>
-			<type>org.exoplatform.social.common.lifecycle.SocialChromatticLifeCycle</type>
-			<init-params>
-				<value-param>
-					<name>domain-name</name>
-					<value>soc</value>
-				</value-param>
-				<value-param>
-					<name>workspace-name</name>
-					<value>social</value>
-				</value-param>
-				<value-param profiles="all,minimal">
-					<name>workspace-name</name>
-					<value>social</value>
-				</value-param>
-				<values-param>
-					<name>entities</name>
-					<value>org.exoplatform.social.core.chromattic.entity.ProviderRootEntity</value>
-					<value>org.exoplatform.social.core.chromattic.entity.ProviderEntity</value>
+  <external-component-plugins>
+    <target-component>org.exoplatform.commons.chromattic.ChromatticManager</target-component>
+    <component-plugin>
+      <name>chromattic</name>
+      <set-method>addLifeCycle</set-method>
+      <type>org.exoplatform.social.common.lifecycle.SocialChromatticLifeCycle</type>
+      <init-params>
+        <value-param>
+          <name>domain-name</name>
+          <value>soc</value>
+        </value-param>
+        <value-param>
+          <name>workspace-name</name>
+          <value>social</value>
+        </value-param>
+        <value-param profiles="all,minimal">
+          <name>workspace-name</name>
+          <value>social</value>
+        </value-param>
+        <values-param>
+          <name>entities</name>
+          <value>org.exoplatform.social.core.chromattic.entity.ProviderRootEntity</value>
+          <value>org.exoplatform.social.core.chromattic.entity.ProviderEntity</value>
 
-					<value>org.exoplatform.social.core.chromattic.entity.DisabledEntity</value>
-					<value>org.exoplatform.social.core.chromattic.entity.IdentityEntity</value>
-					<value>org.exoplatform.social.core.chromattic.entity.ProfileEntity</value>
-					<value>org.exoplatform.social.core.chromattic.entity.ActivityProfileEntity</value>
+          <value>org.exoplatform.social.core.chromattic.entity.DisabledEntity</value>
+          <value>org.exoplatform.social.core.chromattic.entity.IdentityEntity</value>
+          <value>org.exoplatform.social.core.chromattic.entity.ProfileEntity</value>
+          <value>org.exoplatform.social.core.chromattic.entity.ActivityProfileEntity</value>
 
-					<value>org.exoplatform.social.core.chromattic.entity.RelationshipEntity</value>
-					<value>org.exoplatform.social.core.chromattic.entity.RelationshipListEntity</value>
+          <value>org.exoplatform.social.core.chromattic.entity.RelationshipEntity</value>
+          <value>org.exoplatform.social.core.chromattic.entity.RelationshipListEntity</value>
 
-					<value>org.exoplatform.social.core.chromattic.entity.HidableEntity</value>
-					<value>org.exoplatform.social.core.chromattic.entity.LockableEntity</value>
-					<value>org.exoplatform.social.core.chromattic.entity.ActivityEntity</value>
-					<value>org.exoplatform.social.core.chromattic.entity.ActivityListEntity</value>
-					<value>org.exoplatform.social.core.chromattic.entity.ActivityDayEntity</value>
-					<value>org.exoplatform.social.core.chromattic.entity.ActivityMonthEntity</value>
-					<value>org.exoplatform.social.core.chromattic.entity.ActivityYearEntity</value>
-					<value>org.exoplatform.social.core.chromattic.entity.ActivityParameters</value>
+          <value>org.exoplatform.social.core.chromattic.entity.HidableEntity</value>
+          <value>org.exoplatform.social.core.chromattic.entity.LockableEntity</value>
+          <value>org.exoplatform.social.core.chromattic.entity.ActivityEntity</value>
+          <value>org.exoplatform.social.core.chromattic.entity.ActivityListEntity</value>
+          <value>org.exoplatform.social.core.chromattic.entity.ActivityDayEntity</value>
+          <value>org.exoplatform.social.core.chromattic.entity.ActivityMonthEntity</value>
+          <value>org.exoplatform.social.core.chromattic.entity.ActivityYearEntity</value>
+          <value>org.exoplatform.social.core.chromattic.entity.ActivityParameters</value>
 
-					<value>org.exoplatform.social.core.chromattic.entity.StreamsEntity</value>
-					<value>org.exoplatform.social.core.chromattic.entity.ActivityRefListEntity</value>
-					<value>org.exoplatform.social.core.chromattic.entity.ActivityRefDayEntity</value>
-					<value>org.exoplatform.social.core.chromattic.entity.ActivityRefMonthEntity</value>
-					<value>org.exoplatform.social.core.chromattic.entity.ActivityRefYearEntity</value>
-					<value>org.exoplatform.social.core.chromattic.entity.ActivityRef</value>
+          <value>org.exoplatform.social.core.chromattic.entity.StreamsEntity</value>
+          <value>org.exoplatform.social.core.chromattic.entity.ActivityRefListEntity</value>
+          <value>org.exoplatform.social.core.chromattic.entity.ActivityRefDayEntity</value>
+          <value>org.exoplatform.social.core.chromattic.entity.ActivityRefMonthEntity</value>
+          <value>org.exoplatform.social.core.chromattic.entity.ActivityRefYearEntity</value>
+          <value>org.exoplatform.social.core.chromattic.entity.ActivityRef</value>
 
-					<value>org.exoplatform.social.core.chromattic.entity.SpaceRootEntity</value>
-					<value>org.exoplatform.social.core.chromattic.entity.SpaceEntity</value>
-					<value>org.exoplatform.social.core.chromattic.entity.SpaceListEntity</value>
-					<value>org.exoplatform.social.core.chromattic.entity.SpaceRef</value>
+          <value>org.exoplatform.social.core.chromattic.entity.SpaceRootEntity</value>
+          <value>org.exoplatform.social.core.chromattic.entity.SpaceEntity</value>
+          <value>org.exoplatform.social.core.chromattic.entity.SpaceListEntity</value>
+          <value>org.exoplatform.social.core.chromattic.entity.SpaceRef</value>
 
-					<value>org.exoplatform.social.addons.updater.ActivityUpdaterEntity</value>
-				</values-param>
-				<properties-param>
-					<name>options</name>
-					<property name="org.chromattic.api.Option.root_node.path" value="/production" />
-					<property name="org.chromattic.api.Option.root_node.create" value="true" />
-					<property name="org.chromattic.api.Option.optimize.jcr.has_property.enabled" value="true" />
-					<property name="org.chromattic.api.Option.optimize.jcr.has_node.enabled" value="true" />
-				</properties-param>
-			</init-params>
-		</component-plugin>
-	</external-component-plugins>
+          <value>org.exoplatform.social.addons.updater.ActivityUpdaterEntity</value>
+        </values-param>
+        <properties-param>
+          <name>options</name>
+          <property name="org.chromattic.api.Option.root_node.path" value="/production" />
+          <property name="org.chromattic.api.Option.root_node.create" value="true" />
+          <property name="org.chromattic.api.Option.optimize.jcr.has_property.enabled" value="true" />
+          <property name="org.chromattic.api.Option.optimize.jcr.has_node.enabled" value="true" />
+        </properties-param>
+      </init-params>
+    </component-plugin>
+  </external-component-plugins>
 
 </configuration>

@@ -13,14 +13,14 @@ import org.exoplatform.social.core.chromattic.entity.ProviderEntity;
 import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvider;
 import org.exoplatform.social.core.storage.api.IdentityStorage;
 import org.exoplatform.social.core.storage.impl.AbstractStorage;
-import org.picocontainer.Startable;
 
 import com.google.common.collect.Maps;
 
-public abstract class AbstractMigrationService<T>  extends AbstractStorage implements Startable {
+public abstract class AbstractMigrationService<T>  extends AbstractStorage {
   protected Log LOG;
   protected final IdentityStorage identityStorage;
   protected boolean forkStop = false;
+  protected boolean isDone = false;
   protected Map<String, RDBMSMigrationListener<T>> listeners = Maps.newConcurrentMap();
 
   public AbstractMigrationService(IdentityStorage identityStorage) {
@@ -43,7 +43,6 @@ public abstract class AbstractMigrationService<T>  extends AbstractStorage imple
     }
   }
 
-  @Override
    public void start() {
     forkStop = false;
     //
@@ -61,11 +60,14 @@ public abstract class AbstractMigrationService<T>  extends AbstractStorage imple
     }
   }
 
-  @Override
   public void stop() {
     forkStop = true;
   }
-  
+
+  public boolean isDone() {
+    return isDone;
+  }
+
   @SuppressWarnings("unchecked")
   protected Map<String, IdentityEntity> getAllIdentityEntity() {
     ProviderEntity providerEntity;

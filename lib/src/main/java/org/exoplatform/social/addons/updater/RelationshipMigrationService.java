@@ -37,6 +37,7 @@ public class RelationshipMigrationService extends AbstractMigrationService<Relat
 
   @Override
   protected void beforeMigration() throws Exception {
+    isDone = true;
   }
 
   @Override
@@ -44,6 +45,7 @@ public class RelationshipMigrationService extends AbstractMigrationService<Relat
   @ManagedDescription("Manual to start run miguration data of relationships from JCR to MYSQL.")
   public void doMigration() throws Exception {
     if (relationshipDAO.count() > 0) {
+      isDone = true;
       return;
     }
     LOG.info("Stating to migration relationships from JCR to MYSQL........");

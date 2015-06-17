@@ -41,6 +41,7 @@ public class ProfileMigrationService extends AbstractMigrationService<Profile> {
   @ManagedDescription("Manual to start run miguration data of profiles from JCR to MYSQL.")
   public void doMigration() throws Exception {
     if (profileDAO.count() > 0) {
+      isDone = true;
       return;
     }
     LOG.info("Stating to migration profiles from JCR to MYSQL........");
@@ -66,6 +67,7 @@ public class ProfileMigrationService extends AbstractMigrationService<Profile> {
 
   @Override
   protected void afterMigration() throws Exception {
+    isDone = true;
   }
   
   @Override
