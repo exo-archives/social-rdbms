@@ -7,6 +7,7 @@ import org.exoplatform.container.PortalContainer;
 import org.exoplatform.container.component.RequestLifeCycle;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
+import org.exoplatform.social.addons.storage.dao.jpa.GenericDAOImpl;
 import org.exoplatform.social.addons.updater.listeners.RDBMSMigrationListener;
 import org.exoplatform.social.core.chromattic.entity.IdentityEntity;
 import org.exoplatform.social.core.chromattic.entity.ProviderEntity;
@@ -47,15 +48,22 @@ public abstract class AbstractMigrationService<T>  extends AbstractStorage {
     forkStop = false;
     //
     RequestLifeCycle.begin(PortalContainer.getInstance());
+    boolean begun = GenericDAOImpl.startSynchronization();
     try {
-      beforeMigration();
-      //
-      doMigration();
-      //
-      afterMigration();
-    } catch (Exception e) {
-      LOG.error("Failed to run migration data from JCR to Mysql.", e);
+      boolean begunTx = GenericDAOImpl.startTx();
+      try {
+        beforeMigration();
+        //
+        doMigration();
+        //
+        afterMigration();
+      } catch (Exception e) {
+        LOG.error("Failed to run migration data from JCR to Mysql.", e);
+      } finally {
+        GenericDAOImpl.endTx(begunTx);
+      }
     } finally {
+      GenericDAOImpl.stopSynchronization(begun);
       RequestLifeCycle.end();
     }
   }

@@ -130,7 +130,7 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
     }
     long t = System.currentTimeMillis();
     int count = 0;
-    EntityManagerService entityManager = CommonsUtils.getService(EntityManagerService.class);
+    EntityManagerService entityManagerService = CommonsUtils.getService(EntityManagerService.class);
     while (activityIterator.hasNext()) {
       ActivityEntity activityEntity = activityIterator.next();
       LOG.info("Mirgration activity: " + activityEntity.getName());
@@ -144,7 +144,7 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
       String oldId = activity.getId();
       activity.setId(null);
       activityStorage.saveActivity(owner, activity);
-      entityManager.getEntityManager().flush();
+      entityManagerService.getEntityManager().flush();
       //
       doBroadcastListener(activity, oldId);
       //
@@ -155,7 +155,7 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
         oldId = comment.getId();
         comment.setId(null);
         activityStorage.saveComment(activity, comment);
-        entityManager.getEntityManager().flush();
+        entityManagerService.getEntityManager().flush();
         //
         doBroadcastListener(comment, oldId);
       }
@@ -168,8 +168,9 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
       ++count;
       //
       if(count % LIMIT_THRESHOLD == 0) {
-        entityManager.endRequest(null);
-        entityManager.startRequest(null);
+        entityManagerService.endRequest(null);
+        entityManagerService.startRequest(null);
+        entityManagerService.getEntityManager().getTransaction().begin();
       }
     }
     LOG.info(String.format("Done migration %s activities for user %s on %s(ms) ",
