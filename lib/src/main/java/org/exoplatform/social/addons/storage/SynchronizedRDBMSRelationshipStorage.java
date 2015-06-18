@@ -40,7 +40,7 @@ public class SynchronizedRDBMSRelationshipStorage extends RDBMSRelationshipStora
   
   @Override
   public Relationship saveRelationship(final Relationship relationship) throws RelationshipStorageException {
-    boolean begun = GenericDAOImpl.startSynchronization();
+    GenericDAOImpl.startSynchronization();
     try {
       boolean begunTx = GenericDAOImpl.startTx();
       try {
@@ -49,13 +49,13 @@ public class SynchronizedRDBMSRelationshipStorage extends RDBMSRelationshipStora
         GenericDAOImpl.endTx(begunTx);
       }
     } finally {
-      GenericDAOImpl.stopSynchronization(begun);
+      GenericDAOImpl.stopSynchronization();
     }
   }
   
   @Override
   public void removeRelationship(Relationship relationship) throws RelationshipStorageException {
-    boolean begun = GenericDAOImpl.startSynchronization();
+    GenericDAOImpl.startSynchronization();
     try {
       boolean begunTx = GenericDAOImpl.startTx();
       try {
@@ -64,37 +64,37 @@ public class SynchronizedRDBMSRelationshipStorage extends RDBMSRelationshipStora
         GenericDAOImpl.endTx(begunTx);
       }
     } finally {
-      GenericDAOImpl.stopSynchronization(begun);
+      GenericDAOImpl.stopSynchronization();
     }
   }
   
   @Override
   public List<Identity> getConnections(Identity identity, long offset, long limit) throws RelationshipStorageException {
-    boolean begunEM = GenericDAOImpl.startSynchronization();
+    GenericDAOImpl.startSynchronization();
     try {
       return super.getConnections(identity, offset, limit);
     } finally {
-      GenericDAOImpl.stopSynchronization(begunEM);
+      GenericDAOImpl.stopSynchronization();
     }
   }
   
   @Override
   public int getConnectionsCount(Identity identity) throws RelationshipStorageException {
-    boolean begunEM = GenericDAOImpl.startSynchronization();
+    GenericDAOImpl.startSynchronization();
     try {
       return super.getConnectionsCount(identity);
     } finally {
-      GenericDAOImpl.stopSynchronization(begunEM);
+      GenericDAOImpl.stopSynchronization();
     }
   }
   
   @Override
   public int getRelationshipsCount(Identity identity) throws RelationshipStorageException {
-    boolean begunEM = GenericDAOImpl.startSynchronization();
+    GenericDAOImpl.startSynchronization();
     try {
       return super.getRelationshipsCount(identity);
     } finally {
-      GenericDAOImpl.stopSynchronization(begunEM);
+      GenericDAOImpl.stopSynchronization();
     }
   }
 

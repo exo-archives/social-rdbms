@@ -47,7 +47,7 @@ public class SynchronizedRDBMSActivityStorage extends RDBMSActivityStorageImpl {
   
   @Override
   public ExoSocialActivity saveActivity(final Identity owner, final ExoSocialActivity activity) throws ActivityStorageException {
-    boolean begun = GenericDAOImpl.startSynchronization();
+    GenericDAOImpl.startSynchronization();
     try {
       boolean begunTx = GenericDAOImpl.startTx();
       try {
@@ -56,13 +56,13 @@ public class SynchronizedRDBMSActivityStorage extends RDBMSActivityStorageImpl {
         GenericDAOImpl.endTx(begunTx);
       }
     } finally {
-      GenericDAOImpl.stopSynchronization(begun);
+      GenericDAOImpl.stopSynchronization();
     }
   }
   
   @Override
   public void updateActivity(ExoSocialActivity existingActivity) throws ActivityStorageException {
-    boolean begun = GenericDAOImpl.startSynchronization();
+    GenericDAOImpl.startSynchronization();
     try {
       boolean begunTx = GenericDAOImpl.startTx();
       try {
@@ -71,13 +71,13 @@ public class SynchronizedRDBMSActivityStorage extends RDBMSActivityStorageImpl {
         GenericDAOImpl.endTx(begunTx);
       }
     } finally {
-      GenericDAOImpl.stopSynchronization(begun);
+      GenericDAOImpl.stopSynchronization();
     }
   }
   
   @Override
   public void deleteActivity(String activityId) throws ActivityStorageException {
-    boolean begun = GenericDAOImpl.startSynchronization();
+    GenericDAOImpl.startSynchronization();
     try {
       boolean begunTx = GenericDAOImpl.startTx();
       try {
@@ -86,13 +86,13 @@ public class SynchronizedRDBMSActivityStorage extends RDBMSActivityStorageImpl {
         GenericDAOImpl.endTx(begunTx);
       }
     } finally {
-      GenericDAOImpl.stopSynchronization(begun);
+      GenericDAOImpl.stopSynchronization();
     }
   }
   
   @Override
   public void saveComment(ExoSocialActivity activity, ExoSocialActivity eXoComment) throws ActivityStorageException {
-    boolean begun = GenericDAOImpl.startSynchronization();
+    GenericDAOImpl.startSynchronization();
     try {
       boolean begunTx = GenericDAOImpl.startTx();
       try {
@@ -101,13 +101,13 @@ public class SynchronizedRDBMSActivityStorage extends RDBMSActivityStorageImpl {
         GenericDAOImpl.endTx(begunTx);
       }
     } finally {
-      GenericDAOImpl.stopSynchronization(begun);
+      GenericDAOImpl.stopSynchronization();
     }
   }
   
   @Override
   public void deleteComment(String activityId, String commentId) throws ActivityStorageException {
-    boolean begun = GenericDAOImpl.startSynchronization();
+    GenericDAOImpl.startSynchronization();
     try {
       boolean begunTx = GenericDAOImpl.startTx();
       try {
@@ -116,147 +116,147 @@ public class SynchronizedRDBMSActivityStorage extends RDBMSActivityStorageImpl {
         GenericDAOImpl.endTx(begunTx);
       }
     } finally {
-      GenericDAOImpl.stopSynchronization(begun);
+      GenericDAOImpl.stopSynchronization();
     }
   }
   
   @Override
   public List<ExoSocialActivity> getActivityFeed(Identity ownerIdentity, int offset, int limit) {
-    boolean begun = GenericDAOImpl.startSynchronization();
+    GenericDAOImpl.startSynchronization();
     try {
       return super.getActivityFeed(ownerIdentity, offset, limit);
     } finally {
-      GenericDAOImpl.stopSynchronization(begun);
+      GenericDAOImpl.stopSynchronization();
     }
   }
   
   @Override
   public List<ExoSocialActivity> getActivitiesOfConnections(Identity ownerIdentity, int offset, int limit) {
-    boolean begun = GenericDAOImpl.startSynchronization();
+    GenericDAOImpl.startSynchronization();
     try {
       return super.getActivitiesOfConnections(ownerIdentity, offset, limit);
     } finally {
-      GenericDAOImpl.stopSynchronization(begun);
+      GenericDAOImpl.stopSynchronization();
     }
   }
   
   @Override
   public List<ExoSocialActivity> getUserActivities(Identity ownerIdentity, long offset, long limit) {
-    boolean begun = GenericDAOImpl.startSynchronization();
+    GenericDAOImpl.startSynchronization();
     try {
       return super.getUserActivities(ownerIdentity, offset, limit);
     } finally {
-      GenericDAOImpl.stopSynchronization(begun);
+      GenericDAOImpl.stopSynchronization();
     }
   }
   
   @Override
   public List<ExoSocialActivity> getUserSpacesActivities(Identity ownerIdentity, int offset, int limit) {
-    boolean begun = GenericDAOImpl.startSynchronization();
+    GenericDAOImpl.startSynchronization();
     try {
       return super.getUserSpacesActivities(ownerIdentity, offset, limit);
     } finally {
-      GenericDAOImpl.stopSynchronization(begun);
+      GenericDAOImpl.stopSynchronization();
     }
   }
   
   @Override
   public List<ExoSocialActivity> getActivitiesOfIdentity(Identity ownerIdentity, long offset, long limit) {
-    boolean begun = GenericDAOImpl.startSynchronization();
+    GenericDAOImpl.startSynchronization();
     try {
       return super.getActivitiesOfIdentity(ownerIdentity, offset, limit);
     } finally {
-      GenericDAOImpl.stopSynchronization(begun);
+      GenericDAOImpl.stopSynchronization();
     }
   }
   
   @Override
   public List<ExoSocialActivity> getSpaceActivities(Identity ownerIdentity, int offset, int limit) {
-    boolean begun = GenericDAOImpl.startSynchronization();
+    GenericDAOImpl.startSynchronization();
     try {
       return super.getSpaceActivities(ownerIdentity, offset, limit);
     } finally {
-      GenericDAOImpl.stopSynchronization(begun);
+      GenericDAOImpl.stopSynchronization();
     }
   }
   
   @Override
   public ExoSocialActivity getParentActivity(ExoSocialActivity comment) throws ActivityStorageException {
-    boolean begun = GenericDAOImpl.startSynchronization();
+    GenericDAOImpl.startSynchronization();
     try {
       return super.getParentActivity(comment);
     } finally {
-      GenericDAOImpl.stopSynchronization(begun);
+      GenericDAOImpl.stopSynchronization();
     }
   }
   
   @Override
   public int getNumberOfActivitesOnActivityFeed(Identity owner) throws ActivityStorageException {
-    boolean begun = GenericDAOImpl.startSynchronization();
+    GenericDAOImpl.startSynchronization();
     try {
       return super.getNumberOfActivitesOnActivityFeed(owner);
     } finally {
-      GenericDAOImpl.stopSynchronization(begun);
+      GenericDAOImpl.stopSynchronization();
     }
   }
   
   @Override
   public int getNumberOfUserActivities(Identity owner) throws ActivityStorageException {
-    boolean begun = GenericDAOImpl.startSynchronization();
+    GenericDAOImpl.startSynchronization();
     try {
       return super.getNumberOfUserActivitiesForUpgrade(owner);
     } finally {
-      GenericDAOImpl.stopSynchronization(begun);
+      GenericDAOImpl.stopSynchronization();
     }
   }
   
   @Override
   public int getNumberOfActivitiesOfConnections(Identity owner) throws ActivityStorageException {
-    boolean begun = GenericDAOImpl.startSynchronization();
+    GenericDAOImpl.startSynchronization();
     try {
       return super.getNumberOfActivitiesOfConnections(owner);
     } finally {
-      GenericDAOImpl.stopSynchronization(begun);
+      GenericDAOImpl.stopSynchronization();
     }
   }
   
   @Override
   public int getNumberOfUserSpacesActivities(Identity owner) throws ActivityStorageException {
-    boolean begun = GenericDAOImpl.startSynchronization();
+    GenericDAOImpl.startSynchronization();
     try {
       return super.getNumberOfUserSpacesActivities(owner);
     } finally {
-      GenericDAOImpl.stopSynchronization(begun);
+      GenericDAOImpl.stopSynchronization();
     }
   }
   
   @Override
   public int getNumberOfSpaceActivities(Identity owner) throws ActivityStorageException {
-    boolean begun = GenericDAOImpl.startSynchronization();
+    GenericDAOImpl.startSynchronization();
     try {
       return super.getNumberOfSpaceActivities(owner);
     } finally {
-      GenericDAOImpl.stopSynchronization(begun);
+      GenericDAOImpl.stopSynchronization();
     }
   }
   
   @Override
   public List<ExoSocialActivity> getComments(ExoSocialActivity existingActivity, int offset, int limit) {
-    boolean begun = GenericDAOImpl.startSynchronization();
+    GenericDAOImpl.startSynchronization();
     try {
       return super.getComments(existingActivity, offset, limit);
     } finally {
-      GenericDAOImpl.stopSynchronization(begun);
+      GenericDAOImpl.stopSynchronization();
     }
   }
 
   @Override
   public int getNumberOfComments(ExoSocialActivity existingActivity) {
-    boolean begun = GenericDAOImpl.startSynchronization();
+    GenericDAOImpl.startSynchronization();
     try {
       return super.getNumberOfComments(existingActivity);
     } finally {
-      GenericDAOImpl.stopSynchronization(begun);
+      GenericDAOImpl.stopSynchronization();
     }
   }
 }

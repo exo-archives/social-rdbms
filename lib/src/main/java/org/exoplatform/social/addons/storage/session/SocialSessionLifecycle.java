@@ -46,14 +46,6 @@ public class SocialSessionLifecycle {
   }
   
   /**
-   * Checks the synchronization is existing or not
-   * @return TRUE: EntityManager has been created, otherwise FALSE
-   */
-  public boolean hasSynchronization() {
-    return (service.getEntityManager() != null);
-  }
-  
-  /**
    * Synchronize the persistence context to the underlying database.
    * Note: Inside the transaction scope
    * 
@@ -65,28 +57,22 @@ public class SocialSessionLifecycle {
   }
 
   /**
-   * Checks the isActive the transaction
+   * Checks the isActive the transaction.
+   * Always make sure you invok
    * @return TRUE/FALSE
    */
   public boolean isActive() {
-    if(!hasSynchronization()) return false;
     return getCurrentEntityManager().getTransaction().isActive();
   }
   
-  public boolean startRequest() {
-    if (!hasSynchronization()) {
-      log.debug("startRequest::EntityManager is stared!");
-      RequestLifeCycle.begin(service);
-      return true;
-    }
-    return false;
+  public void startRequest() {
+    log.debug("startRequest::EntityManager is closed!");
+    RequestLifeCycle.begin(service);
   }
 
-  public void endRequest(boolean requestClose) {
-    if (requestClose && hasSynchronization()) {
-      log.debug("endRequest::EntityManager is closed!");
-      RequestLifeCycle.end();
-    }
+  public void endRequest() {
+    log.debug("endRequest::EntityManager is closed!");
+    RequestLifeCycle.end();
   }
 
 }

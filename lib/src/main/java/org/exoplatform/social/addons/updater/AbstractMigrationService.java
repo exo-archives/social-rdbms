@@ -48,7 +48,6 @@ public abstract class AbstractMigrationService<T>  extends AbstractStorage {
     forkStop = false;
     //
     RequestLifeCycle.begin(PortalContainer.getInstance());
-    boolean begun = GenericDAOImpl.startSynchronization();
     try {
       boolean begunTx = GenericDAOImpl.startTx();
       try {
@@ -63,7 +62,6 @@ public abstract class AbstractMigrationService<T>  extends AbstractStorage {
         GenericDAOImpl.endTx(begunTx);
       }
     } finally {
-      GenericDAOImpl.stopSynchronization(begun);
       RequestLifeCycle.end();
     }
   }

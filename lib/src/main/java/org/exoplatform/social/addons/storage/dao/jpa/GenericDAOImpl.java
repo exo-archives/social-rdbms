@@ -146,9 +146,9 @@ public class GenericDAOImpl<E,ID extends Serializable> implements GenericDAO<E, 
    * 
    * @return
    */
-  public static boolean startSynchronization() {
+  public static void startSynchronization() {
     SocialSessionLifecycle lc = lifecycleLookup();
-    return lc.startRequest();
+    lc.startRequest();
   }
   
   /**
@@ -178,11 +178,10 @@ public class GenericDAOImpl<E,ID extends Serializable> implements GenericDAO<E, 
   /**
    * Stops the synchronization EntityManager
    * 
-   * @param requestClose
    */
-  public static void stopSynchronization(boolean requestClose) {
+  public static void stopSynchronization() {
     SocialSessionLifecycle lc = lifecycleLookup();
-    lc.endRequest(requestClose);
+    lc.endRequest();
   }
   
   /**

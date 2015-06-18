@@ -243,11 +243,11 @@ public abstract class BaseCoreTest extends BaseExoTestCase {
     T result = null;
     try {
       callable.beforeTransactionCompletion();
-      boolean begunEM = GenericDAOImpl.startSynchronization();
+      GenericDAOImpl.startSynchronization();
       try {
           result = callable.execute();
       } finally {
-        GenericDAOImpl.stopSynchronization(begunEM);
+        GenericDAOImpl.stopSynchronization();
       }
     } catch (RuntimeException e) {
       throw e;
@@ -260,9 +260,9 @@ public abstract class BaseCoreTest extends BaseExoTestCase {
   protected void doInTransaction(TransactionVoidCallable callable) {
     try {
       callable.beforeTransactionCompletion();
-      boolean begunEM = GenericDAOImpl.startSynchronization();
+      GenericDAOImpl.startSynchronization();
       callable.execute();
-      GenericDAOImpl.stopSynchronization(begunEM);
+      GenericDAOImpl.stopSynchronization();
     } catch (RuntimeException e) {
       throw e;
     } finally {
