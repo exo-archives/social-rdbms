@@ -75,13 +75,13 @@ public abstract class AbstractMigrationService<T>  extends AbstractStorage {
   }
 
   @SuppressWarnings("unchecked")
-  protected Map<String, IdentityEntity> getAllIdentityEntity() {
+  protected Map<String, IdentityEntity> getAllIdentityEntity(String providerId) {
     ProviderEntity providerEntity;
     try {
-      providerEntity = getProviderRoot().getProviders().get(OrganizationIdentityProvider.NAME);
+      providerEntity = getProviderRoot().getProviders().get(providerId);
     } catch (Exception ex) {
       lifeCycle.getProviderRoot().set(null);
-      providerEntity = getProviderRoot().getProviders().get(OrganizationIdentityProvider.NAME);
+      providerEntity = getProviderRoot().getProviders().get(providerId);
     }
     return (providerEntity != null) ? providerEntity.getIdentities() : new HashMap<String, IdentityEntity>();
   }

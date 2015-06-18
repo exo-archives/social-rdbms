@@ -47,7 +47,7 @@ public class ProfileMigrationService extends AbstractMigrationService<Profile> {
     LOG.info("Stating to migration profiles from JCR to MYSQL........");
     long t = System.currentTimeMillis();
     int count = 0;
-    Iterator<IdentityEntity> allIdentityEntity = getAllIdentityEntity().values().iterator();
+    Iterator<IdentityEntity> allIdentityEntity = getAllIdentityEntity(OrganizationIdentityProvider.NAME).values().iterator();
     SocialSessionLifecycle sessionLifecycle = GenericDAOImpl.lifecycleLookup();
     while (allIdentityEntity.hasNext()) {
       if(forkStop) {

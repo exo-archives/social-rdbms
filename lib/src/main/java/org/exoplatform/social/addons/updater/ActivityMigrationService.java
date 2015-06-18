@@ -25,15 +25,19 @@ import org.exoplatform.social.core.activity.model.ExoSocialActivityImpl;
 import org.exoplatform.social.core.chromattic.entity.ActivityEntity;
 import org.exoplatform.social.core.chromattic.entity.ActivityListEntity;
 import org.exoplatform.social.core.chromattic.entity.ActivityParameters;
+import org.exoplatform.social.core.chromattic.entity.ActivityRefListEntity;
 import org.exoplatform.social.core.chromattic.entity.HidableEntity;
 import org.exoplatform.social.core.chromattic.entity.IdentityEntity;
 import org.exoplatform.social.core.chromattic.utils.ActivityIterator;
+import org.exoplatform.social.core.chromattic.utils.ActivityRefIterator;
+import org.exoplatform.social.core.chromattic.utils.ActivityRefList;
 import org.exoplatform.social.core.identity.model.ActiveIdentityFilter;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvider;
 import org.exoplatform.social.core.storage.api.ActivityStorage;
 import org.exoplatform.social.core.storage.api.IdentityStorage;
 import org.exoplatform.social.core.storage.impl.ActivityStorageImpl;
+import org.exoplatform.social.core.storage.impl.ActivityStreamStorageImpl.ActivityRefType;
 import org.exoplatform.social.core.storage.streams.StreamConfig;
 
 import com.google.caja.util.Lists;
@@ -81,7 +85,7 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
     }
     // doing with normal users
     boolean isSkip = (lastUserProcess != null);
-    Iterator<IdentityEntity> allIdentityEntity = getAllIdentityEntity().values().iterator();
+    Iterator<IdentityEntity> allIdentityEntity = getAllIdentityEntity(OrganizationIdentityProvider.NAME).values().iterator();
     while (allIdentityEntity.hasNext()) {
       if(forkStop) {
         return;
@@ -201,9 +205,35 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
       _removeMixin(currenActivity, ActivityUpdaterEntity.class);
     }
     isDone = true;
-    
-    //TODO: need remove  all old activities
+    //Remove all activity ref
+    Iterator<IdentityEntity> allIdentityEntity = getAllIdentityEntity(OrganizationIdentityProvider.NAME).values().iterator();
+    while (allIdentityEntity.hasNext()) {
+      IdentityEntity identityEntity = (IdentityEntity) allIdentityEntity.next();
+      removeActivityRefs(identityEntity, ActivityRefType.FEED);
+      removeActivityRefs(identityEntity, ActivityRefType.MY_ACTIVITIES);
+      removeActivityRefs(identityEntity, ActivityRefType.CONNECTION);
+      removeActivityRefs(identityEntity, ActivityRefType.MY_SPACES);
+    }
+    //Remove all activity entity
+    allIdentityEntity = getAllIdentityEntity(OrganizationIdentityProvider.NAME).values().iterator();
+    while (allIdentityEntity.hasNext()) {
+      IdentityEntity identityEntity = (IdentityEntity) allIdentityEntity.next();
+      ActivityListEntity activityListEntity = identityEntity.getActivityList();
+      ActivityIterator activityIterator = new ActivityIterator(activityListEntity);
+      while (activityIterator.hasNext()) {
+        getSession().remove(activityIterator.next());
+      }
+    }
     LOG.info("Done to migration activities from JCR to MYSQL");
+  }
+  
+  private void removeActivityRefs(IdentityEntity identityEntity, ActivityRefType type) {
+    ActivityRefListEntity listRef = type.refsOf(identityEntity);
+    ActivityRefList list = new ActivityRefList(listRef);
+    ActivityRefIterator it = list.iterator();
+    while (it.hasNext()) {
+      getSession().remove(it.next());
+    }
   }
 
   private List<String> getAdminAndActiveUsers() {

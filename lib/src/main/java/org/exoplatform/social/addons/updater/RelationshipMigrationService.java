@@ -52,7 +52,7 @@ public class RelationshipMigrationService extends AbstractMigrationService<Relat
     long t = System.currentTimeMillis();
     int count = 0;
     SocialSessionLifecycle sessionLifecycle = GenericDAOImpl.lifecycleLookup();
-    Iterator<IdentityEntity> allIdentityEntity = getAllIdentityEntity().values().iterator();
+    Iterator<IdentityEntity> allIdentityEntity = getAllIdentityEntity(OrganizationIdentityProvider.NAME).values().iterator();
     while (allIdentityEntity.hasNext()) {
       if(forkStop) {
         return;
@@ -102,7 +102,7 @@ public class RelationshipMigrationService extends AbstractMigrationService<Relat
 
   @Override
   protected void afterMigration() throws Exception {
-    Iterator<IdentityEntity> allIdentityEntity = getAllIdentityEntity().values().iterator();
+    Iterator<IdentityEntity> allIdentityEntity = getAllIdentityEntity(OrganizationIdentityProvider.NAME).values().iterator();
     while (allIdentityEntity.hasNext()) {
       IdentityEntity identityEntity = (IdentityEntity) allIdentityEntity.next();
       //
