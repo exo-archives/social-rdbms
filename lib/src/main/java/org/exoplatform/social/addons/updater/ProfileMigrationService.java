@@ -11,8 +11,6 @@ import org.exoplatform.management.jmx.annotations.NameTemplate;
 import org.exoplatform.management.jmx.annotations.Property;
 import org.exoplatform.social.addons.profile.ProfileUtils;
 import org.exoplatform.social.addons.storage.dao.ProfileItemDAO;
-import org.exoplatform.social.addons.storage.dao.jpa.GenericDAOImpl;
-import org.exoplatform.social.addons.storage.session.SocialSessionLifecycle;
 import org.exoplatform.social.core.chromattic.entity.IdentityEntity;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.identity.model.Profile;
