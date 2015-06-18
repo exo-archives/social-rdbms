@@ -9,7 +9,6 @@ import org.exoplatform.social.addons.storage.dao.jpa.GenericDAOImpl;
 import org.exoplatform.social.addons.storage.entity.Activity;
 import org.exoplatform.social.addons.updater.ActivityMigrationService;
 import org.exoplatform.social.core.activity.model.ExoSocialActivity;
-import org.exoplatform.social.core.activity.model.ExoSocialActivityImpl;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.mysql.test.BaseCoreTest;
 import org.exoplatform.social.core.storage.impl.ActivityStorageImpl;
@@ -73,22 +72,14 @@ public class MigrationActivityJCRToMysqlTest extends BaseCoreTest {
   }
   
   private void createActivityToOtherIdentity(Identity posterIdentity, Identity targetIdentity, int number) {
-//    List<ExoSocialActivity> activities = listOf(number, targetIdentity, posterIdentity, false, false);
-//    for (ExoSocialActivity activity : activities) {
-    for (int i = 0; i < number; i++) {
+    List<ExoSocialActivity> activities = listOf(number, targetIdentity, posterIdentity, false, false);
+    for (ExoSocialActivity activity : activities) {
       try {
-        ExoSocialActivity activity = new ExoSocialActivityImpl();
-        activity.setUserId(posterIdentity.getId());
-        activity.setTitle("activity of " + posterIdentity.getId() + " " + i);
-        activity.setBody("Body of "+ activity.getTitle());
-        activity.setExternalId("External ID");
         activity = jcrStorage.saveActivity(targetIdentity, activity);
         //
-//        List<ExoSocialActivity> comments = listOf(number, targetIdentity, posterIdentity, true, false);
-        for (int j = 0; j < 5; j++) {
-          ExoSocialActivity comment = new ExoSocialActivityImpl();
+        List<ExoSocialActivity> comments = listOf(3, targetIdentity, posterIdentity, true, false);
+        for (ExoSocialActivity comment : comments) {
           comment.setTitle("comment of " + posterIdentity.getId());
-          comment.setUserId(targetIdentity.getId());
           //
           jcrStorage.saveComment(activity, comment);
         }

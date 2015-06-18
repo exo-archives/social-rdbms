@@ -115,7 +115,6 @@ public abstract class AbstractCoreTest extends BaseExoTestCase {
 
   @Override
   protected void tearDown() throws Exception {
-    
     RelationshipDAO reDao = getService(RelationshipDAO.class);
     List<RelationshipItem> reItems = reDao.findAll();
     for (RelationshipItem item :  reItems) {
@@ -123,7 +122,6 @@ public abstract class AbstractCoreTest extends BaseExoTestCase {
     }
 
     ProfileItemDAO dao = getService(ProfileItemDAO.class);
-    
     List<Profile> items = dao.findAll();
     for (Profile item : items) {
       dao.delete(item.getId());
@@ -133,7 +131,6 @@ public abstract class AbstractCoreTest extends BaseExoTestCase {
     identityManager.deleteIdentity(johnIdentity);
     identityManager.deleteIdentity(maryIdentity);
     identityManager.deleteIdentity(demoIdentity);
-    
     //
     end();
   }  

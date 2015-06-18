@@ -43,7 +43,11 @@ import org.exoplatform.component.test.ConfiguredBy;
 import org.exoplatform.component.test.ContainerScope;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
+import org.exoplatform.social.addons.storage.dao.ProfileItemDAO;
+import org.exoplatform.social.addons.storage.dao.RelationshipDAO;
 import org.exoplatform.social.addons.storage.dao.jpa.GenericDAOImpl;
+import org.exoplatform.social.addons.storage.entity.Profile;
+import org.exoplatform.social.addons.storage.entity.RelationshipItem;
 import org.exoplatform.social.core.activity.model.ExoSocialActivity;
 import org.exoplatform.social.core.activity.model.ExoSocialActivityImpl;
 import org.exoplatform.social.core.identity.model.Identity;
@@ -116,13 +120,26 @@ public abstract class BaseCoreTest extends BaseExoTestCase {
 
   @Override
   protected void tearDown() throws Exception {
+    RelationshipDAO reDao = getService(RelationshipDAO.class);
+    List<RelationshipItem> reItems = reDao.findAll();
+    for (RelationshipItem item :  reItems) {
+      reDao.delete(item.getId());
+    }
+
+    ProfileItemDAO dao = getService(ProfileItemDAO.class);
+    List<Profile> items = dao.findAll();
+    for (Profile item : items) {
+      dao.delete(item.getId());
+    }
+
     identityManager.deleteIdentity(rootIdentity);
     identityManager.deleteIdentity(johnIdentity);
     identityManager.deleteIdentity(maryIdentity);
     identityManager.deleteIdentity(demoIdentity);
+    //
+    end();
   }  
   
-  @SuppressWarnings("unchecked")
   public <T> T getService(Class<T> clazz) {
     return (T) getContainer().getComponentInstanceOfType(clazz);
   }
@@ -287,7 +304,7 @@ public abstract class BaseCoreTest extends BaseExoTestCase {
   }
 
   protected <T> void executeAsync(Runnable callable, final Runnable completionCallback) {
-    final Future future = executorService.submit(callable);
+    final Future<?> future = executorService.submit(callable);
     new Thread() {
       public void run() {
         while (!future.isDone()) {
@@ -410,6 +427,12 @@ public abstract class BaseCoreTest extends BaseExoTestCase {
       
       if (isSave) {
         activityStorage.saveActivity(streamOwner, a);
+      } else {
+        try {
+          Thread.sleep(10);
+        } catch (InterruptedException e) {
+          LOG.warn(e);
+        }
       }
       list.add(a);
     }
