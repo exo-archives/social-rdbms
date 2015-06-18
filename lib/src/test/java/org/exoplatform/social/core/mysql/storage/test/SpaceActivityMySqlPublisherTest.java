@@ -248,7 +248,6 @@ public class SpaceActivityMySqlPublisherTest extends AbstractCoreTest {
    }
    
    //clean up
-   activityManager.deleteActivity(activityId);
    spaceService.deleteSpace(space);
    
    

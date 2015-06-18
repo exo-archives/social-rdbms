@@ -193,12 +193,12 @@ public class GenericDAOImpl<E,ID extends Serializable> implements GenericDAO<E, 
    
     SocialSessionLifecycle lc = lifecycleLookup();
     try {
-      
       if (requestClose && lc.isActive()) {
         lc.getCurrentEntityManager().getTransaction().commit();
         LOG.debug("commited transaction");
       }
     } catch (RuntimeException e) {
+      LOG.error("Failed to commit to DB::" + e.getMessage(), e);
       lc.getCurrentEntityManager().getTransaction().rollback();
     }
   }

@@ -30,7 +30,7 @@ import org.junit.runners.Suite.SuiteClasses;
 
 @SuiteClasses({
   ActivityDAOTest.class,
-  MigrationActivityJCRToMysqlTest.class,
+  //MigrationActivityJCRToMysqlTest.class,
   RDBMSActivityStorageImplTest.class,
   ActivityManagerMysqlTest.class,
   SpaceActivityMySqlPublisherTest.class,

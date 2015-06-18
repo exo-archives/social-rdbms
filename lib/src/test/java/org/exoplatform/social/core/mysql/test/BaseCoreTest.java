@@ -123,6 +123,10 @@ public abstract class BaseCoreTest extends BaseExoTestCase {
 
   @Override
   protected void tearDown() throws Exception {
+    identityManager.deleteIdentity(rootIdentity);
+    identityManager.deleteIdentity(johnIdentity);
+    identityManager.deleteIdentity(maryIdentity);
+    identityManager.deleteIdentity(demoIdentity);
   }  
   
   @SuppressWarnings("unchecked")

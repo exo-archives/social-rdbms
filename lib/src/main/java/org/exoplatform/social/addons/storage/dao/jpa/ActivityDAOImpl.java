@@ -21,6 +21,7 @@ import java.util.List;
 
 import org.exoplatform.social.addons.storage.dao.ActivityDAO;
 import org.exoplatform.social.addons.storage.dao.jpa.query.AStreamQueryBuilder;
+import org.exoplatform.social.addons.storage.dao.jpa.synchronization.SynchronizedGenericDAO;
 import org.exoplatform.social.addons.storage.entity.Activity;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.storage.ActivityStorageException;
@@ -31,7 +32,7 @@ import org.exoplatform.social.core.storage.ActivityStorageException;
  *          exo@exoplatform.com
  * May 18, 2015  
  */
-public class ActivityDAOImpl extends GenericDAOImpl<Activity, Long> implements ActivityDAO {
+public class ActivityDAOImpl extends SynchronizedGenericDAO<Activity, Long> implements ActivityDAO {
   
   public List<Activity> getActivities(Identity owner, Identity viewer, long offset, long limit) throws ActivityStorageException {
     return AStreamQueryBuilder.builder()
