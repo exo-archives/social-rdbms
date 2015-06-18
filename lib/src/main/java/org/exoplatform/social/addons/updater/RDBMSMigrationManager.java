@@ -15,6 +15,8 @@ public class RDBMSMigrationManager implements Startable {
   private final RelationshipMigrationService relationshipMigration;
   private final ProfileMigrationService profileMigration;
   private final ActivityMigrationService activityMigration;
+  private final int THREAD_PRIORITY;
+  private boolean isAsync = true;
   
   public RDBMSMigrationManager(ProfileMigrationService profileMigration,
                                RelationshipMigrationService relationshipMigration,
@@ -25,6 +27,9 @@ public class RDBMSMigrationManager implements Startable {
     this.profileMigration = profileMigration;
     this.relationshipMigration = relationshipMigration;
     this.activityMigration = activityMigration;
+    //
+    THREAD_PRIORITY = getInteger(params, "thread-priority", Thread.NORM_PRIORITY);
+    isAsync = getBoolean(params, "async-execution", true);
   }
 
   @Override
@@ -32,6 +37,7 @@ public class RDBMSMigrationManager implements Startable {
     Callable<Boolean> task = new Callable<Boolean>() {
       @Override
       public Boolean call() throws Exception {
+        setUpThread();
         try {
           profileMigration.start();
           //
@@ -59,4 +65,27 @@ public class RDBMSMigrationManager implements Startable {
     activityMigration.stop();
   }
 
+  private void setUpThread() {
+    if (isAsync) {
+      Thread t = Thread.currentThread();
+      t.setPriority(THREAD_PRIORITY);
+      t.setName("Social-migration-JCR-RDBMS");
+    }
+  }
+
+  private static int getInteger(InitParams params, String key, int defaultValue) {
+    try {
+      return Integer.valueOf(params.getValueParam(key).getValue());
+    } catch (Exception e) {
+      return defaultValue;
+    }
+  }
+
+  private static boolean getBoolean(InitParams params, String key, boolean defaultValue) {
+    try {
+      return Boolean.valueOf(params.getValueParam(key).getValue());
+    } catch (Exception e) {
+      return defaultValue;
+    }
+  }
 }

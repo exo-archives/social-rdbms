@@ -23,17 +23,9 @@ import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.Callable;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 
 import javax.jcr.Session;
-import javax.persistence.EntityManager;
 
 import junit.framework.AssertionFailedError;
 
@@ -51,8 +43,9 @@ import org.exoplatform.services.organization.User;
 import org.exoplatform.services.security.ConversationState;
 import org.exoplatform.services.security.MembershipEntry;
 import org.exoplatform.social.addons.storage.dao.ProfileItemDAO;
-import org.exoplatform.social.addons.storage.dao.jpa.GenericDAOImpl;
+import org.exoplatform.social.addons.storage.dao.RelationshipDAO;
 import org.exoplatform.social.addons.storage.entity.Profile;
+import org.exoplatform.social.addons.storage.entity.RelationshipItem;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvider;
 import org.exoplatform.social.core.manager.ActivityManager;
@@ -123,13 +116,19 @@ public abstract class AbstractCoreTest extends BaseExoTestCase {
   @Override
   protected void tearDown() throws Exception {
     
+    RelationshipDAO reDao = getService(RelationshipDAO.class);
+    List<RelationshipItem> reItems = reDao.findAll();
+    for (RelationshipItem item :  reItems) {
+      reDao.delete(item.getId());
+    }
+
     ProfileItemDAO dao = getService(ProfileItemDAO.class);
     
     List<Profile> items = dao.findAll();
     for (Profile item : items) {
       dao.delete(item.getId());
     }
-    
+
     identityManager.deleteIdentity(rootIdentity);
     identityManager.deleteIdentity(johnIdentity);
     identityManager.deleteIdentity(maryIdentity);

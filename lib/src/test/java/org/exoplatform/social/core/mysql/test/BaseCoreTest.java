@@ -20,8 +20,6 @@ package org.exoplatform.social.core.mysql.test;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -39,19 +37,12 @@ import javax.jcr.Session;
 
 import junit.framework.AssertionFailedError;
 
-import org.apache.commons.lang.ArrayUtils;
 import org.exoplatform.commons.testing.BaseExoTestCase;
-import org.exoplatform.commons.utils.ListAccess;
 import org.exoplatform.component.test.ConfigurationUnit;
 import org.exoplatform.component.test.ConfiguredBy;
 import org.exoplatform.component.test.ContainerScope;
-import org.exoplatform.container.ExoContainerContext;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
-import org.exoplatform.services.organization.OrganizationService;
-import org.exoplatform.services.organization.User;
-import org.exoplatform.services.security.ConversationState;
-import org.exoplatform.services.security.MembershipEntry;
 import org.exoplatform.social.addons.storage.dao.jpa.GenericDAOImpl;
 import org.exoplatform.social.core.activity.model.ExoSocialActivity;
 import org.exoplatform.social.core.activity.model.ExoSocialActivityImpl;
@@ -60,9 +51,6 @@ import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvide
 import org.exoplatform.social.core.manager.ActivityManager;
 import org.exoplatform.social.core.manager.IdentityManager;
 import org.exoplatform.social.core.manager.RelationshipManager;
-import org.exoplatform.social.core.space.SpaceException;
-import org.exoplatform.social.core.space.SpaceUtils;
-import org.exoplatform.social.core.space.model.Space;
 import org.exoplatform.social.core.space.spi.SpaceService;
 import org.exoplatform.social.core.storage.api.ActivityStorage;
 import org.jboss.byteman.contrib.bmunit.BMUnit;
@@ -70,6 +58,10 @@ import org.jboss.byteman.contrib.bmunit.BMUnit;
 /**
  * @author <a href="mailto:thanhvc@exoplatform.com">Thanh Vu</a>
  * @version $Revision$
+ */
+/**
+ * @author tuvd
+ *
  */
 @ConfiguredBy({
   @ConfigurationUnit(scope = ContainerScope.PORTAL, path = "conf/exo.portal.component.portal-configuration.xml"),
@@ -101,6 +93,7 @@ public abstract class BaseCoreTest extends BaseExoTestCase {
 
   @Override
   protected void setUp() throws Exception {
+    begin();
     // If is query number test, init byteman
     hasByteMan = getClass().isAnnotationPresent(QueryNumberTest.class);
     if (hasByteMan) {
@@ -463,6 +456,7 @@ public abstract class BaseCoreTest extends BaseExoTestCase {
     
     public ActivityBuilder posterId(String posterId) {
       this.activity.setPosterId(posterId);
+      this.activity.setUserId(posterId);
       return this;
     }
     

@@ -2,35 +2,38 @@ package org.exoplatform.social.core.mysql.storage.test;
 
 import java.util.List;
 
+import org.exoplatform.services.log.ExoLogger;
+import org.exoplatform.services.log.Log;
+import org.exoplatform.social.addons.storage.dao.ActivityDAO;
+import org.exoplatform.social.addons.storage.dao.jpa.GenericDAOImpl;
+import org.exoplatform.social.addons.storage.entity.Activity;
 import org.exoplatform.social.addons.updater.ActivityMigrationService;
 import org.exoplatform.social.core.activity.model.ExoSocialActivity;
 import org.exoplatform.social.core.activity.model.ExoSocialActivityImpl;
 import org.exoplatform.social.core.identity.model.Identity;
-import org.exoplatform.social.core.mysql.test.AbstractCoreTest;
+import org.exoplatform.social.core.mysql.test.BaseCoreTest;
 import org.exoplatform.social.core.storage.impl.ActivityStorageImpl;
 
-import com.google.caja.util.Lists;
-
-public class MigrationActivityJCRToMysqlTest extends AbstractCoreTest {
+public class MigrationActivityJCRToMysqlTest extends BaseCoreTest {
+  protected final Log LOG = ExoLogger.getLogger(MigrationActivityJCRToMysqlTest.class);
   private ActivityStorageImpl jcrStorage;
   private ActivityMigrationService migrationService;
-  private List<ExoSocialActivity> tearDownActivityList;
   @Override
   public void setUp() throws Exception {
     super.setUp();
     jcrStorage = getService(ActivityStorageImpl.class);
     migrationService = getService(ActivityMigrationService.class);
-    tearDownActivityList = Lists.newArrayList();
   }
 
   @Override
   public void tearDown() throws Exception {
-    for (ExoSocialActivity activity : tearDownActivityList) {
-      try {
-        jcrStorage.deleteActivity(activity.getId());
-      } catch (Exception e) {
-        LOG.warn("can not delete activity with id: " + activity.getId());
-      }
+    begin();
+    GenericDAOImpl.startTx();
+    ActivityDAO dao = getService(ActivityDAO.class);
+    //
+    List<Activity> items = dao.findAll();
+    for (Activity item : items) {
+      dao.delete(item.getId());
     }
     super.tearDown();
   }
@@ -53,21 +56,25 @@ public class MigrationActivityJCRToMysqlTest extends AbstractCoreTest {
     relationshipManager.confirm(rootIdentity, demoIdentity);
     //
     LOG.info("Create the activities storage on JCR ....");
-    createActivityToOtherIdentity(rootIdentity, johnIdentity, 20);
-    createActivityToOtherIdentity(demoIdentity, maryIdentity, 20);
-    createActivityToOtherIdentity(johnIdentity, demoIdentity, 20);
-    createActivityToOtherIdentity(maryIdentity, rootIdentity, 20);
+    createActivityToOtherIdentity(rootIdentity, johnIdentity, 5);
+    createActivityToOtherIdentity(demoIdentity, maryIdentity, 5);
+    createActivityToOtherIdentity(johnIdentity, demoIdentity, 5);
+    createActivityToOtherIdentity(maryIdentity, rootIdentity, 5);
     LOG.info("Done created the activities storage on JCR.");
     //
     migrationService.start();
+    begin();
+    GenericDAOImpl.startTx();
     //
-    assertEquals(80, activityStorage.getActivityFeed(rootIdentity, 0, 100).size());
-    assertEquals(80, activityStorage.getActivityFeed(maryIdentity, 0, 100).size());
-    assertEquals(80, activityStorage.getActivityFeed(johnIdentity, 0, 100).size());
-    assertEquals(80, activityStorage.getActivityFeed(demoIdentity, 0, 100).size());
+    assertEquals(20, activityStorage.getActivityFeed(rootIdentity, 0, 100).size());
+    assertEquals(20, activityStorage.getActivityFeed(maryIdentity, 0, 100).size());
+    assertEquals(20, activityStorage.getActivityFeed(johnIdentity, 0, 100).size());
+    assertEquals(20, activityStorage.getActivityFeed(demoIdentity, 0, 100).size());
   }
   
   private void createActivityToOtherIdentity(Identity posterIdentity, Identity targetIdentity, int number) {
+//    List<ExoSocialActivity> activities = listOf(number, targetIdentity, posterIdentity, false, false);
+//    for (ExoSocialActivity activity : activities) {
     for (int i = 0; i < number; i++) {
       try {
         ExoSocialActivity activity = new ExoSocialActivityImpl();
@@ -77,14 +84,14 @@ public class MigrationActivityJCRToMysqlTest extends AbstractCoreTest {
         activity.setExternalId("External ID");
         activity = jcrStorage.saveActivity(targetIdentity, activity);
         //
+//        List<ExoSocialActivity> comments = listOf(number, targetIdentity, posterIdentity, true, false);
         for (int j = 0; j < 5; j++) {
           ExoSocialActivity comment = new ExoSocialActivityImpl();
-          comment.setTitle("comment of " + posterIdentity.getId() + " " + i);
+          comment.setTitle("comment of " + posterIdentity.getId());
           comment.setUserId(targetIdentity.getId());
           //
           jcrStorage.saveComment(activity, comment);
         }
-        tearDownActivityList.add(activity);
       } catch (Exception e) {
         LOG.error("can not save activity.", e);
       }

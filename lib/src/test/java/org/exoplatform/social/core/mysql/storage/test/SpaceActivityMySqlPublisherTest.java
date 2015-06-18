@@ -155,7 +155,6 @@ public class SpaceActivityMySqlPublisherTest extends AbstractCoreTest {
    Identity spaceIdentity = identityManager.getOrCreateIdentity(SpaceIdentityProvider.NAME, space.getPrettyName(), false);
    String activityId = identityStorage.getProfileActivityId(spaceIdentity.getProfile(), Profile.AttachedActivityType.SPACE);
    ExoSocialActivity activity = activityManager.getActivity(activityId);
-   tearDownActivityList.add(activity);
    List<ExoSocialActivity> comments = activityManager.getCommentsWithListAccess(activity).loadAsList(0, 20);
    //Number of comments must be 1
    assertEquals(1, comments.size());

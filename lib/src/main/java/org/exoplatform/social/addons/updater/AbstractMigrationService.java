@@ -48,20 +48,17 @@ public abstract class AbstractMigrationService<T>  extends AbstractStorage {
     forkStop = false;
     //
     RequestLifeCycle.begin(PortalContainer.getInstance());
+    boolean begunTx = GenericDAOImpl.startTx();
     try {
-      boolean begunTx = GenericDAOImpl.startTx();
-      try {
-        beforeMigration();
-        //
-        doMigration();
-        //
-        afterMigration();
-      } catch (Exception e) {
-        LOG.error("Failed to run migration data from JCR to Mysql.", e);
-      } finally {
-        GenericDAOImpl.endTx(begunTx);
-      }
+      beforeMigration();
+      //
+      doMigration();
+      //
+      afterMigration();
+    } catch (Exception e) {
+      LOG.error("Failed to run migration data from JCR to Mysql.", e);
     } finally {
+      GenericDAOImpl.endTx(begunTx);
       RequestLifeCycle.end();
     }
   }
