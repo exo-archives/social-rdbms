@@ -34,6 +34,7 @@ import org.exoplatform.social.core.chromattic.utils.ActivityRefList;
 import org.exoplatform.social.core.identity.model.ActiveIdentityFilter;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvider;
+import org.exoplatform.social.core.identity.provider.SpaceIdentityProvider;
 import org.exoplatform.social.core.storage.api.ActivityStorage;
 import org.exoplatform.social.core.storage.api.IdentityStorage;
 import org.exoplatform.social.core.storage.impl.ActivityStorageImpl;
@@ -102,6 +103,16 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
       }
       //
       migrationByUser(null, identityEntity);
+    }
+    //migrate activities from space
+    migrateSpaceActivities();
+  }
+  
+  private void migrateSpaceActivities() throws Exception {
+    Iterator<IdentityEntity> allIdentityEntity = getAllIdentityEntity(SpaceIdentityProvider.NAME).values().iterator();
+    while (allIdentityEntity.hasNext()) {
+      IdentityEntity spaceEntity = (IdentityEntity) allIdentityEntity.next();
+      migrationByUser(null, spaceEntity);
     }
   }
 
@@ -205,17 +216,29 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
       _removeMixin(currenActivity, ActivityUpdaterEntity.class);
     }
     isDone = true;
-    //Remove all activity ref
-    Iterator<IdentityEntity> allIdentityEntity = getAllIdentityEntity(OrganizationIdentityProvider.NAME).values().iterator();
+    //Remove all activities from users
+    removeActivities(false);
+    //Remove all activities from spaces
+    removeActivities(true);
+    LOG.info("Done to migration activities from JCR to MYSQL");
+  }
+  
+  private void removeActivities(boolean isSpaceActivties) {
+    Iterator<IdentityEntity> allIdentityEntity = getAllIdentityEntity(isSpaceActivties ? SpaceIdentityProvider.NAME : OrganizationIdentityProvider.NAME).values().iterator();
     while (allIdentityEntity.hasNext()) {
       IdentityEntity identityEntity = (IdentityEntity) allIdentityEntity.next();
-      removeActivityRefs(identityEntity, ActivityRefType.FEED);
-      removeActivityRefs(identityEntity, ActivityRefType.MY_ACTIVITIES);
-      removeActivityRefs(identityEntity, ActivityRefType.CONNECTION);
-      removeActivityRefs(identityEntity, ActivityRefType.MY_SPACES);
+      if (isSpaceActivties) {
+        removeActivityRefs(identityEntity, ActivityRefType.FEED);
+        removeActivityRefs(identityEntity, ActivityRefType.SPACE_STREAM);
+      } else {
+        removeActivityRefs(identityEntity, ActivityRefType.FEED);
+        removeActivityRefs(identityEntity, ActivityRefType.MY_ACTIVITIES);
+        removeActivityRefs(identityEntity, ActivityRefType.CONNECTION);
+        removeActivityRefs(identityEntity, ActivityRefType.MY_SPACES);
+      }
     }
     //Remove all activity entity
-    allIdentityEntity = getAllIdentityEntity(OrganizationIdentityProvider.NAME).values().iterator();
+    allIdentityEntity = getAllIdentityEntity(isSpaceActivties ? SpaceIdentityProvider.NAME : OrganizationIdentityProvider.NAME).values().iterator();
     while (allIdentityEntity.hasNext()) {
       IdentityEntity identityEntity = (IdentityEntity) allIdentityEntity.next();
       ActivityListEntity activityListEntity = identityEntity.getActivityList();
@@ -224,7 +247,6 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
         getSession().remove(activityIterator.next());
       }
     }
-    LOG.info("Done to migration activities from JCR to MYSQL");
   }
   
   private void removeActivityRefs(IdentityEntity identityEntity, ActivityRefType type) {
