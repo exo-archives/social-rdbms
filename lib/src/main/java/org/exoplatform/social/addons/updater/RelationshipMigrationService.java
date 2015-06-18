@@ -2,6 +2,9 @@ package org.exoplatform.social.addons.updater;
 
 import java.util.Iterator;
 
+import org.exoplatform.commons.api.event.EventManager;
+import org.exoplatform.commons.api.jpa.EntityManagerService;
+import org.exoplatform.commons.utils.CommonsUtils;
 import org.exoplatform.management.annotations.Managed;
 import org.exoplatform.management.annotations.ManagedDescription;
 import org.exoplatform.management.jmx.annotations.NameTemplate;
@@ -22,22 +25,24 @@ import org.exoplatform.social.core.storage.api.IdentityStorage;
 @ManagedDescription("Social migration relationships from JCR to MYSQl service.")
 @NameTemplate({@Property(key = "service", value = "social"), @Property(key = "view", value = "migration-relationships") })
 public class RelationshipMigrationService extends AbstractMigrationService<Relationship> {
-
+  private static final int LIMIT_THRESHOLD = 100;
+  private static final String EVENT_LISTENER_KEY = "SOC_RELATIONSHIP_MIGRATION";
   private final RelationshipDAO relationshipDAO;
   private final ProfileItemDAO profileItemDAO;
 
   public RelationshipMigrationService(IdentityStorage identityStorage,
                                       RelationshipDAO relationshipDAO,
                                       ProfileMigrationService profileMigration,
+                                      EventManager<Relationship, String> eventManager,
                                       ProfileItemDAO profileItemDAO) {
-    super(identityStorage);
+    super(identityStorage, eventManager);
     this.relationshipDAO = relationshipDAO;
     this.profileItemDAO = profileItemDAO;
   }
 
   @Override
   protected void beforeMigration() throws Exception {
-    isDone = true;
+    isDone = false;
   }
 
   @Override
@@ -51,7 +56,7 @@ public class RelationshipMigrationService extends AbstractMigrationService<Relat
     LOG.info("Stating to migration relationships from JCR to MYSQL........");
     long t = System.currentTimeMillis();
     int count = 0;
-    SocialSessionLifecycle sessionLifecycle = GenericDAOImpl.lifecycleLookup();
+    EntityManagerService entityManagerService = CommonsUtils.getService(EntityManagerService.class);
     Iterator<IdentityEntity> allIdentityEntity = getAllIdentityEntity(OrganizationIdentityProvider.NAME).values().iterator();
     while (allIdentityEntity.hasNext()) {
       if(forkStop) {
@@ -74,7 +79,12 @@ public class RelationshipMigrationService extends AbstractMigrationService<Relat
       it = identityEntity.getReceiver().getRelationships().values().iterator();
       c2 += migrateRelationshipEntity(it, identityFrom, true, Relationship.Type.INCOMING);
       //
-      sessionLifecycle.flush();
+      entityManagerService.getEntityManager().flush();
+      if(c2 % LIMIT_THRESHOLD == 0) {
+        entityManagerService.endRequest(null);
+        entityManagerService.startRequest(null);
+        entityManagerService.getEntityManager().getTransaction().begin();
+      }
       ++count;
       LOG.info(String.format("Done to migration %s relationships for user %s from JCR to MYSQL on %s(ms)", c2, identityEntity.getRemoteId(), (System.currentTimeMillis() - t1)));
     }
@@ -102,6 +112,7 @@ public class RelationshipMigrationService extends AbstractMigrationService<Relat
 
   @Override
   protected void afterMigration() throws Exception {
+    isDone = true;
     Iterator<IdentityEntity> allIdentityEntity = getAllIdentityEntity(OrganizationIdentityProvider.NAME).values().iterator();
     while (allIdentityEntity.hasNext()) {
       IdentityEntity identityEntity = (IdentityEntity) allIdentityEntity.next();
@@ -124,5 +135,9 @@ public class RelationshipMigrationService extends AbstractMigrationService<Relat
   @ManagedDescription("Manual to stop run miguration data of relationships from JCR to MYSQL.")
   public void stop() {
     super.stop();
+  }
+
+  protected String getListenerKey() {
+    return EVENT_LISTENER_KEY;
   }
 }

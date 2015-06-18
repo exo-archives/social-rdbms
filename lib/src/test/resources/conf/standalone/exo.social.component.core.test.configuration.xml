@@ -38,6 +38,11 @@
   </component>
 
   <component>
+    <key>org.exoplatform.commons.api.event.EventManager</key>
+    <type>org.exoplatform.commons.event.impl.EventManagerImpl</type>
+  </component>
+
+  <component>
     <key>org.exoplatform.social.common.lifecycle.LifeCycleCompletionService</key>
     <type>org.exoplatform.social.common.lifecycle.LifeCycleCompletionService</type>
     <init-params>

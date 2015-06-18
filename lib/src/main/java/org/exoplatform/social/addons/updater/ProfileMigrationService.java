@@ -2,6 +2,9 @@ package org.exoplatform.social.addons.updater;
 
 import java.util.Iterator;
 
+import org.exoplatform.commons.api.event.EventManager;
+import org.exoplatform.commons.api.jpa.EntityManagerService;
+import org.exoplatform.commons.utils.CommonsUtils;
 import org.exoplatform.management.annotations.Managed;
 import org.exoplatform.management.annotations.ManagedDescription;
 import org.exoplatform.management.jmx.annotations.NameTemplate;
@@ -21,19 +24,23 @@ import org.exoplatform.social.core.storage.api.IdentityStorage;
 @ManagedDescription("Social migration profiles from JCR to MYSQl service.")
 @NameTemplate({@Property(key = "service", value = "social"), @Property(key = "view", value = "migration-profiles") })
 public class ProfileMigrationService extends AbstractMigrationService<Profile> {
+  private static final int LIMIT_THRESHOLD = 200;
+  private static final String EVENT_LISTENER_KEY = "SOC_PROFILE_MIGRATION";
   private final ProfileItemDAO profileDAO;
   private final IdentityManager identityManager;
   
   public ProfileMigrationService(ProfileItemDAO profileDAO,
                                  IdentityManager identityManager,
+                                 EventManager<Profile, String> eventManager,
                                  IdentityStorage identityStorage) {
-    super(identityStorage);
+    super(identityStorage, eventManager);
     this.profileDAO = profileDAO;
     this.identityManager = identityManager;
   }
 
   @Override
   protected void beforeMigration() throws Exception {
+    isDone = false;
   }
 
   @Override
@@ -48,7 +55,7 @@ public class ProfileMigrationService extends AbstractMigrationService<Profile> {
     long t = System.currentTimeMillis();
     int count = 0;
     Iterator<IdentityEntity> allIdentityEntity = getAllIdentityEntity(OrganizationIdentityProvider.NAME).values().iterator();
-    SocialSessionLifecycle sessionLifecycle = GenericDAOImpl.lifecycleLookup();
+    EntityManagerService entityManagerService = CommonsUtils.getService(EntityManagerService.class);
     while (allIdentityEntity.hasNext()) {
       if(forkStop) {
         return;
@@ -59,8 +66,13 @@ public class ProfileMigrationService extends AbstractMigrationService<Profile> {
       Identity identity = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, identityEntity.getRemoteId(), true);
       //
       ProfileUtils.createOrUpdateProfile(identity.getProfile(), false);
-      sessionLifecycle.flush();
+      entityManagerService.getEntityManager().flush();
       ++count;
+      if(count % LIMIT_THRESHOLD == 0) {
+        entityManagerService.endRequest(null);
+        entityManagerService.startRequest(null);
+        entityManagerService.getEntityManager().getTransaction().begin();
+      }
     }
     LOG.info(String.format("Done to migration %s profiles from JCR to MYSQL on %s(ms)", count, (System.currentTimeMillis() - t)));
   }
@@ -77,4 +89,7 @@ public class ProfileMigrationService extends AbstractMigrationService<Profile> {
     super.stop();
   }
 
+  protected String getListenerKey() {
+    return EVENT_LISTENER_KEY;
+  }
 }

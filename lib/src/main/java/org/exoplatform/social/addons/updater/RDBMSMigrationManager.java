@@ -2,6 +2,7 @@ package org.exoplatform.social.addons.updater;
 
 import java.util.concurrent.Callable;
 
+import org.exoplatform.commons.api.event.EventManager;
 import org.exoplatform.commons.api.notification.service.NotificationCompletionService;
 import org.exoplatform.container.xml.InitParams;
 import org.exoplatform.services.log.ExoLogger;

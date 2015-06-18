@@ -13,6 +13,7 @@ import javax.jcr.NodeIterator;
 import javax.jcr.RepositoryException;
 
 import org.chromattic.core.api.ChromatticSessionImpl;
+import org.exoplatform.commons.api.event.EventManager;
 import org.exoplatform.commons.api.jpa.EntityManagerService;
 import org.exoplatform.commons.utils.CommonsUtils;
 import org.exoplatform.management.annotations.Managed;
@@ -47,7 +48,8 @@ import com.google.caja.util.Lists;
 @ManagedDescription("Social migration activities from JCR to MYSQl service.")
 @NameTemplate({@Property(key = "service", value = "social"), @Property(key = "view", value = "migration-activities") })
 public class ActivityMigrationService extends AbstractMigrationService<ExoSocialActivity> {
-
+  private static final int LIMIT_THRESHOLD = 100;
+  private static final String EVENT_LISTENER_KEY = "SOC_ACTIVITY_MIGRATION";
   private final ActivityDAO activityDAO;
   private final ActivityStorage activityStorage;
   private final ActivityStorageImpl activityJCRStorage;
@@ -56,14 +58,14 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
   private ActivityEntity lastActivity = null;
   private String lastUserProcess = null;
   private boolean forkStop = false;
-  private static final int LIMIT_THRESHOLD = 100;
   
   public ActivityMigrationService(ActivityDAO activityDAO,
                                   ActivityStorage activityStorage,
                                   ActivityStorageImpl activityJCRStorage,
                                   IdentityStorage identityStorage,
+                                  EventManager<ExoSocialActivity, String> eventManager,
                                   RelationshipMigrationService relationshipMigration) {
-    super(identityStorage);
+    super(identityStorage, eventManager);
     this.activityDAO = activityDAO;
     this.activityStorage = activityStorage;
     this.activityJCRStorage = activityJCRStorage;
@@ -200,6 +202,7 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
   }
 
   protected void beforeMigration() throws Exception {
+    isDone = false;
     LOG.info("Stating to migration activities from JCR to MYSQL........");
     NodeIterator iterator = nodes("SELECT * FROM soc:activityUpdater");
     if (iterator.hasNext()) {
@@ -341,5 +344,10 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
       LOG.debug("Failed to get last updated by activity with id = " + activityEntity.getId(), e);
     }
     return activityEntity.getPostedTime();
+  }
+
+  @Override
+  protected String getListenerKey() {
+    return EVENT_LISTENER_KEY;
   }
 }
