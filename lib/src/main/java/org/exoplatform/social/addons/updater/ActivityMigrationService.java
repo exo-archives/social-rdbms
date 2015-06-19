@@ -243,13 +243,18 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
       _removeMixin(currenActivity, ActivityUpdaterEntity.class);
     }
     isDone = true;
+    LOG.info("Done to migration activities from JCR to MYSQL");
+  }
+
+  public void doRemove() throws Exception {
+    LOG.info("Start remove activities from JCR to MYSQL");
     //Remove all activities from users
     removeActivities(false);
     //Remove all activities from spaces
     removeActivities(true);
-    LOG.info("Done to migration activities from JCR to MYSQL");
+    LOG.info("Done to removed activities from JCR");
   }
-  
+
   private void removeActivities(boolean isSpaceActivties) {
     Iterator<IdentityEntity> allIdentityEntity = getAllIdentityEntity(isSpaceActivties ? SpaceIdentityProvider.NAME : OrganizationIdentityProvider.NAME).values().iterator();
     while (allIdentityEntity.hasNext()) {

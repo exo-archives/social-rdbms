@@ -105,5 +105,6 @@ public abstract class AbstractMigrationService<T>  extends AbstractStorage {
   protected abstract void beforeMigration() throws Exception;
   public abstract void doMigration() throws Exception;
   protected abstract void afterMigration() throws Exception;
+  public abstract void doRemove() throws Exception;
   protected abstract String getListenerKey();
 }

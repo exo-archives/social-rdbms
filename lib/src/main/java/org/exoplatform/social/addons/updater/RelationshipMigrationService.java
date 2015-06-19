@@ -5,7 +5,6 @@ import java.util.Iterator;
 
 import org.exoplatform.commons.api.event.EventManager;
 import org.exoplatform.commons.api.jpa.EntityManagerService;
-import org.exoplatform.commons.utils.CommonsUtils;
 import org.exoplatform.container.component.RequestLifeCycle;
 import org.exoplatform.management.annotations.Managed;
 import org.exoplatform.management.annotations.ManagedDescription;
@@ -30,15 +29,20 @@ public class RelationshipMigrationService extends AbstractMigrationService<Relat
   private static final String EVENT_LISTENER_KEY = "SOC_RELATIONSHIP_MIGRATION";
   private final RelationshipDAO relationshipDAO;
   private final ProfileItemDAO profileItemDAO;
+  private final EntityManagerService entityManagerService;
+  private static int number = 0;
+  
 
   public RelationshipMigrationService(IdentityStorage identityStorage,
                                       RelationshipDAO relationshipDAO,
                                       ProfileMigrationService profileMigration,
                                       EventManager<Relationship, String> eventManager,
-                                      ProfileItemDAO profileItemDAO) {
+                                      ProfileItemDAO profileItemDAO,
+                                      EntityManagerService entityManagerService) {
     super(identityStorage, eventManager);
     this.relationshipDAO = relationshipDAO;
     this.profileItemDAO = profileItemDAO;
+    this.entityManagerService = entityManagerService;
   }
 
   @Override
@@ -55,8 +59,8 @@ public class RelationshipMigrationService extends AbstractMigrationService<Relat
       isDone = true;
       return;
     }
+    number = 0;
     LOG.info("Stating to migration relationships from JCR to MYSQL........");
-    EntityManagerService entityManagerService = CommonsUtils.getService(EntityManagerService.class);
     Collection<IdentityEntity> allIdentityEntity  = getAllIdentityEntity(OrganizationIdentityProvider.NAME).values();
     long t = System.currentTimeMillis();
     int count = 0, size = allIdentityEntity.size();
@@ -74,21 +78,15 @@ public class RelationshipMigrationService extends AbstractMigrationService<Relat
       identityFrom.setId(identityEntity.getId());
       //
       Iterator<RelationshipEntity> it = identityEntity.getRelationship().getRelationships().values().iterator();
-      c2 += migrateRelationshipEntity(it, identityFrom, false, Relationship.Type.CONFIRMED);
+      c2 += migrateRelationshipEntity(begunTx, it, identityFrom, false, Relationship.Type.CONFIRMED);
       //
       it = identityEntity.getSender().getRelationships().values().iterator();
-      c2 += migrateRelationshipEntity(it, identityFrom, false, Relationship.Type.OUTGOING);
+      c2 += migrateRelationshipEntity(begunTx, it, identityFrom, false, Relationship.Type.OUTGOING);
       //
       it = identityEntity.getReceiver().getRelationships().values().iterator();
-      c2 += migrateRelationshipEntity(it, identityFrom, true, Relationship.Type.INCOMING);
+      c2 += migrateRelationshipEntity(begunTx, it, identityFrom, true, Relationship.Type.INCOMING);
       //
       entityManagerService.getEntityManager().flush();
-      if(c2 % LIMIT_THRESHOLD == 0) {
-        GenericDAOImpl.endTx(begunTx);
-        RequestLifeCycle.end();
-        RequestLifeCycle.begin(entityManagerService);
-        begunTx = GenericDAOImpl.startTx();
-      }
       ++count;
       processLog("Relationships migration", size, count);
       LOG.info(String.format("Done to migration %s relationships for user %s from JCR to MYSQL on %s(ms)", c2, identityEntity.getRemoteId(), (System.currentTimeMillis() - t1)));
@@ -98,7 +96,7 @@ public class RelationshipMigrationService extends AbstractMigrationService<Relat
     LOG.info(String.format("Done to migration relationships of %s users from JCR to MYSQL on %s(ms)", count,  (System.currentTimeMillis() - t)));
   }
   
-  private int migrateRelationshipEntity(Iterator<RelationshipEntity> it, Identity owner, boolean isIncoming, Relationship.Type status) {
+  private int migrateRelationshipEntity(boolean begunTx, Iterator<RelationshipEntity> it, Identity owner, boolean isIncoming, Relationship.Type status) {
     int c2 = 0;
     while (it.hasNext()) {
       RelationshipEntity relationshipEntity = it.next();
@@ -113,6 +111,13 @@ public class RelationshipMigrationService extends AbstractMigrationService<Relat
       //
       relationshipDAO.create(entity);
       ++c2;
+      ++number;
+      if(number % LIMIT_THRESHOLD == 0) {
+        GenericDAOImpl.endTx(begunTx);
+        RequestLifeCycle.end();
+        RequestLifeCycle.begin(entityManagerService);
+        begunTx = GenericDAOImpl.startTx();
+      }
     }
     return c2;
   }
@@ -123,6 +128,18 @@ public class RelationshipMigrationService extends AbstractMigrationService<Relat
       return;
     }
     isDone = true;
+    LOG.info("Done to migration relationships from JCR to MYSQL");
+  }
+  
+  private void removeRelationshipEntity(Iterator<RelationshipEntity> it) {
+    while (it.hasNext()) {
+      RelationshipEntity relationshipEntity = it.next();
+      getSession().remove(relationshipEntity);
+    }
+  }
+  
+  public void doRemove() throws Exception {
+    LOG.info("Start to remove relationships from JCR");
     Iterator<IdentityEntity> allIdentityEntity = getAllIdentityEntity(OrganizationIdentityProvider.NAME).values().iterator();
     while (allIdentityEntity.hasNext()) {
       IdentityEntity identityEntity = (IdentityEntity) allIdentityEntity.next();
@@ -131,13 +148,7 @@ public class RelationshipMigrationService extends AbstractMigrationService<Relat
       removeRelationshipEntity(identityEntity.getSender().getRelationships().values().iterator());
       removeRelationshipEntity(identityEntity.getReceiver().getRelationships().values().iterator());
     }
-  }
-  
-  private void removeRelationshipEntity(Iterator<RelationshipEntity> it) {
-    while (it.hasNext()) {
-      RelationshipEntity relationshipEntity = it.next();
-      getSession().remove(relationshipEntity);
-    }
+    LOG.info("Done to removed relationships from JCR");
   }
   
   @Override
