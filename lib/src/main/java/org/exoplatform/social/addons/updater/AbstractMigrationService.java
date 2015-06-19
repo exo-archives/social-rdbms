@@ -93,7 +93,9 @@ public abstract class AbstractMigrationService<T>  extends AbstractStorage {
     if (count == 1) {
       process = "=";
     }
-    if ((count * 10) % (size / 10) == 0) {
+    int processSize = (size / 10);
+    processSize = (processSize <= 0) ? 1 : processSize;
+    if ((count * 10) % processSize == 0) {
       process += "=";
     }
     //
