@@ -84,6 +84,7 @@ public class ProfileMigrationService extends AbstractMigrationService<Profile> {
       return;
     }
     isDone = true;
+    LOG.info("Done to migration profiles from JCR to MYSQL");
   }
   
   @Override
@@ -95,5 +96,9 @@ public class ProfileMigrationService extends AbstractMigrationService<Profile> {
 
   protected String getListenerKey() {
     return EVENT_LISTENER_KEY;
+  }
+
+  @Override
+  public void doRemove() throws Exception {
   }
 }

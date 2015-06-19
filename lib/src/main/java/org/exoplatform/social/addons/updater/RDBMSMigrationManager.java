@@ -45,6 +45,10 @@ public class RDBMSMigrationManager implements Startable {
             relationshipMigration.start();
             if(relationshipMigration.isDone()) {
               activityMigration.start();
+              if(activityMigration.isDone()) {
+                relationshipMigration.doRemove();
+                activityMigration.doRemove();
+              }
             }
           }
         } catch (Exception e) {
