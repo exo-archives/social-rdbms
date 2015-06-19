@@ -1,5 +1,6 @@
 package org.exoplatform.social.addons.updater;
 
+import java.util.Collection;
 import java.util.Iterator;
 
 import org.exoplatform.commons.api.event.EventManager;
@@ -50,15 +51,16 @@ public class ProfileMigrationService extends AbstractMigrationService<Profile> {
       return;
     }
     LOG.info("Stating to migration profiles from JCR to MYSQL........");
+    Collection<IdentityEntity> allIdentityEntity  = getAllIdentityEntity(OrganizationIdentityProvider.NAME).values();
     long t = System.currentTimeMillis();
-    int count = 0;
-    Iterator<IdentityEntity> allIdentityEntity = getAllIdentityEntity(OrganizationIdentityProvider.NAME).values().iterator();
+    int count = 0, size = allIdentityEntity.size();
     EntityManagerService entityManagerService = CommonsUtils.getService(EntityManagerService.class);
-    while (allIdentityEntity.hasNext()) {
+    Iterator<IdentityEntity> iter =  allIdentityEntity.iterator();
+    while (iter.hasNext()) {
       if(forkStop) {
         return;
       }
-      IdentityEntity identityEntity = (IdentityEntity) allIdentityEntity.next();
+      IdentityEntity identityEntity = (IdentityEntity) iter.next();
       LOG.info("Migration profile for user: " + identityEntity.getRemoteId());
       //
       Identity identity = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, identityEntity.getRemoteId(), true);
@@ -71,12 +73,16 @@ public class ProfileMigrationService extends AbstractMigrationService<Profile> {
         entityManagerService.startRequest(null);
         entityManagerService.getEntityManager().getTransaction().begin();
       }
+      processLog("Profiles migration", size, count);
     }
     LOG.info(String.format("Done to migration %s profiles from JCR to MYSQL on %s(ms)", count, (System.currentTimeMillis() - t)));
   }
 
   @Override
   protected void afterMigration() throws Exception {
+    if(forkStop) {
+      return;
+    }
     isDone = true;
   }
   

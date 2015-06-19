@@ -22,6 +22,7 @@ public abstract class AbstractMigrationService<T>  extends AbstractStorage {
   protected final IdentityStorage identityStorage;
   protected boolean forkStop = false;
   protected boolean isDone = false;
+  protected String process = "";
   protected EventManager<T, String> eventManager;
 
   public AbstractMigrationService(IdentityStorage identityStorage,
@@ -85,6 +86,18 @@ public abstract class AbstractMigrationService<T>  extends AbstractStorage {
       providerEntity = getProviderRoot().getProviders().get(providerId);
     }
     return (providerEntity != null) ? providerEntity.getIdentities() : new HashMap<String, IdentityEntity>();
+  }
+  
+  protected void processLog(String msg, int size, int count) {
+    size = (size <= 0) ? 1 : size;
+    if (count == 1) {
+      process = "=";
+    }
+    if ((count * 10) % (size / 10) == 0) {
+      process += "=";
+    }
+    //
+    LOG.info(String.format(msg + ":[%s> %s%%]", process, (100 * count) / size));
   }
 
   protected abstract void beforeMigration() throws Exception;

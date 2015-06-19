@@ -1,5 +1,6 @@
 package org.exoplatform.social.addons.updater;
 
+import java.util.Collection;
 import java.util.Iterator;
 
 import org.exoplatform.commons.api.event.EventManager;
@@ -52,15 +53,16 @@ public class RelationshipMigrationService extends AbstractMigrationService<Relat
       return;
     }
     LOG.info("Stating to migration relationships from JCR to MYSQL........");
-    long t = System.currentTimeMillis();
-    int count = 0;
     EntityManagerService entityManagerService = CommonsUtils.getService(EntityManagerService.class);
-    Iterator<IdentityEntity> allIdentityEntity = getAllIdentityEntity(OrganizationIdentityProvider.NAME).values().iterator();
-    while (allIdentityEntity.hasNext()) {
+    Collection<IdentityEntity> allIdentityEntity  = getAllIdentityEntity(OrganizationIdentityProvider.NAME).values();
+    long t = System.currentTimeMillis();
+    int count = 0, size = allIdentityEntity.size();
+    Iterator<IdentityEntity> iter = allIdentityEntity.iterator();
+    while (iter.hasNext()) {
       if(forkStop) {
         return;
       }
-      IdentityEntity identityEntity = (IdentityEntity) allIdentityEntity.next();
+      IdentityEntity identityEntity = (IdentityEntity) iter.next();
       //
       LOG.info("Migration relationship for user: " + identityEntity.getRemoteId());
       long t1 = System.currentTimeMillis();
@@ -84,6 +86,7 @@ public class RelationshipMigrationService extends AbstractMigrationService<Relat
         entityManagerService.getEntityManager().getTransaction().begin();
       }
       ++count;
+      processLog("Relationships migration", size, count);
       LOG.info(String.format("Done to migration %s relationships for user %s from JCR to MYSQL on %s(ms)", c2, identityEntity.getRemoteId(), (System.currentTimeMillis() - t1)));
     }
     LOG.info(String.format("Done to migration relationships of %s users from JCR to MYSQL on %s(ms)", count,  (System.currentTimeMillis() - t)));
@@ -110,6 +113,9 @@ public class RelationshipMigrationService extends AbstractMigrationService<Relat
 
   @Override
   protected void afterMigration() throws Exception {
+    if(forkStop) {
+      return;
+    }
     isDone = true;
     Iterator<IdentityEntity> allIdentityEntity = getAllIdentityEntity(OrganizationIdentityProvider.NAME).values().iterator();
     while (allIdentityEntity.hasNext()) {

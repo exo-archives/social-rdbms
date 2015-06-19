@@ -1,6 +1,7 @@
 package org.exoplatform.social.addons.updater;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -79,21 +80,28 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
     }
     // doing with group administrators and active users
     List<String> activeUsers = getAdminAndActiveUsers();
+    int size = activeUsers.size(), count = 0;
     for (String userName : activeUsers) {
       if(forkStop) {
         return;
       }
       //
       migrationByUser(userName, null);
+      ++count;
+      //
+      processLog("Activities migration admin+active users", size, count);
     }
     // doing with normal users
     boolean isSkip = (lastUserProcess != null);
-    Iterator<IdentityEntity> allIdentityEntity = getAllIdentityEntity(OrganizationIdentityProvider.NAME).values().iterator();
-    while (allIdentityEntity.hasNext()) {
+    Collection<IdentityEntity> allIdentityEntity  = getAllIdentityEntity(OrganizationIdentityProvider.NAME).values();
+    size = allIdentityEntity.size() - size;
+    count = 0;
+    Iterator<IdentityEntity> iter =  allIdentityEntity.iterator();
+    while (iter.hasNext()) {
       if(forkStop) {
         return;
       }
-      IdentityEntity identityEntity = (IdentityEntity) allIdentityEntity.next();
+      IdentityEntity identityEntity = (IdentityEntity) iter.next();
       if (isSkip) {
         if (lastUserProcess.equals(identityEntity.getRemoteId())) {
           isSkip = false;
@@ -105,16 +113,24 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
       }
       //
       migrationByUser(null, identityEntity);
+      //
+      ++count;
+      processLog("Activities migration normal users", size, count);
     }
     //migrate activities from space
     migrateSpaceActivities();
   }
   
   private void migrateSpaceActivities() throws Exception {
-    Iterator<IdentityEntity> allIdentityEntity = getAllIdentityEntity(SpaceIdentityProvider.NAME).values().iterator();
-    while (allIdentityEntity.hasNext()) {
-      IdentityEntity spaceEntity = (IdentityEntity) allIdentityEntity.next();
+    Collection<IdentityEntity> allIdentityEntity  = getAllIdentityEntity(SpaceIdentityProvider.NAME).values(); 
+    Iterator<IdentityEntity> iter = allIdentityEntity.iterator();
+    int size = allIdentityEntity.size(), count = 0;
+    while (iter.hasNext()) {
+      IdentityEntity spaceEntity = (IdentityEntity) iter.next();
       migrationByUser(null, spaceEntity);
+      //
+      ++count;
+      processLog("Activities migration spaces", size, count);
     }
   }
 
@@ -215,6 +231,9 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
   }
 
   protected void afterMigration() throws Exception {
+    if(forkStop) {
+      return;
+    }
     if(currenActivity != null) {
       _removeMixin(currenActivity, ActivityUpdaterEntity.class);
     }
