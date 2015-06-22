@@ -5,6 +5,7 @@ import java.util.Iterator;
 
 import org.exoplatform.commons.api.event.EventManager;
 import org.exoplatform.commons.api.jpa.EntityManagerService;
+import org.exoplatform.container.PortalContainer;
 import org.exoplatform.container.component.RequestLifeCycle;
 import org.exoplatform.management.annotations.Managed;
 import org.exoplatform.management.annotations.ManagedDescription;
@@ -26,10 +27,9 @@ import org.exoplatform.social.core.storage.api.IdentityStorage;
 @NameTemplate({@Property(key = "service", value = "social"), @Property(key = "view", value = "migration-relationships") })
 public class RelationshipMigrationService extends AbstractMigrationService<Relationship> {
   private static final int LIMIT_THRESHOLD = 100;
-  private static final String EVENT_LISTENER_KEY = "SOC_RELATIONSHIP_MIGRATION";
+  public static final String EVENT_LISTENER_KEY = "SOC_RELATIONSHIP_MIGRATION";
   private final RelationshipDAO relationshipDAO;
   private final ProfileItemDAO profileItemDAO;
-  private final EntityManagerService entityManagerService;
   private static int number = 0;
   
 
@@ -37,12 +37,10 @@ public class RelationshipMigrationService extends AbstractMigrationService<Relat
                                       RelationshipDAO relationshipDAO,
                                       ProfileMigrationService profileMigration,
                                       EventManager<Relationship, String> eventManager,
-                                      ProfileItemDAO profileItemDAO,
-                                      EntityManagerService entityManagerService) {
+                                      ProfileItemDAO profileItemDAO) {
     super(identityStorage, eventManager);
     this.relationshipDAO = relationshipDAO;
     this.profileItemDAO = profileItemDAO;
-    this.entityManagerService = entityManagerService;
   }
 
   @Override
@@ -54,46 +52,45 @@ public class RelationshipMigrationService extends AbstractMigrationService<Relat
   @Managed
   @ManagedDescription("Manual to start run miguration data of relationships from JCR to MYSQL.")
   public void doMigration() throws Exception {
-    boolean begunTx = GenericDAOImpl.startTx();
-    if (relationshipDAO.count() > 0) {
-      isDone = true;
-      return;
-    }
-    number = 0;
-    LOG.info("Stating to migration relationships from JCR to MYSQL........");
-    Collection<IdentityEntity> allIdentityEntity  = getAllIdentityEntity(OrganizationIdentityProvider.NAME).values();
-    long t = System.currentTimeMillis();
-    int count = 0, size = allIdentityEntity.size();
-    Iterator<IdentityEntity> iter = allIdentityEntity.iterator();
-    while (iter.hasNext()) {
-      if(forkStop) {
+      boolean begunTx = GenericDAOImpl.startTx();
+      if (relationshipDAO.count() > 0) {
+        isDone = true;
         return;
       }
-      IdentityEntity identityEntity = (IdentityEntity) iter.next();
-      //
-      LOG.info("Migration relationship for user: " + identityEntity.getRemoteId());
-      long t1 = System.currentTimeMillis();
-      int c2 = 0;
-      Identity identityFrom = new Identity(OrganizationIdentityProvider.NAME, identityEntity.getRemoteId());
-      identityFrom.setId(identityEntity.getId());
-      //
-      Iterator<RelationshipEntity> it = identityEntity.getRelationship().getRelationships().values().iterator();
-      c2 += migrateRelationshipEntity(begunTx, it, identityFrom, false, Relationship.Type.CONFIRMED);
-      //
-      it = identityEntity.getSender().getRelationships().values().iterator();
-      c2 += migrateRelationshipEntity(begunTx, it, identityFrom, false, Relationship.Type.OUTGOING);
-      //
-      it = identityEntity.getReceiver().getRelationships().values().iterator();
-      c2 += migrateRelationshipEntity(begunTx, it, identityFrom, true, Relationship.Type.INCOMING);
-      //
-      entityManagerService.getEntityManager().flush();
-      ++count;
-      processLog("Relationships migration", size, count);
-      LOG.info(String.format("Done to migration %s relationships for user %s from JCR to MYSQL on %s(ms)", c2, identityEntity.getRemoteId(), (System.currentTimeMillis() - t1)));
-    }
-    
-    GenericDAOImpl.endTx(begunTx);
-    LOG.info(String.format("Done to migration relationships of %s users from JCR to MYSQL on %s(ms)", count,  (System.currentTimeMillis() - t)));
+      number = 0;
+      LOG.info("Stating to migration relationships from JCR to MYSQL........");
+      Collection<IdentityEntity> allIdentityEntity  = getAllIdentityEntity(OrganizationIdentityProvider.NAME).values();
+      long t = System.currentTimeMillis();
+      int count = 0, size = allIdentityEntity.size();
+      Iterator<IdentityEntity> iter = allIdentityEntity.iterator();
+      while (iter.hasNext()) {
+        if(forkStop) {
+          return;
+        }
+        IdentityEntity identityEntity = (IdentityEntity) iter.next();
+        //
+        LOG.info("Migration relationship for user: " + identityEntity.getRemoteId());
+        long t1 = System.currentTimeMillis();
+        int c2 = 0;
+        Identity identityFrom = new Identity(OrganizationIdentityProvider.NAME, identityEntity.getRemoteId());
+        identityFrom.setId(identityEntity.getId());
+        //
+        Iterator<RelationshipEntity> it = identityEntity.getRelationship().getRelationships().values().iterator();
+        c2 += migrateRelationshipEntity(begunTx, it, identityFrom, false, Relationship.Type.CONFIRMED);
+        //
+        it = identityEntity.getSender().getRelationships().values().iterator();
+        c2 += migrateRelationshipEntity(begunTx, it, identityFrom, false, Relationship.Type.OUTGOING);
+        //
+        it = identityEntity.getReceiver().getRelationships().values().iterator();
+        c2 += migrateRelationshipEntity(begunTx, it, identityFrom, true, Relationship.Type.INCOMING);
+        //
+        ++count;
+        processLog("Relationships migration", size, count);
+        LOG.info(String.format("Done to migration %s relationships for user %s from JCR to MYSQL on %s(ms)", c2, identityEntity.getRemoteId(), (System.currentTimeMillis() - t1)));
+      }
+      
+      GenericDAOImpl.endTx(begunTx);
+      LOG.info(String.format("Done to migration relationships of %s users from JCR to MYSQL on %s(ms)", count, (System.currentTimeMillis() - t)));
   }
   
   private int migrateRelationshipEntity(boolean begunTx, Iterator<RelationshipEntity> it, Identity owner, boolean isIncoming, Relationship.Type status) {
@@ -115,7 +112,7 @@ public class RelationshipMigrationService extends AbstractMigrationService<Relat
       if(number % LIMIT_THRESHOLD == 0) {
         GenericDAOImpl.endTx(begunTx);
         RequestLifeCycle.end();
-        RequestLifeCycle.begin(entityManagerService);
+        RequestLifeCycle.begin(PortalContainer.getInstance());
         begunTx = GenericDAOImpl.startTx();
       }
     }

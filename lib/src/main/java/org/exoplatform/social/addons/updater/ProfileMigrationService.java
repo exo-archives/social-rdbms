@@ -4,8 +4,7 @@ import java.util.Collection;
 import java.util.Iterator;
 
 import org.exoplatform.commons.api.event.EventManager;
-import org.exoplatform.commons.api.jpa.EntityManagerService;
-import org.exoplatform.commons.utils.CommonsUtils;
+import org.exoplatform.container.PortalContainer;
 import org.exoplatform.container.component.RequestLifeCycle;
 import org.exoplatform.management.annotations.Managed;
 import org.exoplatform.management.annotations.ManagedDescription;
@@ -26,7 +25,7 @@ import org.exoplatform.social.core.storage.api.IdentityStorage;
 @NameTemplate({@Property(key = "service", value = "social"), @Property(key = "view", value = "migration-profiles") })
 public class ProfileMigrationService extends AbstractMigrationService<Profile> {
   private static final int LIMIT_THRESHOLD = 200;
-  private static final String EVENT_LISTENER_KEY = "SOC_PROFILE_MIGRATION";
+  public static final String EVENT_LISTENER_KEY = "SOC_PROFILE_MIGRATION";
   private final ProfileItemDAO profileDAO;
   private final IdentityManager identityManager;
   
@@ -49,43 +48,47 @@ public class ProfileMigrationService extends AbstractMigrationService<Profile> {
   @ManagedDescription("Manual to start run miguration data of profiles from JCR to MYSQL.")
   public void doMigration() throws Exception {
     boolean begunTx = GenericDAOImpl.startTx();
-    if (profileDAO.count() > 0) {
-      isDone = true;
-      return;
-    }
-    LOG.info("Stating to migration profiles from JCR to MYSQL........");
-    Collection<IdentityEntity> allIdentityEntity = getAllIdentityEntity(OrganizationIdentityProvider.NAME).values();
-    long t = System.currentTimeMillis();
-    int count = 0, size = allIdentityEntity.size();
-    EntityManagerService entityManagerService = CommonsUtils.getService(EntityManagerService.class);
-    Iterator<IdentityEntity> iter = allIdentityEntity.iterator();
-    while (iter.hasNext()) {
-      if (forkStop) {
+    try {
+      if (profileDAO.count() > 0) {
+        isDone = true;
         return;
       }
-      IdentityEntity identityEntity = (IdentityEntity) iter.next();
-      LOG.info("Migration profile for user: " + identityEntity.getRemoteId());
-      //
-      Identity identity = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME,
-                                                              identityEntity.getRemoteId(),
-                                                              true);
-      //
-      ProfileUtils.createOrUpdateProfile(identity.getProfile(), false);
-      entityManagerService.getEntityManager().flush();
-      ++count;
-      if (count % LIMIT_THRESHOLD == 0) {
-        GenericDAOImpl.endTx(begunTx);
-        RequestLifeCycle.end();
-        RequestLifeCycle.begin(entityManagerService);
-        begunTx = GenericDAOImpl.startTx();
-      }
-      processLog("Profiles migration", size, count);
-    }
+      LOG.info("Stating to migration profiles from JCR to MYSQL........");
+      Collection<IdentityEntity> allIdentityEntity = getAllIdentityEntity(OrganizationIdentityProvider.NAME).values();
+      long t = System.currentTimeMillis();
+      int count = 0, size = allIdentityEntity.size();
 
-    GenericDAOImpl.endTx(begunTx);
-    LOG.info(String.format("Done to migration %s profiles from JCR to MYSQL on %s(ms)",
-                           count,
-                           (System.currentTimeMillis() - t)));
+      Iterator<IdentityEntity> iter = allIdentityEntity.iterator();
+      while (iter.hasNext()) {
+        if (forkStop) {
+          return;
+        }
+        IdentityEntity identityEntity = (IdentityEntity) iter.next();
+        LOG.info("Migration profile for user: " + identityEntity.getRemoteId());
+        //
+        Identity identity = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME,
+                                                                identityEntity.getRemoteId(),
+                                                                true);
+        //
+        ProfileUtils.createOrUpdateProfile(identity.getProfile(), false);
+        ++count;
+        if (count % LIMIT_THRESHOLD == 0) {
+          GenericDAOImpl.endTx(begunTx);
+          RequestLifeCycle.end();
+          RequestLifeCycle.begin(PortalContainer.getInstance());
+          begunTx = GenericDAOImpl.startTx();
+        }
+        processLog("Profiles migration", size, count);
+      }
+
+      
+      LOG.info(String.format("Done to migration %s profiles from JCR to MYSQL on %s(ms)",
+                             count,
+                             (System.currentTimeMillis() - t)));
+    } finally {
+      GenericDAOImpl.endTx(begunTx);
+    }
+   
   }
 
   @Override

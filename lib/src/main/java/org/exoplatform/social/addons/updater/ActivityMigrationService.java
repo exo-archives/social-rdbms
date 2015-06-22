@@ -15,8 +15,8 @@ import javax.jcr.RepositoryException;
 
 import org.chromattic.core.api.ChromatticSessionImpl;
 import org.exoplatform.commons.api.event.EventManager;
-import org.exoplatform.commons.api.jpa.EntityManagerService;
 import org.exoplatform.commons.utils.CommonsUtils;
+import org.exoplatform.container.PortalContainer;
 import org.exoplatform.container.component.RequestLifeCycle;
 import org.exoplatform.management.annotations.Managed;
 import org.exoplatform.management.annotations.ManagedDescription;
@@ -24,17 +24,16 @@ import org.exoplatform.management.jmx.annotations.NameTemplate;
 import org.exoplatform.management.jmx.annotations.Property;
 import org.exoplatform.social.addons.storage.dao.ActivityDAO;
 import org.exoplatform.social.addons.storage.dao.jpa.GenericDAOImpl;
+import org.exoplatform.social.addons.updater.activity.AbstractStrategy;
+import org.exoplatform.social.addons.updater.activity.StrategyFactory;
 import org.exoplatform.social.core.activity.model.ExoSocialActivity;
 import org.exoplatform.social.core.activity.model.ExoSocialActivityImpl;
 import org.exoplatform.social.core.chromattic.entity.ActivityEntity;
 import org.exoplatform.social.core.chromattic.entity.ActivityListEntity;
 import org.exoplatform.social.core.chromattic.entity.ActivityParameters;
-import org.exoplatform.social.core.chromattic.entity.ActivityRefListEntity;
 import org.exoplatform.social.core.chromattic.entity.HidableEntity;
 import org.exoplatform.social.core.chromattic.entity.IdentityEntity;
 import org.exoplatform.social.core.chromattic.utils.ActivityIterator;
-import org.exoplatform.social.core.chromattic.utils.ActivityRefIterator;
-import org.exoplatform.social.core.chromattic.utils.ActivityRefList;
 import org.exoplatform.social.core.identity.model.ActiveIdentityFilter;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvider;
@@ -42,7 +41,6 @@ import org.exoplatform.social.core.identity.provider.SpaceIdentityProvider;
 import org.exoplatform.social.core.storage.api.ActivityStorage;
 import org.exoplatform.social.core.storage.api.IdentityStorage;
 import org.exoplatform.social.core.storage.impl.ActivityStorageImpl;
-import org.exoplatform.social.core.storage.impl.ActivityStreamStorageImpl.ActivityRefType;
 import org.exoplatform.social.core.storage.streams.StreamConfig;
 
 import com.google.caja.util.Lists;
@@ -52,12 +50,12 @@ import com.google.caja.util.Lists;
 @NameTemplate({@Property(key = "service", value = "social"), @Property(key = "view", value = "migration-activities") })
 public class ActivityMigrationService extends AbstractMigrationService<ExoSocialActivity> {
   private static final int LIMIT_THRESHOLD = 100;
-  private static final String EVENT_LISTENER_KEY = "SOC_ACTIVITY_MIGRATION";
+  public static final String EVENT_LISTENER_KEY = "SOC_ACTIVITY_MIGRATION";
   private final ActivityDAO activityDAO;
   private final ActivityStorage activityStorage;
   private final ActivityStorageImpl activityJCRStorage;
 
-  private ActivityEntity currenActivity = null;
+  private String previousActivityId = null;
   private ActivityEntity lastActivity = null;
   private String lastUserProcess = null;
   private boolean forkStop = false;
@@ -77,6 +75,12 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
   @Managed
   @ManagedDescription("Manual to start run miguration data of activities from JCR to MYSQL.")
   public void doMigration() throws Exception {
+    migrateUserActivities();
+    // migrate activities from space
+    migrateSpaceActivities();
+  }
+
+  private void migrateUserActivities() throws Exception {
     //
     if(lastUserProcess == null && activityDAO.count() > 0) {
       return;
@@ -89,7 +93,7 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
         return;
       }
       //
-      migrationByUser(userName, null);
+      migrationByIdentity(userName, null);
       ++count;
       //
       processLog("Activities migration admin+active users", size, count);
@@ -115,13 +119,11 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
         continue;
       }
       //
-      migrationByUser(null, identityEntity);
+      migrationByIdentity(null, identityEntity);
       //
       ++count;
       processLog("Activities migration normal users", size, count);
     }
-    //migrate activities from space
-    migrateSpaceActivities();
   }
   
   private void migrateSpaceActivities() throws Exception {
@@ -130,7 +132,7 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
     int size = allIdentityEntity.size(), count = 0;
     while (iter.hasNext()) {
       IdentityEntity spaceEntity = (IdentityEntity) iter.next();
-      migrationByUser(null, spaceEntity);
+      migrationByIdentity(null, spaceEntity);
       //
       ++count;
       processLog("Activities migration spaces", size, count);
@@ -143,90 +145,7 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
   public void stop() {
     super.stop();
   }
-
-  private void migrationByUser(String userName, IdentityEntity identityEntity) throws Exception {
-    boolean begunTx = GenericDAOImpl.startTx();
-    if (identityEntity == null) {
-      Identity poster = identityStorage.findIdentity(OrganizationIdentityProvider.NAME, userName);
-      try {
-        identityEntity = _findById(IdentityEntity.class, poster.getId());
-      } catch (Exception e) {
-        LOG.warn("The user " + userName + " has not identity. Do not migration for this user.");
-        return;
-      }
-    }
-    LOG.info("Migration activities for user: " + identityEntity.getRemoteId());
-    //
-    ActivityListEntity activityListEntity = identityEntity.getActivityList();
-    ActivityIterator activityIterator = new ActivityIterator(activityListEntity);
-    //
-    if (lastActivity != null) {
-      activityIterator.moveTo(lastActivity);
-      //Only goto last on first users
-      lastActivity = null;
-    }
-    long t = System.currentTimeMillis();
-    int count = 0;
-    EntityManagerService entityManagerService = CommonsUtils.getService(EntityManagerService.class);
-    while (activityIterator.hasNext()) {
-      ActivityEntity activityEntity = activityIterator.next();
-      LOG.info("Mirgration activity: " + activityEntity.getName());
-      //
-      ExoSocialActivity activity = activityJCRStorage.getActivity(activityEntity.getId());
-      //
-      IdentityEntity activityIdentity = activityEntity.getIdentity();
-      Identity owner = new Identity(activityIdentity.getProviderId(), activityIdentity.getRemoteId());
-      owner.setId(activityIdentity.getId());
-      //
-      String oldId = activity.getId();
-      activity.setId(null);
-      activityStorage.saveActivity(owner, activity);
-      entityManagerService.getEntityManager().flush();
-      //
-      doBroadcastListener(activity, oldId);
-      //
-      List<ActivityEntity> commentEntities = activityEntity.getComments();
-      for (ActivityEntity commentEntity : commentEntities) {
-        ExoSocialActivity comment = fillCommentFromEntity(commentEntity);
-        //
-        oldId = comment.getId();
-        comment.setId(null);
-        activityStorage.saveComment(activity, comment);
-        entityManagerService.getEntityManager().flush();
-        //
-        doBroadcastListener(comment, oldId);
-      }
-      //
-      if (currenActivity != null) {
-        try {
-          currenActivity.getName();
-          _removeMixin(currenActivity, ActivityUpdaterEntity.class);
-        } catch (Exception e) {
-          LOG.error("Failed to remove mixin type," + e.getMessage());
-        }
-      }
-      _getMixin(activityEntity, ActivityUpdaterEntity.class, true);
-      currenActivity = activityEntity;
-      ++count;
-      //
-      if(count % LIMIT_THRESHOLD == 0) {
-        GenericDAOImpl.endTx(begunTx);
-        RequestLifeCycle.end();
-        RequestLifeCycle.begin(entityManagerService);
-        begunTx = GenericDAOImpl.startTx();
-      }
-    }
-    LOG.info(String.format("Done migration %s activities for user %s on %s(ms) ",
-                           count, identityEntity.getRemoteId(), System.currentTimeMillis() - t));
-  }
-
-  private void doBroadcastListener(ExoSocialActivity activity, String oldId) {
-    String newId = activity.getId();
-    activity.setId(oldId);
-    broadcastListener(activity, newId);
-    activity.setId(newId);
-  }
-
+  
   protected void beforeMigration() throws Exception {
     isDone = false;
     LOG.info("Stating to migration activities from JCR to MYSQL........");
@@ -240,58 +159,137 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
     }
   }
 
+  private void migrationByIdentity(String userName, IdentityEntity identityEntity) throws Exception {
+    boolean begunTx = GenericDAOImpl.startTx();
+    try {
+      if (identityEntity == null) {
+        Identity poster = identityStorage.findIdentity(OrganizationIdentityProvider.NAME, userName);
+        try {
+          identityEntity = _findById(IdentityEntity.class, poster.getId());
+        } catch (Exception e) {
+          LOG.warn("The user " + userName + " has not identity. Do not migration for this user.");
+          return;
+        }
+      }
+      LOG.info("Migration activities for user: " + identityEntity.getRemoteId());
+      //
+      ActivityListEntity activityListEntity = identityEntity.getActivityList();
+      ActivityIterator activityIterator = new ActivityIterator(activityListEntity);
+      //
+      if (lastActivity != null) {
+        activityIterator.moveTo(lastActivity);
+        //Only goto last on first users
+        lastActivity = null;
+      }
+      long t = System.currentTimeMillis();
+      int count = 0;
+      while (activityIterator.hasNext()) {
+        String activityId = activityIterator.next().getId();
+        //
+        ExoSocialActivity activity = activityJCRStorage.getActivity(activityId);
+        //
+        Identity owner = new Identity(activity.getPosterId());
+        owner.setProviderId(OrganizationIdentityProvider.NAME);
+        //
+        activity.setId(null);
+        activityStorage.saveActivity(owner, activity);
+        //
+        doBroadcastListener(activity, activityId);
+        //
+        ActivityEntity activityEntity = getSession().findById(ActivityEntity.class, activityId);
+        _getMixin(activityEntity, ActivityUpdaterEntity.class, true);
+        //
+        if (previousActivityId != null) {
+          try {
+            ActivityEntity previousActivity = getSession().findById(ActivityEntity.class, previousActivityId);
+            if (previousActivity != null) {
+              _removeMixin(previousActivity, ActivityUpdaterEntity.class);
+            }
+          } catch (Exception e) {
+            LOG.error("Failed to remove mixin type," + e.getMessage(), e);
+          }
+        }
+        
+        List<ActivityEntity> commentEntities = activityEntity.getComments();
+        for (ActivityEntity commentEntity : commentEntities) {
+          ExoSocialActivity comment = fillCommentFromEntity(commentEntity);
+          //
+          String oldCommentId = comment.getId();
+          comment.setId(null);
+          activityStorage.saveComment(activity, comment);
+          //
+          doBroadcastListener(comment, oldCommentId);
+        }
+        
+        previousActivityId = activityId;
+        ++count;
+        //
+        if(count % LIMIT_THRESHOLD == 0) {
+          GenericDAOImpl.endTx(begunTx);
+          RequestLifeCycle.end();
+          RequestLifeCycle.begin(PortalContainer.getInstance());
+          begunTx = GenericDAOImpl.startTx();
+        }
+      }
+      LOG.info(String.format("Done migration %s activities for user %s on %s(ms) ",
+                             count, identityEntity.getRemoteId(), System.currentTimeMillis() - t));
+      
+    } finally {
+      GenericDAOImpl.endTx(begunTx);
+    }
+    
+  }
+
+  private void doBroadcastListener(ExoSocialActivity activity, String oldId) {
+    String newId = activity.getId();
+    activity.setId(oldId);
+    broadcastListener(activity, newId);
+    activity.setId(newId);
+  }
+
+  
+
   protected void afterMigration() throws Exception {
-    if(forkStop) {
+    if (forkStop) {
       return;
     }
-    if(currenActivity != null) {
-      _removeMixin(currenActivity, ActivityUpdaterEntity.class);
+    if (previousActivityId != null) {
+      try {
+        ActivityEntity previousActivity = getSession().findById(ActivityEntity.class, previousActivityId);
+        if (previousActivity != null) {
+          _removeMixin(previousActivity, ActivityUpdaterEntity.class);
+        }
+      } catch (Exception e) {
+        LOG.error("Failed to remove mixin type," + e.getMessage(), e);
+      }
     }
+
     isDone = true;
     LOG.info("Done to migration activities from JCR to MYSQL");
   }
 
   public void doRemove() throws Exception {
     LOG.info("Start remove activities from JCR to MYSQL");
-    //Remove all activities from users
-    removeActivities(false);
-    //Remove all activities from spaces
-    removeActivities(true);
+    removeActivities();
     LOG.info("Done to removed activities from JCR");
   }
 
-  private void removeActivities(boolean isSpaceActivties) {
-    Iterator<IdentityEntity> allIdentityEntity = getAllIdentityEntity(isSpaceActivties ? SpaceIdentityProvider.NAME : OrganizationIdentityProvider.NAME).values().iterator();
+  private void removeActivities() {
+    Iterator<IdentityEntity> allIdentityEntity = getAllIdentityEntity(OrganizationIdentityProvider.NAME).values().iterator();
+    AbstractStrategy<IdentityEntity> refCleanup = StrategyFactory.getActivityCleanupStrategy("DAY");
+    AbstractStrategy<IdentityEntity> activityCleanup = StrategyFactory.getActivityRefCleanupStrategy("DAY");
+    
     while (allIdentityEntity.hasNext()) {
       IdentityEntity identityEntity = (IdentityEntity) allIdentityEntity.next();
-      if (isSpaceActivties) {
-        removeActivityRefs(identityEntity, ActivityRefType.FEED);
-        removeActivityRefs(identityEntity, ActivityRefType.SPACE_STREAM);
-      } else {
-        removeActivityRefs(identityEntity, ActivityRefType.FEED);
-        removeActivityRefs(identityEntity, ActivityRefType.MY_ACTIVITIES);
-        removeActivityRefs(identityEntity, ActivityRefType.CONNECTION);
-        removeActivityRefs(identityEntity, ActivityRefType.MY_SPACES);
-      }
+      refCleanup.process(identityEntity);
+      activityCleanup.process(identityEntity);
     }
-    //Remove all activity entity
-    allIdentityEntity = getAllIdentityEntity(isSpaceActivties ? SpaceIdentityProvider.NAME : OrganizationIdentityProvider.NAME).values().iterator();
+    
+    allIdentityEntity = getAllIdentityEntity(SpaceIdentityProvider.NAME).values().iterator();
     while (allIdentityEntity.hasNext()) {
       IdentityEntity identityEntity = (IdentityEntity) allIdentityEntity.next();
-      ActivityListEntity activityListEntity = identityEntity.getActivityList();
-      ActivityIterator activityIterator = new ActivityIterator(activityListEntity);
-      while (activityIterator.hasNext()) {
-        getSession().remove(activityIterator.next());
-      }
-    }
-  }
-  
-  private void removeActivityRefs(IdentityEntity identityEntity, ActivityRefType type) {
-    ActivityRefListEntity listRef = type.refsOf(identityEntity);
-    ActivityRefList list = new ActivityRefList(listRef);
-    ActivityRefIterator it = list.iterator();
-    while (it.hasNext()) {
-      getSession().remove(it.next());
+      refCleanup.process(identityEntity);
+      activityCleanup.process(identityEntity);
     }
   }
 

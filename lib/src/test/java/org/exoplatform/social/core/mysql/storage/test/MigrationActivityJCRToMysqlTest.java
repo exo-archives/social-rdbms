@@ -62,9 +62,9 @@ public class MigrationActivityJCRToMysqlTest extends BaseCoreTest {
     LOG.info("Done created the activities storage on JCR.");
     //
     activityMigration.start();
+    end();
     begin();
     activityMigration.doRemove();
-    GenericDAOImpl.startTx();
     //
     assertEquals(20, activityStorage.getActivityFeed(rootIdentity, 0, 100).size());
     assertEquals(20, activityStorage.getActivityFeed(maryIdentity, 0, 100).size());

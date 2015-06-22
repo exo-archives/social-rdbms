@@ -875,7 +875,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
       try {
         it.next().processActivity(existingActivity);
       } catch (Exception e) {
-        LOG.warn("activity processing failed ");
+        LOG.debug("activity processing failed ");
       }
     }
   }

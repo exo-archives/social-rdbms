@@ -1,5 +1,10 @@
 package org.exoplatform.social.addons.updater;
 
+import java.util.concurrent.CountDownLatch;
+
+import org.exoplatform.container.ExoContainerContext;
+import org.exoplatform.container.PortalContainer;
+import org.exoplatform.container.component.RequestLifeCycle;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 import org.picocontainer.Startable;
@@ -8,6 +13,8 @@ public class RDBMSMigrationManager implements Startable {
   private static final Log LOG = ExoLogger.getLogger(RDBMSMigrationManager.class);
 
   private Thread migrationThread;
+  
+  private final CountDownLatch migrater;
 
   private final RelationshipMigrationService relationshipMigration;
 
@@ -21,6 +28,7 @@ public class RDBMSMigrationManager implements Startable {
     this.profileMigration = profileMigration;
     this.relationshipMigration = relationshipMigration;
     this.activityMigration = activityMigration;
+    migrater = new CountDownLatch(1);
     //
   }
 
@@ -45,6 +53,8 @@ public class RDBMSMigrationManager implements Startable {
           }
         } catch (Exception e) {
           LOG.error("Failed to running Migration data from JCR to RDBMS", e);
+        } finally {
+          migrater.countDown();
         }
         LOG.info("END ASYNC MIGRATION---------------------------------------------------");
       }
@@ -65,5 +75,9 @@ public class RDBMSMigrationManager implements Startable {
     } catch (InterruptedException e) {
       LOG.error(e);
     }
+  }
+
+  public CountDownLatch getMigrater() {
+    return migrater;
   }
 }

@@ -21,7 +21,6 @@ import java.util.List;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 import org.exoplatform.social.addons.storage.dao.ActivityDAO;
-import org.exoplatform.social.addons.storage.dao.jpa.GenericDAOImpl;
 import org.exoplatform.social.addons.storage.entity.Activity;
 import org.exoplatform.social.addons.updater.ActivityMigrationService;
 import org.exoplatform.social.addons.updater.ProfileMigrationService;
@@ -93,10 +92,9 @@ public class AsynMigrationTest extends BaseCoreTest {
     createActivityToOtherIdentity(maryIdentity, rootIdentity, 5);
     LOG.info("Done created the activities storage on JCR.");
     //
-    activityMigration.start();
-    begin();
-    activityMigration.doRemove();
-    GenericDAOImpl.startTx();
+    rdbmsMigrationManager.start();
+    //
+    rdbmsMigrationManager.getMigrater().await();
     //
     assertEquals(20, activityStorage.getActivityFeed(rootIdentity, 0, 100).size());
     assertEquals(20, activityStorage.getActivityFeed(maryIdentity, 0, 100).size());
