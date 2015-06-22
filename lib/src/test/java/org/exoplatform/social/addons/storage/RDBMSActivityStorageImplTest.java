@@ -14,19 +14,19 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package org.exoplatform.social.core.mysql.storage.test;
+package org.exoplatform.social.addons.storage;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import org.exoplatform.social.addons.test.AbstractCoreTest;
+import org.exoplatform.social.addons.test.MaxQueryNumber;
+import org.exoplatform.social.addons.test.QueryNumberTest;
 import org.exoplatform.social.core.activity.model.ExoSocialActivity;
 import org.exoplatform.social.core.activity.model.ExoSocialActivityImpl;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.identity.provider.SpaceIdentityProvider;
-import org.exoplatform.social.core.mysql.test.AbstractCoreTest;
-import org.exoplatform.social.core.mysql.test.MaxQueryNumber;
-import org.exoplatform.social.core.mysql.test.QueryNumberTest;
 import org.exoplatform.social.core.relationship.model.Relationship;
 import org.exoplatform.social.core.space.impl.DefaultSpaceApplicationHandler;
 import org.exoplatform.social.core.space.model.Space;

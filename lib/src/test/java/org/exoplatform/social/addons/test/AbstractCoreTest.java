@@ -15,7 +15,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.exoplatform.social.core.mysql.test;
+package org.exoplatform.social.addons.test;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;

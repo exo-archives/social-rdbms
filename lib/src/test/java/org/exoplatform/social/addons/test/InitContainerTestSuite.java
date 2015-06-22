@@ -14,17 +14,17 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package org.exoplatform.social.core.mysql.test;
+package org.exoplatform.social.addons.test;
 
 import org.exoplatform.commons.testing.BaseExoContainerTestSuite;
 import org.exoplatform.commons.testing.ConfigTestCase;
-import org.exoplatform.social.core.mysql.storage.ActivityDAOTest;
-import org.exoplatform.social.core.mysql.storage.concurrency.AsynMigrationTest;
-import org.exoplatform.social.core.mysql.storage.test.ActivityManagerMysqlTest;
-import org.exoplatform.social.core.mysql.storage.test.MigrationActivityJCRToMysqlTest;
-import org.exoplatform.social.core.mysql.storage.test.RDBMSActivityStorageImplTest;
-import org.exoplatform.social.core.mysql.storage.test.RDBMSRelationshipManagerTest;
-import org.exoplatform.social.core.mysql.storage.test.SpaceActivityMySqlPublisherTest;
+import org.exoplatform.social.addons.concurrency.AsynMigrationTest;
+import org.exoplatform.social.addons.storage.ActivityManagerMysqlTest;
+import org.exoplatform.social.addons.storage.MigrationActivityJCRToMysqlTest;
+import org.exoplatform.social.addons.storage.RDBMSActivityStorageImplTest;
+import org.exoplatform.social.addons.storage.RDBMSRelationshipManagerTest;
+import org.exoplatform.social.addons.storage.SpaceActivityMySqlPublisherTest;
+import org.exoplatform.social.addons.storage.dao.ActivityDAOTest;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.runners.Suite.SuiteClasses;
