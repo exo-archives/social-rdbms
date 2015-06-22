@@ -1,6 +1,5 @@
 package org.exoplatform.social.addons.updater;
 
-import org.exoplatform.container.xml.InitParams;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 import org.picocontainer.Startable;
@@ -67,20 +66,4 @@ public class RDBMSMigrationManager implements Startable {
       LOG.error(e);
     }
   }
-
-  /**
-   * Get the integer value from Parameter
-   * @param params
-   * @param key
-   * @param defaultValue
-   * @return
-   */
-  private int getInteger(InitParams params, String key, int defaultValue) {
-    try {
-      return Integer.valueOf(params.getValueParam(key).getValue());
-    } catch (Exception e) {
-      return defaultValue;
-    }
-  }
-
 }

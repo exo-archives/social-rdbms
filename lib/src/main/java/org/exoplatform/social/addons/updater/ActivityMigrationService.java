@@ -197,8 +197,13 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
         doBroadcastListener(comment, oldId);
       }
       //
-      if(currenActivity != null) {
-        _removeMixin(currenActivity, ActivityUpdaterEntity.class);
+      if (currenActivity != null) {
+        try {
+          currenActivity.getName();
+          _removeMixin(currenActivity, ActivityUpdaterEntity.class);
+        } catch (Exception e) {
+          LOG.error("Failed to remove mixin type," + e.getMessage());
+        }
       }
       _getMixin(activityEntity, ActivityUpdaterEntity.class, true);
       currenActivity = activityEntity;

@@ -19,6 +19,7 @@ package org.exoplatform.social.core.mysql.test;
 import org.exoplatform.commons.testing.BaseExoContainerTestSuite;
 import org.exoplatform.commons.testing.ConfigTestCase;
 import org.exoplatform.social.core.mysql.storage.ActivityDAOTest;
+import org.exoplatform.social.core.mysql.storage.concurrency.AsynMigrationTest;
 import org.exoplatform.social.core.mysql.storage.test.ActivityManagerMysqlTest;
 import org.exoplatform.social.core.mysql.storage.test.MigrationActivityJCRToMysqlTest;
 import org.exoplatform.social.core.mysql.storage.test.RDBMSActivityStorageImplTest;
@@ -29,6 +30,7 @@ import org.junit.BeforeClass;
 import org.junit.runners.Suite.SuiteClasses;
 
 @SuiteClasses({
+  AsynMigrationTest.class,
   ActivityDAOTest.class,
   MigrationActivityJCRToMysqlTest.class,
   RDBMSActivityStorageImplTest.class,

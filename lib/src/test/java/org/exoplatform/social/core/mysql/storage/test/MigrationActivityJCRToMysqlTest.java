@@ -16,12 +16,12 @@ import org.exoplatform.social.core.storage.impl.ActivityStorageImpl;
 public class MigrationActivityJCRToMysqlTest extends BaseCoreTest {
   protected final Log LOG = ExoLogger.getLogger(MigrationActivityJCRToMysqlTest.class);
   private ActivityStorageImpl jcrStorage;
-  private ActivityMigrationService migrationService;
+  private ActivityMigrationService activityMigration;
   @Override
   public void setUp() throws Exception {
     super.setUp();
     jcrStorage = getService(ActivityStorageImpl.class);
-    migrationService = getService(ActivityMigrationService.class);
+    activityMigration = getService(ActivityMigrationService.class);
   }
 
   @Override
@@ -61,8 +61,9 @@ public class MigrationActivityJCRToMysqlTest extends BaseCoreTest {
     createActivityToOtherIdentity(maryIdentity, rootIdentity, 5);
     LOG.info("Done created the activities storage on JCR.");
     //
-    migrationService.start();
+    activityMigration.start();
     begin();
+    activityMigration.doRemove();
     GenericDAOImpl.startTx();
     //
     assertEquals(20, activityStorage.getActivityFeed(rootIdentity, 0, 100).size());

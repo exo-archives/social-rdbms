@@ -95,6 +95,7 @@ public class AsynMigrationTest extends BaseCoreTest {
     //
     activityMigration.start();
     begin();
+    activityMigration.doRemove();
     GenericDAOImpl.startTx();
     //
     assertEquals(20, activityStorage.getActivityFeed(rootIdentity, 0, 100).size());
