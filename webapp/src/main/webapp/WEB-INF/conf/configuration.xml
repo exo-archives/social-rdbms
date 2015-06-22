@@ -76,24 +76,6 @@
   <component>
     <key>org.exoplatform.social.addons.updater.RDBMSMigrationManager</key>
     <type>org.exoplatform.social.addons.updater.RDBMSMigrationManager</type>
-    <init-params>
-      <value-param>
-        <name>async-execution</name>
-        <value>${social.rdbms.RDBMSMigrationManager.asyncExecution:true}</value>
-      </value-param>
-      <value-param>
-        <name>thread-number</name>
-        <value>5</value>
-      </value-param>
-      <value-param>
-        <name>keepAliveTime</name> <!-- Time in seconds -->
-        <value>${social.rdbms.RDBMSMigrationManager.keepAliveTime:10}</value>
-      </value-param>
-      <value-param>
-        <name>thread-priority</name>
-        <value>${social.rdbms.RDBMSMigrationManager.threadPriority:5}</value><!--10: HIGH, 5: NORMAL; 1: LOW-->
-      </value-param>
-    </init-params>
   </component>
   <component>
     <type>org.exoplatform.social.addons.updater.ActivityMigrationService</type>

@@ -17,11 +17,13 @@ import org.chromattic.core.api.ChromatticSessionImpl;
 import org.exoplatform.commons.api.event.EventManager;
 import org.exoplatform.commons.api.jpa.EntityManagerService;
 import org.exoplatform.commons.utils.CommonsUtils;
+import org.exoplatform.container.component.RequestLifeCycle;
 import org.exoplatform.management.annotations.Managed;
 import org.exoplatform.management.annotations.ManagedDescription;
 import org.exoplatform.management.jmx.annotations.NameTemplate;
 import org.exoplatform.management.jmx.annotations.Property;
 import org.exoplatform.social.addons.storage.dao.ActivityDAO;
+import org.exoplatform.social.addons.storage.dao.jpa.GenericDAOImpl;
 import org.exoplatform.social.core.activity.model.ExoSocialActivity;
 import org.exoplatform.social.core.activity.model.ExoSocialActivityImpl;
 import org.exoplatform.social.core.chromattic.entity.ActivityEntity;
@@ -75,6 +77,7 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
   @Managed
   @ManagedDescription("Manual to start run miguration data of activities from JCR to MYSQL.")
   public void doMigration() throws Exception {
+    //
     if(lastUserProcess == null && activityDAO.count() > 0) {
       return;
     }
@@ -142,6 +145,7 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
   }
 
   private void migrationByUser(String userName, IdentityEntity identityEntity) throws Exception {
+    boolean begunTx = GenericDAOImpl.startTx();
     if (identityEntity == null) {
       Identity poster = identityStorage.findIdentity(OrganizationIdentityProvider.NAME, userName);
       try {
@@ -201,9 +205,10 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
       ++count;
       //
       if(count % LIMIT_THRESHOLD == 0) {
-        entityManagerService.endRequest(null);
-        entityManagerService.startRequest(null);
-        entityManagerService.getEntityManager().getTransaction().begin();
+        GenericDAOImpl.endTx(begunTx);
+        RequestLifeCycle.end();
+        RequestLifeCycle.begin(entityManagerService);
+        begunTx = GenericDAOImpl.startTx();
       }
     }
     LOG.info(String.format("Done migration %s activities for user %s on %s(ms) ",

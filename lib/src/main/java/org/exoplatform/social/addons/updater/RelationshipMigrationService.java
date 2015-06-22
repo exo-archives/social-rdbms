@@ -6,12 +6,14 @@ import java.util.Iterator;
 import org.exoplatform.commons.api.event.EventManager;
 import org.exoplatform.commons.api.jpa.EntityManagerService;
 import org.exoplatform.commons.utils.CommonsUtils;
+import org.exoplatform.container.component.RequestLifeCycle;
 import org.exoplatform.management.annotations.Managed;
 import org.exoplatform.management.annotations.ManagedDescription;
 import org.exoplatform.management.jmx.annotations.NameTemplate;
 import org.exoplatform.management.jmx.annotations.Property;
 import org.exoplatform.social.addons.storage.dao.ProfileItemDAO;
 import org.exoplatform.social.addons.storage.dao.RelationshipDAO;
+import org.exoplatform.social.addons.storage.dao.jpa.GenericDAOImpl;
 import org.exoplatform.social.addons.storage.entity.RelationshipItem;
 import org.exoplatform.social.core.chromattic.entity.IdentityEntity;
 import org.exoplatform.social.core.chromattic.entity.RelationshipEntity;
@@ -48,6 +50,7 @@ public class RelationshipMigrationService extends AbstractMigrationService<Relat
   @Managed
   @ManagedDescription("Manual to start run miguration data of relationships from JCR to MYSQL.")
   public void doMigration() throws Exception {
+    boolean begunTx = GenericDAOImpl.startTx();
     if (relationshipDAO.count() > 0) {
       isDone = true;
       return;
@@ -81,14 +84,17 @@ public class RelationshipMigrationService extends AbstractMigrationService<Relat
       //
       entityManagerService.getEntityManager().flush();
       if(c2 % LIMIT_THRESHOLD == 0) {
-        entityManagerService.endRequest(null);
-        entityManagerService.startRequest(null);
-        entityManagerService.getEntityManager().getTransaction().begin();
+        GenericDAOImpl.endTx(begunTx);
+        RequestLifeCycle.end();
+        RequestLifeCycle.begin(entityManagerService);
+        begunTx = GenericDAOImpl.startTx();
       }
       ++count;
       processLog("Relationships migration", size, count);
       LOG.info(String.format("Done to migration %s relationships for user %s from JCR to MYSQL on %s(ms)", c2, identityEntity.getRemoteId(), (System.currentTimeMillis() - t1)));
     }
+    
+    GenericDAOImpl.endTx(begunTx);
     LOG.info(String.format("Done to migration relationships of %s users from JCR to MYSQL on %s(ms)", count,  (System.currentTimeMillis() - t)));
   }
   

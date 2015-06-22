@@ -22,6 +22,8 @@ import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Root;
 
+import org.exoplatform.services.log.ExoLogger;
+import org.exoplatform.services.log.Log;
 import org.exoplatform.social.addons.storage.dao.ProfileItemDAO;
 import org.exoplatform.social.addons.storage.dao.jpa.synchronization.SynchronizedGenericDAO;
 import org.exoplatform.social.addons.storage.entity.Profile;
@@ -36,15 +38,20 @@ import org.exoplatform.social.addons.storage.entity.Profile_;
 public class ProfileItemDAOImpl extends SynchronizedGenericDAO<Profile, Long> implements ProfileItemDAO {
 
   public Profile findProfileItemByIdentityId(final String identityId) {
-    EntityManager em = lifecycleLookup().getCurrentEntityManager();
-    CriteriaBuilder cb = em.getCriteriaBuilder();
-    CriteriaQuery<Profile> criteria = cb.createQuery(Profile.class);
-    Root<Profile> root = criteria.from(Profile.class);
-    CriteriaQuery<Profile> select = criteria.select(root);
-    select.where(cb.equal(root.get(Profile_.identityId), identityId));
-    //
-    TypedQuery<Profile> typedQuery = em.createQuery(select);
-    return typedQuery.getSingleResult();
+    try {
+      EntityManager em = lifecycleLookup().getCurrentEntityManager();
+      CriteriaBuilder cb = em.getCriteriaBuilder();
+      CriteriaQuery<Profile> criteria = cb.createQuery(Profile.class);
+      Root<Profile> root = criteria.from(Profile.class);
+      CriteriaQuery<Profile> select = criteria.select(root);
+      select.where(cb.equal(root.get(Profile_.identityId), identityId));
+      //
+      TypedQuery<Profile> typedQuery = em.createQuery(select);
+      return typedQuery.getSingleResult();
+    } catch (RuntimeException e) {
+      return null;
+    }
+    
   }
 
 }

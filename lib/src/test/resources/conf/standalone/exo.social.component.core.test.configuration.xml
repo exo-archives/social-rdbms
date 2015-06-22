@@ -112,17 +112,7 @@
     <key>org.exoplatform.social.addons.storage.dao.ProfileItemDAO</key>
     <type>org.exoplatform.social.addons.storage.dao.jpa.ProfileItemDAOImpl</type>
   </component>
-
-  <component>
-    <key>org.exoplatform.social.addons.updater.RDBMSMigrationManager</key>
-    <type>org.exoplatform.social.addons.updater.RDBMSMigrationManager</type>
-    <init-params>
-      <value-param>
-        <name>async-execution</name>
-        <value>false</value>
-      </value-param>
-    </init-params>
-  </component>
+  
   <component>
     <type>org.exoplatform.social.addons.updater.ActivityMigrationService</type>
   </component>
