@@ -8,7 +8,7 @@
    <class>org.exoplatform.social.addons.storage.entity.Activity</class>
    <class>org.exoplatform.social.addons.storage.entity.Comment</class>
    <class>org.exoplatform.social.addons.storage.entity.Profile</class>
-   <class>org.exoplatform.social.addons.storage.entity.RelationshipItem</class>
+   <class>org.exoplatform.social.addons.storage.entity.Connection</class>
 
     <properties>
       <property name="javax.persistence.provider" value="org.hibernate.ejb.HibernatePersistence" />

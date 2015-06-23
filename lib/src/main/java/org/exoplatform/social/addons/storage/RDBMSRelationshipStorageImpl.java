@@ -30,7 +30,7 @@ import java.util.TreeMap;
 
 import org.exoplatform.social.addons.storage.dao.ProfileItemDAO;
 import org.exoplatform.social.addons.storage.dao.RelationshipDAO;
-import org.exoplatform.social.addons.storage.entity.RelationshipItem;
+import org.exoplatform.social.addons.storage.entity.Connection;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.identity.model.Profile;
 import org.exoplatform.social.core.profile.ProfileFilter;
@@ -62,7 +62,7 @@ public class RDBMSRelationshipStorageImpl extends RelationshipStorageImpl {
   @Override
   public Relationship saveRelationship(Relationship relationship) throws RelationshipStorageException {
     if (relationship.getId() == null) {//create new relationship
-      RelationshipItem entity = new RelationshipItem();
+      Connection entity = new Connection();
       entity.setReceiverId(relationship.getReceiver().getId());
       entity.setSenderId(relationship.getSender().getId());
       entity.setStatus(Relationship.Type.PENDING.equals(relationship.getStatus()) ? Relationship.Type.OUTGOING : relationship.getStatus());
@@ -72,7 +72,7 @@ public class RDBMSRelationshipStorageImpl extends RelationshipStorageImpl {
       relationship.setId(Long.toString(entity.getId()));
 
       //
-      RelationshipItem symmetricalEntity = new RelationshipItem();
+      Connection symmetricalEntity = new Connection();
       symmetricalEntity.setSenderId(relationship.getReceiver().getId());
       symmetricalEntity.setReceiverId(relationship.getSender().getId());
       symmetricalEntity.setStatus(Relationship.Type.PENDING.equals(relationship.getStatus()) ? Relationship.Type.INCOMING : relationship.getStatus());
@@ -80,11 +80,11 @@ public class RDBMSRelationshipStorageImpl extends RelationshipStorageImpl {
       //
       relationshipDAO.create(symmetricalEntity);
     } else {//update an relationship
-      RelationshipItem entity = relationshipDAO.getRelationship(relationship.getSender(), relationship.getReceiver());
+      Connection entity = relationshipDAO.getRelationship(relationship.getSender(), relationship.getReceiver());
       entity.setStatus(relationship.getStatus());
       relationshipDAO.update(entity);
       //
-      RelationshipItem symmetricalEntity = relationshipDAO.getRelationship(relationship.getReceiver(), relationship.getSender());
+      Connection symmetricalEntity = relationshipDAO.getRelationship(relationship.getReceiver(), relationship.getSender());
       symmetricalEntity.setStatus(relationship.getStatus());
       relationshipDAO.update(symmetricalEntity);
     }
@@ -95,13 +95,13 @@ public class RDBMSRelationshipStorageImpl extends RelationshipStorageImpl {
   @Override
   public void removeRelationship(Relationship relationship) throws RelationshipStorageException {
     relationshipDAO.delete(Long.valueOf(relationship.getId()));
-    RelationshipItem symmetricalEntity = relationshipDAO.getRelationship(relationship.getReceiver(), relationship.getSender());
+    Connection symmetricalEntity = relationshipDAO.getRelationship(relationship.getReceiver(), relationship.getSender());
     relationshipDAO.delete(Long.valueOf(symmetricalEntity.getId()));
   }
   
   @Override
   public Relationship getRelationship(Identity identity1, Identity identity2) throws RelationshipStorageException {
-    RelationshipItem item = relationshipDAO.getRelationship(identity1, identity2);
+    Connection item = relationshipDAO.getRelationship(identity1, identity2);
     if (item == null) {
       item = relationshipDAO.getRelationship(identity2, identity1);
     }
@@ -177,25 +177,25 @@ public class RDBMSRelationshipStorageImpl extends RelationshipStorageImpl {
     return convertRelationshipEntitiesToIdentities(relationshipDAO.getLastConnections(identity, limit), identity.getId());
   }
   
-  private List<Identity> convertRelationshipEntitiesToIdentities(List<RelationshipItem> relationshipItems, String ownerId) {
+  private List<Identity> convertRelationshipEntitiesToIdentities(List<Connection> relationshipItems, String ownerId) {
     List<Identity> identities = new ArrayList<Identity>();
     if (relationshipItems == null) return identities;
-    for (RelationshipItem item : relationshipItems) {
+    for (Connection item : relationshipItems) {
       identities.add(getIdentityFromRelationshipItem(item, ownerId));
     }
     return identities;
   }
   
-  private List<Relationship> convertRelationshipEntitiesToRelationships(List<RelationshipItem> relationshipItems) {
+  private List<Relationship> convertRelationshipEntitiesToRelationships(List<Connection> relationshipItems) {
     List<Relationship> relationships = new ArrayList<Relationship>();
     if (relationshipItems == null) return relationships;
-    for (RelationshipItem item : relationshipItems) {
+    for (Connection item : relationshipItems) {
       relationships.add(convertRelationshipItemToRelationship(item));
     }
     return relationships;
   }
 
-  private Identity getIdentityFromRelationshipItem(RelationshipItem item, String ownerId) {
+  private Identity getIdentityFromRelationshipItem(Connection item, String ownerId) {
     Identity identity = null;
     if (ownerId.equals(item.getSenderId())) {
       identity = identityStorage.findIdentityById(item.getReceiverId());
@@ -209,7 +209,7 @@ public class RDBMSRelationshipStorageImpl extends RelationshipStorageImpl {
     return identity;
   }
   
-  private Relationship convertRelationshipItemToRelationship(RelationshipItem item) {
+  private Relationship convertRelationshipItemToRelationship(Connection item) {
     if (item == null) return null;
     //
     Relationship relationship = new Relationship(Long.toString(item.getId()));

@@ -233,11 +233,9 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
       }
       LOG.info(String.format("Done migration %s activities for user %s on %s(ms) ",
                              count, identityEntity.getRemoteId(), System.currentTimeMillis() - t));
-      
     } finally {
       GenericDAOImpl.endTx(begunTx);
     }
-    
   }
 
   private void doBroadcastListener(ExoSocialActivity activity, String oldId) {

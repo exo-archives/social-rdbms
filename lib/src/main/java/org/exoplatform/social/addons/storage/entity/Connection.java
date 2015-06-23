@@ -16,8 +16,8 @@ import org.exoplatform.social.core.relationship.model.Relationship.Type;
 @Entity
 @Table(name = "SOC_RELATIONSHIPS")
 @NamedQuery(name = "getRelationships",
-            query = "select r from RelationshipItem r")
-public class RelationshipItem {
+            query = "select r from Connection r")
+public class Connection {
   @Id
   @GeneratedValue(strategy = GenerationType.AUTO)
   @Column(name = "RELATIONSHIP_ID")
@@ -36,10 +36,10 @@ public class RelationshipItem {
   @Enumerated
   private Type status;
 
-  public RelationshipItem() {
+  public Connection() {
   }
 
-  public RelationshipItem(String senderId, String receiverId, Type status) {
+  public Connection(String senderId, String receiverId, Type status) {
     this.senderId = senderId;
     this.receiverId = receiverId;
     this.status = status;

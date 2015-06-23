@@ -35,8 +35,8 @@ import org.exoplatform.social.addons.storage.entity.Activity;
 import org.exoplatform.social.addons.storage.entity.Activity_;
 import org.exoplatform.social.addons.storage.entity.Comment;
 import org.exoplatform.social.addons.storage.entity.Comment_;
-import org.exoplatform.social.addons.storage.entity.RelationshipItem;
-import org.exoplatform.social.addons.storage.entity.RelationshipItem_;
+import org.exoplatform.social.addons.storage.entity.Connection;
+import org.exoplatform.social.addons.storage.entity.Connection_;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.relationship.model.Relationship;
 
@@ -142,10 +142,10 @@ public final class AStreamQueryBuilder {
     //connections
     if (this.connectionSize > 0) {
       Subquery<String> subQuery1 = criteria.subquery(String.class);
-      Root<RelationshipItem> subRoot1 = subQuery1.from(RelationshipItem.class);
-      subQuery1.select(subRoot1.<String>get(RelationshipItem_.receiverId));
-      subQuery1.where(cb.and(cb.equal(subRoot1.<String>get(RelationshipItem_.senderId), this.myIdentity.getId()),
-                             cb.equal(subRoot1.<Relationship.Type>get(RelationshipItem_.status), Relationship.Type.CONFIRMED)));
+      Root<Connection> subRoot1 = subQuery1.from(Connection.class);
+      subQuery1.select(subRoot1.<String>get(Connection_.receiverId));
+      subQuery1.where(cb.and(cb.equal(subRoot1.<String>get(Connection_.senderId), this.myIdentity.getId()),
+                             cb.equal(subRoot1.<Relationship.Type>get(Connection_.status), Relationship.Type.CONFIRMED)));
       
       Predicate posterConnection = cb.and(cb.in(activity.get(Activity_.posterId)).value(subQuery1));
       Predicate ownerConnection = cb.and(cb.in(activity.get(Activity_.ownerId)).value(subQuery1));
@@ -234,10 +234,10 @@ public final class AStreamQueryBuilder {
     
     if (this.connectionSize > 0) {
       Subquery<String> subQuery1 = criteria.subquery(String.class);
-      Root<RelationshipItem> subRoot1 = subQuery1.from(RelationshipItem.class);
-      subQuery1.select(subRoot1.<String>get(RelationshipItem_.receiverId));
-      subQuery1.where(cb.and(cb.equal(subRoot1.<String>get(RelationshipItem_.senderId), this.myIdentity.getId()),
-                             cb.equal(subRoot1.<Relationship.Type>get(RelationshipItem_.status), Relationship.Type.CONFIRMED)));
+      Root<Connection> subRoot1 = subQuery1.from(Connection.class);
+      subQuery1.select(subRoot1.<String>get(Connection_.receiverId));
+      subQuery1.where(cb.and(cb.equal(subRoot1.<String>get(Connection_.senderId), this.myIdentity.getId()),
+                             cb.equal(subRoot1.<Relationship.Type>get(Connection_.status), Relationship.Type.CONFIRMED)));
       
       Predicate posterConnection = cb.and(cb.in(activity.get(Activity_.posterId)).value(subQuery1));
       Predicate ownerConnection = cb.and(cb.in(activity.get(Activity_.ownerId)).value(subQuery1));
@@ -322,9 +322,9 @@ public final class AStreamQueryBuilder {
     //connections
     if (this.connectionSize > 0) {
       Subquery<String> subQuery1 = criteria.subquery(String.class);
-      Root<RelationshipItem> subRoot1 = subQuery1.from(RelationshipItem.class);
-      subQuery1.select(subRoot1.<String>get(RelationshipItem_.receiverId));
-      subQuery1.where(cb.equal(subRoot1.<String>get(RelationshipItem_.senderId), this.myIdentity.getId()));
+      Root<Connection> subRoot1 = subQuery1.from(Connection.class);
+      subQuery1.select(subRoot1.<String>get(Connection_.receiverId));
+      subQuery1.where(cb.equal(subRoot1.<String>get(Connection_.senderId), this.myIdentity.getId()));
       
       predicates.add(cb.in(activity.get(Activity_.posterId)).value(subQuery1));
       
@@ -396,10 +396,10 @@ public final class AStreamQueryBuilder {
     
     if (this.connectionSize > 0) {
       Subquery<String> subQuery1 = criteria.subquery(String.class);
-      Root<RelationshipItem> subRoot1 = subQuery1.from(RelationshipItem.class);
-      subQuery1.select(subRoot1.<String>get(RelationshipItem_.receiverId));
-      subQuery1.where(cb.and(cb.equal(subRoot1.<String>get(RelationshipItem_.senderId), this.myIdentity.getId()),
-                             cb.equal(subRoot1.<Relationship.Type>get(RelationshipItem_.status), Relationship.Type.CONFIRMED)));
+      Root<Connection> subRoot1 = subQuery1.from(Connection.class);
+      subQuery1.select(subRoot1.<String>get(Connection_.receiverId));
+      subQuery1.where(cb.and(cb.equal(subRoot1.<String>get(Connection_.senderId), this.myIdentity.getId()),
+                             cb.equal(subRoot1.<Relationship.Type>get(Connection_.status), Relationship.Type.CONFIRMED)));
       
       Predicate posterConnection = cb.and(cb.in(activity.get(Activity_.posterId)).value(subQuery1));
       Predicate ownerConnection = cb.and(cb.in(activity.get(Activity_.ownerId)).value(subQuery1));

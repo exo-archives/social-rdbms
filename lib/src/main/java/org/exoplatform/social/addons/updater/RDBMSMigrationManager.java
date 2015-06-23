@@ -2,9 +2,6 @@ package org.exoplatform.social.addons.updater;
 
 import java.util.concurrent.CountDownLatch;
 
-import org.exoplatform.container.ExoContainerContext;
-import org.exoplatform.container.PortalContainer;
-import org.exoplatform.container.component.RequestLifeCycle;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 import org.picocontainer.Startable;

@@ -29,7 +29,7 @@ import org.exoplatform.services.security.ConversationState;
 import org.exoplatform.services.security.IdentityRegistry;
 import org.exoplatform.social.addons.storage.dao.RelationshipDAO;
 import org.exoplatform.social.addons.storage.dao.jpa.GenericDAOImpl;
-import org.exoplatform.social.addons.storage.entity.RelationshipItem;
+import org.exoplatform.social.addons.storage.entity.Connection;
 import org.exoplatform.social.addons.test.AbstractCoreTest;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.identity.model.Profile;
@@ -76,8 +76,8 @@ public class RDBMSRelationshipManagerTest extends AbstractCoreTest {
       GenericDAOImpl.lifecycleLookup().getCurrentEntityManager().getTransaction().commit();
     
     RelationshipDAO relationshipDAO = getService(RelationshipDAO.class);
-    List<RelationshipItem> items = relationshipDAO.findAll();
-    for (RelationshipItem item : items) {
+    List<Connection> items = relationshipDAO.findAll();
+    for (Connection item : items) {
       relationshipDAO.delete(item.getId());
     }
     

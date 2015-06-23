@@ -18,7 +18,7 @@ package org.exoplatform.social.addons.storage.dao;
 
 import java.util.List;
 
-import org.exoplatform.social.addons.storage.entity.RelationshipItem;
+import org.exoplatform.social.addons.storage.entity.Connection;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.profile.ProfileFilter;
 import org.exoplatform.social.core.relationship.model.Relationship;
@@ -30,7 +30,7 @@ import org.exoplatform.social.core.relationship.model.Relationship.Type;
  *          exo@exoplatform.com
  * Jun 4, 2015  
  */
-public interface RelationshipDAO extends GenericDAO<RelationshipItem, Long> {
+public interface RelationshipDAO extends GenericDAO<Connection, Long> {
 
   /**
    * Has the connections
@@ -48,7 +48,7 @@ public interface RelationshipDAO extends GenericDAO<RelationshipItem, Long> {
    * @param identity2
    * @return
    */
-  RelationshipItem getRelationship(Identity identity1, Identity identity2);
+  Connection getRelationship(Identity identity1, Identity identity2);
 
   
   /**
@@ -58,7 +58,7 @@ public interface RelationshipDAO extends GenericDAO<RelationshipItem, Long> {
    * @param limit
    * @return
    */
-  List<RelationshipItem> getRelationships(Identity identity, Type type, long offset, long limit);
+  List<Connection> getRelationships(Identity identity, Type type, long offset, long limit);
 
   /**
    * @param identity
@@ -72,9 +72,9 @@ public interface RelationshipDAO extends GenericDAO<RelationshipItem, Long> {
    * @param limit
    * @return
    */
-  List<RelationshipItem> getLastConnections(Identity identity, int limit);
+  List<Connection> getLastConnections(Identity identity, int limit);
 
-  List<RelationshipItem> getRelationshipsByFilter(Identity existingIdentity, ProfileFilter profileFilter, Type type, long offset, long limit);
+  List<Connection> getRelationshipsByFilter(Identity existingIdentity, ProfileFilter profileFilter, Type type, long offset, long limit);
 
   int getRelationshipsByFilterCount(Identity identity, ProfileFilter profileFilter, Type type);
 

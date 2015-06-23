@@ -4,7 +4,6 @@ import java.util.Collection;
 import java.util.Iterator;
 
 import org.exoplatform.commons.api.event.EventManager;
-import org.exoplatform.commons.api.jpa.EntityManagerService;
 import org.exoplatform.container.PortalContainer;
 import org.exoplatform.container.component.RequestLifeCycle;
 import org.exoplatform.management.annotations.Managed;
@@ -14,7 +13,7 @@ import org.exoplatform.management.jmx.annotations.Property;
 import org.exoplatform.social.addons.storage.dao.ProfileItemDAO;
 import org.exoplatform.social.addons.storage.dao.RelationshipDAO;
 import org.exoplatform.social.addons.storage.dao.jpa.GenericDAOImpl;
-import org.exoplatform.social.addons.storage.entity.RelationshipItem;
+import org.exoplatform.social.addons.storage.entity.Connection;
 import org.exoplatform.social.core.chromattic.entity.IdentityEntity;
 import org.exoplatform.social.core.chromattic.entity.RelationshipEntity;
 import org.exoplatform.social.core.identity.model.Identity;
@@ -100,7 +99,7 @@ public class RelationshipMigrationService extends AbstractMigrationService<Relat
       String receiverId = relationshipEntity.getTo().getId().equals(owner.getId()) ? relationshipEntity.getFrom().getId() : relationshipEntity.getTo().getId();
       Identity receiver = identityStorage.findIdentityById(receiverId);
       //
-      RelationshipItem entity = new RelationshipItem();
+      Connection entity = new Connection();
       entity.setSenderId(isIncoming ? receiver.getId() : owner.getId());
       entity.setReceiverId(isIncoming ? owner.getId() : receiver.getId());
       entity.setStatus(status);
