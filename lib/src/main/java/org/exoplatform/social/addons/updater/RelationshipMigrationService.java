@@ -4,8 +4,8 @@ import java.util.Collection;
 import java.util.Iterator;
 
 import org.exoplatform.commons.api.event.EventManager;
+import org.exoplatform.commons.api.jpa.EntityManagerService;
 import org.exoplatform.container.PortalContainer;
-import org.exoplatform.container.component.RequestLifeCycle;
 import org.exoplatform.management.annotations.Managed;
 import org.exoplatform.management.annotations.ManagedDescription;
 import org.exoplatform.management.jmx.annotations.NameTemplate;
@@ -30,16 +30,19 @@ public class RelationshipMigrationService extends AbstractMigrationService<Relat
   private final RelationshipDAO relationshipDAO;
   private final ProfileItemDAO profileItemDAO;
   private static int number = 0;
+  private final EntityManagerService entityManagerService;
   
 
   public RelationshipMigrationService(IdentityStorage identityStorage,
                                       RelationshipDAO relationshipDAO,
                                       ProfileMigrationService profileMigration,
                                       EventManager<Relationship, String> eventManager,
-                                      ProfileItemDAO profileItemDAO) {
+                                      ProfileItemDAO profileItemDAO,
+                                      EntityManagerService entityManagerService) {
     super(identityStorage, eventManager);
     this.relationshipDAO = relationshipDAO;
     this.profileItemDAO = profileItemDAO;
+    this.entityManagerService = entityManagerService;
   }
 
   @Override
@@ -110,8 +113,8 @@ public class RelationshipMigrationService extends AbstractMigrationService<Relat
       ++number;
       if(number % LIMIT_THRESHOLD == 0) {
         GenericDAOImpl.endTx(begunTx);
-        RequestLifeCycle.end();
-        RequestLifeCycle.begin(PortalContainer.getInstance());
+        entityManagerService.endRequest(PortalContainer.getInstance());
+        entityManagerService.startRequest(PortalContainer.getInstance());
         begunTx = GenericDAOImpl.startTx();
       }
     }

@@ -4,8 +4,8 @@ import java.util.Collection;
 import java.util.Iterator;
 
 import org.exoplatform.commons.api.event.EventManager;
+import org.exoplatform.commons.api.jpa.EntityManagerService;
 import org.exoplatform.container.PortalContainer;
-import org.exoplatform.container.component.RequestLifeCycle;
 import org.exoplatform.management.annotations.Managed;
 import org.exoplatform.management.annotations.ManagedDescription;
 import org.exoplatform.management.jmx.annotations.NameTemplate;
@@ -28,14 +28,17 @@ public class ProfileMigrationService extends AbstractMigrationService<Profile> {
   public static final String EVENT_LISTENER_KEY = "SOC_PROFILE_MIGRATION";
   private final ProfileItemDAO profileDAO;
   private final IdentityManager identityManager;
+  private final EntityManagerService entityManagerService;
   
   public ProfileMigrationService(ProfileItemDAO profileDAO,
                                  IdentityManager identityManager,
                                  EventManager<Profile, String> eventManager,
-                                 IdentityStorage identityStorage) {
+                                 IdentityStorage identityStorage,
+                                 EntityManagerService entityManagerService) {
     super(identityStorage, eventManager);
     this.profileDAO = profileDAO;
     this.identityManager = identityManager;
+    this.entityManagerService = entityManagerService;
   }
 
   @Override
@@ -74,8 +77,8 @@ public class ProfileMigrationService extends AbstractMigrationService<Profile> {
         ++count;
         if (count % LIMIT_THRESHOLD == 0) {
           GenericDAOImpl.endTx(begunTx);
-          RequestLifeCycle.end();
-          RequestLifeCycle.begin(PortalContainer.getInstance());
+          entityManagerService.endRequest(PortalContainer.getInstance());
+          entityManagerService.startRequest(PortalContainer.getInstance());
           begunTx = GenericDAOImpl.startTx();
         }
         processLog("Profiles migration", size, count);

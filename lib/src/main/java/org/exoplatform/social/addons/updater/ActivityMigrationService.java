@@ -15,9 +15,9 @@ import javax.jcr.RepositoryException;
 
 import org.chromattic.core.api.ChromatticSessionImpl;
 import org.exoplatform.commons.api.event.EventManager;
+import org.exoplatform.commons.api.jpa.EntityManagerService;
 import org.exoplatform.commons.utils.CommonsUtils;
 import org.exoplatform.container.PortalContainer;
-import org.exoplatform.container.component.RequestLifeCycle;
 import org.exoplatform.management.annotations.Managed;
 import org.exoplatform.management.annotations.ManagedDescription;
 import org.exoplatform.management.jmx.annotations.NameTemplate;
@@ -54,6 +54,7 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
   private final ActivityDAO activityDAO;
   private final ActivityStorage activityStorage;
   private final ActivityStorageImpl activityJCRStorage;
+  private final EntityManagerService entityManagerService;
 
   private String previousActivityId = null;
   private ActivityEntity lastActivity = null;
@@ -65,11 +66,13 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
                                   ActivityStorageImpl activityJCRStorage,
                                   IdentityStorage identityStorage,
                                   EventManager<ExoSocialActivity, String> eventManager,
-                                  RelationshipMigrationService relationshipMigration) {
+                                  RelationshipMigrationService relationshipMigration,
+                                  EntityManagerService entityManagerService) {
     super(identityStorage, eventManager);
     this.activityDAO = activityDAO;
     this.activityStorage = activityStorage;
     this.activityJCRStorage = activityJCRStorage;
+    this.entityManagerService = entityManagerService;
   }
 
   @Managed
@@ -226,8 +229,8 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
         //
         if(count % LIMIT_THRESHOLD == 0) {
           GenericDAOImpl.endTx(begunTx);
-          RequestLifeCycle.end();
-          RequestLifeCycle.begin(PortalContainer.getInstance());
+          entityManagerService.endRequest(PortalContainer.getInstance());
+          entityManagerService.startRequest(PortalContainer.getInstance());
           begunTx = GenericDAOImpl.startTx();
         }
       }
