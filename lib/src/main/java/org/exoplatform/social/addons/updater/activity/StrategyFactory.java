@@ -25,12 +25,51 @@ import org.exoplatform.social.core.chromattic.entity.IdentityEntity;
  * Jun 22, 2015  
  */
 public class StrategyFactory {
+  enum CLEAN_TYPE {
+    DAY("DAY", DayCleanup.activityDayCleanup, DayCleanup.activityDayRefCleanup),
+    MONTH("MONTH", MonthCleanup.activityMonthCleanup, MonthCleanup.activityMonthRefCleanup),
+    YEAR("YEAR", YearCleanup.activityYearCleanup, YearCleanup.activityYearRefCleanup);
+
+    private AbstractStrategy<IdentityEntity> refClean, activityClean;
+    private String type;
+
+    private CLEAN_TYPE(String type, AbstractStrategy<IdentityEntity> activityClean, AbstractStrategy<IdentityEntity> refClean) {
+      this.activityClean = activityClean;
+      this.refClean = refClean;
+      this.type = type;
+    }
+
+    public AbstractStrategy<IdentityEntity> getRefClean() {
+      return refClean;
+    }
+
+    public void setRefClean(AbstractStrategy<IdentityEntity> refClean) {
+      this.refClean = refClean;
+    }
+
+    public AbstractStrategy<IdentityEntity> getActivityClean() {
+      return activityClean;
+    }
+
+    public void setActivityClean(AbstractStrategy<IdentityEntity> activityClean) {
+      this.activityClean = activityClean;
+    }
+
+    public static CLEAN_TYPE getCleanType(String type) {
+      for (CLEAN_TYPE cleanType : values()) {
+        if (cleanType.type.equalsIgnoreCase(type)) {
+          return cleanType;
+        }
+      }
+      return null;
+    }
+  }
 
   public static AbstractStrategy<IdentityEntity> getActivityCleanupStrategy(String strategyName) {
-    return DayCleanup.activityDayCleanup;
+    return CLEAN_TYPE.getCleanType(strategyName).getRefClean();
   }
   
   public static AbstractStrategy<IdentityEntity> getActivityRefCleanupStrategy(String strategyName) {
-    return DayCleanup.activityDayRefCleanup;
+    return CLEAN_TYPE.getCleanType(strategyName).getActivityClean();
   }
 }

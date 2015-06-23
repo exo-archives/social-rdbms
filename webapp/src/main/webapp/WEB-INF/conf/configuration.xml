@@ -77,15 +77,38 @@
     <key>org.exoplatform.social.addons.updater.RDBMSMigrationManager</key>
     <type>org.exoplatform.social.addons.updater.RDBMSMigrationManager</type>
   </component>
-  <component>
-    <type>org.exoplatform.social.addons.updater.ActivityMigrationService</type>
-  </component>
-  <component>
-    <type>org.exoplatform.social.addons.updater.RelationshipMigrationService</type>
-  </component>
-  <component>
-    <type>org.exoplatform.social.addons.updater.ProfileMigrationService</type>
-  </component>
+
+	<component>
+		<type>org.exoplatform.social.addons.updater.ActivityMigrationService</type>
+		<init-params>
+			<value-param>
+				<name>LIMIT_THRESHOLD</name>
+				<description>The number limit of items migration each round</description>
+				<value>${exo.social.addons.ActivityMigrationService.limitThreshold:100}</value>
+			</value-param>
+			<value-param>
+				<name>REMOVE_REF_TYPE</name>
+				<description>The type of remove activity reference (DAY, MONTH or YEAR)</description>
+				<value>${exo.social.addons.ActivityMigrationService.removeTypeOfRef:DAY}</value>
+			</value-param>
+			<value-param>
+				<name>REMOVE_ACTIVITY_TYPE</name>
+				<description>The type of remove activity (DAY, MONTH or YEAR)</description>
+				<value>${exo.social.addons.ActivityMigrationService.removeTypeOfActivity:DAY}</value>
+			</value-param>
+		</init-params>
+	</component>
+
+	<component>
+		<type>org.exoplatform.social.addons.updater.RelationshipMigrationService</type>
+		<init-params>
+			<value-param>
+				<name>LIMIT_THRESHOLD</name>
+				<description>The number limit of items migration each round</description>
+				<value>${exo.social.addons.RelationshipMigrationService.limitThreshold:200}</value>
+			</value-param>
+		</init-params>
+	</component>
 
   <external-component-plugins>
     <target-component>org.exoplatform.social.core.manager.IdentityManager</target-component>

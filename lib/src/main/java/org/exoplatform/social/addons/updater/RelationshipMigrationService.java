@@ -6,6 +6,7 @@ import java.util.Iterator;
 import org.exoplatform.commons.api.event.EventManager;
 import org.exoplatform.commons.api.jpa.EntityManagerService;
 import org.exoplatform.container.PortalContainer;
+import org.exoplatform.container.xml.InitParams;
 import org.exoplatform.management.annotations.Managed;
 import org.exoplatform.management.annotations.ManagedDescription;
 import org.exoplatform.management.jmx.annotations.NameTemplate;
@@ -25,24 +26,24 @@ import org.exoplatform.social.core.storage.api.IdentityStorage;
 @ManagedDescription("Social migration relationships from JCR to MYSQl service.")
 @NameTemplate({@Property(key = "service", value = "social"), @Property(key = "view", value = "migration-relationships") })
 public class RelationshipMigrationService extends AbstractMigrationService<Relationship> {
-  private static final int LIMIT_THRESHOLD = 100;
   public static final String EVENT_LISTENER_KEY = "SOC_RELATIONSHIP_MIGRATION";
   private final RelationshipDAO relationshipDAO;
   private final ProfileItemDAO profileItemDAO;
   private static int number = 0;
-  private final EntityManagerService entityManagerService;
   
 
-  public RelationshipMigrationService(IdentityStorage identityStorage,
+  public RelationshipMigrationService(InitParams initParams,
+                                      IdentityStorage identityStorage,
                                       RelationshipDAO relationshipDAO,
+                                      ProfileItemDAO profileItemDAO,
                                       ProfileMigrationService profileMigration,
                                       EventManager<Relationship, String> eventManager,
-                                      ProfileItemDAO profileItemDAO,
                                       EntityManagerService entityManagerService) {
-    super(identityStorage, eventManager);
+
+    super(initParams, identityStorage, eventManager, entityManagerService);
     this.relationshipDAO = relationshipDAO;
     this.profileItemDAO = profileItemDAO;
-    this.entityManagerService = entityManagerService;
+    this.LIMIT_THRESHOLD = getInteger(initParams, LIMIT_THRESHOLD_KEY, 100);
   }
 
   @Override

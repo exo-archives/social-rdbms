@@ -18,6 +18,7 @@ import org.exoplatform.commons.api.event.EventManager;
 import org.exoplatform.commons.api.jpa.EntityManagerService;
 import org.exoplatform.commons.utils.CommonsUtils;
 import org.exoplatform.container.PortalContainer;
+import org.exoplatform.container.xml.InitParams;
 import org.exoplatform.management.annotations.Managed;
 import org.exoplatform.management.annotations.ManagedDescription;
 import org.exoplatform.management.jmx.annotations.NameTemplate;
@@ -49,30 +50,34 @@ import com.google.caja.util.Lists;
 @ManagedDescription("Social migration activities from JCR to MYSQl service.")
 @NameTemplate({@Property(key = "service", value = "social"), @Property(key = "view", value = "migration-activities") })
 public class ActivityMigrationService extends AbstractMigrationService<ExoSocialActivity> {
-  private static final int LIMIT_THRESHOLD = 100;
   public static final String EVENT_LISTENER_KEY = "SOC_ACTIVITY_MIGRATION";
   private final ActivityDAO activityDAO;
   private final ActivityStorage activityStorage;
   private final ActivityStorageImpl activityJCRStorage;
-  private final EntityManagerService entityManagerService;
+  private final String removeTypeOfFef;
+  private final String removeTypeOfActivity;
 
   private String previousActivityId = null;
   private ActivityEntity lastActivity = null;
   private String lastUserProcess = null;
   private boolean forkStop = false;
   
-  public ActivityMigrationService(ActivityDAO activityDAO,
+  public ActivityMigrationService(InitParams initParams,
+                                  ActivityDAO activityDAO,
                                   ActivityStorage activityStorage,
                                   ActivityStorageImpl activityJCRStorage,
                                   IdentityStorage identityStorage,
-                                  EventManager<ExoSocialActivity, String> eventManager,
                                   RelationshipMigrationService relationshipMigration,
+                                  EventManager<ExoSocialActivity, String> eventManager,
                                   EntityManagerService entityManagerService) {
-    super(identityStorage, eventManager);
+
+    super(initParams, identityStorage, eventManager, entityManagerService);
     this.activityDAO = activityDAO;
     this.activityStorage = activityStorage;
     this.activityJCRStorage = activityJCRStorage;
-    this.entityManagerService = entityManagerService;
+    this.LIMIT_THRESHOLD = getInteger(initParams, LIMIT_THRESHOLD_KEY, 100);
+    this.removeTypeOfFef = getString(initParams, "REMOVE_REF_TYPE", "DAY");
+    this.removeTypeOfActivity = getString(initParams, "REMOVE_ACTIVITY_TYPE", "DAY");
   }
 
   @Managed
@@ -277,8 +282,8 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
 
   private void removeActivities() {
     Iterator<IdentityEntity> allIdentityEntity = getAllIdentityEntity(OrganizationIdentityProvider.NAME).values().iterator();
-    AbstractStrategy<IdentityEntity> refCleanup = StrategyFactory.getActivityCleanupStrategy("DAY");
-    AbstractStrategy<IdentityEntity> activityCleanup = StrategyFactory.getActivityRefCleanupStrategy("DAY");
+    AbstractStrategy<IdentityEntity> refCleanup = StrategyFactory.getActivityCleanupStrategy(removeTypeOfFef);
+    AbstractStrategy<IdentityEntity> activityCleanup = StrategyFactory.getActivityRefCleanupStrategy(removeTypeOfActivity);
     
     while (allIdentityEntity.hasNext()) {
       IdentityEntity identityEntity = (IdentityEntity) allIdentityEntity.next();
