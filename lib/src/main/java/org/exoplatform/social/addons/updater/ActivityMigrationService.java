@@ -54,7 +54,7 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
   private final ActivityDAO activityDAO;
   private final ActivityStorage activityStorage;
   private final ActivityStorageImpl activityJCRStorage;
-  private final String removeTypeOfFef;
+  private final String removeTypeOfActivityRef;
   private final String removeTypeOfActivity;
 
   private String previousActivityId = null;
@@ -76,7 +76,7 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
     this.activityStorage = activityStorage;
     this.activityJCRStorage = activityJCRStorage;
     this.LIMIT_THRESHOLD = getInteger(initParams, LIMIT_THRESHOLD_KEY, 100);
-    this.removeTypeOfFef = getString(initParams, "REMOVE_REF_TYPE", "DAY");
+    this.removeTypeOfActivityRef = getString(initParams, "REMOVE_REF_TYPE", "DAY");
     this.removeTypeOfActivity = getString(initParams, "REMOVE_ACTIVITY_TYPE", "DAY");
   }
 
@@ -335,8 +335,8 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
   }
 
   private void removeActivities() {
-    AbstractStrategy<IdentityEntity> refCleanup = StrategyFactory.getActivityCleanupStrategy("DAY");
-    AbstractStrategy<IdentityEntity> activityCleanup = StrategyFactory.getActivityRefCleanupStrategy("DAY");
+    AbstractStrategy<IdentityEntity> refCleanup = StrategyFactory.getActivityCleanupStrategy(removeTypeOfActivity);
+    AbstractStrategy<IdentityEntity> activityCleanup = StrategyFactory.getActivityRefCleanupStrategy(removeTypeOfActivityRef);
     long t = System.currentTimeMillis();
     NodeIterator it = getIdentityNodes();
     Node node = null;
@@ -347,7 +347,6 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
         IdentityEntity identityEntity = _findById(IdentityEntity.class, node.getUUID());
         refCleanup.process(identityEntity);
         offset++;
-        
         //
         if (offset % LIMIT_IDENTITY_THRESHOLD == 0) {
           getSession().save();
