@@ -61,7 +61,7 @@ public class StrategyFactory {
           return cleanType;
         }
       }
-      return null;
+      return DAY;
     }
   }
 
