@@ -1,11 +1,12 @@
 package org.exoplatform.social.addons.updater;
 
-import java.util.Collection;
-import java.util.Iterator;
+import javax.jcr.Node;
+import javax.jcr.NodeIterator;
 
 import org.exoplatform.commons.api.event.EventManager;
 import org.exoplatform.commons.api.jpa.EntityManagerService;
 import org.exoplatform.container.PortalContainer;
+import org.exoplatform.container.component.RequestLifeCycle;
 import org.exoplatform.container.xml.InitParams;
 import org.exoplatform.management.annotations.Managed;
 import org.exoplatform.management.annotations.ManagedDescription;
@@ -14,11 +15,8 @@ import org.exoplatform.management.jmx.annotations.Property;
 import org.exoplatform.social.addons.profile.ProfileUtils;
 import org.exoplatform.social.addons.storage.dao.ProfileItemDAO;
 import org.exoplatform.social.addons.storage.dao.jpa.GenericDAOImpl;
-import org.exoplatform.social.core.chromattic.entity.IdentityEntity;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.identity.model.Profile;
-import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvider;
-import org.exoplatform.social.core.manager.IdentityManager;
 import org.exoplatform.social.core.storage.api.IdentityStorage;
 
 @Managed
@@ -27,19 +25,17 @@ import org.exoplatform.social.core.storage.api.IdentityStorage;
 public class ProfileMigrationService extends AbstractMigrationService<Profile> {
   public static final String EVENT_LISTENER_KEY = "SOC_PROFILE_MIGRATION";
   private final ProfileItemDAO profileDAO;
-  private final IdentityManager identityManager;
   
   public ProfileMigrationService(InitParams initParams,
                                  ProfileItemDAO profileDAO,
-                                 IdentityManager identityManager,
                                  IdentityStorage identityStorage,
                                  EventManager<Profile, String> eventManager,
                                  EntityManagerService entityManagerService) {
 
     super(initParams, identityStorage, eventManager, entityManagerService);
     this.profileDAO = profileDAO;
-    this.identityManager = identityManager;
     this.LIMIT_THRESHOLD = getInteger(initParams, LIMIT_THRESHOLD_KEY, 200);
+
   }
 
   @Override
@@ -58,39 +54,37 @@ public class ProfileMigrationService extends AbstractMigrationService<Profile> {
         return;
       }
       LOG.info("Stating to migration profiles from JCR to MYSQL........");
-      Collection<IdentityEntity> allIdentityEntity = getAllIdentityEntity(OrganizationIdentityProvider.NAME).values();
       long t = System.currentTimeMillis();
-      int count = 0, size = allIdentityEntity.size();
-
-      Iterator<IdentityEntity> iter = allIdentityEntity.iterator();
-      while (iter.hasNext()) {
-        if (forkStop) {
-          return;
+      NodeIterator it = getIdentityNodes();
+      Identity owner = null; 
+      Node node = null;
+      long offset = 0;
+      try {
+        while (it.hasNext()) {
+          node = (Node) it.next();
+          owner = identityStorage.findIdentityById(node.getUUID());
+          ProfileUtils.createOrUpdateProfile(owner.getProfile(), false);
+          offset++;
+          
+          //
+          if (offset % LIMIT_THRESHOLD == 0) {
+            GenericDAOImpl.endTx(begunTx);
+            RequestLifeCycle.end();
+            RequestLifeCycle.begin(PortalContainer.getInstance());
+            begunTx = GenericDAOImpl.startTx();
+            it = getIdentityNodes();
+            _skip(it, offset);
+          }
         }
-        IdentityEntity identityEntity = (IdentityEntity) iter.next();
-        LOG.info("Migration profile for user: " + identityEntity.getRemoteId());
-        //
-        Identity identity = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME,
-                                                                identityEntity.getRemoteId(),
-                                                                true);
-        //
-        ProfileUtils.createOrUpdateProfile(identity.getProfile(), false);
-        ++count;
-        if (count % LIMIT_THRESHOLD == 0) {
-          GenericDAOImpl.endTx(begunTx);
-          entityManagerService.endRequest(PortalContainer.getInstance());
-          entityManagerService.startRequest(PortalContainer.getInstance());
-          begunTx = GenericDAOImpl.startTx();
-        }
-        processLog("Profiles migration", size, count);
+      } catch (Exception e) {
+        LOG.error("Failed to migration for Profile.", e);
       }
-
-      
-      LOG.info(String.format("Done to migration %s profiles from JCR to MYSQL on %s(ms)",
-                             count,
-                             (System.currentTimeMillis() - t)));
+      LOG.info(String.format("Done to migration %s profiles from JCR to MYSQL on %s(ms)", offset, (System.currentTimeMillis() - t)));
     } finally {
       GenericDAOImpl.endTx(begunTx);
+      RequestLifeCycle.end();
+      RequestLifeCycle.begin(PortalContainer.getInstance());
+
     }
    
   }

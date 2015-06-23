@@ -1,10 +1,8 @@
 package org.exoplatform.social.addons.updater;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Set;
@@ -19,6 +17,8 @@ import org.exoplatform.commons.api.jpa.EntityManagerService;
 import org.exoplatform.commons.utils.CommonsUtils;
 import org.exoplatform.container.PortalContainer;
 import org.exoplatform.container.xml.InitParams;
+
+import org.exoplatform.container.component.RequestLifeCycle;
 import org.exoplatform.management.annotations.Managed;
 import org.exoplatform.management.annotations.ManagedDescription;
 import org.exoplatform.management.jmx.annotations.NameTemplate;
@@ -38,7 +38,6 @@ import org.exoplatform.social.core.chromattic.utils.ActivityIterator;
 import org.exoplatform.social.core.identity.model.ActiveIdentityFilter;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvider;
-import org.exoplatform.social.core.identity.provider.SpaceIdentityProvider;
 import org.exoplatform.social.core.storage.api.ActivityStorage;
 import org.exoplatform.social.core.storage.api.IdentityStorage;
 import org.exoplatform.social.core.storage.impl.ActivityStorageImpl;
@@ -50,6 +49,7 @@ import com.google.caja.util.Lists;
 @ManagedDescription("Social migration activities from JCR to MYSQl service.")
 @NameTemplate({@Property(key = "service", value = "social"), @Property(key = "view", value = "migration-activities") })
 public class ActivityMigrationService extends AbstractMigrationService<ExoSocialActivity> {
+  private static final int LIMIT_IDENTITY_THRESHOLD = 50;
   public static final String EVENT_LISTENER_KEY = "SOC_ACTIVITY_MIGRATION";
   private final ActivityDAO activityDAO;
   private final ActivityStorage activityStorage;
@@ -89,6 +89,7 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
   }
 
   private void migrateUserActivities() throws Exception {
+    boolean begunTx = GenericDAOImpl.startTx();
     //
     if(lastUserProcess == null && activityDAO.count() > 0) {
       return;
@@ -104,46 +105,99 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
       migrationByIdentity(userName, null);
       ++count;
       //
-      processLog("Activities migration admin+active users", size, count);
+      processLog("Activities migration admin & active users", size, count);
     }
     // doing with normal users
     boolean isSkip = (lastUserProcess != null);
-    Collection<IdentityEntity> allIdentityEntity  = getAllIdentityEntity(OrganizationIdentityProvider.NAME).values();
-    size = allIdentityEntity.size() - size;
-    count = 0;
-    Iterator<IdentityEntity> iter =  allIdentityEntity.iterator();
-    while (iter.hasNext()) {
-      if(forkStop) {
-        return;
-      }
-      IdentityEntity identityEntity = (IdentityEntity) iter.next();
-      if (isSkip) {
-        if (lastUserProcess.equals(identityEntity.getRemoteId())) {
-          isSkip = false;
+    long t = System.currentTimeMillis();
+    NodeIterator it = getIdentityNodes();
+    Identity owner = null; 
+    Node node = null;
+    long offset = 0;
+    try {
+      while (it.hasNext()) {
+        if(forkStop) {
+          return;
         }
-        continue;
+        
+        node = (Node) it.next();
+        owner = identityStorage.findIdentityById(node.getUUID());
+        if (isSkip) {
+          if (lastUserProcess.equals(owner.getRemoteId())) {
+            isSkip = false;
+          }
+          continue;
+        }
+        if(activeUsers.contains(owner.getRemoteId())) {
+          continue;
+        }
+        
+        IdentityEntity identityEntity = _findById(IdentityEntity.class, owner.getId());
+        migrationByIdentity(null, identityEntity);
+        offset++;
+        
+        //
+        if (offset % LIMIT_IDENTITY_THRESHOLD == 0) {
+          GenericDAOImpl.endTx(begunTx);
+          RequestLifeCycle.end();
+          RequestLifeCycle.begin(PortalContainer.getInstance());
+          begunTx = GenericDAOImpl.startTx();
+          it = getIdentityNodes();
+          _skip(it, offset);
+        }
       }
-      if(activeUsers.contains(identityEntity.getRemoteId())) {
-        continue;
-      }
-      //
-      migrationByIdentity(null, identityEntity);
-      //
-      ++count;
-      processLog("Activities migration normal users", size, count);
+      
+      long newSize = count + size;
+      LOG.info(String.format("Done to migration %s user activities from JCR to MYSQL on %s(ms)", newSize, (System.currentTimeMillis() - t)));
+    } catch (Exception e) {
+      LOG.error("Failed to migration for user Activity.", e);
+    } finally {
+      GenericDAOImpl.endTx(begunTx);
+      RequestLifeCycle.end();
+      RequestLifeCycle.begin(PortalContainer.getInstance());
     }
+    
   }
   
   private void migrateSpaceActivities() throws Exception {
-    Collection<IdentityEntity> allIdentityEntity  = getAllIdentityEntity(SpaceIdentityProvider.NAME).values(); 
-    Iterator<IdentityEntity> iter = allIdentityEntity.iterator();
-    int size = allIdentityEntity.size(), count = 0;
-    while (iter.hasNext()) {
-      IdentityEntity spaceEntity = (IdentityEntity) iter.next();
-      migrationByIdentity(null, spaceEntity);
-      //
-      ++count;
-      processLog("Activities migration spaces", size, count);
+    long t = System.currentTimeMillis();
+    NodeIterator it = getSpaceIdentityNodes();
+    if (it == null) return;
+    
+    boolean begunTx = GenericDAOImpl.startTx();
+    Identity owner = null;
+    Node node = null;
+    long offset = 0;
+    try {
+      while (it.hasNext()) {
+        if (forkStop) {
+          return;
+        }
+        node = (Node) it.next();
+        owner = identityStorage.findIdentityById(node.getUUID());
+
+        IdentityEntity spaceEntity = _findById(IdentityEntity.class, owner.getId());
+        migrationByIdentity(null, spaceEntity);
+        offset++;
+
+        //
+        if (offset % LIMIT_IDENTITY_THRESHOLD == 0) {
+          GenericDAOImpl.endTx(begunTx);
+          RequestLifeCycle.end();
+          RequestLifeCycle.begin(PortalContainer.getInstance());
+          begunTx = GenericDAOImpl.startTx();
+          it = getSpaceIdentityNodes();
+          _skip(it, offset);
+        }
+      }
+
+      LOG.info(String.format("Done to migration %s space activities from JCR to MYSQL on %s(ms)", offset, (System.currentTimeMillis() - t)));
+    } catch (Exception e) {
+      LOG.error("Failed to migration for Space Activity.", e);
+    } finally {
+      GenericDAOImpl.endTx(begunTx);
+      RequestLifeCycle.end();
+      RequestLifeCycle.begin(PortalContainer.getInstance());
     }
   }
 
@@ -281,22 +335,98 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
   }
 
   private void removeActivities() {
-    Iterator<IdentityEntity> allIdentityEntity = getAllIdentityEntity(OrganizationIdentityProvider.NAME).values().iterator();
-    AbstractStrategy<IdentityEntity> refCleanup = StrategyFactory.getActivityCleanupStrategy(removeTypeOfFef);
-    AbstractStrategy<IdentityEntity> activityCleanup = StrategyFactory.getActivityRefCleanupStrategy(removeTypeOfActivity);
-    
-    while (allIdentityEntity.hasNext()) {
-      IdentityEntity identityEntity = (IdentityEntity) allIdentityEntity.next();
-      refCleanup.process(identityEntity);
-      activityCleanup.process(identityEntity);
+    AbstractStrategy<IdentityEntity> refCleanup = StrategyFactory.getActivityCleanupStrategy("DAY");
+    AbstractStrategy<IdentityEntity> activityCleanup = StrategyFactory.getActivityRefCleanupStrategy("DAY");
+    long t = System.currentTimeMillis();
+    NodeIterator it = getIdentityNodes();
+    Node node = null;
+    long offset = 0;
+    try {
+      while (it.hasNext()) {
+        node = (Node) it.next();
+        IdentityEntity identityEntity = _findById(IdentityEntity.class, node.getUUID());
+        refCleanup.process(identityEntity);
+        offset++;
+        
+        //
+        if (offset % LIMIT_IDENTITY_THRESHOLD == 0) {
+          getSession().save();
+          RequestLifeCycle.end();
+          RequestLifeCycle.begin(PortalContainer.getInstance());
+          it = getIdentityNodes();
+          _skip(it, offset);
+        }
+      }
+      
+    } catch (Exception e) {
+      LOG.error("Failed to cleanup for Activity Reference.", e);
+    } finally {
+      LOG.info(String.format("Done cleanup Activity Ref for %s(ms) ", System.currentTimeMillis() - t));
     }
     
-    allIdentityEntity = getAllIdentityEntity(SpaceIdentityProvider.NAME).values().iterator();
-    while (allIdentityEntity.hasNext()) {
-      IdentityEntity identityEntity = (IdentityEntity) allIdentityEntity.next();
-      refCleanup.process(identityEntity);
-      activityCleanup.process(identityEntity);
+    //cleanup activity
+    t = System.currentTimeMillis();
+    it = getIdentityNodes();
+    node = null;
+    offset = 0;
+    try {
+      while (it.hasNext()) {
+        node = (Node) it.next();
+        IdentityEntity identityEntity = _findById(IdentityEntity.class, node.getUUID());
+        activityCleanup.process(identityEntity);
+        offset++;
+        
+        //
+        if (offset % LIMIT_IDENTITY_THRESHOLD == 0) {
+          getSession().save();
+          RequestLifeCycle.end();
+          RequestLifeCycle.begin(PortalContainer.getInstance());
+          it = getIdentityNodes();
+          _skip(it, offset);
+        }
+      }
+      
+    } catch (Exception e) {
+      LOG.error("Failed to cleanup for user Activities.", e);
+    } finally {
+      getSession().save();
+      RequestLifeCycle.begin(PortalContainer.getInstance());
+      LOG.info(String.format("Done cleanup User Activities for %s(ms) ", System.currentTimeMillis() - t));
     }
+    
+    //space
+    t = System.currentTimeMillis();
+    it = getSpaceIdentityNodes();
+    //
+    if (it == null) return;
+    
+    node = null;
+    offset = 0;
+    try {
+      while (it.hasNext()) {
+        node = (Node) it.next();
+        IdentityEntity spaceIdentityEntity = _findById(IdentityEntity.class, node.getUUID());
+        activityCleanup.process(spaceIdentityEntity);
+        offset++;
+        //
+        if (offset % LIMIT_IDENTITY_THRESHOLD == 0) {
+          getSession().save();
+          RequestLifeCycle.end();
+          RequestLifeCycle.begin(PortalContainer.getInstance());
+          it = getIdentityNodes();
+          _skip(it, offset);
+        }
+      }
+      
+    } catch (Exception e) {
+      LOG.error("Failed to cleanup for user Space Activity.", e);
+    } finally {
+      getSession().save();
+      RequestLifeCycle.begin(PortalContainer.getInstance());
+      LOG.info(String.format("Done cleanup Space Activities for %s(ms) ", System.currentTimeMillis() - t));
+    }
+    
+   
   }
 
   private List<String> getAdminAndActiveUsers() {

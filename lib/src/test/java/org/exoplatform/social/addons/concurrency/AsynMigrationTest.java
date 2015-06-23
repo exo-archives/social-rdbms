@@ -18,6 +18,8 @@ package org.exoplatform.social.addons.concurrency;
 
 import java.util.List;
 
+import org.exoplatform.container.PortalContainer;
+import org.exoplatform.container.component.RequestLifeCycle;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 import org.exoplatform.social.addons.storage.dao.ActivityDAO;
@@ -86,20 +88,22 @@ public class AsynMigrationTest extends BaseCoreTest {
     relationshipManager.confirm(rootIdentity, demoIdentity);
     //
     LOG.info("Create the activities storage on JCR ....");
-    createActivityToOtherIdentity(rootIdentity, johnIdentity, 5);
-    createActivityToOtherIdentity(demoIdentity, maryIdentity, 5);
-    createActivityToOtherIdentity(johnIdentity, demoIdentity, 5);
-    createActivityToOtherIdentity(maryIdentity, rootIdentity, 5);
+    createActivityToOtherIdentity(rootIdentity, johnIdentity, 20);
+    createActivityToOtherIdentity(demoIdentity, maryIdentity, 20);
+    createActivityToOtherIdentity(johnIdentity, demoIdentity, 20);
+    createActivityToOtherIdentity(maryIdentity, rootIdentity, 20);
     LOG.info("Done created the activities storage on JCR.");
+    RequestLifeCycle.end();
+    RequestLifeCycle.begin(PortalContainer.getInstance());
     //
     rdbmsMigrationManager.start();
     //
     rdbmsMigrationManager.getMigrater().await();
     //
-    assertEquals(20, activityStorage.getActivityFeed(rootIdentity, 0, 100).size());
-    assertEquals(20, activityStorage.getActivityFeed(maryIdentity, 0, 100).size());
-    assertEquals(20, activityStorage.getActivityFeed(johnIdentity, 0, 100).size());
-    assertEquals(20, activityStorage.getActivityFeed(demoIdentity, 0, 100).size());
+    assertEquals(80, activityStorage.getActivityFeed(rootIdentity, 0, 100).size());
+    assertEquals(80, activityStorage.getActivityFeed(maryIdentity, 0, 100).size());
+    assertEquals(80, activityStorage.getActivityFeed(johnIdentity, 0, 100).size());
+    assertEquals(80, activityStorage.getActivityFeed(demoIdentity, 0, 100).size());
   }
   
   private void createActivityToOtherIdentity(Identity posterIdentity, Identity targetIdentity, int number) {

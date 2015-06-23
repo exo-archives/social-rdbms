@@ -4,6 +4,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import javax.jcr.NodeIterator;
+
 import org.exoplatform.commons.api.event.EventManager;
 import org.exoplatform.commons.api.jpa.EntityManagerService;
 import org.exoplatform.container.PortalContainer;
@@ -15,8 +17,12 @@ import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 import org.exoplatform.social.core.chromattic.entity.IdentityEntity;
 import org.exoplatform.social.core.chromattic.entity.ProviderEntity;
+import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvider;
+import org.exoplatform.social.core.identity.provider.SpaceIdentityProvider;
 import org.exoplatform.social.core.storage.api.IdentityStorage;
 import org.exoplatform.social.core.storage.impl.AbstractStorage;
+import org.exoplatform.social.core.storage.impl.StorageUtils;
+import org.exoplatform.social.core.storage.query.JCRProperties;
 
 public abstract class AbstractMigrationService<T>  extends AbstractStorage {
   protected Log LOG;
@@ -105,6 +111,24 @@ public abstract class AbstractMigrationService<T>  extends AbstractStorage {
     }
     //
     LOG.info(String.format(msg + ":[%s> %s%%]", process, (100 * count) / size));
+  }
+  
+  protected NodeIterator getIdentityNodes() {
+    StringBuffer sb = new StringBuffer().append("SELECT * FROM soc:identitydefinition WHERE ");
+    sb.append(JCRProperties.path.getName()).append(" LIKE '").append(getProviderRoot().getProviders().get(OrganizationIdentityProvider.NAME).getPath() + StorageUtils.SLASH_STR + StorageUtils.PERCENT_STR + "'");
+    return nodes(sb.toString());
+  }
+  
+  protected NodeIterator getSpaceIdentityNodes() {
+    ProviderEntity providerEntity = getProviderRoot().getProviders().get(SpaceIdentityProvider.NAME);
+    if (providerEntity != null) {
+      StringBuffer sb = new StringBuffer().append("SELECT * FROM soc:identitydefinition WHERE ");
+      sb.append(JCRProperties.path.getName()).append(" LIKE '").append(providerEntity.getPath() + StorageUtils.SLASH_STR + StorageUtils.PERCENT_STR + "'");
+      return nodes(sb.toString());
+    } else {
+      return null;
+    }
+    
   }
 
   protected int getInteger(InitParams params, String key, int defaultValue) {
