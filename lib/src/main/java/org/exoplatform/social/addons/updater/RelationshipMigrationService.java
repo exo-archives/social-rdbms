@@ -6,6 +6,7 @@ import java.util.Iterator;
 import org.exoplatform.commons.api.event.EventManager;
 import org.exoplatform.commons.api.jpa.EntityManagerService;
 import org.exoplatform.container.PortalContainer;
+import org.exoplatform.container.component.RequestLifeCycle;
 import org.exoplatform.container.xml.InitParams;
 import org.exoplatform.management.annotations.Managed;
 import org.exoplatform.management.annotations.ManagedDescription;
@@ -43,7 +44,7 @@ public class RelationshipMigrationService extends AbstractMigrationService<Relat
     super(initParams, identityStorage, eventManager, entityManagerService);
     this.relationshipDAO = relationshipDAO;
     this.profileItemDAO = profileItemDAO;
-    this.LIMIT_THRESHOLD = getInteger(initParams, LIMIT_THRESHOLD_KEY, 100);
+    this.LIMIT_THRESHOLD = getInteger(initParams, LIMIT_THRESHOLD_KEY, 200);
   }
 
   @Override
@@ -131,26 +132,72 @@ public class RelationshipMigrationService extends AbstractMigrationService<Relat
     LOG.info("Done to migration relationships from JCR to MYSQL");
   }
   
-  private void removeRelationshipEntity(Iterator<RelationshipEntity> it) {
+  private void removeRelationshipEntity(Collection<RelationshipEntity> entities) {
+    Iterator<RelationshipEntity> it = entities.iterator();
     while (it.hasNext()) {
       RelationshipEntity relationshipEntity = it.next();
       getSession().remove(relationshipEntity);
+      ++number;
+      if (number % LIMIT_THRESHOLD == 0) {
+        getSession().save();
+      }
     }
   }
-  
+
   public void doRemove() throws Exception {
     LOG.info("Start to remove relationships from JCR");
-    Iterator<IdentityEntity> allIdentityEntity = getAllIdentityEntity(OrganizationIdentityProvider.NAME).values().iterator();
+    number = 0;
+    LOG.info("Remove main relationships ...");
+    long t = System.currentTimeMillis(), t1 = t, t2;
+    RequestLifeCycle.begin(PortalContainer.getInstance());
+    Collection<IdentityEntity> identityEntities = getAllIdentityEntity(OrganizationIdentityProvider.NAME).values();
+    int count = 0, size = identityEntities.size();
+    Iterator<IdentityEntity> allIdentityEntity = identityEntities.iterator();
     while (allIdentityEntity.hasNext()) {
-      IdentityEntity identityEntity = (IdentityEntity) allIdentityEntity.next();
+      IdentityEntity entity = allIdentityEntity.next();
+      Collection<RelationshipEntity> entities = entity.getRelationship().getRelationships().values();
+      removeRelationshipEntity(entities);
       //
-      removeRelationshipEntity(identityEntity.getRelationship().getRelationships().values().iterator());
-      removeRelationshipEntity(identityEntity.getSender().getRelationships().values().iterator());
-      removeRelationshipEntity(identityEntity.getReceiver().getRelationships().values().iterator());
+      processLog(String.format("Removed %s confirm of user %s", entities.size(), entity.getRemoteId()), size, count);
     }
-    LOG.info("Done to removed relationships from JCR");
+    //
+    getSession().save();
+    RequestLifeCycle.end();
+    LOG.info(String.format("Done to remove %s main relationships on %s(ms)", number, (t2 = System.currentTimeMillis()) - t1));
+
+    LOG.info("Remove sender relationships ...");
+    RequestLifeCycle.begin(PortalContainer.getInstance());
+    number = 0; count = 0;
+    allIdentityEntity = getAllIdentityEntity(OrganizationIdentityProvider.NAME).values().iterator();
+    while (allIdentityEntity.hasNext()) {
+      IdentityEntity entity = allIdentityEntity.next();
+      Collection<RelationshipEntity> entities = entity.getSender().getRelationships().values();
+      removeRelationshipEntity(entities);
+      //
+      processLog(String.format("Removed %s sender of user %s", entities.size(), entity.getRemoteId()), size, count);
+    }
+    //
+    getSession().save();
+    RequestLifeCycle.end();
+    LOG.info(String.format("Done to remove %s sender relationships on %s(ms)", number, (t1 = System.currentTimeMillis()) - t2));
+
+    LOG.info("Remove receiver relationships ...");
+    RequestLifeCycle.begin(PortalContainer.getInstance());
+    number = 0;
+    allIdentityEntity = getAllIdentityEntity(OrganizationIdentityProvider.NAME).values().iterator();
+    while (allIdentityEntity.hasNext()) {
+      IdentityEntity entity = allIdentityEntity.next();
+      Collection<RelationshipEntity> entities = entity.getReceiver().getRelationships().values();
+      removeRelationshipEntity(entities);
+      processLog(String.format("Removed %s receiver of user %s", entities.size(), entity.getRemoteId()), size, count);
+    }
+    //
+    getSession().save();
+    RequestLifeCycle.end();
+    LOG.info(String.format("Done to remove %s receiver relationships on %s(ms)", number, (t2 = System.currentTimeMillis()) - t1));
+    LOG.info("Done all removed relationships from JCR on " + (t2 - t) + "(ms)");
   }
-  
+
   @Override
   @Managed
   @ManagedDescription("Manual to stop run miguration data of relationships from JCR to MYSQL.")
