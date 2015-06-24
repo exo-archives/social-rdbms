@@ -30,11 +30,15 @@ public abstract class AbstractMigrationService<T>  extends AbstractStorage {
   protected final IdentityStorage identityStorage;
   protected final EventManager<T, String> eventManager;
   protected final EntityManagerService entityManagerService;
-
+  
   protected boolean forkStop = false;
   protected boolean isDone = false;
   protected int LIMIT_THRESHOLD = 100;
   protected String process = "";
+  protected int lastPercent = 0;
+
+  private static String identityQuery = null;
+  private static String spaceIdentityQuery = "";
 
   public AbstractMigrationService(InitParams initParams,
                                   IdentityStorage identityStorage,
@@ -103,32 +107,40 @@ public abstract class AbstractMigrationService<T>  extends AbstractStorage {
     size = (size <= 0) ? 1 : size;
     if (count == 1) {
       process = "=";
+      lastPercent= 0;
     }
-    int processSize = (size / 10);
-    processSize = (processSize <= 0) ? 1 : processSize;
-    if ((count * 10) % processSize == 0) {
+    double percent = (100 * count) / size;
+    if ((int) percent > lastPercent && (int) percent % 2 == 0) {
       process += "=";
+      lastPercent = (int) percent;
     }
     //
-    LOG.info(String.format(msg + ":[%s> %s%%]", process, (100 * count) / size));
+    LOG.info(String.format(msg + ":[%s> %s%%]", process, percent));
   }
   
   protected NodeIterator getIdentityNodes() {
-    StringBuffer sb = new StringBuffer().append("SELECT * FROM soc:identitydefinition WHERE ");
-    sb.append(JCRProperties.path.getName()).append(" LIKE '").append(getProviderRoot().getProviders().get(OrganizationIdentityProvider.NAME).getPath() + StorageUtils.SLASH_STR + StorageUtils.PERCENT_STR + "'");
-    return nodes(sb.toString());
-  }
-  
-  protected NodeIterator getSpaceIdentityNodes() {
-    ProviderEntity providerEntity = getProviderRoot().getProviders().get(SpaceIdentityProvider.NAME);
-    if (providerEntity != null) {
-      StringBuffer sb = new StringBuffer().append("SELECT * FROM soc:identitydefinition WHERE ");
-      sb.append(JCRProperties.path.getName()).append(" LIKE '").append(providerEntity.getPath() + StorageUtils.SLASH_STR + StorageUtils.PERCENT_STR + "'");
-      return nodes(sb.toString());
-    } else {
-      return null;
+    if(identityQuery == null) {
+      identityQuery = new StringBuffer().append("SELECT * FROM soc:identitydefinition WHERE ")
+                                        .append(JCRProperties.path.getName()).append(" LIKE '")
+                                        .append(getProviderRoot().getProviders().get(OrganizationIdentityProvider.NAME).getPath())
+                                        .append(StorageUtils.SLASH_STR).append(StorageUtils.PERCENT_STR).append("'").toString();
     }
-    
+    return nodes(identityQuery);
+  }
+
+  protected NodeIterator getSpaceIdentityNodes() {
+    if ("".equals(spaceIdentityQuery)) {
+      ProviderEntity providerEntity = getProviderRoot().getProviders().get(SpaceIdentityProvider.NAME);
+      if (providerEntity != null) {
+        spaceIdentityQuery = new StringBuffer().append("SELECT * FROM soc:identitydefinition WHERE ")
+                                               .append(JCRProperties.path.getName()).append(" LIKE '")
+                                               .append(providerEntity.getPath())
+                                               .append(StorageUtils.SLASH_STR).append(StorageUtils.PERCENT_STR).append("'").toString();
+      } else {
+        spaceIdentityQuery = null;
+      }
+    }
+    return nodes(spaceIdentityQuery);
   }
 
   protected int getInteger(InitParams params, String key, int defaultValue) {
