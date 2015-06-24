@@ -143,7 +143,7 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
           RequestLifeCycle.begin(PortalContainer.getInstance());
           begunTx = GenericDAOImpl.startTx();
           it = getIdentityNodes();
-          _skip(it, offset);
+          it.skip(offset);
         }
       }
       
@@ -165,7 +165,6 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
     if (it == null) return;
     
     boolean begunTx = GenericDAOImpl.startTx();
-    Identity owner = null;
     Node node = null;
     long offset = 0;
     try {
@@ -174,9 +173,8 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
           return;
         }
         node = (Node) it.next();
-        owner = identityStorage.findIdentityById(node.getUUID());
 
-        IdentityEntity spaceEntity = _findById(IdentityEntity.class, owner.getId());
+        IdentityEntity spaceEntity = _findById(IdentityEntity.class, node.getUUID());
         migrationByIdentity(null, spaceEntity);
         offset++;
 
@@ -187,7 +185,7 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
           RequestLifeCycle.begin(PortalContainer.getInstance());
           begunTx = GenericDAOImpl.startTx();
           it = getSpaceIdentityNodes();
-          _skip(it, offset);
+          it.skip(offset);
         }
       }
 
@@ -335,6 +333,7 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
   }
 
   private void removeActivities() {
+    RequestLifeCycle.begin(PortalContainer.getInstance());
     AbstractStrategy<IdentityEntity> refCleanup = StrategyFactory.getActivityCleanupStrategy(removeTypeOfActivity);
     AbstractStrategy<IdentityEntity> activityCleanup = StrategyFactory.getActivityRefCleanupStrategy(removeTypeOfActivityRef);
     long t = System.currentTimeMillis();
@@ -346,10 +345,10 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
         node = (Node) it.next();
         IdentityEntity identityEntity = _findById(IdentityEntity.class, node.getUUID());
         refCleanup.process(identityEntity);
+        LOG.info(String.format("Session save:: ref for %s(ms) ", System.currentTimeMillis() - t));
         offset++;
         //
         if (offset % LIMIT_IDENTITY_THRESHOLD == 0) {
-          getSession().save();
           RequestLifeCycle.end();
           RequestLifeCycle.begin(PortalContainer.getInstance());
           it = getIdentityNodes();
@@ -374,10 +373,10 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
         IdentityEntity identityEntity = _findById(IdentityEntity.class, node.getUUID());
         activityCleanup.process(identityEntity);
         offset++;
-        
+        getSession().save();
+        LOG.info(String.format("Session save:: activity for %s(ms) ", System.currentTimeMillis() - t));
         //
         if (offset % LIMIT_IDENTITY_THRESHOLD == 0) {
-          getSession().save();
           RequestLifeCycle.end();
           RequestLifeCycle.begin(PortalContainer.getInstance());
           it = getIdentityNodes();
@@ -389,6 +388,7 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
       LOG.error("Failed to cleanup for user Activities.", e);
     } finally {
       getSession().save();
+      RequestLifeCycle.end();
       RequestLifeCycle.begin(PortalContainer.getInstance());
       LOG.info(String.format("Done cleanup User Activities for %s(ms) ", System.currentTimeMillis() - t));
     }
@@ -407,9 +407,10 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
         IdentityEntity spaceIdentityEntity = _findById(IdentityEntity.class, node.getUUID());
         activityCleanup.process(spaceIdentityEntity);
         offset++;
+        getSession().save();
+        LOG.info(String.format("Session save:: space activity for %s(ms) ", System.currentTimeMillis() - t));
         //
         if (offset % LIMIT_IDENTITY_THRESHOLD == 0) {
-          getSession().save();
           RequestLifeCycle.end();
           RequestLifeCycle.begin(PortalContainer.getInstance());
           it = getIdentityNodes();
@@ -421,11 +422,10 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
       LOG.error("Failed to cleanup for user Space Activity.", e);
     } finally {
       getSession().save();
+      RequestLifeCycle.end();
       RequestLifeCycle.begin(PortalContainer.getInstance());
       LOG.info(String.format("Done cleanup Space Activities for %s(ms) ", System.currentTimeMillis() - t));
     }
-    
-   
   }
 
   private List<String> getAdminAndActiveUsers() {

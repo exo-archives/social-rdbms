@@ -58,6 +58,7 @@ public class ProfileMigrationService extends AbstractMigrationService<Profile> {
       NodeIterator it = getIdentityNodes();
       Identity owner = null; 
       Node node = null;
+      long size = it.getSize();
       long offset = 0;
       try {
         while (it.hasNext()) {
@@ -65,7 +66,7 @@ public class ProfileMigrationService extends AbstractMigrationService<Profile> {
           owner = identityStorage.findIdentityById(node.getUUID());
           ProfileUtils.createOrUpdateProfile(owner.getProfile(), false);
           offset++;
-          
+          processLog("Profile migration", (int)size, (int)offset);
           //
           if (offset % LIMIT_THRESHOLD == 0) {
             GenericDAOImpl.endTx(begunTx);
@@ -73,7 +74,7 @@ public class ProfileMigrationService extends AbstractMigrationService<Profile> {
             RequestLifeCycle.begin(PortalContainer.getInstance());
             begunTx = GenericDAOImpl.startTx();
             it = getIdentityNodes();
-            _skip(it, offset);
+            it.skip(offset);
           }
         }
       } catch (Exception e) {
