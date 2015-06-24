@@ -16,22 +16,20 @@ import org.exoplatform.commons.api.event.EventManager;
 import org.exoplatform.commons.api.jpa.EntityManagerService;
 import org.exoplatform.commons.utils.CommonsUtils;
 import org.exoplatform.container.PortalContainer;
-import org.exoplatform.container.xml.InitParams;
-
 import org.exoplatform.container.component.RequestLifeCycle;
+import org.exoplatform.container.xml.InitParams;
 import org.exoplatform.management.annotations.Managed;
 import org.exoplatform.management.annotations.ManagedDescription;
 import org.exoplatform.management.jmx.annotations.NameTemplate;
 import org.exoplatform.management.jmx.annotations.Property;
 import org.exoplatform.social.addons.storage.dao.ActivityDAO;
 import org.exoplatform.social.addons.storage.dao.jpa.GenericDAOImpl;
-import org.exoplatform.social.addons.updater.activity.AbstractStrategy;
-import org.exoplatform.social.addons.updater.activity.StrategyFactory;
 import org.exoplatform.social.core.activity.model.ExoSocialActivity;
 import org.exoplatform.social.core.activity.model.ExoSocialActivityImpl;
 import org.exoplatform.social.core.chromattic.entity.ActivityEntity;
 import org.exoplatform.social.core.chromattic.entity.ActivityListEntity;
 import org.exoplatform.social.core.chromattic.entity.ActivityParameters;
+import org.exoplatform.social.core.chromattic.entity.ActivityRef;
 import org.exoplatform.social.core.chromattic.entity.HidableEntity;
 import org.exoplatform.social.core.chromattic.entity.IdentityEntity;
 import org.exoplatform.social.core.chromattic.utils.ActivityIterator;
@@ -41,6 +39,8 @@ import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvide
 import org.exoplatform.social.core.storage.api.ActivityStorage;
 import org.exoplatform.social.core.storage.api.IdentityStorage;
 import org.exoplatform.social.core.storage.impl.ActivityStorageImpl;
+import org.exoplatform.social.core.storage.impl.StorageUtils;
+import org.exoplatform.social.core.storage.query.JCRProperties;
 import org.exoplatform.social.core.storage.streams.StreamConfig;
 
 import com.google.caja.util.Lists;
@@ -49,6 +49,8 @@ import com.google.caja.util.Lists;
 @ManagedDescription("Social migration activities from JCR to MYSQl service.")
 @NameTemplate({@Property(key = "service", value = "social"), @Property(key = "view", value = "migration-activities") })
 public class ActivityMigrationService extends AbstractMigrationService<ExoSocialActivity> {
+  private static final int LIMIT_IDENTITY_THRESHOLD = 50;
+  private static final int LIMIT_ACTIVITY_SAVE_THRESHOLD = 50;
   public static final String EVENT_LISTENER_KEY = "SOC_ACTIVITY_MIGRATION";
   private final ActivityDAO activityDAO;
   private final ActivityStorage activityStorage;
@@ -88,6 +90,7 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
   }
 
   private void migrateUserActivities() throws Exception {
+    RequestLifeCycle.begin(PortalContainer.getInstance());
     boolean begunTx = GenericDAOImpl.startTx();
     //
     if(lastUserProcess == null && activityDAO.count() > 0) {
@@ -162,6 +165,7 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
   }
 
   private void migrateSpaceActivities() throws Exception {
+    RequestLifeCycle.begin(PortalContainer.getInstance());
     long t = System.currentTimeMillis();
     NodeIterator it = getSpaceIdentityNodes();
     if (it == null) return;
@@ -341,24 +345,22 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
 
   public void doRemove() throws Exception {
     LOG.info("Start remove activities from JCR to MYSQL");
-    removeActivities();
+    removeActivityRef();
+    removeActivity();
     LOG.info("Done to removed activities from JCR");
   }
 
-  private void removeActivities() {
-    RequestLifeCycle.begin(PortalContainer.getInstance());
-    AbstractStrategy<IdentityEntity> refCleanup = StrategyFactory.getActivityCleanupStrategy(removeTypeOfActivity);
-    AbstractStrategy<IdentityEntity> activityCleanup = StrategyFactory.getActivityRefCleanupStrategy(removeTypeOfActivityRef);
+  private void removeActivityRef() {
     long t = System.currentTimeMillis();
     NodeIterator it = getIdentityNodes();
+    long size = it.getSize();
     Node node = null;
     long offset = 0;
     try {
       while (it.hasNext()) {
         node = (Node) it.next();
-        IdentityEntity identityEntity = _findById(IdentityEntity.class, node.getUUID());
-        refCleanup.process(identityEntity);
-        LOG.info(String.format("Session save:: ref for %s(ms) ", System.currentTimeMillis() - t));
+        cleanupRef(node);
+        LOG.info(String.format("Cleanup Activity Ref for %s user for %s(ms) ", node.getName(), System.currentTimeMillis() - t));
         offset++;
         //
         if (offset % LIMIT_THRESHOLD == 0) {
@@ -372,56 +374,58 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
     } catch (Exception e) {
       LOG.error("Failed to cleanup for Activity Reference.", e);
     } finally {
-      LOG.info(String.format("Done cleanup Activity Ref for %s(ms) ", System.currentTimeMillis() - t));
+      RequestLifeCycle.end();
+      RequestLifeCycle.begin(PortalContainer.getInstance());
+      LOG.info(String.format("Done cleanup Activity Ref for %s user  %s(ms) ", size, System.currentTimeMillis() - t));
     }
     
     //cleanup activity
     t = System.currentTimeMillis();
-    it = getIdentityNodes();
+    it = getSpaceIdentityNodes();
+    //don't have any space.
+    if (it == null) {
+      return;
+    }
+    
+    size = it.getSize();
     node = null;
     offset = 0;
     try {
       while (it.hasNext()) {
         node = (Node) it.next();
-        IdentityEntity identityEntity = _findById(IdentityEntity.class, node.getUUID());
-        activityCleanup.process(identityEntity);
+        cleanupRef(node);
         offset++;
-        getSession().save();
-        LOG.info(String.format("Session save:: activity for %s(ms) ", System.currentTimeMillis() - t));
+        LOG.info(String.format("Cleanup Activity Ref for %s space consumed %s(ms) ", node.getName(), System.currentTimeMillis() - t));
         //
-        if (offset % LIMIT_THRESHOLD == 0) {
+        if (offset % LIMIT_IDENTITY_THRESHOLD == 0) {
           RequestLifeCycle.end();
           RequestLifeCycle.begin(PortalContainer.getInstance());
           it = getIdentityNodes();
-          _skip(it, offset);
+          it.skip(offset);
         }
       }
-      
     } catch (Exception e) {
       LOG.error("Failed to cleanup for user Activities.", e);
     } finally {
-      getSession().save();
       RequestLifeCycle.end();
       RequestLifeCycle.begin(PortalContainer.getInstance());
-      LOG.info(String.format("Done cleanup User Activities for %s(ms) ", System.currentTimeMillis() - t));
+      LOG.info(String.format("Done cleanup Activity Ref for %s space consumed %s(ms) ", size, System.currentTimeMillis() - t));
     }
     
-    //space
-    t = System.currentTimeMillis();
-    it = getSpaceIdentityNodes();
-    //
-    if (it == null) return;
-    
-    node = null;
-    offset = 0;
+  }
+  
+  private void removeActivity() {
+    long t = System.currentTimeMillis();
+    NodeIterator it = getIdentityNodes();
+    long size = it.getSize();
+    Node node = null;
+    long offset = 0;
     try {
       while (it.hasNext()) {
         node = (Node) it.next();
-        IdentityEntity spaceIdentityEntity = _findById(IdentityEntity.class, node.getUUID());
-        activityCleanup.process(spaceIdentityEntity);
+        cleanupActivity(node);
+        LOG.info(String.format("Cleanup Activity for %s user for %s(ms) ", node.getName(), System.currentTimeMillis() - t));
         offset++;
-        getSession().save();
-        LOG.info(String.format("Session save:: space activity for %s(ms) ", System.currentTimeMillis() - t));
         //
         if (offset % LIMIT_THRESHOLD == 0) {
           RequestLifeCycle.end();
@@ -432,12 +436,131 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
       }
       
     } catch (Exception e) {
-      LOG.error("Failed to cleanup for user Space Activity.", e);
+      LOG.error("Failed to cleanup for Activity Reference.", e);
     } finally {
-      getSession().save();
       RequestLifeCycle.end();
       RequestLifeCycle.begin(PortalContainer.getInstance());
-      LOG.info(String.format("Done cleanup Space Activities for %s(ms) ", System.currentTimeMillis() - t));
+      LOG.info(String.format("Done cleanup Activity for %s user consumed %s(ms) ", size, System.currentTimeMillis() - t));
+    }
+    
+    //cleanup activity
+    t = System.currentTimeMillis();
+    it = getSpaceIdentityNodes();
+    //don't have any space.
+    if (it == null) {
+      return;
+    }
+    
+    size = it.getSize();
+    node = null;
+    offset = 0;
+    try {
+      while (it.hasNext()) {
+        node = (Node) it.next();
+        cleanupActivity(node);
+        offset++;
+        LOG.info(String.format("Cleanup Activity for %s space consumed %s(ms) ", node.getName(), System.currentTimeMillis() - t));
+        //
+        if (offset % LIMIT_THRESHOLD == 0) {
+          RequestLifeCycle.end();
+          RequestLifeCycle.begin(PortalContainer.getInstance());
+          it = getIdentityNodes();
+          it.skip(offset);
+        }
+      }
+    } catch (Exception e) {
+      LOG.error("Failed to cleanup for user Activities.", e);
+    } finally {
+      RequestLifeCycle.end();
+      RequestLifeCycle.begin(PortalContainer.getInstance());
+      LOG.info(String.format("Done cleanup Activity for %s space consumed %s(ms) ", size, System.currentTimeMillis() - t));
+    }
+    
+  }
+  
+  /**
+   * Cleanup ActivityRef for Identity
+   * @param identityNode
+   */
+  private void cleanupRef(Node identityNode) {
+    
+    String nodeStreamsPath;
+    String identityName = "";
+    
+    StringBuffer sb = new StringBuffer().append("SELECT * FROM soc:activityref WHERE ");
+    try {
+      nodeStreamsPath = identityNode.getNode("soc:streams").getPath();
+      sb.append(JCRProperties.path.getName()).append(" LIKE '").append(nodeStreamsPath + StorageUtils.SLASH_STR + StorageUtils.PERCENT_STR + "'");
+    } catch (RepositoryException e) {
+      LOG.error(e.getMessage(), e);
+      return;
+    }
+
+    long t = System.currentTimeMillis();
+    NodeIterator it = nodes(sb.toString());
+    Node node = null;
+    long offset = 0;
+    
+    try {
+      identityName = identityNode.getName();
+      while (it.hasNext()) {
+        node = (Node) it.next();
+        ActivityRef ref = _findById(ActivityRef.class, node.getUUID());
+        getSession().remove(ref);
+        offset++;
+        if (offset % LIMIT_ACTIVITY_SAVE_THRESHOLD == 0) {
+          getSession().save();
+          LOG.info(String.format("Persist Activity Ref: %s activity ref consumed time %s(ms) ", LIMIT_ACTIVITY_SAVE_THRESHOLD, System.currentTimeMillis() - t));
+          t = System.currentTimeMillis();
+        }
+      }
+    } catch (Exception e) {
+      LOG.error("Failed to cleanup for Activity Reference.", e);
+    } finally {
+      LOG.info(String.format("Done cleanup Activity Ref: %s for %s user consumed time %s(ms) ", offset, identityName, System.currentTimeMillis() - t));
+    }
+  }
+  
+  /**
+   * Cleanup Activity for Identity
+   * @param identityNode
+   */
+  private void cleanupActivity(Node identityNode) {
+    
+    String nodeStreamsPath;
+    String identityName = "";
+    
+    StringBuffer sb = new StringBuffer().append("SELECT * FROM soc:activity WHERE ");
+    try {
+      nodeStreamsPath = identityNode.getNode("soc:activities").getPath();
+      sb.append(JCRProperties.path.getName()).append(" LIKE '").append(nodeStreamsPath + StorageUtils.SLASH_STR + StorageUtils.PERCENT_STR + "'");
+    } catch (RepositoryException e) {
+      LOG.error(e.getMessage(), e);
+      return;
+    }
+
+    long t = System.currentTimeMillis();
+    NodeIterator it = nodes(sb.toString());
+    Node node = null;
+    long offset = 0;
+    
+    try {
+      identityName = identityNode.getName();
+      while (it.hasNext()) {
+        node = (Node) it.next();
+        ActivityRef ref = _findById(ActivityRef.class, node.getUUID());
+        getSession().remove(ref);
+        offset++;
+        if (offset % LIMIT_ACTIVITY_SAVE_THRESHOLD == 0) {
+          getSession().save();
+          LOG.info(String.format("Persist Activity Ref: %s Activity consumed time %s(ms) ", LIMIT_ACTIVITY_SAVE_THRESHOLD, System.currentTimeMillis() - t));
+          t = System.currentTimeMillis();
+        }
+      }
+    } catch (Exception e) {
+      LOG.error("Failed to cleanup for Activity Reference.", e);
+    } finally {
+      LOG.info(String.format("Done cleanup Activity: %s for %s user consumed time %s(ms) ", offset, identityName, System.currentTimeMillis() - t));
     }
   }
 
