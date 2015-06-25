@@ -7,6 +7,7 @@ import org.exoplatform.services.log.Log;
 import org.exoplatform.social.addons.storage.dao.ActivityDAO;
 import org.exoplatform.social.addons.storage.dao.jpa.GenericDAOImpl;
 import org.exoplatform.social.addons.storage.entity.Activity;
+import org.exoplatform.social.addons.storage.listener.ExampleActivityUpdaterListener;
 import org.exoplatform.social.addons.test.BaseCoreTest;
 import org.exoplatform.social.addons.updater.ActivityMigrationService;
 import org.exoplatform.social.core.activity.model.ExoSocialActivity;
@@ -71,7 +72,18 @@ public class MigrationActivityJCRToMysqlTest extends BaseCoreTest {
     assertEquals(20, activityStorage.getActivityFeed(johnIdentity, 0, 100).size());
     assertEquals(20, activityStorage.getActivityFeed(demoIdentity, 0, 100).size());
   }
-  
+
+  public void testMigrationListener() throws Exception {
+    ExampleActivityUpdaterListener listener = new ExampleActivityUpdaterListener();
+    activityMigration.addMigrationListener(listener);
+    createActivityToOtherIdentity(rootIdentity, johnIdentity, 5);
+    activityMigration.start();
+    end();
+    begin();
+    activityMigration.doRemove();
+    activityMigration.removeMigrationListener(listener);
+  }
+
   private void createActivityToOtherIdentity(Identity posterIdentity, Identity targetIdentity, int number) {
     List<ExoSocialActivity> activities = listOf(number, targetIdentity, posterIdentity, false, false);
     for (ExoSocialActivity activity : activities) {

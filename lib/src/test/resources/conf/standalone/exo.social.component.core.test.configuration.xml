@@ -656,14 +656,16 @@
     </component-plugin>
   </external-component-plugins>
 
+<!--
 	<external-component-plugins>
 		<target-component>org.exoplatform.commons.api.event.EventManager</target-component>
 		<component-plugin>
-			<name>SOC_ACTIVITY_MIGRATION</name> <!-- Do not change the name of component-plugin -->
+			<name>SOC_ACTIVITY_MIGRATION</name>
 			<set-method>addEventListener</set-method>
 			<type>org.exoplatform.social.addons.storage.listener.ExampleActivityUpdaterListener</type>
 		</component-plugin>
 	</external-component-plugins>
+-->
 
   <external-component-plugins>
     <target-component>org.exoplatform.services.jcr.RepositoryService</target-component>

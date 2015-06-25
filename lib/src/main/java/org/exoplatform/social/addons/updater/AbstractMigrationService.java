@@ -55,6 +55,10 @@ public abstract class AbstractMigrationService<T>  extends AbstractStorage {
     eventManager.addEventListener(getListenerKey(), listener);
   }
 
+  public void removeMigrationListener(Listener<T, String> listener) {
+    eventManager.removeEventListener(getListenerKey(), listener);
+  }
+
   protected void broadcastListener(T t, String newId) {
     List<Listener<T, String>> listeners = eventManager.getEventListeners(getListenerKey());
     for (Listener<T, String> listener : listeners) {
