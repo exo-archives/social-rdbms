@@ -268,7 +268,7 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
         //
         ExoSocialActivity activity = activityJCRStorage.getActivity(activityId);
         //
-        Identity owner = new Identity(activity.getPosterId());
+        Identity owner = new Identity(identityEntity.getId());
         owner.setProviderId(providerId);
         //
         activity.setId(null);
