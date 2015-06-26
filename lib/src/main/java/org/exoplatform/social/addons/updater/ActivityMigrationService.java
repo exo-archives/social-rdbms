@@ -60,7 +60,7 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
   private String previousActivityId = null;
   private ActivityEntity lastActivity = null;
   private String lastUserProcess = null;
-  private boolean forkStop = false;
+  private boolean forceStop = false;
   
   public ActivityMigrationService(InitParams initParams,
                                   ActivityDAO activityDAO,
@@ -101,7 +101,7 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
     long t = System.currentTimeMillis();
     int size = activeUsers.size(), count = 0;
     for (String userName : activeUsers) {
-      if(forkStop) {
+      if(forceStop) {
         return;
       }
       //
@@ -122,7 +122,7 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
     long offset = 0;
     try {
       while (it.hasNext()) {
-        if(forkStop) {
+        if(forceStop) {
           return;
         }
         offset++;
@@ -177,7 +177,7 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
     Identity owner = null; 
     try {
       while (it.hasNext()) {
-        if (forkStop) {
+        if (forceStop) {
           return;
         }
         node = (Node) it.next();
@@ -326,7 +326,7 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
   }
 
   protected void afterMigration() throws Exception {
-    if (forkStop) {
+    if (forceStop) {
       return;
     }
     if (previousActivityId != null) {

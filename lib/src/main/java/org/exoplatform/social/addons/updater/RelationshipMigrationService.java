@@ -139,8 +139,20 @@ public class RelationshipMigrationService extends AbstractMigrationService<Relat
       getSession().remove(relationshipEntity);
       ++number;
       if (number % LIMIT_THRESHOLD == 0) {
-        getSession().save();
+        LOG.info("Session save ....");
+        sessionSave();
       }
+    }
+    //
+    sessionSave();
+  }
+
+  private void sessionSave() {
+    try {
+      number = 0;
+      getSession().save();
+    } catch (Exception e) {
+      LOG.warn("Session save error: " + e.getMessage());
     }
   }
 
@@ -151,17 +163,32 @@ public class RelationshipMigrationService extends AbstractMigrationService<Relat
     long t = System.currentTimeMillis(), t1 = t, t2;
     RequestLifeCycle.begin(PortalContainer.getInstance());
     Collection<IdentityEntity> identityEntities = getAllIdentityEntity(OrganizationIdentityProvider.NAME).values();
-    int count = 0, size = identityEntities.size();
+    int count = 0, next = 0, size = identityEntities.size();
     Iterator<IdentityEntity> allIdentityEntity = identityEntities.iterator();
     while (allIdentityEntity.hasNext()) {
       IdentityEntity entity = allIdentityEntity.next();
+      ++next;
+      if(next < count) {
+        continue;
+      }
+      String remoteId = entity.getRemoteId();
       Collection<RelationshipEntity> entities = entity.getRelationship().getRelationships().values();
-      removeRelationshipEntity(entities);
+      int entitiesSize = entities.size();
+      if (entitiesSize > 0) {
+        removeRelationshipEntity(entities);
+      }
       //
-      processLog(String.format("Removed %s confirm of user %s", entities.size(), entity.getRemoteId()), size, count);
+      ++count;
+      if(count % LIMIT_THRESHOLD == 0) {
+        RequestLifeCycle.end();
+        RequestLifeCycle.begin(PortalContainer.getInstance());
+        //
+        allIdentityEntity = getAllIdentityEntity(OrganizationIdentityProvider.NAME).values().iterator();
+        next = 0;
+      }
+      processLog(String.format("Removed %s confirm of user %s", entitiesSize, remoteId), size, count);
     }
     //
-    getSession().save();
     RequestLifeCycle.end();
     LOG.info(String.format("Done to remove %s main relationships on %s(ms)", number, (t2 = System.currentTimeMillis()) - t1));
 
@@ -172,27 +199,29 @@ public class RelationshipMigrationService extends AbstractMigrationService<Relat
     while (allIdentityEntity.hasNext()) {
       IdentityEntity entity = allIdentityEntity.next();
       Collection<RelationshipEntity> entities = entity.getSender().getRelationships().values();
+      int entitiesSize = entities.size();
       removeRelationshipEntity(entities);
       //
-      processLog(String.format("Removed %s sender of user %s", entities.size(), entity.getRemoteId()), size, count);
+      ++count;
+      processLog(String.format("Removed %s sender of user %s", entitiesSize, entity.getRemoteId()), size, count);
     }
     //
-    getSession().save();
     RequestLifeCycle.end();
     LOG.info(String.format("Done to remove %s sender relationships on %s(ms)", number, (t1 = System.currentTimeMillis()) - t2));
 
     LOG.info("Remove receiver relationships ...");
     RequestLifeCycle.begin(PortalContainer.getInstance());
-    number = 0;
+    number = 0; count = 0;
     allIdentityEntity = getAllIdentityEntity(OrganizationIdentityProvider.NAME).values().iterator();
     while (allIdentityEntity.hasNext()) {
       IdentityEntity entity = allIdentityEntity.next();
       Collection<RelationshipEntity> entities = entity.getReceiver().getRelationships().values();
+      int entitiesSize = entities.size();
       removeRelationshipEntity(entities);
-      processLog(String.format("Removed %s receiver of user %s", entities.size(), entity.getRemoteId()), size, count);
+      ++count;
+      processLog(String.format("Removed %s receiver of user %s", entitiesSize, entity.getRemoteId()), size, count);
     }
     //
-    getSession().save();
     RequestLifeCycle.end();
     LOG.info(String.format("Done to remove %s receiver relationships on %s(ms)", number, (t2 = System.currentTimeMillis()) - t1));
     LOG.info("Done all removed relationships from JCR on " + (t2 - t) + "(ms)");
