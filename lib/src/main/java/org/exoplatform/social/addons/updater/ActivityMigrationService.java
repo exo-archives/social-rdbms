@@ -56,8 +56,6 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
   private final ActivityDAO activityDAO;
   private final ActivityStorage activityStorage;
   private final ActivityStorageImpl activityJCRStorage;
-  private final String removeTypeOfActivityRef;
-  private final String removeTypeOfActivity;
 
   private String previousActivityId = null;
   private ActivityEntity lastActivity = null;
@@ -78,8 +76,6 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
     this.activityStorage = activityStorage;
     this.activityJCRStorage = activityJCRStorage;
     this.LIMIT_THRESHOLD = getInteger(initParams, LIMIT_THRESHOLD_KEY, 100);
-    this.removeTypeOfActivityRef = getString(initParams, "REMOVE_REF_TYPE", "DAY");
-    this.removeTypeOfActivity = getString(initParams, "REMOVE_ACTIVITY_TYPE", "DAY");
   }
 
   @Managed
@@ -253,7 +249,8 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
           return;
         }
       }
-      String type = (OrganizationIdentityProvider.NAME.equals(identityEntity.getProviderId())) ? "user" : "space";
+      String providerId = identityEntity.getProviderId();
+      String type = (OrganizationIdentityProvider.NAME.equals(providerId)) ? "user" : "space";
       LOG.info(String.format("Migration activities for %s: %s", type, identityEntity.getRemoteId()));
       //
       ActivityListEntity activityListEntity = identityEntity.getActivityList();
@@ -272,7 +269,7 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
         ExoSocialActivity activity = activityJCRStorage.getActivity(activityId);
         //
         Identity owner = new Identity(activity.getPosterId());
-        owner.setProviderId(OrganizationIdentityProvider.NAME);
+        owner.setProviderId(providerId);
         //
         activity.setId(null);
         activityStorage.saveActivity(owner, activity);

@@ -39,23 +39,18 @@ public class RDBMSMigrationManager implements Startable {
         LOG.info("START ASYNC MIGRATION---------------------------------------------------");
         try {
           RequestLifeCycle.begin(PortalContainer.getInstance());
-          activityMigration.start();
-          if(activityMigration.isDone()) {
-            activityMigration.doRemove();
+          profileMigration.start();
+          //
+          if (profileMigration.isDone()) {
+            relationshipMigration.start();
+            if (relationshipMigration.isDone()) {
+              activityMigration.start();
+              if(activityMigration.isDone()) {
+                relationshipMigration.doRemove();
+                activityMigration.doRemove();
+              }
+            }
           }
-//          
-//          profileMigration.start();
-//          //
-//          if (profileMigration.isDone()) {
-//            relationshipMigration.start();
-//            if (relationshipMigration.isDone()) {
-//              activityMigration.start();
-//              if(activityMigration.isDone()) {
-//                relationshipMigration.doRemove();
-//                activityMigration.doRemove();
-//              }
-//            }
-//          }
         } catch (Exception e) {
           LOG.error("Failed to running Migration data from JCR to RDBMS", e);
         } finally {
