@@ -38,7 +38,6 @@ public class RDBMSMigrationManager implements Startable {
       public void run() {
         LOG.info("START ASYNC MIGRATION---------------------------------------------------");
         try {
-          RequestLifeCycle.begin(PortalContainer.getInstance());
           profileMigration.start();
           //
           if (profileMigration.isDone()) {
@@ -54,7 +53,6 @@ public class RDBMSMigrationManager implements Startable {
         } catch (Exception e) {
           LOG.error("Failed to running Migration data from JCR to RDBMS", e);
         } finally {
-          RequestLifeCycle.end();
           migrater.countDown();
         }
         LOG.info("END ASYNC MIGRATION---------------------------------------------------");
