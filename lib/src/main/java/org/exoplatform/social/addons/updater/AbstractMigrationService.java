@@ -74,7 +74,6 @@ public abstract class AbstractMigrationService<T>  extends AbstractStorage {
    public void start() {
     forkStop = false;
     try {
-      RequestLifeCycle.begin(PortalContainer.getInstance());
       beforeMigration();
       //
       doMigration();
@@ -131,7 +130,32 @@ public abstract class AbstractMigrationService<T>  extends AbstractStorage {
     }
     return nodes(identityQuery);
   }
+  
+  protected NodeIterator getIdentityNodes(long offset, long limit) {
+    if(identityQuery == null) {
+      identityQuery = new StringBuffer().append("SELECT * FROM soc:identitydefinition WHERE ")
+                                        .append(JCRProperties.path.getName()).append(" LIKE '")
+                                        .append(getProviderRoot().getProviders().get(OrganizationIdentityProvider.NAME).getPath())
+                                        .append(StorageUtils.SLASH_STR).append(StorageUtils.PERCENT_STR).append("'").toString();
+    }
+    return nodes(identityQuery, offset, limit);
+  }
 
+  protected NodeIterator getSpaceIdentityNodes(long offset, long limit) {
+    if ("".equals(spaceIdentityQuery)) {
+      ProviderEntity providerEntity = getProviderRoot().getProviders().get(SpaceIdentityProvider.NAME);
+      if (providerEntity != null) {
+        spaceIdentityQuery = new StringBuffer().append("SELECT * FROM soc:identitydefinition WHERE ")
+                                               .append(JCRProperties.path.getName()).append(" LIKE '")
+                                               .append(providerEntity.getPath())
+                                               .append(StorageUtils.SLASH_STR).append(StorageUtils.PERCENT_STR).append("'").toString();
+      } else {
+        spaceIdentityQuery = null;
+      }
+    }
+    return nodes(spaceIdentityQuery, offset, limit);
+  }
+  
   protected NodeIterator getSpaceIdentityNodes() {
     if ("".equals(spaceIdentityQuery)) {
       ProviderEntity providerEntity = getProviderRoot().getProviders().get(SpaceIdentityProvider.NAME);

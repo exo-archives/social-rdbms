@@ -2,6 +2,8 @@ package org.exoplatform.social.addons.updater;
 
 import java.util.concurrent.CountDownLatch;
 
+import org.exoplatform.container.PortalContainer;
+import org.exoplatform.container.component.RequestLifeCycle;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 import org.picocontainer.Startable;
@@ -36,21 +38,28 @@ public class RDBMSMigrationManager implements Startable {
       public void run() {
         LOG.info("START ASYNC MIGRATION---------------------------------------------------");
         try {
-          profileMigration.start();
-          //
-          if (profileMigration.isDone()) {
-            relationshipMigration.start();
-            if (relationshipMigration.isDone()) {
-              activityMigration.start();
-              if(activityMigration.isDone()) {
-                relationshipMigration.doRemove();
-                activityMigration.doRemove();
-              }
-            }
+          RequestLifeCycle.begin(PortalContainer.getInstance());
+          activityMigration.start();
+          if(activityMigration.isDone()) {
+            activityMigration.doRemove();
           }
+//          
+//          profileMigration.start();
+//          //
+//          if (profileMigration.isDone()) {
+//            relationshipMigration.start();
+//            if (relationshipMigration.isDone()) {
+//              activityMigration.start();
+//              if(activityMigration.isDone()) {
+//                relationshipMigration.doRemove();
+//                activityMigration.doRemove();
+//              }
+//            }
+//          }
         } catch (Exception e) {
           LOG.error("Failed to running Migration data from JCR to RDBMS", e);
         } finally {
+          RequestLifeCycle.end();
           migrater.countDown();
         }
         LOG.info("END ASYNC MIGRATION---------------------------------------------------");

@@ -88,10 +88,10 @@ public class AsynMigrationTest extends BaseCoreTest {
     relationshipManager.confirm(rootIdentity, demoIdentity);
     //
     LOG.info("Create the activities storage on JCR ....");
-    createActivityToOtherIdentity(rootIdentity, johnIdentity, 20);
-    createActivityToOtherIdentity(demoIdentity, maryIdentity, 20);
-    createActivityToOtherIdentity(johnIdentity, demoIdentity, 20);
-    createActivityToOtherIdentity(maryIdentity, rootIdentity, 20);
+    createActivityToOtherIdentity(rootIdentity, johnIdentity, 5);
+    createActivityToOtherIdentity(demoIdentity, maryIdentity, 5);
+    createActivityToOtherIdentity(johnIdentity, demoIdentity, 5);
+    createActivityToOtherIdentity(maryIdentity, rootIdentity, 5);
     LOG.info("Done created the activities storage on JCR.");
     RequestLifeCycle.end();
     RequestLifeCycle.begin(PortalContainer.getInstance());
@@ -100,10 +100,10 @@ public class AsynMigrationTest extends BaseCoreTest {
     //
     rdbmsMigrationManager.getMigrater().await();
     //
-    assertEquals(80, activityStorage.getActivityFeed(rootIdentity, 0, 100).size());
-    assertEquals(80, activityStorage.getActivityFeed(maryIdentity, 0, 100).size());
-    assertEquals(80, activityStorage.getActivityFeed(johnIdentity, 0, 100).size());
-    assertEquals(80, activityStorage.getActivityFeed(demoIdentity, 0, 100).size());
+    assertEquals(20, activityStorage.getActivityFeed(rootIdentity, 0, 100).size());
+    assertEquals(20, activityStorage.getActivityFeed(maryIdentity, 0, 100).size());
+    assertEquals(20, activityStorage.getActivityFeed(johnIdentity, 0, 100).size());
+    assertEquals(20, activityStorage.getActivityFeed(demoIdentity, 0, 100).size());
   }
   
   private void createActivityToOtherIdentity(Identity posterIdentity, Identity targetIdentity, int number) {
