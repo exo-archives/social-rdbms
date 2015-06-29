@@ -25,6 +25,7 @@ import javax.persistence.TypedQuery;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaBuilder.In;
 import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Join;
 import javax.persistence.criteria.Path;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
@@ -35,6 +36,9 @@ import org.exoplatform.social.addons.storage.entity.Activity;
 import org.exoplatform.social.addons.storage.entity.Activity_;
 import org.exoplatform.social.addons.storage.entity.Connection;
 import org.exoplatform.social.addons.storage.entity.Connection_;
+import org.exoplatform.social.addons.storage.entity.StreamItem;
+import org.exoplatform.social.addons.storage.entity.StreamItem_;
+import org.exoplatform.social.addons.storage.entity.StreamType;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.relationship.model.Relationship;
 
@@ -51,6 +55,9 @@ public final class AStreamQueryBuilder {
   //newer or older
   private long sinceTime = 0;
   private boolean isNewer = false;
+  //streamType
+  private StreamType type = null;
+  private boolean equalType;
   //memberOfSpaceIds
   private Collection<String> memberOfSpaceIds;
   private Identity myIdentity;
@@ -102,6 +109,18 @@ public final class AStreamQueryBuilder {
     return this;
   }
   
+  public AStreamQueryBuilder equalType(StreamType type) {
+    this.type = type;
+    this.equalType = true;
+    return this;
+  }
+  
+  public AStreamQueryBuilder notEqualType(StreamType type) {
+    this.type = type;
+    this.equalType = false;
+    return this;
+  }
+  
   public AStreamQueryBuilder ascOrder() {
     this.descOrder = false;
     return this;
@@ -124,17 +143,16 @@ public final class AStreamQueryBuilder {
     CriteriaBuilder cb = em.getCriteriaBuilder();
     CriteriaQuery<Activity> criteria = cb.createQuery(Activity.class);
     Root<Activity> activity = criteria.from(Activity.class);
+    Join<Activity, StreamItem> streamItem = activity.join(Activity_.streamItems);
     
     List<Predicate> predicates = new ArrayList<Predicate>();
     //owner
     if (this.owner != null) {
-      Predicate pOwner = cb.equal(activity.get(Activity_.posterId), owner.getId());
-      pOwner = cb.or(pOwner, cb.equal(activity.get(Activity_.ownerId), owner.getId()));
-      predicates.add(pOwner);
+      predicates.add(cb.equal(streamItem.get(StreamItem_.ownerId), owner.getId()));
     }
     // space members
     if (this.memberOfSpaceIds != null && memberOfSpaceIds.size() > 0) {
-      predicates.add(addInClause(cb, activity.get(Activity_.ownerId), memberOfSpaceIds));
+      predicates.add(addInClause(cb, streamItem.get(StreamItem_.ownerId), memberOfSpaceIds));
     }
     
     //connections
@@ -193,20 +211,20 @@ public final class AStreamQueryBuilder {
     CriteriaBuilder cb = em.getCriteriaBuilder();
     CriteriaQuery<Activity> criteria = cb.createQuery(Activity.class);
     Root<Activity> activity = criteria.from(Activity.class);
+    Join<Activity, StreamItem> streamItem = activity.join(Activity_.streamItems);
     
     Predicate predicate = null;
     //owner
     if (this.owner != null) {
-      predicate = cb.equal(activity.get(Activity_.posterId), owner.getId());
-      predicate = cb.or(predicate, cb.equal(activity.get(Activity_.ownerId), owner.getId()));
+      predicate = cb.equal(streamItem.get(StreamItem_.ownerId), owner.getId());
     }
     
     // space members
     if (this.memberOfSpaceIds != null && memberOfSpaceIds.size() > 0) {
       if (predicate != null) {
-        predicate = cb.or(predicate, addInClause(cb, activity.get(Activity_.ownerId), memberOfSpaceIds));
+        predicate = cb.or(predicate, addInClause(cb, streamItem.get(StreamItem_.ownerId), memberOfSpaceIds));
       } else {
-        predicate = addInClause(cb, activity.get(Activity_.ownerId), memberOfSpaceIds);
+        predicate = addInClause(cb, streamItem.get(StreamItem_.ownerId), memberOfSpaceIds);
       }
     }
     
@@ -284,28 +302,39 @@ public final class AStreamQueryBuilder {
     CriteriaBuilder cb = em.getCriteriaBuilder();
     CriteriaQuery<Long> criteria = cb.createQuery(Long.class);
     Root<Activity> activity = criteria.from(Activity.class);
+    Join<Activity, StreamItem> streamItem = activity.join(Activity_.streamItems);
     
     List<Predicate> predicates = new ArrayList<Predicate>();
     //owner
     if (this.owner != null) {
-      Predicate pOwner = cb.equal(activity.get(Activity_.posterId), owner.getId());
-      pOwner = cb.or(pOwner, cb.equal(activity.get(Activity_.ownerId), owner.getId()));
-      predicates.add(pOwner);
+      predicates.add(cb.equal(streamItem.get(StreamItem_.ownerId), owner.getId()));
     }
     // space members
     if (this.memberOfSpaceIds != null && memberOfSpaceIds.size() > 0) {
-      predicates.add(addInClause(cb, activity.get(Activity_.ownerId), memberOfSpaceIds));
+      predicates.add(addInClause(cb, streamItem.get(StreamItem_.ownerId), memberOfSpaceIds));
     }
     
-    //connections
+    // relationships
     if (this.connectionSize > 0) {
       Subquery<String> subQuery1 = criteria.subquery(String.class);
       Root<Connection> subRoot1 = subQuery1.from(Connection.class);
       subQuery1.select(subRoot1.<String>get(Connection_.receiverId));
-      subQuery1.where(cb.equal(subRoot1.<String>get(Connection_.senderId), this.myIdentity.getId()));
+      subQuery1.where(cb.and(cb.equal(subRoot1.<String>get(Connection_.senderId), this.myIdentity.getId()),
+                             cb.equal(subRoot1.<Relationship.Type>get(Connection_.status), Relationship.Type.CONFIRMED)));
       
-      predicates.add(cb.in(activity.get(Activity_.posterId)).value(subQuery1));
+      Predicate posterConnection = cb.and(cb.in(activity.get(Activity_.posterId)).value(subQuery1));
+      Predicate ownerConnection = cb.and(cb.in(activity.get(Activity_.ownerId)).value(subQuery1));
       
+      predicates.add(cb.and(posterConnection, ownerConnection));
+    }
+    
+    //type
+    if (this.type != null) {
+      if (equalType) {
+        predicates.add(cb.equal(streamItem.<StreamType>get(StreamItem_.streamType), this.type));
+      } else {
+        predicates.add(cb.notEqual(streamItem.<StreamType>get(StreamItem_.streamType), this.type));
+      }
     }
     
     //newer or older
@@ -336,39 +365,20 @@ public final class AStreamQueryBuilder {
     CriteriaBuilder cb = em.getCriteriaBuilder();
     CriteriaQuery<Long> criteria = cb.createQuery(Long.class);
     Root<Activity> activity = criteria.from(Activity.class);
+    Join<Activity, StreamItem> streamItem = activity.join(Activity_.streamItems);
     
     Predicate predicate = null;
     //owner
     if (this.owner != null) {
-      predicate = cb.equal(activity.get(Activity_.posterId), owner.getId());
-      predicate = cb.or(predicate, cb.equal(activity.get(Activity_.ownerId), owner.getId()));
-    }
-    
-    //comment
-//    Subquery<Long> commentQuery = criteria.subquery(Long.class);
-//    Root<Comment> subRootComment = commentQuery.from(Comment.class);
-//    commentQuery.select(subRootComment.<Long>get(Comment_.activity));
-//    commentQuery.where(cb.equal(subRootComment.<String>get(Comment_.posterId), this.owner.getId()));
-//    
-//    if (predicate != null) {
-//      predicate = cb.or(predicate, cb.or(cb.in(activity.get(Activity_.id)).value(commentQuery)));
-//    } else {
-//      predicate = cb.or(cb.in(activity.get(Activity_.id)).value(commentQuery));
-//    }
-    
-    //mention
-    if (predicate != null) {
-      predicate = cb.or(predicate, cb.isMember(this.owner.getId(), activity.get(Activity_.mentionerIds)));
-    } else {
-      predicate = cb.isMember(this.owner.getId(), activity.get(Activity_.mentionerIds));
+      predicate = cb.equal(streamItem.get(StreamItem_.ownerId), owner.getId());
     }
     
     // space members
     if (this.memberOfSpaceIds != null && memberOfSpaceIds.size() > 0) {
       if (predicate != null) {
-        predicate = cb.or(predicate, addInClause(cb, activity.get(Activity_.ownerId), memberOfSpaceIds));
+        predicate = cb.or(predicate, addInClause(cb, streamItem.get(StreamItem_.ownerId), memberOfSpaceIds));
       } else {
-        predicate = addInClause(cb, activity.get(Activity_.ownerId), memberOfSpaceIds);
+        predicate = addInClause(cb, streamItem.get(StreamItem_.ownerId), memberOfSpaceIds);
       }
     }
     

@@ -518,8 +518,12 @@ public class ActivityManagerMysqlTest extends AbstractCoreTest {
     maryComment.setTitle("mary comment");
     maryComment.setUserId(maryIdentity.getId());
     activityManager.saveComment(demoActivity, maryComment);
+    RealtimeListAccess<ExoSocialActivity> maryListAccess = activityManager.getActivitiesWithListAccess(maryIdentity);
+    assertEquals(1, maryListAccess.getSize());
     
     activityManager.deleteComment(demoActivity, maryComment);
+    maryListAccess = activityManager.getActivitiesWithListAccess(maryIdentity);
+    assertEquals(0, maryListAccess.getSize());
     
     assertEquals("activityManager.getComments(demoActivity).size() must return: 0", 0, activityManager.getComments(demoActivity).size());
   }

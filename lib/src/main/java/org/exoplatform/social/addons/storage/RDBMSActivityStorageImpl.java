@@ -30,14 +30,18 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.commons.lang.ArrayUtils;
+import org.exoplatform.commons.utils.CommonsUtils;
 import org.exoplatform.container.component.BaseComponentPlugin;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 import org.exoplatform.social.addons.storage.dao.ActivityDAO;
 import org.exoplatform.social.addons.storage.dao.CommentDAO;
 import org.exoplatform.social.addons.storage.dao.RelationshipDAO;
+import org.exoplatform.social.addons.storage.dao.StreamItemDAO;
 import org.exoplatform.social.addons.storage.entity.Activity;
 import org.exoplatform.social.addons.storage.entity.Comment;
+import org.exoplatform.social.addons.storage.entity.StreamItem;
+import org.exoplatform.social.addons.storage.entity.StreamType;
 import org.exoplatform.social.core.ActivityProcessor;
 import org.exoplatform.social.core.activity.filter.ActivityFilter;
 import org.exoplatform.social.core.activity.filter.ActivityUpdateFilter;
@@ -61,6 +65,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
 
   private static final Log LOG = ExoLogger.getLogger(RDBMSActivityStorageImpl.class);
   private final ActivityDAO activityDAO;
+  private final StreamItemDAO streamItemDAO;
   private final CommentDAO commentDAO;
   private final RelationshipDAO relationshipDAO;
   private final IdentityStorage identityStorage;
@@ -73,6 +78,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
                                       IdentityStorage identityStorage, 
                                       SpaceStorage spaceStorage,
                                       ActivityDAO activityDAO,
+                                      StreamItemDAO streamItemDAO,
                                       CommentDAO commentDAO,
                                       RelationshipDAO relationshipDAO) {
     
@@ -82,6 +88,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
     this.identityStorage = identityStorage;
     this.activityProcessors = new TreeSet<ActivityProcessor>(processorComparator());
     this.activityDAO = activityDAO;
+    this.streamItemDAO = streamItemDAO;
     this.commentDAO = commentDAO;
     this.spaceStorage = spaceStorage;
     this.relationshipDAO = relationshipDAO;
@@ -298,6 +305,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
     commentEntity.setMentionerIds(new HashSet<String>(Arrays.asList(processMentions(eXoComment.getTitle()))));
     //
     Identity commenter = identityStorage.findIdentityById(commentEntity.getPosterId());
+    saveStreamItemForCommenter(commenter, activityEntity);
     mention(commenter, activityEntity, processMentions(eXoComment.getTitle()));
     //
     commentEntity = commentDAO.create(commentEntity);
@@ -311,6 +319,20 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
     activity = convertActivityEntityToActivity(activityEntity);
   }
   
+  private void saveStreamItemForCommenter(Identity commenter, Activity activityEntity) {
+    Identity posterActivity = identityStorage.findIdentityById(activityEntity.getPosterId());
+    Identity ownerActivity = identityStorage.findIdentityById(activityEntity.getOwnerId());
+    if (! SpaceIdentityProvider.NAME.equals(ownerActivity.getProviderId()) && ! hasRelationship(commenter, posterActivity)) {
+      poster(commenter, activityEntity);
+    }
+  }
+  
+  private boolean hasRelationship(Identity identity1, Identity identity2) {
+    RelationshipStorage relationshipStorage = CommonsUtils.getService(RelationshipStorage.class);
+    Relationship relationship = relationshipStorage.getRelationship(identity1, identity2);
+    return relationship != null && relationship.getStatus().equals(Relationship.Type.CONFIRMED);
+  }
+  
   private Set<String> processMentionOfComment(Activity activityEntity, Comment commentEntity, String[] activityMentioners, String[] commentMentioners, boolean isAdded) {
     Set<String> mentioners = new HashSet<String>(Arrays.asList(activityMentioners));
     if (commentMentioners.length == 0) return mentioners;
@@ -322,6 +344,9 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
       if (mentioners.contains(mentioner) && !isAdded) {
         if (isAllowedToRemove(activityEntity, commentEntity, mentioner)) {
           mentioners.remove(mentioner);
+          StreamItem item = new StreamItem(StreamType.MENTIONER);
+          item.setOwnerId(commentEntity.getPosterId());
+          streamItemDAO.delete(item);
         }
       }
     }
@@ -348,12 +373,32 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
     //
     entity.setOwnerId(owner.getId());
     entity.setProviderId(owner.getProviderId());
+    saveStreamItem(owner, entity);
     //
     activityDAO.create(entity);
     activity.setId(Long.toString(entity.getId()));
     //
     
     return activity;
+  }
+
+  private void saveStreamItem(Identity owner, Activity activity) {
+    //create StreamItem
+    if (OrganizationIdentityProvider.NAME.equals(owner.getProviderId())) {
+      //poster
+      poster(owner, activity);
+      //connection
+      //connection(poster, activity);
+      //mention
+      mention(owner, activity, processMentions(activity.getTitle()));
+    } else {
+      //for SPACE
+      spaceMembers(owner, activity);
+    }
+  }
+
+  private void poster(Identity owner, Activity activity) {
+    createStreamItem(StreamType.POSTER, activity, owner.getId());
   }
 
   /**
@@ -366,7 +411,30 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
     for (String mentioner : mentions) {
       Identity identity = identityStorage.findIdentityById(mentioner);
       if(identity != null) {
+        createStreamItem(StreamType.MENTIONER, activity, identity.getId());
       }
+    }
+  }
+
+  private void spaceMembers(Identity spaceOwner, Activity activity) {
+    createStreamItem(StreamType.SPACE, activity, spaceOwner.getId());
+  }
+
+  private void createStreamItem(StreamType streamType, Activity activity, String ownerId){
+    
+    StreamItem streamItem = new StreamItem(streamType);
+    streamItem.setOwnerId(ownerId);
+    boolean isExist = false;
+    if (activity.getId() != null) {
+      for (StreamItem item : activity.getStreamItems()) {
+        if (item.getOwnerId().equals(ownerId)) {
+          isExist = true;
+          break;
+        }
+      }
+    }
+    if (!isExist) {
+      activity.addStreamItem(streamItem);
     }
   }
 
@@ -412,6 +480,11 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
 
   @Override
   public void deleteActivity(String activityId) throws ActivityStorageException {
+    List<StreamItem> streamItems = streamItemDAO.findStreamItemByActivityId(Long.valueOf(activityId));
+    for (StreamItem streamItem : streamItems) {
+      streamItemDAO.delete(streamItem);
+    }
+    //
     activityDAO.delete(Long.valueOf(activityId));
   }
 

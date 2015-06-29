@@ -99,6 +99,11 @@
   </component>
   
   <component>
+    <key>org.exoplatform.social.addons.storage.dao.StreamItemDAO</key>
+    <type>org.exoplatform.social.addons.storage.dao.jpa.StreamItemDAOImpl</type>
+  </component>
+  
+  <component>
     <key>org.exoplatform.social.addons.storage.dao.RelationshipDAO</key>
     <type>org.exoplatform.social.addons.storage.dao.jpa.RelationshipDAOImpl</type>
   </component>

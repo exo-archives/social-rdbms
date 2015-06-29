@@ -51,7 +51,6 @@ public abstract class BaseActivity implements Serializable {
   
   /** */
   private Boolean hidden = false;
-  
   @Deprecated
   @Column(length = 2000)
   private String body;
