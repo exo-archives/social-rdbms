@@ -18,6 +18,7 @@ package org.exoplatform.social.addons.storage.dao;
 
 import java.util.List;
 
+import org.exoplatform.commons.api.persistence.GenericDAO;
 import org.exoplatform.social.addons.storage.entity.Activity;
 import org.exoplatform.social.addons.storage.entity.Comment;
 

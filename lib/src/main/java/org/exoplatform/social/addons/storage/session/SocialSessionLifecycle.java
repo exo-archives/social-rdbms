@@ -22,7 +22,7 @@ import java.util.MissingResourceException;
 import javax.persistence.EntityManager;
 
 import org.apache.log4j.Logger;
-import org.exoplatform.commons.api.jpa.EntityManagerService;
+import org.exoplatform.commons.persistence.impl.EntityManagerService;
 import org.exoplatform.container.component.RequestLifeCycle;
 
 /**

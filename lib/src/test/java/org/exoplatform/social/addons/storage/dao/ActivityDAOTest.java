@@ -33,7 +33,6 @@ import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvider;
 import org.exoplatform.social.core.identity.provider.SpaceIdentityProvider;
 import org.exoplatform.social.core.manager.IdentityManager;
-import org.exoplatform.social.core.manager.RelationshipManager;
 import org.exoplatform.social.core.space.model.Space;
 import org.exoplatform.social.core.space.spi.SpaceService;
 
@@ -51,10 +50,6 @@ public class ActivityDAOTest extends AbstractCoreTest {
   private Identity raulIdentity;
   private Identity jameIdentity;
   private Identity paulIdentity;
-
-  private IdentityManager identityManager;
-  private RelationshipManager relationshipManager;
-  private SpaceService spaceService;
   
   private ActivityDAO activityDao;
   private CommentDAO commentDao;
@@ -62,10 +57,6 @@ public class ActivityDAOTest extends AbstractCoreTest {
   @Override
   public void setUp() throws Exception {
     super.setUp();
-    identityManager = getService(IdentityManager.class);
-    relationshipManager = getService(RelationshipManager.class);
-    spaceService = getService(SpaceService.class);
-
     activityDao = getService(ActivityDAO.class);
     commentDao = getService(CommentDAO.class);
     //
@@ -205,7 +196,7 @@ public class ActivityDAOTest extends AbstractCoreTest {
     assertNotNull(activity);
     assertEquals(activityTitle, activity.getTitle());
     assertEquals(userId, activity.getOwnerId());
-    activityDao.delete(activity.getId());
+    activityDao.delete(activity);
     //
     assertNull(activityDao.find(activity.getId()));
   }
@@ -327,7 +318,7 @@ public class ActivityDAOTest extends AbstractCoreTest {
     activityDao.update(demoActivity);
     //
     maryComment = commentDao.find(maryComment.getId());
-    commentDao.delete(maryComment.getId());
+    commentDao.delete(maryComment);
     demoActivity = activityDao.find(demoActivity.getId());
     demoActivity.getComments().remove(maryComment);
     activityDao.update(demoActivity);

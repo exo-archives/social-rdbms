@@ -28,7 +28,6 @@ import org.exoplatform.services.organization.UserHandler;
 import org.exoplatform.services.security.ConversationState;
 import org.exoplatform.services.security.IdentityRegistry;
 import org.exoplatform.social.addons.storage.dao.RelationshipDAO;
-import org.exoplatform.social.addons.storage.dao.jpa.GenericDAOImpl;
 import org.exoplatform.social.addons.storage.entity.Connection;
 import org.exoplatform.social.addons.test.AbstractCoreTest;
 import org.exoplatform.social.core.identity.model.Identity;
@@ -72,13 +71,10 @@ public class RDBMSRelationshipManagerTest extends AbstractCoreTest {
 
   @Override
   protected void tearDown() throws Exception {
-    if(GenericDAOImpl.lifecycleLookup().getCurrentEntityManager().getTransaction().isActive())
-      GenericDAOImpl.lifecycleLookup().getCurrentEntityManager().getTransaction().commit();
-    
     RelationshipDAO relationshipDAO = getService(RelationshipDAO.class);
     List<Connection> items = relationshipDAO.findAll();
     for (Connection item : items) {
-      relationshipDAO.delete(item.getId());
+      relationshipDAO.delete(item);
     }
     
     identityManager.deleteIdentity(ghostIdentity);

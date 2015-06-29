@@ -30,6 +30,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.commons.lang.ArrayUtils;
+import org.exoplatform.commons.api.persistence.Transactional;
 import org.exoplatform.container.component.BaseComponentPlugin;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
@@ -291,6 +292,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
   }
 
   @Override
+  @Transactional
   public void saveComment(ExoSocialActivity activity, ExoSocialActivity eXoComment) throws ActivityStorageException {
     Activity activityEntity = activityDAO.find(Long.valueOf(activity.getId()));
     Comment commentEntity = convertCommentToCommentEntity(eXoComment);
@@ -412,13 +414,15 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
 
   @Override
   public void deleteActivity(String activityId) throws ActivityStorageException {
-    activityDAO.delete(Long.valueOf(activityId));
+    Activity a = activityDAO.find(Long.valueOf(activityId));
+    activityDAO.delete(a);
   }
 
   @Override
+  @Transactional
   public void deleteComment(String activityId, String commentId) throws ActivityStorageException {
     Comment comment = commentDAO.find(getCommentID(commentId));
-    commentDAO.delete(comment.getId());
+    commentDAO.delete(comment);
     //
     Activity activity = activityDAO.find(Long.valueOf(activityId));
     activity.getComments().remove(comment);

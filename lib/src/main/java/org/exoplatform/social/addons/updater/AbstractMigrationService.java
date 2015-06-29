@@ -5,9 +5,10 @@ import java.util.List;
 import java.util.Map;
 
 import javax.jcr.NodeIterator;
+import javax.persistence.EntityManager;
 
 import org.exoplatform.commons.api.event.EventManager;
-import org.exoplatform.commons.api.jpa.EntityManagerService;
+import org.exoplatform.commons.persistence.impl.EntityManagerService;
 import org.exoplatform.container.PortalContainer;
 import org.exoplatform.container.component.RequestLifeCycle;
 import org.exoplatform.container.xml.InitParams;
@@ -185,6 +186,39 @@ public abstract class AbstractMigrationService<T>  extends AbstractStorage {
       return params.getValueParam(key).getValue();
     } catch (Exception e) {
       return defaultValue;
+    }
+  }
+  
+  /**
+   * Starts the transaction if it isn't existing
+   * 
+   * @return
+   */
+  protected boolean startTx() {
+    EntityManager em = entityManagerService.getEntityManager();
+    if (!em.getTransaction().isActive()) {
+      em.getTransaction().begin();
+      LOG.debug("started new transaction");
+      return true;
+    }
+    return false;
+  }
+  
+  /**
+   * Stops the transaction
+   * 
+   * @param requestClose
+   */
+  public void endTx(boolean requestClose) {
+    EntityManager em = entityManagerService.getEntityManager();
+    try {
+      if (requestClose && em.getTransaction().isActive()) {
+        em.getTransaction().commit();
+        LOG.debug("commited transaction");
+      }
+    } catch (RuntimeException e) {
+      LOG.error("Failed to commit to DB::" + e.getMessage(), e);
+      em.getTransaction().rollback();
     }
   }
 

@@ -27,7 +27,7 @@ import javax.persistence.criteria.Join;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 
-import org.exoplatform.social.addons.storage.dao.jpa.GenericDAOImpl;
+import org.exoplatform.commons.persistence.impl.EntityManagerHolder;
 import org.exoplatform.social.addons.storage.entity.Activity;
 import org.exoplatform.social.addons.storage.entity.Activity_;
 import org.exoplatform.social.addons.storage.entity.Comment;
@@ -97,7 +97,7 @@ public final class CommentQueryBuilder {
    * @return
    */
   public TypedQuery<Comment> build() {
-    EntityManager em = GenericDAOImpl.lifecycleLookup().getCurrentEntityManager();
+    EntityManager em = EntityManagerHolder.get();
     CriteriaBuilder cb = em.getCriteriaBuilder();
     CriteriaQuery<Comment> criteria = cb.createQuery(Comment.class);
     Root<Comment> comment = criteria.from(Comment.class);
@@ -144,7 +144,7 @@ public final class CommentQueryBuilder {
    * @return TypedQuery<Long> instance 
    */
   public TypedQuery<Long> buildCount() {
-    EntityManager em = GenericDAOImpl.lifecycleLookup().getCurrentEntityManager();
+    EntityManager em = EntityManagerHolder.get();
     CriteriaBuilder cb = em.getCriteriaBuilder();
     CriteriaQuery<Long> criteria = cb.createQuery(Long.class);
     Root<Comment> comment = criteria.from(Comment.class);

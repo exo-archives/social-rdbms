@@ -82,8 +82,7 @@
   </component>
   
   <component>
-    <key>org.exoplatform.commons.api.jpa.EntityManagerService</key>
-    <type>org.exoplatform.commons.api.jpa.EntityManagerService</type>
+    <type>org.exoplatform.commons.persistence.impl.EntityManagerService</type>
     <init-params>    
       <value-param>
         <name>persistence.unit.name</name>
@@ -155,7 +154,7 @@
 
   <component>
     <key>org.exoplatform.social.core.storage.api.ActivityStorage</key>
-    <type>org.exoplatform.social.addons.storage.SynchronizedRDBMSActivityStorage</type>
+    <type>org.exoplatform.social.addons.storage.RDBMSActivityStorageImpl</type>
   </component>
   
   <component>
@@ -211,7 +210,7 @@
   -->
   <component>
     <key>org.exoplatform.social.core.storage.api.RelationshipStorage</key>
-    <type>org.exoplatform.social.addons.storage.SynchronizedRDBMSRelationshipStorage</type>
+    <type>org.exoplatform.social.addons.storage.RDBMSRelationshipStorageImpl</type>
   </component>
 
   <!--
@@ -252,24 +251,7 @@
     <type>org.exoplatform.social.core.processor.OSHtmlSanitizerProcessor</type>
   </component>
 
-  <component>
-    <key>org.exoplatform.social.core.manager.ActivityManager</key>
-    <type>org.exoplatform.social.core.manager.ActivityManagerImpl</type>
-    <component-plugins>
-      <component-plugin>
-        <name>OSHtmlSanitizer</name>
-        <set-method>addProcessorPlugin</set-method>
-        <type>org.exoplatform.social.core.processor.OSHtmlSanitizerProcessor</type>
-        <init-params>
-          <value-param>
-            <name>priority</name>
-            <description>priority of this processor (lower are executed first)</description>
-            <value>3</value>
-          </value-param>
-        </init-params>
-      </component-plugin>
-    </component-plugins>
-  </component>
+  
 
   <component>
     <key>org.exoplatform.social.core.identity.model.PropertiesDefinition</key>
@@ -305,6 +287,25 @@
             <value>org.exoplatform.social.core.identity.provider.SpaceIdentityProvider</value>
             <value>org.exoplatform.social.core.identity.IdentityProvider</value>
           </values-param>
+        </init-params>
+      </component-plugin>
+    </component-plugins>
+  </component>
+  
+  <component>
+    <key>org.exoplatform.social.core.manager.ActivityManager</key>
+    <type>org.exoplatform.social.core.manager.ActivityManagerImpl</type>
+    <component-plugins>
+      <component-plugin>
+        <name>OSHtmlSanitizer</name>
+        <set-method>addProcessorPlugin</set-method>
+        <type>org.exoplatform.social.core.processor.OSHtmlSanitizerProcessor</type>
+        <init-params>
+          <value-param>
+            <name>priority</name>
+            <description>priority of this processor (lower are executed first)</description>
+            <value>3</value>
+          </value-param>
         </init-params>
       </component-plugin>
     </component-plugins>

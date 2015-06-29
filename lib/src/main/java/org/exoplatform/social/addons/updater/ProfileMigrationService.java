@@ -4,7 +4,7 @@ import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 
 import org.exoplatform.commons.api.event.EventManager;
-import org.exoplatform.commons.api.jpa.EntityManagerService;
+import org.exoplatform.commons.persistence.impl.EntityManagerService;
 import org.exoplatform.container.PortalContainer;
 import org.exoplatform.container.component.RequestLifeCycle;
 import org.exoplatform.container.xml.InitParams;
@@ -14,7 +14,6 @@ import org.exoplatform.management.jmx.annotations.NameTemplate;
 import org.exoplatform.management.jmx.annotations.Property;
 import org.exoplatform.social.addons.profile.ProfileUtils;
 import org.exoplatform.social.addons.storage.dao.ProfileItemDAO;
-import org.exoplatform.social.addons.storage.dao.jpa.GenericDAOImpl;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.identity.model.Profile;
 import org.exoplatform.social.core.storage.api.IdentityStorage;
@@ -47,7 +46,7 @@ public class ProfileMigrationService extends AbstractMigrationService<Profile> {
   @Managed
   @ManagedDescription("Manual to start run miguration data of profiles from JCR to MYSQL.")
   public void doMigration() throws Exception {
-    boolean begunTx = GenericDAOImpl.startTx();
+    boolean begunTx = startTx();
     try {
       if (profileDAO.count() > 0) {
         isDone = true;
@@ -69,10 +68,10 @@ public class ProfileMigrationService extends AbstractMigrationService<Profile> {
           processLog("Profile migration", (int)size, (int)offset);
           //
           if (offset % LIMIT_THRESHOLD == 0) {
-            GenericDAOImpl.endTx(begunTx);
+            endTx(begunTx);
             RequestLifeCycle.end();
             RequestLifeCycle.begin(PortalContainer.getInstance());
-            begunTx = GenericDAOImpl.startTx();
+            begunTx = startTx();
             it = getIdentityNodes();
             it.skip(offset);
           }
@@ -82,7 +81,7 @@ public class ProfileMigrationService extends AbstractMigrationService<Profile> {
       }
       LOG.info(String.format("Done to migration %s profiles from JCR to MYSQL on %s(ms)", offset, (System.currentTimeMillis() - t)));
     } finally {
-      GenericDAOImpl.endTx(begunTx);
+      endTx(begunTx);
       RequestLifeCycle.end();
       RequestLifeCycle.begin(PortalContainer.getInstance());
 

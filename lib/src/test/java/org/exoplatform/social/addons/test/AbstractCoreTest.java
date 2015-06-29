@@ -118,13 +118,13 @@ public abstract class AbstractCoreTest extends BaseExoTestCase {
     RelationshipDAO reDao = getService(RelationshipDAO.class);
     List<Connection> reItems = reDao.findAll();
     for (Connection item :  reItems) {
-      reDao.delete(item.getId());
+      reDao.delete(item);
     }
 
     ProfileItemDAO dao = getService(ProfileItemDAO.class);
     List<Profile> items = dao.findAll();
     for (Profile item : items) {
-      dao.delete(item.getId());
+      dao.delete(item);
     }
 
     identityManager.deleteIdentity(rootIdentity);

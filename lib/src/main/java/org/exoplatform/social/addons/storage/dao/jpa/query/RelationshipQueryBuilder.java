@@ -36,7 +36,7 @@ import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 
 import org.apache.commons.lang.StringEscapeUtils;
-import org.exoplatform.social.addons.storage.dao.jpa.GenericDAOImpl;
+import org.exoplatform.commons.persistence.impl.EntityManagerHolder;
 import org.exoplatform.social.addons.storage.entity.Connection;
 import org.exoplatform.social.addons.storage.entity.Connection_;
 import org.exoplatform.social.addons.storage.entity.Profile;
@@ -103,7 +103,7 @@ public final class RelationshipQueryBuilder {
    * @return
    */
   public TypedQuery<Connection> buildSingleRelationship() {
-    EntityManager em = GenericDAOImpl.lifecycleLookup().getCurrentEntityManager();
+    EntityManager em = EntityManagerHolder.get();
     CriteriaBuilder cb = em.getCriteriaBuilder();
     CriteriaQuery<Connection> criteria = cb.createQuery(Connection.class);
     Root<Connection> relationship = criteria.from(Connection.class);
@@ -126,7 +126,7 @@ public final class RelationshipQueryBuilder {
    * @return
    */
   public TypedQuery<Connection> build() {
-    EntityManager em = GenericDAOImpl.lifecycleLookup().getCurrentEntityManager();
+    EntityManager em = EntityManagerHolder.get();
     CriteriaBuilder cb = em.getCriteriaBuilder();
     CriteriaQuery<Connection> criteria = cb.createQuery(Connection.class);
     Root<Connection> relationship = criteria.from(Connection.class);
@@ -162,7 +162,7 @@ public final class RelationshipQueryBuilder {
    * @return
    */
   public TypedQuery<Long> buildCount() {
-    EntityManager em = GenericDAOImpl.lifecycleLookup().getCurrentEntityManager();
+    EntityManager em = EntityManagerHolder.get();
     CriteriaBuilder cb = em.getCriteriaBuilder();
     CriteriaQuery<Long> criteria = cb.createQuery(Long.class);
     Root<Connection> relationship = criteria.from(Connection.class);
@@ -188,7 +188,7 @@ public final class RelationshipQueryBuilder {
   }
 
   public TypedQuery<Connection> buildLastConnections() {
-    EntityManager em = GenericDAOImpl.lifecycleLookup().getCurrentEntityManager();
+    EntityManager em = EntityManagerHolder.get();
     CriteriaBuilder cb = em.getCriteriaBuilder();
     CriteriaQuery<Connection> criteria = cb.createQuery(Connection.class);
     Root<Connection> relationship = criteria.from(Connection.class);
@@ -217,7 +217,7 @@ public final class RelationshipQueryBuilder {
   }
 
   public TypedQuery<Connection> buildFilter() {
-    EntityManager em = GenericDAOImpl.lifecycleLookup().getCurrentEntityManager();
+    EntityManager em = EntityManagerHolder.get();
     CriteriaBuilder cb = em.getCriteriaBuilder();
     CriteriaQuery<Connection> criteria = cb.createQuery(Connection.class);
     Root<Connection> relationship = criteria.from(Connection.class);
@@ -237,7 +237,7 @@ public final class RelationshipQueryBuilder {
   }
 
   public TypedQuery<Long> buildFilterCount() {
-    EntityManager em = GenericDAOImpl.lifecycleLookup().getCurrentEntityManager();
+    EntityManager em = EntityManagerHolder.get();
     CriteriaBuilder cb = em.getCriteriaBuilder();
     CriteriaQuery<Long> criteria = cb.createQuery(Long.class);
     Root<Connection> relationship = criteria.from(Connection.class);
