@@ -46,7 +46,7 @@ import org.exoplatform.container.component.RequestLifeCycle;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 import org.exoplatform.social.addons.storage.dao.ProfileItemDAO;
-import org.exoplatform.social.addons.storage.dao.RelationshipDAO;
+import org.exoplatform.social.addons.storage.dao.ConnectionDAO;
 import org.exoplatform.social.addons.storage.entity.Connection;
 import org.exoplatform.social.addons.storage.entity.Profile;
 import org.exoplatform.social.core.activity.model.ExoSocialActivity;
@@ -123,7 +123,7 @@ public abstract class BaseCoreTest extends BaseExoTestCase {
 
   @Override
   protected void tearDown() throws Exception {
-    RelationshipDAO reDao = getService(RelationshipDAO.class);
+    ConnectionDAO reDao = getService(ConnectionDAO.class);
     List<Connection> reItems = reDao.findAll();
     for (Connection item :  reItems) {
       reDao.delete(item);

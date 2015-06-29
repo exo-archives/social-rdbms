@@ -13,7 +13,7 @@ import org.exoplatform.management.annotations.ManagedDescription;
 import org.exoplatform.management.jmx.annotations.NameTemplate;
 import org.exoplatform.management.jmx.annotations.Property;
 import org.exoplatform.social.addons.storage.dao.ProfileItemDAO;
-import org.exoplatform.social.addons.storage.dao.RelationshipDAO;
+import org.exoplatform.social.addons.storage.dao.ConnectionDAO;
 import org.exoplatform.social.addons.storage.entity.Connection;
 import org.exoplatform.social.core.chromattic.entity.IdentityEntity;
 import org.exoplatform.social.core.chromattic.entity.RelationshipEntity;
@@ -27,21 +27,21 @@ import org.exoplatform.social.core.storage.api.IdentityStorage;
 @NameTemplate({@Property(key = "service", value = "social"), @Property(key = "view", value = "migration-relationships") })
 public class RelationshipMigrationService extends AbstractMigrationService<Relationship> {
   public static final String EVENT_LISTENER_KEY = "SOC_RELATIONSHIP_MIGRATION";
-  private final RelationshipDAO relationshipDAO;
+  private final ConnectionDAO connectionDAO;
   private final ProfileItemDAO profileItemDAO;
   private static int number = 0;
   
 
   public RelationshipMigrationService(InitParams initParams,
                                       IdentityStorage identityStorage,
-                                      RelationshipDAO relationshipDAO,
+                                      ConnectionDAO connectionDAO,
                                       ProfileItemDAO profileItemDAO,
                                       ProfileMigrationService profileMigration,
                                       EventManager<Relationship, String> eventManager,
                                       EntityManagerService entityManagerService) {
 
     super(initParams, identityStorage, eventManager, entityManagerService);
-    this.relationshipDAO = relationshipDAO;
+    this.connectionDAO = connectionDAO;
     this.profileItemDAO = profileItemDAO;
     this.LIMIT_THRESHOLD = getInteger(initParams, LIMIT_THRESHOLD_KEY, 200);
   }
@@ -56,7 +56,7 @@ public class RelationshipMigrationService extends AbstractMigrationService<Relat
   @ManagedDescription("Manual to start run miguration data of relationships from JCR to MYSQL.")
   public void doMigration() throws Exception {
       boolean begunTx = startTx();
-      if (relationshipDAO.count() > 0) {
+      if (connectionDAO.count() > 0) {
         isDone = true;
         return;
       }
@@ -109,7 +109,7 @@ public class RelationshipMigrationService extends AbstractMigrationService<Relat
       entity.setStatus(status);
       entity.setReceiver(profileItemDAO.findProfileItemByIdentityId(isIncoming ? owner.getId() : receiver.getId()));
       //
-      relationshipDAO.create(entity);
+      connectionDAO.create(entity);
       ++c2;
       ++number;
       if(number % LIMIT_THRESHOLD == 0) {

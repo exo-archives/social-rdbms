@@ -14,13 +14,13 @@ import javax.persistence.Table;
 import org.exoplatform.social.core.relationship.model.Relationship.Type;
 
 @Entity
-@Table(name = "SOC_RELATIONSHIPS")
+@Table(name = "SOC_CONNECTIONS")
 @NamedQuery(name = "getRelationships",
             query = "select r from Connection r")
 public class Connection {
   @Id
   @GeneratedValue(strategy = GenerationType.AUTO)
-  @Column(name = "RELATIONSHIP_ID")
+  @Column(name = "CONNECTION_ID")
   private Long id;
 
   @Column(length = 36)

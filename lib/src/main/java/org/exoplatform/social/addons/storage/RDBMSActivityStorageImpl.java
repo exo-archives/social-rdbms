@@ -36,7 +36,7 @@ import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 import org.exoplatform.social.addons.storage.dao.ActivityDAO;
 import org.exoplatform.social.addons.storage.dao.CommentDAO;
-import org.exoplatform.social.addons.storage.dao.RelationshipDAO;
+import org.exoplatform.social.addons.storage.dao.ConnectionDAO;
 import org.exoplatform.social.addons.storage.entity.Activity;
 import org.exoplatform.social.addons.storage.entity.Comment;
 import org.exoplatform.social.core.ActivityProcessor;
@@ -63,7 +63,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
   private static final Log LOG = ExoLogger.getLogger(RDBMSActivityStorageImpl.class);
   private final ActivityDAO activityDAO;
   private final CommentDAO commentDAO;
-  private final RelationshipDAO relationshipDAO;
+  private final ConnectionDAO connectionDAO;
   private final IdentityStorage identityStorage;
   private final SpaceStorage spaceStorage;
   private final SortedSet<ActivityProcessor> activityProcessors;
@@ -75,7 +75,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
                                       SpaceStorage spaceStorage,
                                       ActivityDAO activityDAO,
                                       CommentDAO commentDAO,
-                                      RelationshipDAO relationshipDAO) {
+                                      ConnectionDAO connectionDAO) {
     
     super(relationshipStorage, identityStorage, spaceStorage);
     //
@@ -85,7 +85,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
     this.activityDAO = activityDAO;
     this.commentDAO = commentDAO;
     this.spaceStorage = spaceStorage;
-    this.relationshipDAO = relationshipDAO;
+    this.connectionDAO = connectionDAO;
   }
   
   private static Comparator<ActivityProcessor> processorComparator() {
@@ -891,7 +891,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
    * @return
    */
   private long getNumberOfConnections(Identity owner) {
-    return relationshipDAO.count(owner, Relationship.Type.CONFIRMED);
+    return connectionDAO.count(owner, Relationship.Type.CONFIRMED);
   }
   
   /**

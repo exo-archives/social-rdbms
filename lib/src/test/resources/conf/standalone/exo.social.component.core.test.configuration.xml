@@ -77,11 +77,6 @@
   </component>
 
   <component>
-    <key>org.exoplatform.social.addons.storage.session.SocialSessionLifecycle</key>
-    <type>org.exoplatform.social.addons.storage.session.SocialSessionLifecycle</type>
-  </component>
-  
-  <component>
     <type>org.exoplatform.commons.persistence.impl.EntityManagerService</type>
     <init-params>    
       <value-param>
@@ -98,8 +93,8 @@
   </component>
   
   <component>
-    <key>org.exoplatform.social.addons.storage.dao.RelationshipDAO</key>
-    <type>org.exoplatform.social.addons.storage.dao.jpa.RelationshipDAOImpl</type>
+    <key>org.exoplatform.social.addons.storage.dao.ConnectionDAO</key>
+    <type>org.exoplatform.social.addons.storage.dao.jpa.ConnectionDAOImpl</type>
   </component>
   
   <component>

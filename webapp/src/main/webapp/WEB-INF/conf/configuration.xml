@@ -24,12 +24,7 @@
    xmlns="http://www.exoplatform.org/xml/ns/kernel_1_2.xsd">
 
   <component>
-    <type>org.exoplatform.social.addons.storage.session.SocialSessionLifecycle</type>
-  </component>
-  
-  <component>
-    <key>org.exoplatform.commons.api.jpa.EntityManagerService</key>
-    <type>org.exoplatform.commons.api.jpa.EntityManagerService</type>
+    <type>org.exoplatform.commons.persistence.impl.EntityManagerService</type>
     <init-params>    
       <value-param>
         <name>persistence.unit.name</name>
@@ -50,8 +45,8 @@
   </component>
   
    <component>
-    <key>org.exoplatform.social.addons.storage.dao.RelationshipDAO</key>
-    <type>org.exoplatform.social.addons.storage.dao.jpa.RelationshipDAOImpl</type>
+    <key>org.exoplatform.social.addons.storage.dao.ConnectionDAO</key>
+    <type>org.exoplatform.social.addons.storage.dao.jpa.ConnectionDAOImpl</type>
   </component>
   
   <component>
@@ -61,12 +56,12 @@
   
   <component>
     <key>org.exoplatform.social.core.storage.api.RelationshipStorage</key>
-    <type>org.exoplatform.social.addons.storage.SynchronizedRDBMSRelationshipStorage</type>
+    <type>org.exoplatform.social.addons.storage.RDBMSRelationshipStorageImpl</type>
   </component>
   
   <component>
     <key>org.exoplatform.social.core.storage.api.ActivityStorage</key>
-    <type>org.exoplatform.social.addons.storage.SynchronizedRDBMSActivityStorage</type>
+    <type>org.exoplatform.social.addons.storage.RDBMSActivityStorageImpl</type>
   </component>
   
   <component>
