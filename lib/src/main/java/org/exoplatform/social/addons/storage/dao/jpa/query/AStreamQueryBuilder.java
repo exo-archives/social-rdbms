@@ -33,8 +33,6 @@ import javax.persistence.criteria.Subquery;
 import org.exoplatform.social.addons.storage.dao.jpa.GenericDAOImpl;
 import org.exoplatform.social.addons.storage.entity.Activity;
 import org.exoplatform.social.addons.storage.entity.Activity_;
-import org.exoplatform.social.addons.storage.entity.Comment;
-import org.exoplatform.social.addons.storage.entity.Comment_;
 import org.exoplatform.social.addons.storage.entity.Connection;
 import org.exoplatform.social.addons.storage.entity.Connection_;
 import org.exoplatform.social.core.identity.model.Identity;
@@ -197,30 +195,10 @@ public final class AStreamQueryBuilder {
     Root<Activity> activity = criteria.from(Activity.class);
     
     Predicate predicate = null;
-    
     //owner
     if (this.owner != null) {
       predicate = cb.equal(activity.get(Activity_.posterId), owner.getId());
       predicate = cb.or(predicate, cb.equal(activity.get(Activity_.ownerId), owner.getId()));
-    }
-    
-    //comment
-    Subquery<Activity> commentQuery = criteria.subquery(Activity.class);
-    Root<Comment> subRootComment = commentQuery.from(Comment.class);
-    commentQuery.select(subRootComment.<Activity>get(Comment_.activity));
-    commentQuery.where(cb.equal(subRootComment.<String>get(Comment_.posterId), this.owner.getId()));
-    
-    if (predicate != null) {
-      predicate = cb.or(predicate, cb.or(cb.in(activity).value(commentQuery)));
-    } else {
-      predicate = cb.in(activity).value(commentQuery);
-    }
-
-    //mention
-    if (predicate != null) {
-      predicate = cb.or(predicate, cb.isMember(this.owner.getId(), activity.get(Activity_.mentionerIds)));
-    } else {
-      predicate = cb.isMember(this.owner.getId(), activity.get(Activity_.mentionerIds));
     }
     
     // space members
@@ -367,16 +345,16 @@ public final class AStreamQueryBuilder {
     }
     
     //comment
-    Subquery<Activity> commentQuery = criteria.subquery(Activity.class);
-    Root<Comment> subRootComment = commentQuery.from(Comment.class);
-    commentQuery.select(subRootComment.<Activity>get(Comment_.activity));
-    commentQuery.where(cb.equal(subRootComment.<String>get(Comment_.posterId), this.owner.getId()));
-    
-    if (predicate != null) {
-      predicate = cb.or(predicate, cb.or(cb.in(activity).value(commentQuery)));
-    } else {
-      predicate = cb.in(activity).value(commentQuery);
-    }
+//    Subquery<Long> commentQuery = criteria.subquery(Long.class);
+//    Root<Comment> subRootComment = commentQuery.from(Comment.class);
+//    commentQuery.select(subRootComment.<Long>get(Comment_.activity));
+//    commentQuery.where(cb.equal(subRootComment.<String>get(Comment_.posterId), this.owner.getId()));
+//    
+//    if (predicate != null) {
+//      predicate = cb.or(predicate, cb.or(cb.in(activity.get(Activity_.id)).value(commentQuery)));
+//    } else {
+//      predicate = cb.or(cb.in(activity.get(Activity_.id)).value(commentQuery));
+//    }
     
     //mention
     if (predicate != null) {
