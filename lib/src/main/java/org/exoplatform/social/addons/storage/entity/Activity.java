@@ -161,6 +161,15 @@ public class Activity extends BaseActivity {
     item.setActivity(this);
     this.streamItems.add(item);
   }
+  
+  public void removeStreamItem(StreamItem item) {
+    for (StreamItem it : this.getStreamItems()) {
+      if (it.getOwnerId().equals(item.getOwnerId()) && it.getStreamType().equals(item.getStreamType())) {
+        this.streamItems.remove(it);
+        break;
+      }
+    }
+  }
 
   public Long getId() {
     return id;

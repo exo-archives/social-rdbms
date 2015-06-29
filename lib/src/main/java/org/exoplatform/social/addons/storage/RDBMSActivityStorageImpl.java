@@ -345,8 +345,8 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
         if (isAllowedToRemove(activityEntity, commentEntity, mentioner)) {
           mentioners.remove(mentioner);
           StreamItem item = new StreamItem(StreamType.MENTIONER);
-          item.setOwnerId(commentEntity.getPosterId());
-          streamItemDAO.delete(item);
+          item.setOwnerId(mentioner);
+          activityEntity.removeStreamItem(item);
         }
       }
     }
@@ -498,7 +498,22 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
     //
     activity.setMentionerIds(processMentionOfComment(activity, comment, activity.getMentionerIds().toArray(new String[activity.getMentionerIds().size()]), processMentions(comment.getTitle()), false));
     //
+    if (! hasOtherComment(activity, comment.getPosterId())) {
+      StreamItem item = new StreamItem(StreamType.POSTER);
+      item.setOwnerId(comment.getPosterId());
+      activity.removeStreamItem(item);
+    }
+    //
     activityDAO.update(activity);
+  }
+  
+  private boolean hasOtherComment(Activity activity, String poster) {
+    for (Comment comment : activity.getComments()) {
+      if (poster.equals(comment.getPosterId())) {
+        return true;
+      }
+    }
+    return false;
   }
 
   @Override
