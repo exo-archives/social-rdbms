@@ -34,13 +34,16 @@
             <column name="type" type="VARCHAR(255)"/>
         </createTable>
         <createIndex tableName="SOC_ACTIVITIES" indexName="IDX_SOC_ACTIVITIES_01">
-            <column name="HIDDEN"/>
+            <column name="lastUpdated DESC"/>
         </createIndex>
         <createIndex tableName="SOC_ACTIVITIES" indexName="IDX_SOC_ACTIVITIES_02">
             <column name="POSTERID"/>
         </createIndex>
         <createIndex tableName="SOC_ACTIVITIES" indexName="IDX_SOC_ACTIVITIES_03">
             <column name="OWNERID"/>
+        </createIndex>
+        <createIndex tableName="SOC_ACTIVITIES" indexName="IDX_SOC_ACTIVITIES_04">
+            <column name="HIDDEN"/>
         </createIndex>
     </changeSet>
     <changeSet author="tuvd@exoplatform.com" id="1.0.0-2">
@@ -97,6 +100,9 @@
             <column name="ACTIVITY_ID" type="BIGINT"/>
         </createTable>
         <createIndex tableName="SOC_COMMENTS" indexName="IDX_SOC_COMMENTS_01">
+            <column name="lastUpdated DESC"/>
+        </createIndex>
+        <createIndex tableName="SOC_COMMENTS" indexName="IDX_SOC_COMMENTS_02">
             <column name="posterId"/>
         </createIndex>
     </changeSet>
@@ -145,6 +151,9 @@
             <column name="PROFILE_ID" type="BIGINT"/>
         </createTable>
         <createIndex tableName="SOC_CONNECTIONS" indexName="IDX_SOC_CONNECTIONS_01">
+            <column name="receiverId"/>
+        </createIndex>
+        <createIndex tableName="SOC_CONNECTIONS" indexName="IDX_SOC_CONNECTIONS_02">
             <column name="senderId"/>
         </createIndex>
     </changeSet>
