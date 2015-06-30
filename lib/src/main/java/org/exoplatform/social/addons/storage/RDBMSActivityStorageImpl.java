@@ -184,10 +184,12 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
       activityEntity.setTemplateParams(params);
     }
     //
-    activity.setPostedTime(System.currentTimeMillis());
+    if (activity.getPostedTime() == null || activity.getPostedTime() <= 0) {
+      activity.setPostedTime(System.currentTimeMillis());
+    }
+    activityEntity.setPosted(activity.getPostedTime());
     activityEntity.setLocked(activity.isLocked());
     activityEntity.setHidden(activity.isHidden());
-    activityEntity.setPosted(activity.getPostedTime());
     activityEntity.setLastUpdated(activity.getUpdated().getTime());
     activityEntity.setMentionerIds(new HashSet<String>(Arrays.asList(processMentions(activity.getTitle()))));
     //
@@ -561,6 +563,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
   }
 
   @Override
+  @Transactional
   public List<ExoSocialActivity> getActivityFeedForUpgrade(Identity ownerIdentity, int offset, int limit) {
     return convertActivityEntitiesToActivities(activityDAO.getActivityFeed(ownerIdentity, offset, limit, getNumberOfConnections(ownerIdentity), memberOfSpaceIds(ownerIdentity)));
   }

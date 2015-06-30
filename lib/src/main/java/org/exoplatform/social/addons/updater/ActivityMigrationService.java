@@ -13,7 +13,6 @@ import javax.jcr.RepositoryException;
 
 import org.chromattic.core.api.ChromatticSessionImpl;
 import org.exoplatform.commons.api.event.EventManager;
-import org.exoplatform.commons.persistence.impl.EntityManagerHolder;
 import org.exoplatform.commons.persistence.impl.EntityManagerService;
 import org.exoplatform.commons.utils.CommonsUtils;
 import org.exoplatform.container.PortalContainer;
@@ -25,8 +24,7 @@ import org.exoplatform.management.jmx.annotations.NameTemplate;
 import org.exoplatform.management.jmx.annotations.Property;
 import org.exoplatform.services.jcr.impl.core.NodeImpl;
 import org.exoplatform.social.addons.storage.dao.ActivityDAO;
-import org.exoplatform.social.addons.updater.AbstractMigrationService;
-import org.exoplatform.social.addons.updater.ActivityUpdaterEntity;
+import org.exoplatform.social.addons.updater.utils.MigrationCounter;
 import org.exoplatform.social.core.activity.model.ExoSocialActivity;
 import org.exoplatform.social.core.activity.model.ExoSocialActivityImpl;
 import org.exoplatform.social.core.chromattic.entity.ActivityEntity;
@@ -51,8 +49,8 @@ import com.google.caja.util.Lists;
 @ManagedDescription("Social migration activities from JCR to MYSQl service.")
 @NameTemplate({@Property(key = "service", value = "social"), @Property(key = "view", value = "migration-activities") })
 public class ActivityMigrationService extends AbstractMigrationService<ExoSocialActivity> {
-  private static final int LIMIT_REMOVED_THRESHOLD = 5;
-  private static final int LIMIT_ACTIVITY_SAVE_THRESHOLD = 5;
+  private static final int LIMIT_REMOVED_THRESHOLD = 10;
+  private static final int LIMIT_ACTIVITY_SAVE_THRESHOLD = 10;
   private static final int LIMIT_ACTIVITY_REF_SAVE_THRESHOLD = 50;
   public static final String EVENT_LISTENER_KEY = "SOC_ACTIVITY_MIGRATION";
   private final ActivityDAO activityDAO;
@@ -83,7 +81,7 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
   @ManagedDescription("Manual to start run miguration data of activities from JCR to MYSQL.")
   public void doMigration() throws Exception {
     if(lastUserProcess == null && activityDAO.count() > 0) {
-      isDone = true;
+      MigrationContext.setActivityDone(true);
       return;
     }
     
@@ -94,42 +92,41 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
 
   private void migrateUserActivities() throws Exception {
     RequestLifeCycle.begin(PortalContainer.getInstance());
-    
     boolean begunTx = startTx();
-    //
+    MigrationCounter counter = MigrationCounter.builder().threshold(LIMIT_THRESHOLD).build();
     
-    // doing with group administrators and active users
     List<String> activeUsers = getAdminAndActiveUsers();
-    long t = System.currentTimeMillis();
-    int size = activeUsers.size(), count = 0;
+    counter.newTotalAndWatch();
+    LOG.info("| \\ START::Activity User's activity migration ---------------------------------");
     for (String userName : activeUsers) {
       if(forceStop) {
         return;
       }
-      //
+      
       migrationByIdentity(userName, null);
-      ++count;
-      //
-      processLog("Activities migration admin & active users", size, count);
+      counter.getAndIncrementBatch();
     }
-    LOG.info(String.format("Done to migration %s admin & active user activities on %s(ms)", size, (System.currentTimeMillis() - t)));
+    
+    LOG.info(String.format("| / END::Migration User's activity for %s user(s) consumed %s(ms) -------------", counter.getBatch(), counter.endTotalWatch()));
+    //
+    counter.reset();
+    counter.newTotalAndWatch();
     // doing with normal users
-    t = System.currentTimeMillis();
     boolean isSkip = (lastUserProcess != null);
-    NodeIterator it = getIdentityNodes();
-    size = (int) it.getSize();
-    count = 0;
+    NodeIterator it = getIdentityNodes(counter.getTotal(), LIMIT_THRESHOLD);
     Identity owner = null; 
     Node node = null;
-    long offset = 0;
     try {
       while (it.hasNext()) {
         if(forceStop) {
           return;
         }
-        offset++;
+        
         node = (Node) it.next();
         owner = identityStorage.findIdentityById(node.getUUID());
+        counter.newBatchAndWatch();
+        counter.getAndIncrementTotal();
+        LOG.info(String.format("|  \\ START::user number: %s (%s user)", counter.getTotal(), owner.getRemoteId()));
         if (isSkip) {
           if (lastUserProcess.equals(owner.getRemoteId())) {
             lastUserProcess = null;
@@ -143,20 +140,18 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
         }
         IdentityEntity identityEntity = _findById(IdentityEntity.class, owner.getId());
         migrationByIdentity(null, identityEntity);
-        ++count;
-        processLog("Activities migration normal users", size, count);
+        
+        LOG.info(String.format("| / END:: user's activity consumed %s(ms) -------------", counter.endBatchWatch()));
         //
-        if (count % LIMIT_THRESHOLD == 0) {
-          LOG.info(String.format("Commit database into mysql and reCreate JCR-Session at offset: " + offset));
+        if (counter.isPersistPoint()) {
           endTx(begunTx);
           RequestLifeCycle.end();
           RequestLifeCycle.begin(PortalContainer.getInstance());
           begunTx = startTx();
-          it = getIdentityNodes();
-          it.skip(offset);
+          it = getIdentityNodes(counter.getTotal(), LIMIT_THRESHOLD);
         }
       }
-      LOG.info(String.format("Done to migration %s normal user activities on %s(ms)", count, (System.currentTimeMillis() - t)));
+      LOG.info(String.format("| / END::%s user(s) consumed %s(ms) -------------", counter.getTotal(), counter.endTotalWatch()));
     } catch (Exception e) {
       LOG.error("Failed to migration for user Activity.", e);
     } finally {
@@ -227,7 +222,7 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
   }
   
   protected void beforeMigration() throws Exception {
-    isDone = false;
+    MigrationContext.setActivityDone(false);
     LOG.info("Stating to migration activities from JCR to MYSQL........");
     NodeIterator iterator = nodes("SELECT * FROM soc:activityUpdater");
     if (iterator.hasNext()) {
@@ -253,7 +248,7 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
       }
       String providerId = identityEntity.getProviderId();
       String type = (OrganizationIdentityProvider.NAME.equals(providerId)) ? "user" : "space";
-      LOG.info(String.format("Migration activities for %s: %s", type, identityEntity.getRemoteId()));
+      LOG.info(String.format("    Migration activities for %s: %s", type, identityEntity.getRemoteId()));
       //
       ActivityListEntity activityListEntity = identityEntity.getActivityList();
       ActivityIterator activityIterator = new ActivityIterator(activityListEntity);
@@ -306,15 +301,14 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
         previousActivityId = activityId;
         ++count;
         //
-        if(count % 10 == 0) {
+        if(count % LIMIT_ACTIVITY_SAVE_THRESHOLD == 0) {
           endTx(begunTx);
           entityManagerService.endRequest(PortalContainer.getInstance());
           entityManagerService.startRequest(PortalContainer.getInstance());
           begunTx = startTx();
         }
       }
-      LOG.info(String.format("Done migration %s activities for %s %s on %s(ms) ",
-                             type, count, identityEntity.getRemoteId(), System.currentTimeMillis() - t));
+      LOG.info(String.format("    Done migration %s activitie(s) for %s consumed %s(ms) ", count, identityEntity.getRemoteId(), System.currentTimeMillis() - t));
     } finally {
       endTx(begunTx);
     }
@@ -342,7 +336,7 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
       }
     }
 
-    isDone = true;
+    MigrationContext.setActivityDone(true);
     LOG.info("Done to migration activities from JCR to MYSQL");
   }
 
@@ -360,7 +354,7 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
     Node node = null;
     
     try {
-      LOG.info(String.format("| \\ START::cleanup User Activity ---------------------------------"));
+      LOG.info("| \\ START::cleanup User Activity ---------------------------------");
       while (it.hasNext()) {
         node = (Node) it.next();
         LOG.info(String.format("|  \\ START::cleanup user number: %s (%s user)", offset, node.getName()));

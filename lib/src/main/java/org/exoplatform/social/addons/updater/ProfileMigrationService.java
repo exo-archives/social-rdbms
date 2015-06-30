@@ -14,6 +14,7 @@ import org.exoplatform.management.jmx.annotations.NameTemplate;
 import org.exoplatform.management.jmx.annotations.Property;
 import org.exoplatform.social.addons.profile.ProfileUtils;
 import org.exoplatform.social.addons.storage.dao.ProfileItemDAO;
+import org.exoplatform.social.addons.updater.utils.MigrationCounter;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.identity.model.Profile;
 import org.exoplatform.social.core.storage.api.IdentityStorage;
@@ -39,7 +40,7 @@ public class ProfileMigrationService extends AbstractMigrationService<Profile> {
 
   @Override
   protected void beforeMigration() throws Exception {
-    isDone = false;
+    MigrationContext.setProfileDone(false);
   }
 
   @Override
@@ -47,46 +48,49 @@ public class ProfileMigrationService extends AbstractMigrationService<Profile> {
   @ManagedDescription("Manual to start run miguration data of profiles from JCR to MYSQL.")
   public void doMigration() throws Exception {
     boolean begunTx = startTx();
+    MigrationCounter counter = MigrationCounter.builder().threshold(LIMIT_THRESHOLD).build();
+    counter.newTotalAndWatch();
     try {
       if (profileDAO.count() > 0) {
-        isDone = true;
+        MigrationContext.setProfileDone(true);
         return;
       }
-      LOG.info("Stating to migration profiles from JCR to MYSQL........");
-      long t = System.currentTimeMillis();
-      NodeIterator it = getIdentityNodes();
+      
+      LOG.info("| \\ START::Profile migration ---------------------------------");
+      NodeIterator it = getIdentityNodes(counter.getTotal(), LIMIT_THRESHOLD);
+      if (it == null) return;
       Identity owner = null; 
       Node node = null;
-      long size = it.getSize();
-      long offset = 0;
+      
       try {
         while (it.hasNext()) {
           node = (Node) it.next();
           owner = identityStorage.findIdentityById(node.getUUID());
+          counter.newBatchAndWatch();
+          counter.getAndIncrementTotal();
+          LOG.info(String.format("|  \\ START::user number: %s (%s user)", counter.getTotal(), owner.getRemoteId()));
           ProfileUtils.createOrUpdateProfile(owner.getProfile(), false);
-          offset++;
-          processLog("Profile migration", (int)size, (int)offset);
+          LOG.info(String.format("|  / END::user number %s (%s user) consumed %s(ms)", counter.getTotal(), owner.getRemoteId(), counter.endBatchWatch()));
+          
           //
-          if (offset % LIMIT_THRESHOLD == 0) {
+          if (counter.isPersistPoint()) {
             endTx(begunTx);
             RequestLifeCycle.end();
             RequestLifeCycle.begin(PortalContainer.getInstance());
             begunTx = startTx();
-            it = getIdentityNodes();
-            it.skip(offset);
+            it = getIdentityNodes(counter.getTotal(), LIMIT_THRESHOLD);
           }
+          
         }
       } catch (Exception e) {
         LOG.error("Failed to migration for Profile.", e);
       }
-      LOG.info(String.format("Done to migration %s profiles from JCR to MYSQL on %s(ms)", offset, (System.currentTimeMillis() - t)));
     } finally {
       endTx(begunTx);
       RequestLifeCycle.end();
       RequestLifeCycle.begin(PortalContainer.getInstance());
-
+      LOG.info(String.format("| / END::Profile migration for (%s) user(s) consumed %s(ms)", counter.getTotal(), counter.endTotalWatch()));
     }
-   
   }
 
   @Override
@@ -94,7 +98,7 @@ public class ProfileMigrationService extends AbstractMigrationService<Profile> {
     if(forkStop) {
       return;
     }
-    isDone = true;
+    MigrationContext.setProfileDone(true);
     LOG.info("Done to migration profiles from JCR to MYSQL");
   }
   

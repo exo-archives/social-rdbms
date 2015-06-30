@@ -31,7 +31,10 @@ import org.exoplatform.social.addons.updater.RDBMSMigrationManager;
 import org.exoplatform.social.addons.updater.RelationshipMigrationService;
 import org.exoplatform.social.core.activity.model.ExoSocialActivity;
 import org.exoplatform.social.core.identity.model.Identity;
+import org.exoplatform.social.core.relationship.model.Relationship;
+import org.exoplatform.social.core.relationship.model.Relationship.Type;
 import org.exoplatform.social.core.storage.impl.ActivityStorageImpl;
+import org.exoplatform.social.core.storage.impl.RelationshipStorageImpl;
 
 /**
  * Created by The eXo Platform SAS
@@ -42,6 +45,7 @@ import org.exoplatform.social.core.storage.impl.ActivityStorageImpl;
 public class AsynMigrationTest extends BaseCoreTest {
   protected final Log LOG = ExoLogger.getLogger(AsynMigrationTest.class);
   private ActivityStorageImpl jcrStorage;
+  private RelationshipStorageImpl relationshipStorageImpl;
   private ActivityMigrationService activityMigration;
   private ProfileMigrationService profileMigration;
   private RelationshipMigrationService relationshipMigration;
@@ -52,6 +56,7 @@ public class AsynMigrationTest extends BaseCoreTest {
   public void setUp() throws Exception {
     super.setUp();
     jcrStorage = getService(ActivityStorageImpl.class);
+    relationshipStorageImpl = getService(RelationshipStorageImpl.class);
     activityMigration = getService(ActivityMigrationService.class);
     relationshipMigration = getService(RelationshipMigrationService.class);
     profileMigration = getService(ProfileMigrationService.class);
@@ -73,19 +78,55 @@ public class AsynMigrationTest extends BaseCoreTest {
   public void testMigrationActivities() throws Exception {
     // create jcr data
     LOG.info("Create connection for root,john,mary and demo");
-    relationshipManager.inviteToConnect(johnIdentity, demoIdentity);
-    relationshipManager.inviteToConnect(johnIdentity, maryIdentity);
-    relationshipManager.inviteToConnect(johnIdentity, rootIdentity);
-    relationshipManager.inviteToConnect(rootIdentity, maryIdentity);
-    relationshipManager.inviteToConnect(demoIdentity, maryIdentity);
-    relationshipManager.inviteToConnect(demoIdentity, rootIdentity);
-    //
-    relationshipManager.confirm(demoIdentity, johnIdentity);
-    relationshipManager.confirm(maryIdentity, johnIdentity);
-    relationshipManager.confirm(rootIdentity, johnIdentity);
-    relationshipManager.confirm(maryIdentity, rootIdentity);
-    relationshipManager.confirm(maryIdentity, demoIdentity);
-    relationshipManager.confirm(rootIdentity, demoIdentity);
+    //John invites Demo
+    Relationship johnToDemo = new Relationship(johnIdentity, demoIdentity, Type.PENDING);
+    relationshipStorageImpl.saveRelationship(johnToDemo);
+    
+    //John invites Mary
+    Relationship johnToMary = new Relationship(johnIdentity, maryIdentity, Type.PENDING);
+    relationshipStorageImpl.saveRelationship(johnToMary);
+    
+    //John invites Root
+    Relationship johnToRoot = new Relationship(johnIdentity, rootIdentity, Type.PENDING);
+    relationshipStorageImpl.saveRelationship(johnToRoot);
+    
+    //Root invites Mary
+    Relationship rootToMary = new Relationship(rootIdentity, maryIdentity, Type.PENDING);
+    relationshipStorageImpl.saveRelationship(rootToMary);
+    
+    //Demo invites Mary
+    Relationship demoToMary = new Relationship(demoIdentity, maryIdentity, Type.PENDING);
+    relationshipStorageImpl.saveRelationship(demoToMary);
+    
+    //Demo invites Root
+    Relationship demoToRoot = new Relationship(demoIdentity, rootIdentity, Type.PENDING);
+    relationshipStorageImpl.saveRelationship(demoToRoot);
+    
+    
+    //confirmed john and demo
+    johnToDemo.setStatus(Type.CONFIRMED);
+    relationshipStorageImpl.saveRelationship(johnToDemo);
+    
+    //confirmed john and demo
+    johnToMary.setStatus(Type.CONFIRMED);
+    relationshipStorageImpl.saveRelationship(johnToMary);
+    
+    //confirmed john and root
+    johnToRoot.setStatus(Type.CONFIRMED);
+    relationshipStorageImpl.saveRelationship(johnToRoot);
+    
+    //confirmed root and mary
+    rootToMary.setStatus(Type.CONFIRMED);
+    relationshipStorageImpl.saveRelationship(rootToMary);
+    
+    //confirmed demo and mary
+    demoToMary.setStatus(Type.CONFIRMED);
+    relationshipStorageImpl.saveRelationship(demoToMary);
+    
+    //confirmed demo and root
+    demoToRoot.setStatus(Type.CONFIRMED);
+    relationshipStorageImpl.saveRelationship(demoToRoot);
+    
     //
     LOG.info("Create the activities storage on JCR ....");
     createActivityToOtherIdentity(rootIdentity, johnIdentity, 5);
