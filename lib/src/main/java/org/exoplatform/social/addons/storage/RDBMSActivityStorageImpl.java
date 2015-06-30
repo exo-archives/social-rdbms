@@ -480,6 +480,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
   }
 
   @Override
+  @Transactional
   public List<ExoSocialActivity> getActivityFeedForUpgrade(Identity ownerIdentity, int offset, int limit) {
     return convertActivityEntitiesToActivities(activityDAO.getActivityFeed(ownerIdentity, offset, limit, getNumberOfConnections(ownerIdentity), memberOfSpaceIds(ownerIdentity)));
   }

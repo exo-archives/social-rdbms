@@ -31,15 +31,13 @@ public abstract class AbstractMigrationService<T>  extends AbstractStorage {
   protected final IdentityStorage identityStorage;
   protected final EventManager<T, String> eventManager;
   protected final EntityManagerService entityManagerService;
-  
   protected boolean forkStop = false;
-  protected boolean isDone = false;
   protected int LIMIT_THRESHOLD = 100;
   protected String process = "";
   protected int lastPercent = 0;
 
   private static String identityQuery = null;
-  private static String spaceIdentityQuery = "";
+  private static String spaceIdentityQuery = null;
 
   public AbstractMigrationService(InitParams initParams,
                                   IdentityStorage identityStorage,
@@ -92,10 +90,6 @@ public abstract class AbstractMigrationService<T>  extends AbstractStorage {
     forkStop = true;
   }
 
-  public boolean isDone() {
-    return isDone;
-  }
-
   @SuppressWarnings("unchecked")
   protected Map<String, IdentityEntity> getAllIdentityEntity(String providerId) {
     ProviderEntity providerEntity;
@@ -123,17 +117,35 @@ public abstract class AbstractMigrationService<T>  extends AbstractStorage {
     LOG.info(String.format(msg + ":[%s> %s%%]", process, percent));
   }
   
+  /**
+   * Gets the all of ALL SPACE identity nodes
+   * @return
+   */
   protected NodeIterator getIdentityNodes() {
-    if(identityQuery == null) {
-      identityQuery = new StringBuffer().append("SELECT * FROM soc:identitydefinition WHERE ")
+    ProviderEntity providerEntity = getProviderRoot().getProviders().get(OrganizationIdentityProvider.NAME);
+    if (providerEntity == null) {
+      MigrationContext.setDone(true);
+      return null;
+    }
+    String identityQuery = new StringBuffer().append("SELECT * FROM soc:identitydefinition WHERE ")
                                         .append(JCRProperties.path.getName()).append(" LIKE '")
                                         .append(getProviderRoot().getProviders().get(OrganizationIdentityProvider.NAME).getPath())
                                         .append(StorageUtils.SLASH_STR).append(StorageUtils.PERCENT_STR).append("'").toString();
-    }
     return nodes(identityQuery);
   }
-  
+  /**
+   * Gets the all of USER identity nodes with given offset and limit;
+   * @param offset
+   * @param limit
+   * @return
+   */
   protected NodeIterator getIdentityNodes(long offset, long limit) {
+    ProviderEntity providerEntity = getProviderRoot().getProviders().get(OrganizationIdentityProvider.NAME);
+    if (providerEntity == null) {
+      MigrationContext.setDone(true);
+      return null;
+    }
+    
     if(identityQuery == null) {
       identityQuery = new StringBuffer().append("SELECT * FROM soc:identitydefinition WHERE ")
                                         .append(JCRProperties.path.getName()).append(" LIKE '")
@@ -143,6 +155,12 @@ public abstract class AbstractMigrationService<T>  extends AbstractStorage {
     return nodes(identityQuery, offset, limit);
   }
 
+  /**
+   * Gets the all of SPACE identity nodes with given offset and limit;
+   * @param offset
+   * @param limit
+   * @return NodeIterator if there is matched SPACE Identity, Otherwise return NULL
+   */
   protected NodeIterator getSpaceIdentityNodes(long offset, long limit) {
     if ("".equals(spaceIdentityQuery)) {
       ProviderEntity providerEntity = getProviderRoot().getProviders().get(SpaceIdentityProvider.NAME);
@@ -158,8 +176,12 @@ public abstract class AbstractMigrationService<T>  extends AbstractStorage {
     return nodes(spaceIdentityQuery, offset, limit);
   }
   
+  /**
+   * Gets the all of ALL SPACE identity nodes
+   * @return NodeIterator if there is matched SPACE Identity, Otherwise return NULL
+   */
   protected NodeIterator getSpaceIdentityNodes() {
-    if ("".equals(spaceIdentityQuery)) {
+    if (spaceIdentityQuery == null) {
       ProviderEntity providerEntity = getProviderRoot().getProviders().get(SpaceIdentityProvider.NAME);
       if (providerEntity != null) {
         spaceIdentityQuery = new StringBuffer().append("SELECT * FROM soc:identitydefinition WHERE ")
@@ -168,8 +190,10 @@ public abstract class AbstractMigrationService<T>  extends AbstractStorage {
                                                .append(StorageUtils.SLASH_STR).append(StorageUtils.PERCENT_STR).append("'").toString();
       } else {
         spaceIdentityQuery = null;
+        return null;
       }
     }
+    
     return nodes(spaceIdentityQuery);
   }
 

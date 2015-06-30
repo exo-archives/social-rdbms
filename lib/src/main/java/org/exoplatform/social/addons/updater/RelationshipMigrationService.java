@@ -3,6 +3,9 @@ package org.exoplatform.social.addons.updater;
 import java.util.Collection;
 import java.util.Iterator;
 
+import javax.jcr.Node;
+import javax.jcr.NodeIterator;
+
 import org.exoplatform.commons.api.event.EventManager;
 import org.exoplatform.commons.persistence.impl.EntityManagerService;
 import org.exoplatform.container.PortalContainer;
@@ -28,9 +31,8 @@ import org.exoplatform.social.core.storage.api.IdentityStorage;
 public class RelationshipMigrationService extends AbstractMigrationService<Relationship> {
   public static final String EVENT_LISTENER_KEY = "SOC_RELATIONSHIP_MIGRATION";
   private final ConnectionDAO connectionDAO;
+  private static final int LIMIT_REMOVED_THRESHOLD = 10;
   private final ProfileItemDAO profileItemDAO;
-  private static int number = 0;
-  
 
   public RelationshipMigrationService(InitParams initParams,
                                       IdentityStorage identityStorage,
@@ -48,56 +50,75 @@ public class RelationshipMigrationService extends AbstractMigrationService<Relat
 
   @Override
   protected void beforeMigration() throws Exception {
-    isDone = false;
+    MigrationContext.setConnectionDone(false);
   }
 
   @Override
   @Managed
-  @ManagedDescription("Manual to start run miguration data of relationships from JCR to MYSQL.")
+  @ManagedDescription("Manual to start run migration data of relationships from JCR to MYSQL.")
   public void doMigration() throws Exception {
       boolean begunTx = startTx();
-      if (connectionDAO.count() > 0) {
-        isDone = true;
-        return;
-      }
-      number = 0;
-      LOG.info("Stating to migration relationships from JCR to MYSQL........");
-      Collection<IdentityEntity> allIdentityEntity  = getAllIdentityEntity(OrganizationIdentityProvider.NAME).values();
+      long offset = 0;
+      int total = 0;
+
       long t = System.currentTimeMillis();
-      int count = 0, size = allIdentityEntity.size();
-      Iterator<IdentityEntity> iter = allIdentityEntity.iterator();
-      while (iter.hasNext()) {
-        if(forkStop) {
+      try {
+        if (connectionDAO.count() > 0) {
+          MigrationContext.setConnectionDone(true);
           return;
         }
-        IdentityEntity identityEntity = (IdentityEntity) iter.next();
-        //
-        LOG.info("Migration relationship for user: " + identityEntity.getRemoteId());
-        long t1 = System.currentTimeMillis();
-        int c2 = 0;
-        Identity identityFrom = new Identity(OrganizationIdentityProvider.NAME, identityEntity.getRemoteId());
-        identityFrom.setId(identityEntity.getId());
-        //
-        Iterator<RelationshipEntity> it = identityEntity.getRelationship().getRelationships().values().iterator();
-        c2 += migrateRelationshipEntity(begunTx, it, identityFrom, false, Relationship.Type.CONFIRMED);
-        //
-        it = identityEntity.getSender().getRelationships().values().iterator();
-        c2 += migrateRelationshipEntity(begunTx, it, identityFrom, false, Relationship.Type.OUTGOING);
-        //
-        it = identityEntity.getReceiver().getRelationships().values().iterator();
-        c2 += migrateRelationshipEntity(begunTx, it, identityFrom, true, Relationship.Type.INCOMING);
-        //
-        ++count;
-        processLog("Relationships migration", size, count);
-        LOG.info(String.format("Done to migration %s relationships for user %s from JCR to MYSQL on %s(ms)", c2, identityEntity.getRemoteId(), (System.currentTimeMillis() - t1)));
+        
+        LOG.info("| \\ START::Relationships migration ---------------------------------");
+        NodeIterator nodeIter  = getIdentityNodes(offset, LIMIT_THRESHOLD);
+        
+        int relationshipNo = 0;
+        Node identityNode = null;
+        while (nodeIter.hasNext()) {
+          if(forkStop) {
+            break;
+          }
+          relationshipNo = 0;
+          identityNode = nodeIter.nextNode();
+          LOG.info(String.format("|  \\ START::user number: %s (%s user)", offset, identityNode.getName()));
+          long t1 = System.currentTimeMillis();
+          
+          IdentityEntity identityEntity = _findById(IdentityEntity.class, identityNode.getUUID());
+          Identity identityFrom = new Identity(OrganizationIdentityProvider.NAME, identityEntity.getRemoteId());
+          identityFrom.setId(identityEntity.getId());
+          //
+          Iterator<RelationshipEntity> it = identityEntity.getRelationship().getRelationships().values().iterator();
+          relationshipNo += migrateRelationshipEntity(it, identityFrom, false, Relationship.Type.CONFIRMED);
+          //
+          it = identityEntity.getSender().getRelationships().values().iterator();
+          relationshipNo += migrateRelationshipEntity(it, identityFrom, false, Relationship.Type.OUTGOING);
+          //
+          it = identityEntity.getReceiver().getRelationships().values().iterator();
+          relationshipNo += migrateRelationshipEntity(it, identityFrom, true, Relationship.Type.INCOMING);
+          //
+          offset++;
+          total += relationshipNo;
+          if (offset % LIMIT_THRESHOLD == 0) {
+            endTx(begunTx);
+            RequestLifeCycle.end();
+            RequestLifeCycle.begin(PortalContainer.getInstance());
+            begunTx = startTx();
+            nodeIter  = getIdentityNodes(offset, LIMIT_THRESHOLD);
+          }
+          
+          LOG.info(String.format("|  / END::user number %s (%s user) with %s relationship(s) user consumed %s(ms)", relationshipNo, identityNode.getName(), relationshipNo, System.currentTimeMillis() - t1));
+        }
+        
+      } finally {
+        endTx(begunTx);
+        RequestLifeCycle.end();
+        RequestLifeCycle.begin(PortalContainer.getInstance());
+        LOG.info(String.format("| / END::Relationships migration for (%s) user(s) with %s relationship(s) consumed %s(ms)", offset, total, System.currentTimeMillis() - t));
       }
-      
-      endTx(begunTx);
-      LOG.info(String.format("Done to migration relationships of %s users from JCR to MYSQL on %s(ms)", count, (System.currentTimeMillis() - t)));
   }
   
-  private int migrateRelationshipEntity(boolean begunTx, Iterator<RelationshipEntity> it, Identity owner, boolean isIncoming, Relationship.Type status) {
-    int c2 = 0;
+  private int migrateRelationshipEntity(Iterator<RelationshipEntity> it, Identity owner, boolean isIncoming, Relationship.Type status) {
+    int doneConnectionNo = 0;
+    startTx();
     while (it.hasNext()) {
       RelationshipEntity relationshipEntity = it.next();
       String receiverId = relationshipEntity.getTo().getId().equals(owner.getId()) ? relationshipEntity.getFrom().getId() : relationshipEntity.getTo().getId();
@@ -109,17 +130,17 @@ public class RelationshipMigrationService extends AbstractMigrationService<Relat
       entity.setStatus(status);
       entity.setReceiver(profileItemDAO.findProfileItemByIdentityId(isIncoming ? owner.getId() : receiver.getId()));
       //
+
       connectionDAO.create(entity);
-      ++c2;
-      ++number;
-      if(number % LIMIT_THRESHOLD == 0) {
-        endTx(begunTx);
+      ++doneConnectionNo;
+      if(doneConnectionNo % LIMIT_THRESHOLD == 0) {
+        endTx(true);
         entityManagerService.endRequest(PortalContainer.getInstance());
         entityManagerService.startRequest(PortalContainer.getInstance());
-        begunTx = startTx();
+        startTx();
       }
     }
-    return c2;
+    return doneConnectionNo;
   }
 
   @Override
@@ -127,104 +148,66 @@ public class RelationshipMigrationService extends AbstractMigrationService<Relat
     if(forkStop) {
       return;
     }
-    isDone = true;
-    LOG.info("Done to migration relationships from JCR to MYSQL");
-  }
-  
-  private void removeRelationshipEntity(Collection<RelationshipEntity> entities) {
-    Iterator<RelationshipEntity> it = entities.iterator();
-    while (it.hasNext()) {
-      RelationshipEntity relationshipEntity = it.next();
-      getSession().remove(relationshipEntity);
-      ++number;
-      if (number % LIMIT_THRESHOLD == 0) {
-        LOG.info("Session save ....");
-        sessionSave();
-      }
-    }
-    //
-    sessionSave();
-  }
-
-  private void sessionSave() {
-    try {
-      number = 0;
-      getSession().save();
-    } catch (Exception e) {
-      LOG.warn("Session save error: " + e.getMessage());
-    }
+    MigrationContext.setConnectionDone(true);
   }
 
   public void doRemove() throws Exception {
-    LOG.info("Start to remove relationships from JCR");
-    number = 0;
-    LOG.info("Remove main relationships ...");
-    long t = System.currentTimeMillis(), t1 = t, t2;
+    LOG.info("| \\ START::cleanup Relationships ---------------------------------");
+    long t = System.currentTimeMillis();
+    long timePerUser = System.currentTimeMillis();
     RequestLifeCycle.begin(PortalContainer.getInstance());
-    Collection<IdentityEntity> identityEntities = getAllIdentityEntity(OrganizationIdentityProvider.NAME).values();
-    int count = 0, next = 0, size = identityEntities.size();
-    Iterator<IdentityEntity> allIdentityEntity = identityEntities.iterator();
-    while (allIdentityEntity.hasNext()) {
-      IdentityEntity entity = allIdentityEntity.next();
-      ++next;
-      if(next < count) {
-        continue;
-      }
-      String remoteId = entity.getRemoteId();
-      Collection<RelationshipEntity> entities = entity.getRelationship().getRelationships().values();
-      int entitiesSize = entities.size();
-      if (entitiesSize > 0) {
-        removeRelationshipEntity(entities);
-      }
+    int offset = 0;
+    NodeIterator nodeIter  = getIdentityNodes(offset, LIMIT_THRESHOLD);
+    Node node = null;
+    
+    while (nodeIter.hasNext()) {
+      node = nodeIter.nextNode();
+      LOG.info(String.format("|  \\ START::cleanup Relationship of user number: %s (%s user)", offset, node.getName()));
+      IdentityEntity identityEntity = _findById(IdentityEntity.class, node.getUUID());
+      offset++;
+      
+      Collection<RelationshipEntity> entities = identityEntity.getRelationship().getRelationships().values();
+      removeRelationshipEntity(entities);
+      // 
+      entities = identityEntity.getSender().getRelationships().values();
+      removeRelationshipEntity(entities);
       //
-      ++count;
-      if(count % LIMIT_THRESHOLD == 0) {
+      entities = identityEntity.getReceiver().getRelationships().values();
+      removeRelationshipEntity(entities);
+      
+      LOG.info(String.format("|  / END::cleanup (%s user) consumed time %s(ms)", node.getName(), System.currentTimeMillis() - timePerUser));
+      
+      timePerUser = System.currentTimeMillis();
+      if(offset % LIMIT_THRESHOLD == 0) {
         RequestLifeCycle.end();
         RequestLifeCycle.begin(PortalContainer.getInstance());
-        //
-        allIdentityEntity = getAllIdentityEntity(OrganizationIdentityProvider.NAME).values().iterator();
-        next = 0;
+        nodeIter = getIdentityNodes(offset, LIMIT_THRESHOLD);
       }
-      processLog(String.format("Removed %s confirm of user %s", entitiesSize, remoteId), size, count);
     }
     //
     RequestLifeCycle.end();
-    LOG.info(String.format("Done to remove %s main relationships on %s(ms)", number, (t2 = System.currentTimeMillis()) - t1));
-
-    LOG.info("Remove sender relationships ...");
-    RequestLifeCycle.begin(PortalContainer.getInstance());
-    number = 0; count = 0;
-    allIdentityEntity = getAllIdentityEntity(OrganizationIdentityProvider.NAME).values().iterator();
-    while (allIdentityEntity.hasNext()) {
-      IdentityEntity entity = allIdentityEntity.next();
-      Collection<RelationshipEntity> entities = entity.getSender().getRelationships().values();
-      int entitiesSize = entities.size();
-      removeRelationshipEntity(entities);
-      //
-      ++count;
-      processLog(String.format("Removed %s sender of user %s", entitiesSize, entity.getRemoteId()), size, count);
-    }
-    //
-    RequestLifeCycle.end();
-    LOG.info(String.format("Done to remove %s sender relationships on %s(ms)", number, (t1 = System.currentTimeMillis()) - t2));
-
-    LOG.info("Remove receiver relationships ...");
-    RequestLifeCycle.begin(PortalContainer.getInstance());
-    number = 0; count = 0;
-    allIdentityEntity = getAllIdentityEntity(OrganizationIdentityProvider.NAME).values().iterator();
-    while (allIdentityEntity.hasNext()) {
-      IdentityEntity entity = allIdentityEntity.next();
-      Collection<RelationshipEntity> entities = entity.getReceiver().getRelationships().values();
-      int entitiesSize = entities.size();
-      removeRelationshipEntity(entities);
-      ++count;
-      processLog(String.format("Removed %s receiver of user %s", entitiesSize, entity.getRemoteId()), size, count);
-    }
-    //
-    RequestLifeCycle.end();
-    LOG.info(String.format("Done to remove %s receiver relationships on %s(ms)", number, (t2 = System.currentTimeMillis()) - t1));
-    LOG.info("Done all removed relationships from JCR on " + (t2 - t) + "(ms)");
+    LOG.info(String.format("| / END::cleanup Relationships migration for (%s) user consumed %s(ms)", offset, System.currentTimeMillis() - t));
   }
+  
+  
+  private void removeRelationshipEntity(Collection<RelationshipEntity> entities) {
+    try {
+      int offset = 0;
+      Iterator<RelationshipEntity> it = entities.iterator();
+      while (it.hasNext()) {
+        RelationshipEntity relationshipEntity = it.next();
+        getSession().remove(relationshipEntity);
+        ++offset;
+        if (offset % LIMIT_REMOVED_THRESHOLD == 0) {
+          getSession().save();
+        }
+      }
+    } finally {
+      getSession().save();
+    }
+  }
+
+  
 
   @Override
   @Managed
