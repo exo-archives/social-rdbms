@@ -82,7 +82,7 @@
       <value-param>
         <name>persistence.unit.name</name>
         <description>The name of persistence unit</description>
-        <value>${persistence.unit.name:soc-activity-persistence-h2}</value>      
+        <value>${persistence.unit.name:soc-activity-pu}</value>
       </value-param>
     </init-params>
   </component>
