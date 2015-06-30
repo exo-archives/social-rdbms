@@ -497,7 +497,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
     //
     activity.setMentionerIds(processMentionOfComment(activity, comment, activity.getMentionerIds().toArray(new String[activity.getMentionerIds().size()]), processMentions(comment.getTitle()), false));
     //
-    if (! hasOtherComment(activity, comment.getPosterId())) {
+    if (! hasOtherComment(activity, comment.getPosterId()) && ! activity.getPosterId().equals(comment.getPosterId())) {
       StreamItem item = new StreamItem(StreamType.POSTER);
       item.setOwnerId(comment.getPosterId());
       activity.removeStreamItem(item);
