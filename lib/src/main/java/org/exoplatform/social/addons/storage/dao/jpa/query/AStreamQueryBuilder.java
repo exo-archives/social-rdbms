@@ -31,7 +31,7 @@ import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 import javax.persistence.criteria.Subquery;
 
-import org.exoplatform.social.addons.storage.dao.jpa.GenericDAOImpl;
+import org.exoplatform.commons.persistence.impl.EntityManagerHolder;
 import org.exoplatform.social.addons.storage.entity.Activity;
 import org.exoplatform.social.addons.storage.entity.Activity_;
 import org.exoplatform.social.addons.storage.entity.Connection;
@@ -139,7 +139,7 @@ public final class AStreamQueryBuilder {
    * @return TypedQuery<Activity> instance
    */
   public TypedQuery<Activity> build() {
-    EntityManager em = GenericDAOImpl.lifecycleLookup().getCurrentEntityManager();
+    EntityManager em = EntityManagerHolder.get();
     CriteriaBuilder cb = em.getCriteriaBuilder();
     CriteriaQuery<Activity> criteria = cb.createQuery(Activity.class);
     Root<Activity> activity = criteria.from(Activity.class);
@@ -207,7 +207,7 @@ public final class AStreamQueryBuilder {
    * @return TypedQuery<Activity> instance
    */
   public TypedQuery<Activity> buildFeed() {
-    EntityManager em = GenericDAOImpl.lifecycleLookup().getCurrentEntityManager();
+    EntityManager em = EntityManagerHolder.get();
     CriteriaBuilder cb = em.getCriteriaBuilder();
     CriteriaQuery<Activity> criteria = cb.createQuery(Activity.class);
     Root<Activity> activity = criteria.from(Activity.class);
@@ -298,7 +298,7 @@ public final class AStreamQueryBuilder {
    * @return TypedQuery<Long> instance 
    */
   public TypedQuery<Long> buildCount() {
-    EntityManager em = GenericDAOImpl.lifecycleLookup().getCurrentEntityManager();
+    EntityManager em = EntityManagerHolder.get();
     CriteriaBuilder cb = em.getCriteriaBuilder();
     CriteriaQuery<Long> criteria = cb.createQuery(Long.class);
     Root<Activity> activity = criteria.from(Activity.class);
@@ -361,7 +361,7 @@ public final class AStreamQueryBuilder {
    * @return TypedQuery<Long> instance 
    */
   public TypedQuery<Long> buildFeedCount() {
-    EntityManager em = GenericDAOImpl.lifecycleLookup().getCurrentEntityManager();
+    EntityManager em = EntityManagerHolder.get();
     CriteriaBuilder cb = em.getCriteriaBuilder();
     CriteriaQuery<Long> criteria = cb.createQuery(Long.class);
     Root<Activity> activity = criteria.from(Activity.class);

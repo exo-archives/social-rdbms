@@ -13,7 +13,8 @@ import javax.jcr.RepositoryException;
 
 import org.chromattic.core.api.ChromatticSessionImpl;
 import org.exoplatform.commons.api.event.EventManager;
-import org.exoplatform.commons.api.jpa.EntityManagerService;
+import org.exoplatform.commons.persistence.impl.EntityManagerHolder;
+import org.exoplatform.commons.persistence.impl.EntityManagerService;
 import org.exoplatform.commons.utils.CommonsUtils;
 import org.exoplatform.container.PortalContainer;
 import org.exoplatform.container.component.RequestLifeCycle;
@@ -24,7 +25,8 @@ import org.exoplatform.management.jmx.annotations.NameTemplate;
 import org.exoplatform.management.jmx.annotations.Property;
 import org.exoplatform.services.jcr.impl.core.NodeImpl;
 import org.exoplatform.social.addons.storage.dao.ActivityDAO;
-import org.exoplatform.social.addons.storage.dao.jpa.GenericDAOImpl;
+import org.exoplatform.social.addons.updater.AbstractMigrationService;
+import org.exoplatform.social.addons.updater.ActivityUpdaterEntity;
 import org.exoplatform.social.core.activity.model.ExoSocialActivity;
 import org.exoplatform.social.core.activity.model.ExoSocialActivityImpl;
 import org.exoplatform.social.core.chromattic.entity.ActivityEntity;
@@ -67,7 +69,6 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
                                   ActivityStorage activityStorage,
                                   ActivityStorageImpl activityJCRStorage,
                                   IdentityStorage identityStorage,
-                                  RelationshipMigrationService relationshipMigration,
                                   EventManager<ExoSocialActivity, String> eventManager,
                                   EntityManagerService entityManagerService) {
 
@@ -93,7 +94,8 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
 
   private void migrateUserActivities() throws Exception {
     RequestLifeCycle.begin(PortalContainer.getInstance());
-    boolean begunTx = GenericDAOImpl.startTx();
+    
+    boolean begunTx = startTx();
     //
     
     // doing with group administrators and active users
@@ -146,10 +148,10 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
         //
         if (count % LIMIT_THRESHOLD == 0) {
           LOG.info(String.format("Commit database into mysql and reCreate JCR-Session at offset: " + offset));
-          GenericDAOImpl.endTx(begunTx);
+          endTx(begunTx);
           RequestLifeCycle.end();
           RequestLifeCycle.begin(PortalContainer.getInstance());
-          begunTx = GenericDAOImpl.startTx();
+          begunTx = startTx();
           it = getIdentityNodes();
           it.skip(offset);
         }
@@ -158,7 +160,7 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
     } catch (Exception e) {
       LOG.error("Failed to migration for user Activity.", e);
     } finally {
-      GenericDAOImpl.endTx(begunTx);
+      endTx(begunTx);
       RequestLifeCycle.end();
       RequestLifeCycle.begin(PortalContainer.getInstance());
     }
@@ -170,7 +172,7 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
     NodeIterator it = getSpaceIdentityNodes();
     if (it == null) return;
     int size = (int) it.getSize(), count = 0;
-    boolean begunTx = GenericDAOImpl.startTx();
+    boolean begunTx = startTx();
     Node node = null;
     long offset = 0;
     boolean isSkip = (lastUserProcess != null);
@@ -199,10 +201,10 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
         //
         if (count % LIMIT_THRESHOLD == 0) {
           LOG.info(String.format("Commit database into mysql and reCreate JCR-Session at offset: " + offset));
-          GenericDAOImpl.endTx(begunTx);
+          endTx(begunTx);
           RequestLifeCycle.end();
           RequestLifeCycle.begin(PortalContainer.getInstance());
-          begunTx = GenericDAOImpl.startTx();
+          begunTx = startTx();
           it = getSpaceIdentityNodes();
           it.skip(offset);
         }
@@ -211,7 +213,7 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
     } catch (Exception e) {
       LOG.error("Failed to migration for Space Activity.", e);
     } finally {
-      GenericDAOImpl.endTx(begunTx);
+      endTx(begunTx);
       RequestLifeCycle.end();
       RequestLifeCycle.begin(PortalContainer.getInstance());
     }
@@ -238,7 +240,7 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
   }
 
   private void migrationByIdentity(String userName, IdentityEntity identityEntity) throws Exception {
-    boolean begunTx = GenericDAOImpl.startTx();
+    boolean begunTx = startTx();
     try {
       if (identityEntity == null) {
         Identity poster = identityStorage.findIdentity(OrganizationIdentityProvider.NAME, userName);
@@ -305,16 +307,16 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
         ++count;
         //
         if(count % 10 == 0) {
-          GenericDAOImpl.endTx(begunTx);
+          endTx(begunTx);
           entityManagerService.endRequest(PortalContainer.getInstance());
           entityManagerService.startRequest(PortalContainer.getInstance());
-          begunTx = GenericDAOImpl.startTx();
+          begunTx = startTx();
         }
       }
       LOG.info(String.format("Done migration %s activities for %s %s on %s(ms) ",
                              type, count, identityEntity.getRemoteId(), System.currentTimeMillis() - t));
     } finally {
-      GenericDAOImpl.endTx(begunTx);
+      endTx(begunTx);
     }
   }
 

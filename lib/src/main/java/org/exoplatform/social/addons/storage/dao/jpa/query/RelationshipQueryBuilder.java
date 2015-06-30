@@ -36,7 +36,7 @@ import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 
 import org.apache.commons.lang.StringEscapeUtils;
-import org.exoplatform.social.addons.storage.dao.jpa.GenericDAOImpl;
+import org.exoplatform.commons.persistence.impl.EntityManagerHolder;
 import org.exoplatform.social.addons.storage.entity.Connection;
 import org.exoplatform.social.addons.storage.entity.Connection_;
 import org.exoplatform.social.addons.storage.entity.Profile;
@@ -103,18 +103,18 @@ public final class RelationshipQueryBuilder {
    * @return
    */
   public TypedQuery<Connection> buildSingleRelationship() {
-    EntityManager em = GenericDAOImpl.lifecycleLookup().getCurrentEntityManager();
+    EntityManager em = EntityManagerHolder.get();
     CriteriaBuilder cb = em.getCriteriaBuilder();
     CriteriaQuery<Connection> criteria = cb.createQuery(Connection.class);
-    Root<Connection> relationship = criteria.from(Connection.class);
+    Root<Connection> connection = criteria.from(Connection.class);
     
     Predicate predicate = null;
     if (this.sender != null && this.receiver != null) {
-      predicate = cb.equal(relationship.get(Connection_.senderId), sender.getId()) ;
-      predicate = cb.and(predicate, cb.equal(relationship.get(Connection_.receiverId), receiver.getId()));
+      predicate = cb.equal(connection.get(Connection_.senderId), sender.getId()) ;
+      predicate = cb.and(predicate, cb.equal(connection.get(Connection_.receiverId), receiver.getId()));
     }
     
-    CriteriaQuery<Connection> select = criteria.select(relationship).distinct(true);
+    CriteriaQuery<Connection> select = criteria.select(connection).distinct(true);
     select.where(predicate);
     TypedQuery<Connection> typedQuery = em.createQuery(select);
     
@@ -126,26 +126,26 @@ public final class RelationshipQueryBuilder {
    * @return
    */
   public TypedQuery<Connection> build() {
-    EntityManager em = GenericDAOImpl.lifecycleLookup().getCurrentEntityManager();
+    EntityManager em = EntityManagerHolder.get();
     CriteriaBuilder cb = em.getCriteriaBuilder();
     CriteriaQuery<Connection> criteria = cb.createQuery(Connection.class);
-    Root<Connection> relationship = criteria.from(Connection.class);
+    Root<Connection> connection = criteria.from(Connection.class);
     
     Predicate predicate = null;
     //owner
     if (this.owner != null) {
-      predicate = cb.equal(relationship.get(Connection_.senderId), owner.getId()) ;
+      predicate = cb.equal(connection.get(Connection_.senderId), owner.getId()) ;
     }
     //status
     if (this.status != null) {
       if (Relationship.Type.PENDING.equals(this.status)) {
-        predicate = cb.and(predicate, addInClause(cb, relationship.get(Connection_.status), types));
+        predicate = cb.and(predicate, addInClause(cb, connection.get(Connection_.status), types));
       } else {
-        predicate = cb.and(predicate, cb.equal(relationship.get(Connection_.status), this.status));
+        predicate = cb.and(predicate, cb.equal(connection.get(Connection_.status), this.status));
       }
     }
     
-    CriteriaQuery<Connection> select = criteria.select(relationship).distinct(true);
+    CriteriaQuery<Connection> select = criteria.select(connection).distinct(true);
     select.where(predicate);
 
     TypedQuery<Connection> typedQuery = em.createQuery(select);
@@ -162,50 +162,50 @@ public final class RelationshipQueryBuilder {
    * @return
    */
   public TypedQuery<Long> buildCount() {
-    EntityManager em = GenericDAOImpl.lifecycleLookup().getCurrentEntityManager();
+    EntityManager em = EntityManagerHolder.get();
     CriteriaBuilder cb = em.getCriteriaBuilder();
     CriteriaQuery<Long> criteria = cb.createQuery(Long.class);
-    Root<Connection> relationship = criteria.from(Connection.class);
+    Root<Connection> connection = criteria.from(Connection.class);
     
     Predicate predicate = null;
     //owner
     if (this.owner != null) {
-      predicate = cb.equal(relationship.get(Connection_.senderId), owner.getId()) ;
+      predicate = cb.equal(connection.get(Connection_.senderId), owner.getId()) ;
     }
     //status
     if (this.status != null) {
       if (Relationship.Type.PENDING.equals(this.status)) {
-        predicate = cb.and(predicate, addInClause(cb, relationship.get(Connection_.status), types));
+        predicate = cb.and(predicate, addInClause(cb, connection.get(Connection_.status), types));
       } else {
-        predicate = cb.and(predicate, cb.equal(relationship.get(Connection_.status), this.status));
+        predicate = cb.and(predicate, cb.equal(connection.get(Connection_.status), this.status));
       }
     }
     
-    CriteriaQuery<Long> select = criteria.select(cb.countDistinct(relationship));
+    CriteriaQuery<Long> select = criteria.select(cb.countDistinct(connection));
     select.where(predicate);
 
     return em.createQuery(select);
   }
 
   public TypedQuery<Connection> buildLastConnections() {
-    EntityManager em = GenericDAOImpl.lifecycleLookup().getCurrentEntityManager();
+    EntityManager em = EntityManagerHolder.get();
     CriteriaBuilder cb = em.getCriteriaBuilder();
     CriteriaQuery<Connection> criteria = cb.createQuery(Connection.class);
-    Root<Connection> relationship = criteria.from(Connection.class);
+    Root<Connection> connection = criteria.from(Connection.class);
     
     Predicate predicate = null;
     //owner
     if (this.owner != null) {
-      predicate = cb.equal(relationship.get(Connection_.senderId), owner.getId()) ;
+      predicate = cb.equal(connection.get(Connection_.senderId), owner.getId()) ;
     }
     //status
     if (this.status != null) {
-      predicate = cb.and(predicate, cb.equal(relationship.get(Connection_.status), this.status));
+      predicate = cb.and(predicate, cb.equal(connection.get(Connection_.status), this.status));
     }
     
-    CriteriaQuery<Connection> select = criteria.select(relationship).distinct(true);
+    CriteriaQuery<Connection> select = criteria.select(connection).distinct(true);
     select.where(predicate);
-    select.orderBy(cb.desc(relationship.<Long> get(Connection_.id)));
+    select.orderBy(cb.desc(connection.<Long> get(Connection_.id)));
 
     TypedQuery<Connection> typedQuery = em.createQuery(select);
     if (this.limit > 0) {
@@ -217,14 +217,14 @@ public final class RelationshipQueryBuilder {
   }
 
   public TypedQuery<Connection> buildFilter() {
-    EntityManager em = GenericDAOImpl.lifecycleLookup().getCurrentEntityManager();
+    EntityManager em = EntityManagerHolder.get();
     CriteriaBuilder cb = em.getCriteriaBuilder();
     CriteriaQuery<Connection> criteria = cb.createQuery(Connection.class);
-    Root<Connection> relationship = criteria.from(Connection.class);
-    Join<Connection, Profile> receiver = relationship.join(Connection_.receiver);
+    Root<Connection> connection = criteria.from(Connection.class);
+    Join<Connection, Profile> receiver = connection.join(Connection_.receiver);
     //
-    CriteriaQuery<Connection> select = criteria.select(relationship);
-    select.where(buildPredicateFilter(cb, receiver, relationship));
+    CriteriaQuery<Connection> select = criteria.select(connection);
+    select.where(buildPredicateFilter(cb, receiver, connection));
     select.orderBy(cb.asc(receiver.get(Profile_.fullName)));
     //
     TypedQuery<Connection> typedQuery = em.createQuery(select);
@@ -237,7 +237,7 @@ public final class RelationshipQueryBuilder {
   }
 
   public TypedQuery<Long> buildFilterCount() {
-    EntityManager em = GenericDAOImpl.lifecycleLookup().getCurrentEntityManager();
+    EntityManager em = EntityManagerHolder.get();
     CriteriaBuilder cb = em.getCriteriaBuilder();
     CriteriaQuery<Long> criteria = cb.createQuery(Long.class);
     Root<Connection> relationship = criteria.from(Connection.class);
@@ -249,15 +249,15 @@ public final class RelationshipQueryBuilder {
     return em.createQuery(select);
   }
   
-  private Predicate buildPredicateFilter(CriteriaBuilder cb, Join<Connection, Profile> receiver, Root<Connection> relationship) {
+  private Predicate buildPredicateFilter(CriteriaBuilder cb, Join<Connection, Profile> receiver, Root<Connection> connection) {
     Predicate predicate = null;
     // owner
     if (this.owner != null) {
-      predicate = cb.equal(relationship.get(Connection_.senderId), owner.getId());
+      predicate = cb.equal(connection.get(Connection_.senderId), owner.getId());
     }
     // status
     if (this.status != null) {
-      predicate = cb.and(predicate, cb.equal(relationship.get(Connection_.status), this.status));
+      predicate = cb.and(predicate, cb.equal(connection.get(Connection_.status), this.status));
     }
 
     Predicate pFilter = null;

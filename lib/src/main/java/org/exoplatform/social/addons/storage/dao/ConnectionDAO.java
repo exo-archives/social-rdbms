@@ -18,6 +18,7 @@ package org.exoplatform.social.addons.storage.dao;
 
 import java.util.List;
 
+import org.exoplatform.commons.api.persistence.GenericDAO;
 import org.exoplatform.social.addons.storage.entity.Connection;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.profile.ProfileFilter;
@@ -30,7 +31,7 @@ import org.exoplatform.social.core.relationship.model.Relationship.Type;
  *          exo@exoplatform.com
  * Jun 4, 2015  
  */
-public interface RelationshipDAO extends GenericDAO<Connection, Long> {
+public interface ConnectionDAO extends GenericDAO<Connection, Long> {
 
   /**
    * Has the connections
@@ -42,13 +43,13 @@ public interface RelationshipDAO extends GenericDAO<Connection, Long> {
   long count(Identity identity, Relationship.Type status);
 
   /**
-   * Get relationship of 2 users
+   * Get connection of 2 users
    * 
    * @param identity1
    * @param identity2
    * @return
    */
-  Connection getRelationship(Identity identity1, Identity identity2);
+  Connection getConnection(Identity identity1, Identity identity2);
 
   
   /**
@@ -58,14 +59,14 @@ public interface RelationshipDAO extends GenericDAO<Connection, Long> {
    * @param limit
    * @return
    */
-  List<Connection> getRelationships(Identity identity, Type type, long offset, long limit);
+  List<Connection> getConnections(Identity identity, Type type, long offset, long limit);
 
   /**
    * @param identity
    * @param type
    * @return
    */
-  int getRelationshipsCount(Identity identity, Type type);
+  int getConnectionsCount(Identity identity, Type type);
 
   /**
    * @param identity
@@ -74,8 +75,8 @@ public interface RelationshipDAO extends GenericDAO<Connection, Long> {
    */
   List<Connection> getLastConnections(Identity identity, int limit);
 
-  List<Connection> getRelationshipsByFilter(Identity existingIdentity, ProfileFilter profileFilter, Type type, long offset, long limit);
+  List<Connection> getConnectionsByFilter(Identity existingIdentity, ProfileFilter profileFilter, Type type, long offset, long limit);
 
-  int getRelationshipsByFilterCount(Identity identity, ProfileFilter profileFilter, Type type);
+  int getConnectionsByFilterCount(Identity identity, ProfileFilter profileFilter, Type type);
 
 }

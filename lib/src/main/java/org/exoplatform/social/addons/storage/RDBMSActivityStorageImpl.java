@@ -31,13 +31,14 @@ import java.util.regex.Pattern;
 
 import org.apache.commons.lang.ArrayUtils;
 import org.exoplatform.commons.utils.CommonsUtils;
+import org.exoplatform.commons.api.persistence.Transactional;
 import org.exoplatform.container.component.BaseComponentPlugin;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 import org.exoplatform.social.addons.storage.dao.ActivityDAO;
 import org.exoplatform.social.addons.storage.dao.CommentDAO;
-import org.exoplatform.social.addons.storage.dao.RelationshipDAO;
 import org.exoplatform.social.addons.storage.dao.StreamItemDAO;
+import org.exoplatform.social.addons.storage.dao.ConnectionDAO;
 import org.exoplatform.social.addons.storage.entity.Activity;
 import org.exoplatform.social.addons.storage.entity.Comment;
 import org.exoplatform.social.addons.storage.entity.StreamItem;
@@ -67,7 +68,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
   private final ActivityDAO activityDAO;
   private final StreamItemDAO streamItemDAO;
   private final CommentDAO commentDAO;
-  private final RelationshipDAO relationshipDAO;
+  private final ConnectionDAO connectionDAO;
   private final IdentityStorage identityStorage;
   private final SpaceStorage spaceStorage;
   private final SortedSet<ActivityProcessor> activityProcessors;
@@ -80,7 +81,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
                                       ActivityDAO activityDAO,
                                       StreamItemDAO streamItemDAO,
                                       CommentDAO commentDAO,
-                                      RelationshipDAO relationshipDAO) {
+                                      ConnectionDAO connectionDAO) {
     
     super(relationshipStorage, identityStorage, spaceStorage);
     //
@@ -91,7 +92,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
     this.streamItemDAO = streamItemDAO;
     this.commentDAO = commentDAO;
     this.spaceStorage = spaceStorage;
-    this.relationshipDAO = relationshipDAO;
+    this.connectionDAO = connectionDAO;
   }
   
   private static Comparator<ActivityProcessor> processorComparator() {
@@ -298,6 +299,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
   }
 
   @Override
+  @Transactional
   public void saveComment(ExoSocialActivity activity, ExoSocialActivity eXoComment) throws ActivityStorageException {
     Activity activityEntity = activityDAO.find(Long.valueOf(activity.getId()));
     Comment commentEntity = convertCommentToCommentEntity(eXoComment);
@@ -480,18 +482,15 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
 
   @Override
   public void deleteActivity(String activityId) throws ActivityStorageException {
-    List<StreamItem> streamItems = streamItemDAO.findStreamItemByActivityId(Long.valueOf(activityId));
-    for (StreamItem streamItem : streamItems) {
-      streamItemDAO.delete(streamItem);
-    }
-    //
-    activityDAO.delete(Long.valueOf(activityId));
+    Activity a = activityDAO.find(Long.valueOf(activityId));
+    activityDAO.delete(a);
   }
 
   @Override
+  @Transactional
   public void deleteComment(String activityId, String commentId) throws ActivityStorageException {
     Comment comment = commentDAO.find(getCommentID(commentId));
-    commentDAO.delete(comment.getId());
+    commentDAO.delete(comment);
     //
     Activity activity = activityDAO.find(Long.valueOf(activityId));
     activity.getComments().remove(comment);
@@ -975,7 +974,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
    * @return
    */
   private long getNumberOfConnections(Identity owner) {
-    return relationshipDAO.count(owner, Relationship.Type.CONFIRMED);
+    return connectionDAO.count(owner, Relationship.Type.CONFIRMED);
   }
   
   /**

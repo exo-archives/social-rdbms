@@ -20,9 +20,9 @@ import java.util.List;
 
 import javax.persistence.TypedQuery;
 
-import org.exoplatform.social.addons.storage.dao.RelationshipDAO;
+import org.exoplatform.commons.persistence.impl.GenericDAOJPAImpl;
+import org.exoplatform.social.addons.storage.dao.ConnectionDAO;
 import org.exoplatform.social.addons.storage.dao.jpa.query.RelationshipQueryBuilder;
-import org.exoplatform.social.addons.storage.dao.jpa.synchronization.SynchronizedGenericDAO;
 import org.exoplatform.social.addons.storage.entity.Connection;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.profile.ProfileFilter;
@@ -35,7 +35,7 @@ import org.exoplatform.social.core.relationship.model.Relationship.Type;
  *          exo@exoplatform.com
  * Jun 4, 2015  
  */
-public class RelationshipDAOImpl extends SynchronizedGenericDAO<Connection, Long> implements RelationshipDAO {
+public class ConnectionDAOImpl extends GenericDAOJPAImpl<Connection, Long> implements ConnectionDAO {
 
   @Override
   public long count(Identity identity, Type status) {
@@ -47,7 +47,7 @@ public class RelationshipDAOImpl extends SynchronizedGenericDAO<Connection, Long
   }
 
   @Override
-  public Connection getRelationship(Identity identity1, Identity identity2) {
+  public Connection getConnection(Identity identity1, Identity identity2) {
     TypedQuery<Connection> query = RelationshipQueryBuilder.builder()
                                                                  .sender(identity1)
                                                                  .receiver(identity2)
@@ -60,7 +60,7 @@ public class RelationshipDAOImpl extends SynchronizedGenericDAO<Connection, Long
   }
 
   @Override
-  public List<Connection> getRelationships(Identity identity, Type type, long offset, long limit) {
+  public List<Connection> getConnections(Identity identity, Type type, long offset, long limit) {
     return RelationshipQueryBuilder.builder()
                                    .owner(identity)
                                    .status(type)
@@ -71,7 +71,7 @@ public class RelationshipDAOImpl extends SynchronizedGenericDAO<Connection, Long
   }
 
   @Override
-  public int getRelationshipsCount(Identity identity, Type type) {
+  public int getConnectionsCount(Identity identity, Type type) {
     return RelationshipQueryBuilder.builder()
                                    .owner(identity)
                                    .status(type)
@@ -91,7 +91,7 @@ public class RelationshipDAOImpl extends SynchronizedGenericDAO<Connection, Long
                                    .getResultList();
   }
   
-  public List<Connection> getRelationshipsByFilter(Identity existingIdentity, ProfileFilter profileFilter, Type type, long offset, long limit) {
+  public List<Connection> getConnectionsByFilter(Identity existingIdentity, ProfileFilter profileFilter, Type type, long offset, long limit) {
     return RelationshipQueryBuilder.builder()
                                    .owner(existingIdentity)
                                    .status(type)
@@ -103,7 +103,7 @@ public class RelationshipDAOImpl extends SynchronizedGenericDAO<Connection, Long
   }
 
   @Override
-  public int getRelationshipsByFilterCount(Identity identity, ProfileFilter profileFilter, Type type) {
+  public int getConnectionsByFilterCount(Identity identity, ProfileFilter profileFilter, Type type) {
     return RelationshipQueryBuilder.builder()
                                    .owner(identity)
                                    .status(type)

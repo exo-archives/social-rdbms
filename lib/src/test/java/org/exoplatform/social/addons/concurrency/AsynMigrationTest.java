@@ -65,7 +65,7 @@ public class AsynMigrationTest extends BaseCoreTest {
     //
     List<Activity> items = dao.findAll();
     for (Activity item : items) {
-      dao.delete(item.getId());
+      dao.delete(item);
     }
     super.tearDown();
   }

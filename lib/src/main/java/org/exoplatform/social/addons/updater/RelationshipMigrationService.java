@@ -4,7 +4,7 @@ import java.util.Collection;
 import java.util.Iterator;
 
 import org.exoplatform.commons.api.event.EventManager;
-import org.exoplatform.commons.api.jpa.EntityManagerService;
+import org.exoplatform.commons.persistence.impl.EntityManagerService;
 import org.exoplatform.container.PortalContainer;
 import org.exoplatform.container.component.RequestLifeCycle;
 import org.exoplatform.container.xml.InitParams;
@@ -13,8 +13,7 @@ import org.exoplatform.management.annotations.ManagedDescription;
 import org.exoplatform.management.jmx.annotations.NameTemplate;
 import org.exoplatform.management.jmx.annotations.Property;
 import org.exoplatform.social.addons.storage.dao.ProfileItemDAO;
-import org.exoplatform.social.addons.storage.dao.RelationshipDAO;
-import org.exoplatform.social.addons.storage.dao.jpa.GenericDAOImpl;
+import org.exoplatform.social.addons.storage.dao.ConnectionDAO;
 import org.exoplatform.social.addons.storage.entity.Connection;
 import org.exoplatform.social.core.chromattic.entity.IdentityEntity;
 import org.exoplatform.social.core.chromattic.entity.RelationshipEntity;
@@ -28,21 +27,21 @@ import org.exoplatform.social.core.storage.api.IdentityStorage;
 @NameTemplate({@Property(key = "service", value = "social"), @Property(key = "view", value = "migration-relationships") })
 public class RelationshipMigrationService extends AbstractMigrationService<Relationship> {
   public static final String EVENT_LISTENER_KEY = "SOC_RELATIONSHIP_MIGRATION";
-  private final RelationshipDAO relationshipDAO;
+  private final ConnectionDAO connectionDAO;
   private final ProfileItemDAO profileItemDAO;
   private static int number = 0;
   
 
   public RelationshipMigrationService(InitParams initParams,
                                       IdentityStorage identityStorage,
-                                      RelationshipDAO relationshipDAO,
+                                      ConnectionDAO connectionDAO,
                                       ProfileItemDAO profileItemDAO,
                                       ProfileMigrationService profileMigration,
                                       EventManager<Relationship, String> eventManager,
                                       EntityManagerService entityManagerService) {
 
     super(initParams, identityStorage, eventManager, entityManagerService);
-    this.relationshipDAO = relationshipDAO;
+    this.connectionDAO = connectionDAO;
     this.profileItemDAO = profileItemDAO;
     this.LIMIT_THRESHOLD = getInteger(initParams, LIMIT_THRESHOLD_KEY, 200);
   }
@@ -56,8 +55,8 @@ public class RelationshipMigrationService extends AbstractMigrationService<Relat
   @Managed
   @ManagedDescription("Manual to start run miguration data of relationships from JCR to MYSQL.")
   public void doMigration() throws Exception {
-      boolean begunTx = GenericDAOImpl.startTx();
-      if (relationshipDAO.count() > 0) {
+      boolean begunTx = startTx();
+      if (connectionDAO.count() > 0) {
         isDone = true;
         return;
       }
@@ -93,7 +92,7 @@ public class RelationshipMigrationService extends AbstractMigrationService<Relat
         LOG.info(String.format("Done to migration %s relationships for user %s from JCR to MYSQL on %s(ms)", c2, identityEntity.getRemoteId(), (System.currentTimeMillis() - t1)));
       }
       
-      GenericDAOImpl.endTx(begunTx);
+      endTx(begunTx);
       LOG.info(String.format("Done to migration relationships of %s users from JCR to MYSQL on %s(ms)", count, (System.currentTimeMillis() - t)));
   }
   
@@ -110,14 +109,14 @@ public class RelationshipMigrationService extends AbstractMigrationService<Relat
       entity.setStatus(status);
       entity.setReceiver(profileItemDAO.findProfileItemByIdentityId(isIncoming ? owner.getId() : receiver.getId()));
       //
-      relationshipDAO.create(entity);
+      connectionDAO.create(entity);
       ++c2;
       ++number;
       if(number % LIMIT_THRESHOLD == 0) {
-        GenericDAOImpl.endTx(begunTx);
+        endTx(begunTx);
         entityManagerService.endRequest(PortalContainer.getInstance());
         entityManagerService.startRequest(PortalContainer.getInstance());
-        begunTx = GenericDAOImpl.startTx();
+        begunTx = startTx();
       }
     }
     return c2;

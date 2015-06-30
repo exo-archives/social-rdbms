@@ -16,6 +16,7 @@
  */
 package org.exoplatform.social.addons.storage.dao;
 
+import org.exoplatform.commons.api.persistence.GenericDAO;
 import org.exoplatform.social.addons.storage.entity.Profile;
 
 /**

@@ -37,15 +37,16 @@ import javax.jcr.Session;
 
 import junit.framework.AssertionFailedError;
 
+import org.exoplatform.commons.persistence.impl.EntityManagerService;
 import org.exoplatform.commons.testing.BaseExoTestCase;
 import org.exoplatform.component.test.ConfigurationUnit;
 import org.exoplatform.component.test.ConfiguredBy;
 import org.exoplatform.component.test.ContainerScope;
+import org.exoplatform.container.component.RequestLifeCycle;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 import org.exoplatform.social.addons.storage.dao.ProfileItemDAO;
-import org.exoplatform.social.addons.storage.dao.RelationshipDAO;
-import org.exoplatform.social.addons.storage.dao.jpa.GenericDAOImpl;
+import org.exoplatform.social.addons.storage.dao.ConnectionDAO;
 import org.exoplatform.social.addons.storage.entity.Connection;
 import org.exoplatform.social.addons.storage.entity.Profile;
 import org.exoplatform.social.core.activity.model.ExoSocialActivity;
@@ -82,6 +83,7 @@ public abstract class BaseCoreTest extends BaseExoTestCase {
   protected RelationshipManager relationshipManager;
   protected ActivityManager activityManager;
   protected ActivityStorage activityStorage;
+  protected EntityManagerService entityManagerService;
 
   protected Identity rootIdentity;
   protected Identity johnIdentity;
@@ -111,6 +113,7 @@ public abstract class BaseCoreTest extends BaseExoTestCase {
     activityStorage = getService(ActivityStorage.class);
     relationshipManager = getService(RelationshipManager.class);
     spaceService = getService(SpaceService.class);
+    entityManagerService = getService(EntityManagerService.class);
     //
     rootIdentity = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, "root", false);
     johnIdentity = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, "john", false);
@@ -120,16 +123,16 @@ public abstract class BaseCoreTest extends BaseExoTestCase {
 
   @Override
   protected void tearDown() throws Exception {
-    RelationshipDAO reDao = getService(RelationshipDAO.class);
+    ConnectionDAO reDao = getService(ConnectionDAO.class);
     List<Connection> reItems = reDao.findAll();
     for (Connection item :  reItems) {
-      reDao.delete(item.getId());
+      reDao.delete(item);
     }
 
     ProfileItemDAO dao = getService(ProfileItemDAO.class);
     List<Profile> items = dao.findAll();
     for (Profile item : items) {
-      dao.delete(item.getId());
+      dao.delete(item);
     }
 
     identityManager.deleteIdentity(rootIdentity);
@@ -257,11 +260,11 @@ public abstract class BaseCoreTest extends BaseExoTestCase {
     T result = null;
     try {
       callable.beforeTransactionCompletion();
-      GenericDAOImpl.startSynchronization();
+      RequestLifeCycle.begin(entityManagerService);
       try {
           result = callable.execute();
       } finally {
-        GenericDAOImpl.stopSynchronization();
+        RequestLifeCycle.end();
       }
     } catch (RuntimeException e) {
       throw e;
@@ -274,9 +277,9 @@ public abstract class BaseCoreTest extends BaseExoTestCase {
   protected void doInTransaction(TransactionVoidCallable callable) {
     try {
       callable.beforeTransactionCompletion();
-      GenericDAOImpl.startSynchronization();
+      RequestLifeCycle.begin(entityManagerService);
       callable.execute();
-      GenericDAOImpl.stopSynchronization();
+      RequestLifeCycle.end();
     } catch (RuntimeException e) {
       throw e;
     } finally {

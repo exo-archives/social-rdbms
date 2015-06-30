@@ -22,8 +22,8 @@ import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Root;
 
+import org.exoplatform.commons.persistence.impl.GenericDAOJPAImpl;
 import org.exoplatform.social.addons.storage.dao.ProfileItemDAO;
-import org.exoplatform.social.addons.storage.dao.jpa.synchronization.SynchronizedGenericDAO;
 import org.exoplatform.social.addons.storage.entity.Profile;
 import org.exoplatform.social.addons.storage.entity.Profile_;
 
@@ -33,11 +33,11 @@ import org.exoplatform.social.addons.storage.entity.Profile_;
  *          exo@exoplatform.com
  * June 09, 2015  
  */
-public class ProfileItemDAOImpl extends SynchronizedGenericDAO<Profile, Long> implements ProfileItemDAO {
+public class ProfileItemDAOImpl extends GenericDAOJPAImpl<Profile, Long> implements ProfileItemDAO {
 
   public Profile findProfileItemByIdentityId(final String identityId) {
     try {
-      EntityManager em = lifecycleLookup().getCurrentEntityManager();
+      EntityManager em = getEntityManager();
       CriteriaBuilder cb = em.getCriteriaBuilder();
       CriteriaQuery<Profile> criteria = cb.createQuery(Profile.class);
       Root<Profile> root = criteria.from(Profile.class);
