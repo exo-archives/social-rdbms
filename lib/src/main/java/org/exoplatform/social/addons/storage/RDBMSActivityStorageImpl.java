@@ -156,7 +156,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
     
     return activity;
   }
-  
+
   private Activity convertActivityToActivityEntity(ExoSocialActivity activity, String ownerId) {
     Activity activityEntity  =  new Activity();
     if (activity.getId() != null) {
@@ -403,15 +403,12 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
   @Override
   public ExoSocialActivity getParentActivity(ExoSocialActivity comment) throws ActivityStorageException {
     try {
-      Comment commentEntity = commentDAO.find(getCommentID(comment.getId()));
-      if (commentEntity != null) {
-        return convertActivityEntityToActivity(commentEntity.getActivity());
-      }
+      Long commentId = getCommentID(comment.getId());
+      return convertActivityEntityToActivity(commentDAO.findActivity(commentId));
     } catch (NumberFormatException e) {
       LOG.warn("The input ExoSocialActivity is not comment, it is Activity");
       return null;
     }
-    return null;
   }
 
   @Override

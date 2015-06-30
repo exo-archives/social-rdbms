@@ -63,4 +63,11 @@ public interface CommentDAO extends GenericDAO<Comment, Long> {
    * @return
    */
   int getNumberOfComments(Activity existingActivity);
+  
+  /**
+   * Get Activity parent of comment by comment's id
+   * @param commentId The comment's id
+   * @return
+   */
+  Activity findActivity(Long commentId);
 }

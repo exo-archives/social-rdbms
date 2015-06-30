@@ -264,7 +264,30 @@ public class ActivityDAOTest extends AbstractCoreTest {
     assertEquals(1, demoActivity.getComments().size());
     assertEquals(demoIdentity.getId(), comment.getOwnerId());
   }
-  
+
+  /**
+   * Tests {@link activityDao#getActivityByComment(Activity)}.
+   */
+  public void testGetActivityByCommentId() {
+    String activityTitle = "activity title";
+    String identityId = johnIdentity.getId();
+    Activity demoActivity = new Activity();
+    demoActivity.setTitle(activityTitle);
+    demoActivity.setOwnerId(identityId);
+    saveActivity(johnIdentity, demoActivity);
+    // comment
+    Comment comment = new Comment();
+    comment.setTitle("demo comment");
+    comment.setOwnerId(demoIdentity.getId());
+    //
+    comment = commentDao.create(comment);
+    demoActivity.addComment(comment);
+    activityDao.update(demoActivity);
+    //
+    Activity activityAdded = commentDao.findActivity(comment.getId());
+    assertEquals(demoActivity.getId(), activityAdded.getId());
+  }
+
   /**
    * Test {@link activityDao#getComments(Activity)}
    * 

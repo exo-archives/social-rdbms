@@ -18,6 +18,9 @@ package org.exoplatform.social.addons.storage.dao.jpa;
 
 import java.util.List;
 
+import javax.persistence.NoResultException;
+
+import org.exoplatform.commons.api.persistence.Transactional;
 import org.exoplatform.commons.persistence.impl.GenericDAOJPAImpl;
 import org.exoplatform.social.addons.storage.dao.CommentDAO;
 import org.exoplatform.social.addons.storage.dao.jpa.query.CommentQueryBuilder;
@@ -77,6 +80,16 @@ public class CommentDAOImpl extends GenericDAOJPAImpl<Comment, Long>  implements
                               .buildCount()
                               .getSingleResult()
                               .intValue();
+  }
+
+  @Override
+  @Transactional
+  public Activity findActivity(Long commentId) {
+    try {
+      return CommentQueryBuilder.builder().commentId(commentId).buildActivty();
+    } catch (NoResultException e) {
+      return null;
+    }
   }
 
 }

@@ -24,6 +24,8 @@ import javax.persistence.TypedQuery;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Join;
+import javax.persistence.criteria.JoinType;
+import javax.persistence.criteria.ListJoin;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 
@@ -42,6 +44,7 @@ import org.exoplatform.social.addons.storage.entity.Comment_;
 public final class CommentQueryBuilder {
 
   private Long activityId;
+  private Long commentId;
   //newer or older
   private long sinceTime = 0;
   private boolean isNewer = false;
@@ -57,6 +60,11 @@ public final class CommentQueryBuilder {
   
   public CommentQueryBuilder activityId(Long activityId) {
     this.activityId = activityId;
+    return this;
+  }
+
+  public CommentQueryBuilder commentId(Long commentId) {
+    this.commentId = commentId;
     return this;
   }
   
@@ -172,5 +180,19 @@ public final class CommentQueryBuilder {
     select.where(predicates.toArray(new Predicate[0]));
 
     return em.createQuery(select);
+  }
+  
+  public Activity buildActivty() {
+    EntityManager em = EntityManagerHolder.get();
+    CriteriaBuilder cb = em.getCriteriaBuilder();
+    CriteriaQuery<Activity> criteria = cb.createQuery(Activity.class);
+    Root<Activity> a = criteria.from(Activity.class);
+    ListJoin<Activity, Comment> o = a.join(Activity_.comments, JoinType.LEFT);
+    Predicate p = cb.equal(o.get(Comment_.id), commentId);
+
+    CriteriaQuery<Activity> select = criteria.select(a);
+    select.where(p);
+    TypedQuery<Activity> typedQuery = em.createQuery(select);
+    return typedQuery.getSingleResult();
   }
 }
