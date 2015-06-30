@@ -42,7 +42,7 @@
     <!-- Platform Project Dependencies -->
     <hibernate.version>4.1.12.Final</hibernate.version>
     <exoplatform.version>4.3.x-plf-social-rdbms-SNAPSHOT</exoplatform.version>
-    <liquibase.version>3.3.2</liquibase.version>
+    <liquibase.version>3.4.0</liquibase.version>
     <!-- **************************************** -->
     <!-- Jenkins Settings -->
     <!-- **************************************** -->

@@ -3,7 +3,7 @@
     xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
-                      http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.3.xsd">
+                      http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.4.xsd">
 
   <!-- Managing both DB that use sequences and db that use auto increment -->
   <property name="autoIncrement" value="true" dbms="mysql,mssql,h2,sybase,db2,hsqldb"/>
@@ -34,7 +34,7 @@
             <column name="type" type="VARCHAR(255)"/>
         </createTable>
         <createIndex tableName="SOC_ACTIVITIES" indexName="IDX_SOC_ACTIVITIES_01">
-            <column name="lastUpdated DESC"/>
+            <column name="lastUpdated" descending="true"/>
         </createIndex>
         <createIndex tableName="SOC_ACTIVITIES" indexName="IDX_SOC_ACTIVITIES_02">
             <column name="POSTERID"/>
@@ -100,7 +100,7 @@
             <column name="ACTIVITY_ID" type="BIGINT"/>
         </createTable>
         <createIndex tableName="SOC_COMMENTS" indexName="IDX_SOC_COMMENTS_01">
-            <column name="lastUpdated DESC"/>
+            <column name="lastUpdated" descending="true"/>
         </createIndex>
         <createIndex tableName="SOC_COMMENTS" indexName="IDX_SOC_COMMENTS_02">
             <column name="posterId"/>
