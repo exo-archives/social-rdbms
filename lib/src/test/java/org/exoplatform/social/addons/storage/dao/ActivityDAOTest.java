@@ -28,7 +28,7 @@ import org.exoplatform.services.log.Log;
 import org.exoplatform.services.security.ConversationState;
 import org.exoplatform.social.addons.storage.entity.Activity;
 import org.exoplatform.social.addons.storage.entity.Comment;
-import org.exoplatform.social.addons.test.AbstractCoreTest;
+import org.exoplatform.social.addons.test.BaseCoreTest;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvider;
 import org.exoplatform.social.core.identity.provider.SpaceIdentityProvider;
@@ -40,7 +40,7 @@ import org.exoplatform.social.core.space.model.Space;
  *          exo@exoplatform.com
  * May 18, 2015  
  */
-public class ActivityDAOTest extends AbstractCoreTest {
+public class ActivityDAOTest extends BaseCoreTest {
   private final Log LOG = ExoLogger.getLogger(ActivityDAOTest.class);
   private Set<Activity> tearDownActivityList;
   private List<Space> tearDownSpaceList;
@@ -268,7 +268,7 @@ public class ActivityDAOTest extends AbstractCoreTest {
   /**
    * Tests {@link activityDao#getActivityByComment(Activity)}.
    */
-  public void testGetActivityByCommentId() {
+  public void testGetActivityByCommentId() throws Exception {
     String activityTitle = "activity title";
     String identityId = johnIdentity.getId();
     Activity demoActivity = new Activity();
@@ -286,6 +286,21 @@ public class ActivityDAOTest extends AbstractCoreTest {
     //
     Activity activityAdded = commentDao.findActivity(comment.getId());
     assertEquals(demoActivity.getId(), activityAdded.getId());
+    //
+    try {
+      final Long acId = demoActivity.getId(), cmId = comment.getId();
+      executeSync(new VoidCallable() {
+        @Override
+        public void execute() {
+          Activity activityAdded = commentDao.findActivity(cmId);
+          assertNotNull(activityAdded);
+          assertEquals(acId, activityAdded.getId());
+        }
+      });
+    } catch (Exception e) {
+      LOG.error("Failed to test as synchronous", e);
+    }
+    Thread.sleep(1000);
   }
 
   /**
