@@ -287,20 +287,15 @@ public class ActivityDAOTest extends BaseCoreTest {
     Activity activityAdded = commentDao.findActivity(comment.getId());
     assertEquals(demoActivity.getId(), activityAdded.getId());
     //
-    try {
-      final Long acId = demoActivity.getId(), cmId = comment.getId();
-      executeSync(new VoidCallable() {
-        @Override
-        public void execute() {
-          Activity activityAdded = commentDao.findActivity(cmId);
-          assertNotNull(activityAdded);
-          assertEquals(acId, activityAdded.getId());
-        }
-      });
-    } catch (Exception e) {
-      LOG.error("Failed to test as synchronous", e);
-    }
-    Thread.sleep(1000);
+    final Long acId = demoActivity.getId(), cmId = comment.getId();
+    executeSync(new VoidCallable() {
+      @Override
+      public void execute() {
+        Activity activityAdded = commentDao.findActivity(cmId);
+        assertNotNull(activityAdded);
+        assertEquals(acId, activityAdded.getId());
+      }
+    });
   }
 
   /**
