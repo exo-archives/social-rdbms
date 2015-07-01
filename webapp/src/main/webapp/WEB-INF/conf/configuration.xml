@@ -196,5 +196,32 @@
       </init-params>
     </component-plugin>
   </external-component-plugins>
+  
+  <external-component-plugins>
+		<target-component>org.exoplatform.commons.api.event.EventManager</target-component>
+		<component-plugin>
+			<name>SOC_ACTIVITY_MIGRATION</name>
+			<set-method>addEventListener</set-method>
+			<type>org.exoplatform.social.addons.updater.listener.UserProfileActivityUpdaterListener</type>
+		</component-plugin>
+	</external-component-plugins>
+	
+	<external-component-plugins>
+		<target-component>org.exoplatform.commons.api.event.EventManager</target-component>
+		<component-plugin>
+			<name>SOC_ACTIVITY_MIGRATION</name>
+			<set-method>addEventListener</set-method>
+			<type>org.exoplatform.social.addons.updater.listener.RelationshipActivityUpdaterListener</type>
+		</component-plugin>
+	</external-component-plugins>
+	
+	<external-component-plugins>
+		<target-component>org.exoplatform.commons.api.event.EventManager</target-component>
+		<component-plugin>
+			<name>SOC_ACTIVITY_MIGRATION</name>
+			<set-method>addEventListener</set-method>
+			<type>org.exoplatform.social.addons.updater.listener.SpaceActivityUpdaterListener</type>
+		</component-plugin>
+	</external-component-plugins>
 
 </configuration>
