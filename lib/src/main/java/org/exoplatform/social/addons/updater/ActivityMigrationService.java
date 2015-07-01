@@ -317,7 +317,7 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
   private void doBroadcastListener(ExoSocialActivity activity, String oldId) {
     String newId = activity.getId();
     activity.setId(oldId);
-    broadcastListener(activity, newId);
+    broadcastListener(activity, newId.replace("comment", ""));
     activity.setId(newId);
   }
 
