@@ -259,11 +259,6 @@
           </includes>
         </configuration>
       </plugin>
-<<<<<<< HEAD
-
-
-=======
->>>>>>> 74407fe0b7edb4000cfbd9106754421e85e1365b
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>aspectj-maven-plugin</artifactId>
@@ -288,11 +283,6 @@
           </aspectLibraries>
         </configuration>
       </plugin>
-<<<<<<< HEAD
-
-
-=======
->>>>>>> 74407fe0b7edb4000cfbd9106754421e85e1365b
     </plugins>
   </build>
   <profiles>
