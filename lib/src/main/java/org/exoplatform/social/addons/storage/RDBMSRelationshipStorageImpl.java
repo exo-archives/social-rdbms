@@ -104,6 +104,7 @@ public class RDBMSRelationshipStorageImpl extends RelationshipStorageImpl {
   }
   
   @Override
+  @Transactional
   public Relationship getRelationship(Identity identity1, Identity identity2) throws RelationshipStorageException {
     Connection item = connectionDAO.getConnection(identity1, identity2);
     if (item == null) {
