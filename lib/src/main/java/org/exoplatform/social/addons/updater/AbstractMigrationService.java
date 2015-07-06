@@ -162,7 +162,7 @@ public abstract class AbstractMigrationService<T>  extends AbstractStorage {
    * @return NodeIterator if there is matched SPACE Identity, Otherwise return NULL
    */
   protected NodeIterator getSpaceIdentityNodes(long offset, long limit) {
-    if ("".equals(spaceIdentityQuery)) {
+    if (spaceIdentityQuery == null) {
       ProviderEntity providerEntity = getProviderRoot().getProviders().get(SpaceIdentityProvider.NAME);
       if (providerEntity != null) {
         spaceIdentityQuery = new StringBuffer().append("SELECT * FROM soc:identitydefinition WHERE ")
