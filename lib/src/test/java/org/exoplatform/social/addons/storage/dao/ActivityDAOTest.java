@@ -288,9 +288,9 @@ public class ActivityDAOTest extends BaseCoreTest {
     assertEquals(demoActivity.getId(), activityAdded.getId());
     //
     final Long acId = demoActivity.getId(), cmId = comment.getId();
-    executeSync(new VoidCallable() {
+    executeAsync(new Runnable() {
       @Override
-      public void execute() {
+      public void run() {
         Activity activityAdded = commentDao.findActivity(cmId);
         assertNotNull(activityAdded);
         assertEquals(acId, activityAdded.getId());
