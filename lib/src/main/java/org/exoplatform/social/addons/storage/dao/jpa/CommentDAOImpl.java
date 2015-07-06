@@ -83,6 +83,7 @@ public class CommentDAOImpl extends GenericDAOJPAImpl<Comment, Long>  implements
   }
 
   @Override
+  @Transactional
   public Activity findActivity(Long commentId) {
     try {
       return CommentQueryBuilder.builder().commentId(commentId).buildActivty();
