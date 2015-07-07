@@ -18,6 +18,10 @@ package org.exoplatform.social.addons.concurrency;
 
 import java.util.List;
 
+import org.exoplatform.commons.api.settings.SettingService;
+import org.exoplatform.commons.api.settings.SettingValue;
+import org.exoplatform.commons.api.settings.data.Context;
+import org.exoplatform.commons.api.settings.data.Scope;
 import org.exoplatform.container.PortalContainer;
 import org.exoplatform.container.component.RequestLifeCycle;
 import org.exoplatform.services.log.ExoLogger;
@@ -26,6 +30,7 @@ import org.exoplatform.social.addons.storage.dao.ActivityDAO;
 import org.exoplatform.social.addons.storage.entity.Activity;
 import org.exoplatform.social.addons.test.BaseCoreTest;
 import org.exoplatform.social.addons.updater.ActivityMigrationService;
+import org.exoplatform.social.addons.updater.MigrationContext;
 import org.exoplatform.social.addons.updater.ProfileMigrationService;
 import org.exoplatform.social.addons.updater.RDBMSMigrationManager;
 import org.exoplatform.social.addons.updater.RelationshipMigrationService;
@@ -49,6 +54,7 @@ public class AsynMigrationTest extends BaseCoreTest {
   private ActivityMigrationService activityMigration;
   private ProfileMigrationService profileMigration;
   private RelationshipMigrationService relationshipMigration;
+  private SettingService settingService;
   private RDBMSMigrationManager rdbmsMigrationManager;
   
   
@@ -60,7 +66,8 @@ public class AsynMigrationTest extends BaseCoreTest {
     activityMigration = getService(ActivityMigrationService.class);
     relationshipMigration = getService(RelationshipMigrationService.class);
     profileMigration = getService(ProfileMigrationService.class);
-    rdbmsMigrationManager = new RDBMSMigrationManager(profileMigration, relationshipMigration, activityMigration);
+    settingService = getService(SettingService.class);
+    rdbmsMigrationManager = new RDBMSMigrationManager(profileMigration, relationshipMigration, activityMigration, settingService);
   }
 
   @Override
@@ -140,11 +147,27 @@ public class AsynMigrationTest extends BaseCoreTest {
     rdbmsMigrationManager.start();
     //
     rdbmsMigrationManager.getMigrater().await();
+    assertTrue(getOrCreateSettingValue(MigrationContext.SOC_RDBMS_PROFILE_MIGRATION_KEY));
+    assertTrue(getOrCreateSettingValue(MigrationContext.SOC_RDBMS_CONNECTION_MIGRATION_KEY));
+    assertTrue(getOrCreateSettingValue(MigrationContext.SOC_RDBMS_ACTIVITY_MIGRATION_KEY));
+    assertTrue(getOrCreateSettingValue(MigrationContext.SOC_RDBMS_MIGRATION_STATUS_KEY));
+    
+    assertTrue(getOrCreateSettingValue(MigrationContext.SOC_RDBMS_ACTIVITY_CLEANUP_KEY));
+    assertTrue(getOrCreateSettingValue(MigrationContext.SOC_RDBMS_CONNECTION_CLEANUP_KEY));
     //
     assertEquals(20, activityStorage.getActivityFeed(rootIdentity, 0, 100).size());
     assertEquals(20, activityStorage.getActivityFeed(maryIdentity, 0, 100).size());
     assertEquals(20, activityStorage.getActivityFeed(johnIdentity, 0, 100).size());
     assertEquals(20, activityStorage.getActivityFeed(demoIdentity, 0, 100).size());
+  }
+  
+  private boolean getOrCreateSettingValue(String key) {
+    SettingValue<?> migrationValue =  settingService.get(Context.GLOBAL, Scope.GLOBAL.id(RDBMSMigrationManager.MIGRATION_SETTING_GLOBAL_KEY), key);
+    if (migrationValue != null) {
+      return Boolean.parseBoolean(migrationValue.getValue().toString());
+    } else {
+      return false;
+    }
   }
   
   private void createActivityToOtherIdentity(Identity posterIdentity, Identity targetIdentity, int number) {

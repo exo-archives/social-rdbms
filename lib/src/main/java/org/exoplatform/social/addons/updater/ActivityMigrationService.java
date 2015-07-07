@@ -473,10 +473,11 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
     long offset = 0;
     NodeIterator it = nodes(sb.toString());
     NodeImpl node = null;
+    long size = it.getSize();
     
     try {
       identityName = identityNode.getName();
-      LOG.info(String.format("|   \\ START::cleanup: %d (Activity) for %s identity", offset, identityName));
+      LOG.info(String.format("|   \\ START::cleanup: %d (Activity) for %s identity", size, identityName));
       while (it.hasNext()) {
         node = (NodeImpl) it.next();
         if (node.getData() != null) {
@@ -494,7 +495,8 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
     } catch (Exception e) {
       LOG.error("Failed to cleanup for Activity.", e);
     } finally {
-      LOG.info(String.format("|   / END::cleanup: %d (Activity) for %s identity consumed time %s(ms) ", offset, identityName, System.currentTimeMillis() - totalTime));
+      getSession().save();
+      LOG.info(String.format("|   / END::cleanup: %d (Activity) for %s identity consumed time %s(ms) ", size, identityName, System.currentTimeMillis() - totalTime));
     }
   }
 

@@ -23,11 +23,19 @@ package org.exoplatform.social.addons.updater;
  * Jun 30, 2015  
  */
 public final class MigrationContext {
+  public static final String SOC_RDBMS_MIGRATION_STATUS_KEY = "SOC_RDBMS_MIGRATION_DONE";
+  public static final String SOC_RDBMS_ACTIVITY_MIGRATION_KEY = "SOC_RDBMS_ACTIVITY_MIGRATION_DONE";
+  public static final String SOC_RDBMS_ACTIVITY_CLEANUP_KEY = "SOC_RDBMS_ACTIVITY_CLEANUP_DONE";
+  public static final String SOC_RDBMS_PROFILE_MIGRATION_KEY = "SOC_RDBMS_PROFILE_MIGRATION_DONE";
+  public static final String SOC_RDBMS_CONNECTION_MIGRATION_KEY = "SOC_RDBMS_CONNECTION_MIGRATION_DONE";
+  public static final String SOC_RDBMS_CONNECTION_CLEANUP_KEY = "SOC_RDBMS_CONNECTION_CLEANUP_DONE";
+  //
   private static boolean isDone = false;
-  
   private static boolean isActivityDone = false;
+  private static boolean isActivityCleanupDone = false;
   private static boolean isProfileDone = false;
   private static boolean isConnectionDone = false;
+  private static boolean isConnectionCleanupDone = false;
 
   public static boolean isDone() {
     return isDone;
@@ -59,6 +67,22 @@ public final class MigrationContext {
 
   public static void setConnectionDone(boolean isConnectionDoneArg) {
     isConnectionDone = isConnectionDoneArg;
+  }
+
+  public static boolean isActivityCleanupDone() {
+    return isActivityCleanupDone;
+  }
+
+  public static void setActivityCleanupDone(boolean isActivityCleanupDone) {
+    MigrationContext.isActivityCleanupDone = isActivityCleanupDone;
+  }
+
+  public static boolean isConnectionCleanupDone() {
+    return isConnectionCleanupDone;
+  }
+
+  public static void setConnectionCleanupDone(boolean isConnectionCleanupDone) {
+    MigrationContext.isConnectionCleanupDone = isConnectionCleanupDone;
   }
 
 }
