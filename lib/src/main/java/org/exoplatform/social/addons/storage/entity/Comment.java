@@ -41,7 +41,7 @@ public class Comment extends BaseActivity {
     joinColumns=@JoinColumn(name = "COMMENT_ID")
   )
   @MapKeyColumn(name="TEMPLATE_PARAM_KEY")
-  @Column(name="TEMPLATE_PARAM_VALUE")
+  @Column(name="TEMPLATE_PARAM_VALUE", length = 1024)
   private Map<String, String> templateParams;
   
   @ElementCollection
