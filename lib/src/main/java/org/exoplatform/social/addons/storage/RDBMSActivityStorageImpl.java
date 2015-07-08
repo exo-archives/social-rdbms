@@ -672,11 +672,17 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
     if (existingActivity.getTitle() == null) existingActivity.setTitle(updatedActivity.getTitle());
     if (existingActivity.getBody() == null) existingActivity.setBody(updatedActivity.getBody());
     if (existingActivity.getTemplateParams() == null) existingActivity.setTemplateParams(updatedActivity.getTemplateParams());
-    
-    Activity activityEntity = convertActivityToActivityEntity(existingActivity, null);
-    activityEntity.setLastUpdated(System.currentTimeMillis());
-    activityDAO.update(activityEntity);
-    
+
+    if (existingActivity.getId().startsWith(COMMENT_PREFIX)) {
+      // update comment
+      Comment comment = convertCommentToCommentEntity(existingActivity);
+      comment.setLastUpdated(System.currentTimeMillis());
+      commentDAO.update(comment);
+    } else {
+      Activity activityEntity = convertActivityToActivityEntity(existingActivity, null);
+      activityEntity.setLastUpdated(System.currentTimeMillis());
+      activityDAO.update(activityEntity);
+    }
   }
 
   @Override

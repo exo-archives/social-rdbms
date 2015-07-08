@@ -127,7 +127,7 @@ public final class CommentQueryBuilder {
     }
     
     //filter hidden = FALSE
-    predicates.add(cb.equal(activity.<Boolean>get(Comment_.hidden), Boolean.FALSE));
+    predicates.add(cb.equal(comment.<Boolean>get(Comment_.hidden), Boolean.FALSE));
     
     CriteriaQuery<Comment> select = criteria.select(comment);
     select.where(predicates.toArray(new Predicate[0]));
