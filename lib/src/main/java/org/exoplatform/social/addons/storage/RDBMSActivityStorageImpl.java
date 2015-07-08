@@ -337,6 +337,13 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
     if (ArrayUtils.contains(processMentions(activity.getTitle()), mentioner)) {
       return false;
     }
+    List<Comment> comments = activity.getComments();
+    comments.remove(comment);
+    for (Comment cmt : comments) {
+      if (ArrayUtils.contains(processMentions(cmt.getTitle()), mentioner)) {
+        return false;
+      }
+    }
     return true;
   }
   
