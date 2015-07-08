@@ -45,10 +45,11 @@ public class RDBMSMigrationManager implements Startable {
     Runnable migrateTask = new Runnable() {
       @Override
       public void run() {
-        LOG.info("START ASYNC MIGRATION---------------------------------------------------");
         initMigrationSetting();
         try {
           if (!MigrationContext.isDone()) {
+            //
+            LOG.info("START ASYNC MIGRATION---------------------------------------------------");
             profileMigration.start();
             updateSettingValue(MigrationContext.SOC_RDBMS_PROFILE_MIGRATION_KEY, true);
             //
@@ -60,22 +61,24 @@ public class RDBMSMigrationManager implements Startable {
                 updateSettingValue(MigrationContext.SOC_RDBMS_ACTIVITY_MIGRATION_KEY, true);
               }
             }
+
+            // cleanup Connections
+            if (!MigrationContext.isDone() && MigrationContext.isConnectionDone()) {
+              relationshipMigration.doRemove();
+              updateSettingValue(MigrationContext.SOC_RDBMS_CONNECTION_CLEANUP_KEY, true);
+            }
+
+            // cleanup activities
+            if (!MigrationContext.isDone() && MigrationContext.isActivityDone()) {
+              activityMigration.doRemove();
+              updateSettingValue(MigrationContext.SOC_RDBMS_ACTIVITY_CLEANUP_KEY, true);
+              updateSettingValue(MigrationContext.SOC_RDBMS_MIGRATION_STATUS_KEY, true);
+              MigrationContext.setDone(true);
+            }
+            //
+            LOG.info("END ASYNC MIGRATION-----------------------------------------------------");
           }
-          
-          //cleanup Connections
-          if (!MigrationContext.isDone() && MigrationContext.isConnectionDone()) {
-            relationshipMigration.doRemove();
-            updateSettingValue(MigrationContext.SOC_RDBMS_CONNECTION_CLEANUP_KEY, true);
-          }
-          
-          //cleanup activities
-          if(!MigrationContext.isDone() && MigrationContext.isActivityDone()) {
-            activityMigration.doRemove();
-            updateSettingValue(MigrationContext.SOC_RDBMS_ACTIVITY_CLEANUP_KEY, true);
-            updateSettingValue(MigrationContext.SOC_RDBMS_MIGRATION_STATUS_KEY, true);
-            MigrationContext.setDone(true);
-          }
-          
+
         } catch (Exception e) {
           LOG.error("Failed to running Migration data from JCR to RDBMS", e);
         } finally {
@@ -83,7 +86,7 @@ public class RDBMSMigrationManager implements Startable {
           RequestLifeCycle.end();
           migrater.countDown();
         }
-        LOG.info("END ASYNC MIGRATION-----------------------------------------------------");
+
       }
     };
     this.migrationThread = new Thread(migrateTask);
