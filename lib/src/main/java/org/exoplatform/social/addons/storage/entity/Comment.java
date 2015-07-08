@@ -43,14 +43,6 @@ public class Comment extends BaseActivity {
   @MapKeyColumn(name="TEMPLATE_PARAM_KEY")
   @Column(name="TEMPLATE_PARAM_VALUE", length = 1024)
   private Map<String, String> templateParams;
-  
-  @ElementCollection
-  @CollectionTable(
-    name = "SOC_COMMENT_MENTIONERS",
-    joinColumns=@JoinColumn(name = "COMMENT_ID")
-  )
-  @Column(name="MENTIONER_ID")
-  private Set<String> mentionerIds = new HashSet<String>();
 
   @ManyToOne(fetch=FetchType.LAZY)
   @JoinColumn(name="ACTIVITY_ID")
@@ -75,14 +67,6 @@ public class Comment extends BaseActivity {
 
   public void setTemplateParams(Map<String, String> templateParams) {
     this.templateParams = templateParams;
-  }
-  
-  public Set<String> getMentionerIds() {
-    return mentionerIds;
-  }
-
-  public void setMentionerIds(Set<String> mentionerIds) {
-    this.mentionerIds = mentionerIds;
   }
 
   public Activity getActivity() {

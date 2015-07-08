@@ -520,9 +520,6 @@ public class RDBMSActivityStorageImplTest extends AbstractCoreTest {
     assertEquals(2, got.getCommentedIds().length);
     assertEquals(3, got.getMentionedIds().length);
     
-    ExoSocialActivity gotComment = activityStorage.getActivity(comment3.getId());
-    assertEquals(1, gotComment.getMentionedIds().length);
-    
     activityStorage.deleteComment(activity.getId(), comment3.getId());
     
     got = activityStorage.getActivity(activity.getId());

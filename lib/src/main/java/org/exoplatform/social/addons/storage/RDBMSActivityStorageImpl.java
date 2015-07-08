@@ -205,7 +205,6 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
     exoComment.setUpdated(comment.getLastUpdated());
     //
     exoComment.setParentId(comment.getActivity().getId() + "");
-    exoComment.setMentionedIds(comment.getMentionerIds().toArray(new String[comment.getMentionerIds().size()]));
     //
     exoComment.setPostedTime(comment.getPosted());
     exoComment.setUpdated(comment.getLastUpdated());
@@ -302,7 +301,6 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
     Activity activityEntity = activityDAO.find(Long.valueOf(activity.getId()));
     Comment commentEntity = convertCommentToCommentEntity(eXoComment);
     commentEntity.setActivity(activityEntity);
-    commentEntity.setMentionerIds(new HashSet<String>(Arrays.asList(processMentions(eXoComment.getTitle()))));
     //
     Identity commenter = identityStorage.findIdentityById(commentEntity.getPosterId());
     mention(commenter, activityEntity, processMentions(eXoComment.getTitle()));
@@ -338,13 +336,6 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
   private boolean isAllowedToRemove(Activity activity, Comment comment, String mentioner) {
     if (ArrayUtils.contains(processMentions(activity.getTitle()), mentioner)) {
       return false;
-    }
-    List<Comment> comments = activity.getComments();
-    comments.remove(comment);
-    for (Comment cmt : comments) {
-      if (ArrayUtils.contains(cmt.getMentionerIds().toArray(new String[cmt.getMentionerIds().size()]), mentioner)) {
-        return false;
-      }
     }
     return true;
   }
