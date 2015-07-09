@@ -47,14 +47,6 @@ public class Activity extends BaseActivity {
   )
   @Column(name="LIKER_ID")
   private Set<String> likerIds = new HashSet<String>();
-  
-  @ElementCollection
-  @CollectionTable(
-    name = "SOC_ACTIVITY_MENTIONERS",
-    joinColumns=@JoinColumn(name = "ACTIVITY_ID")
-  )
-  @Column(name="MENTIONER_ID")
-  private Set<String> mentionerIds = new HashSet<String>();
 
   @ElementCollection
   @JoinTable(
@@ -68,7 +60,10 @@ public class Activity extends BaseActivity {
   @OneToMany(cascade=CascadeType.ALL, orphanRemoval=true, mappedBy="activity", fetch=FetchType.LAZY)
   @OrderBy("posted DESC")
   private List<Comment> comments;
-  
+
+  @OneToMany(cascade=CascadeType.ALL, orphanRemoval=true, mappedBy="activity", fetch=FetchType.LAZY)
+  private List<Mention> mentions;
+
   /** */
   @Column(length = 36)
   private String providerId;
@@ -102,13 +97,35 @@ public class Activity extends BaseActivity {
   public void setLikerIds(Set<String> likerIds) {
     this.likerIds = likerIds;
   }
-  
+
   public Set<String> getMentionerIds() {
-    return mentionerIds;
+    Set<String> result = new HashSet<String>();
+    if (this.mentions!=null) {
+      for (Mention mention : this.mentions) {
+        result.add(mention.getMentionId());
+      }
+    }
+    return result;
   }
 
   public void setMentionerIds(Set<String> mentionerIds) {
-    this.mentionerIds = mentionerIds;
+    if (this.mentions==null) {
+      this.mentions = new ArrayList<Mention>();
+    }
+    this.mentions.clear();
+    for (String mentionerId : mentionerIds) {
+      addMention(mentionerId);
+    }
+  }
+
+  private void addMention(String mentionerId) {
+    if (this.mentions==null) {
+      this.mentions = new ArrayList<Mention>();
+    }
+    Mention mention = new Mention();
+    mention.setMentionId(mentionerId);
+    mention.setActivity(this);
+    this.mentions.add(mention);
   }
 
   public Map<String, String> getTemplateParams() {

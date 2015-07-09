@@ -7,6 +7,7 @@
    
    <class>org.exoplatform.social.addons.storage.entity.Activity</class>
    <class>org.exoplatform.social.addons.storage.entity.Comment</class>
+   <class>org.exoplatform.social.addons.storage.entity.Mention</class>
    <class>org.exoplatform.social.addons.storage.entity.Profile</class>
    <class>org.exoplatform.social.addons.storage.entity.Connection</class>
 
