@@ -15,15 +15,15 @@ import org.exoplatform.management.annotations.Managed;
 import org.exoplatform.management.annotations.ManagedDescription;
 import org.exoplatform.management.jmx.annotations.NameTemplate;
 import org.exoplatform.management.jmx.annotations.Property;
-import org.exoplatform.social.addons.storage.dao.ProfileItemDAO;
 import org.exoplatform.social.addons.storage.dao.ConnectionDAO;
+import org.exoplatform.social.addons.storage.dao.ProfileItemDAO;
 import org.exoplatform.social.addons.storage.entity.Connection;
 import org.exoplatform.social.core.chromattic.entity.IdentityEntity;
 import org.exoplatform.social.core.chromattic.entity.RelationshipEntity;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvider;
 import org.exoplatform.social.core.relationship.model.Relationship;
-import org.exoplatform.social.core.storage.api.IdentityStorage;
+import org.exoplatform.social.core.storage.impl.IdentityStorageImpl;
 
 @Managed
 @ManagedDescription("Social migration relationships from JCR to MYSQl service.")
@@ -35,7 +35,7 @@ public class RelationshipMigrationService extends AbstractMigrationService<Relat
   private final ProfileItemDAO profileItemDAO;
 
   public RelationshipMigrationService(InitParams initParams,
-                                      IdentityStorage identityStorage,
+                                      IdentityStorageImpl identityStorage,
                                       ConnectionDAO connectionDAO,
                                       ProfileItemDAO profileItemDAO,
                                       ProfileMigrationService profileMigration,

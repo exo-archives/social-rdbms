@@ -37,8 +37,8 @@ import org.exoplatform.social.core.identity.model.ActiveIdentityFilter;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvider;
 import org.exoplatform.social.core.storage.api.ActivityStorage;
-import org.exoplatform.social.core.storage.api.IdentityStorage;
 import org.exoplatform.social.core.storage.impl.ActivityStorageImpl;
+import org.exoplatform.social.core.storage.impl.IdentityStorageImpl;
 import org.exoplatform.social.core.storage.impl.StorageUtils;
 import org.exoplatform.social.core.storage.query.JCRProperties;
 import org.exoplatform.social.core.storage.streams.StreamConfig;
@@ -66,7 +66,7 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
                                   ActivityDAO activityDAO,
                                   ActivityStorage activityStorage,
                                   ActivityStorageImpl activityJCRStorage,
-                                  IdentityStorage identityStorage,
+                                  IdentityStorageImpl identityStorage,
                                   EventManager<ExoSocialActivity, String> eventManager,
                                   EntityManagerService entityManagerService) {
 

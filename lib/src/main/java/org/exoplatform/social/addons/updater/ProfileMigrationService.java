@@ -17,7 +17,7 @@ import org.exoplatform.social.addons.storage.dao.ProfileItemDAO;
 import org.exoplatform.social.addons.updater.utils.MigrationCounter;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.identity.model.Profile;
-import org.exoplatform.social.core.storage.api.IdentityStorage;
+import org.exoplatform.social.core.storage.impl.IdentityStorageImpl;
 
 @Managed
 @ManagedDescription("Social migration profiles from JCR to MYSQl service.")
@@ -28,7 +28,7 @@ public class ProfileMigrationService extends AbstractMigrationService<Profile> {
   
   public ProfileMigrationService(InitParams initParams,
                                  ProfileItemDAO profileDAO,
-                                 IdentityStorage identityStorage,
+                                 IdentityStorageImpl identityStorage,
                                  EventManager<Profile, String> eventManager,
                                  EntityManagerService entityManagerService) {
 
