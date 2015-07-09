@@ -26,7 +26,7 @@ import org.exoplatform.social.core.relationship.model.Relationship;
 import org.exoplatform.social.core.storage.impl.IdentityStorageImpl;
 
 @Managed
-@ManagedDescription("Social migration relationships from JCR to MYSQl service.")
+@ManagedDescription("Social migration relationships from JCR to RDBMS.")
 @NameTemplate({@Property(key = "service", value = "social"), @Property(key = "view", value = "migration-relationships") })
 public class RelationshipMigrationService extends AbstractMigrationService<Relationship> {
   public static final String EVENT_LISTENER_KEY = "SOC_RELATIONSHIP_MIGRATION";
@@ -55,7 +55,7 @@ public class RelationshipMigrationService extends AbstractMigrationService<Relat
 
   @Override
   @Managed
-  @ManagedDescription("Manual to start run migration data of relationships from JCR to MYSQL.")
+  @ManagedDescription("Manual to start run migration data of relationships from JCR to RDBMS.")
   public void doMigration() throws Exception {
       boolean begunTx = startTx();
       long offset = 0;
@@ -213,7 +213,7 @@ public class RelationshipMigrationService extends AbstractMigrationService<Relat
 
   @Override
   @Managed
-  @ManagedDescription("Manual to stop run miguration data of relationships from JCR to MYSQL.")
+  @ManagedDescription("Manual to stop run miguration data of relationships from JCR to RDBMS.")
   public void stop() {
     super.stop();
   }

@@ -20,7 +20,7 @@ import org.exoplatform.social.core.identity.model.Profile;
 import org.exoplatform.social.core.storage.impl.IdentityStorageImpl;
 
 @Managed
-@ManagedDescription("Social migration profiles from JCR to MYSQl service.")
+@ManagedDescription("Social migration profiles from JCR to RDBMS.")
 @NameTemplate({@Property(key = "service", value = "social"), @Property(key = "view", value = "migration-profiles") })
 public class ProfileMigrationService extends AbstractMigrationService<Profile> {
   public static final String EVENT_LISTENER_KEY = "SOC_PROFILE_MIGRATION";
@@ -45,7 +45,7 @@ public class ProfileMigrationService extends AbstractMigrationService<Profile> {
 
   @Override
   @Managed
-  @ManagedDescription("Manual to start run miguration data of profiles from JCR to MYSQL.")
+  @ManagedDescription("Manual to start run miguration data of profiles from JCR to RDBMS.")
   public void doMigration() throws Exception {
     boolean begunTx = startTx();
     MigrationCounter counter = MigrationCounter.builder().threshold(LIMIT_THRESHOLD).build();
@@ -99,12 +99,12 @@ public class ProfileMigrationService extends AbstractMigrationService<Profile> {
       return;
     }
     MigrationContext.setProfileDone(true);
-    LOG.info("Done to migration profiles from JCR to MYSQL");
+    LOG.info("Done to migration profiles from JCR to RDBMS");
   }
   
   @Override
   @Managed
-  @ManagedDescription("Manual to stop run miguration data of profiles from JCR to MYSQL.")
+  @ManagedDescription("Manual to stop run miguration data of profiles from JCR to RDBMS.")
   public void stop() {
     super.stop();
   }

@@ -46,7 +46,7 @@ import org.exoplatform.social.core.storage.streams.StreamConfig;
 import com.google.caja.util.Lists;
 
 @Managed
-@ManagedDescription("Social migration activities from JCR to MYSQl service.")
+@ManagedDescription("Social migration activities from JCR to RDBMS.")
 @NameTemplate({@Property(key = "service", value = "social"), @Property(key = "view", value = "migration-activities") })
 public class ActivityMigrationService extends AbstractMigrationService<ExoSocialActivity> {
   private static final int LIMIT_REMOVED_THRESHOLD = 10;
@@ -78,7 +78,7 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
   }
 
   @Managed
-  @ManagedDescription("Manual to start run miguration data of activities from JCR to MYSQL.")
+  @ManagedDescription("Manual to start run miguration data of activities from JCR to RDBMS.")
   public void doMigration() throws Exception {
     if(lastUserProcess == null && activityDAO.count() > 0) {
       MigrationContext.setActivityDone(true);
@@ -195,7 +195,7 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
         processLog("Activities migration spaces", size, count);
         //
         if (count % LIMIT_THRESHOLD == 0) {
-          LOG.info(String.format("Commit database into mysql and reCreate JCR-Session at offset: " + offset));
+          LOG.info(String.format("Commit database into RDBMS and reCreate JCR-Session at offset: " + offset));
           endTx(begunTx);
           RequestLifeCycle.end();
           RequestLifeCycle.begin(PortalContainer.getInstance());
@@ -204,7 +204,7 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
           it.skip(offset);
         }
       }
-      LOG.info(String.format("Done to migration %s space activities from JCR to MYSQL on %s(ms)", offset, (System.currentTimeMillis() - t)));
+      LOG.info(String.format("Done to migration %s space activities from JCR to RDBMS on %s(ms)", offset, (System.currentTimeMillis() - t)));
     } catch (Exception e) {
       LOG.error("Failed to migration for Space Activity.", e);
     } finally {
@@ -216,14 +216,14 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
 
   @Override
   @Managed
-  @ManagedDescription("Manual to stop run miguration data of activities from JCR to MYSQL.")
+  @ManagedDescription("Manual to stop run miguration data of activities from JCR to RDBMS.")
   public void stop() {
     super.stop();
   }
   
   protected void beforeMigration() throws Exception {
     MigrationContext.setActivityDone(false);
-    LOG.info("Stating to migration activities from JCR to MYSQL........");
+    LOG.info("Stating to migration activities from JCR to RDBMS........");
     NodeIterator iterator = nodes("SELECT * FROM soc:activityUpdater");
     if (iterator.hasNext()) {
       String currentUUID = iterator.nextNode().getUUID();
@@ -337,11 +337,11 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
     }
 
     MigrationContext.setActivityDone(true);
-    LOG.info("Done to migration activities from JCR to MYSQL");
+    LOG.info("Done to migration activities from JCR to RDBMS");
   }
 
   public void doRemove() throws Exception {
-    LOG.info("Start remove activities from JCR to MYSQL");
+    LOG.info("Start remove activities from JCR to RDBMS");
     removeActivity();
     LOG.info("Done to removed activities from JCR");
   }
