@@ -15,6 +15,7 @@ import org.chromattic.core.api.ChromatticSessionImpl;
 import org.exoplatform.commons.api.event.EventManager;
 import org.exoplatform.commons.persistence.impl.EntityManagerService;
 import org.exoplatform.commons.utils.CommonsUtils;
+import org.exoplatform.commons.utils.XPathUtils;
 import org.exoplatform.container.PortalContainer;
 import org.exoplatform.container.component.RequestLifeCycle;
 import org.exoplatform.container.xml.InitParams;
@@ -455,27 +456,25 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
    * @param identityNode
    */
   private void cleanupActivity(Node identityNode) {
-    
     String nodeStreamsPath;
     String identityName = "";
-    
+
     StringBuffer sb = new StringBuffer().append("SELECT * FROM soc:activity WHERE ");
     try {
-      nodeStreamsPath = identityNode.getNode("soc:activities").getPath();
+      nodeStreamsPath = XPathUtils.escapeIllegalSQLName(identityNode.getNode("soc:activities").getPath());
       sb.append(JCRProperties.path.getName()).append(" LIKE '").append(nodeStreamsPath + StorageUtils.SLASH_STR + StorageUtils.PERCENT_STR + "'");
     } catch (RepositoryException e) {
       LOG.error(e.getMessage(), e);
-      return;
     }
-    
+
     long t = System.currentTimeMillis();
     long totalTime = System.currentTimeMillis();
     long offset = 0;
-    NodeIterator it = nodes(sb.toString());
-    NodeImpl node = null;
-    long size = it.getSize();
-    
+    long size = 0;
     try {
+      NodeIterator it = nodes(sb.toString());
+      NodeImpl node = null;
+      size = it.getSize();
       identityName = identityNode.getName();
       LOG.info(String.format("|   \\ START::cleanup: %d (Activity) for %s identity", size, identityName));
       while (it.hasNext()) {
@@ -485,7 +484,7 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
           node.remove();
           offset++;
         }
-        
+
         if (offset % LIMIT_ACTIVITY_SAVE_THRESHOLD == 0) {
           getSession().save();
           LOG.info(String.format("|     - Persist deleted: %s activity consumed time %s(ms) ", LIMIT_ACTIVITY_SAVE_THRESHOLD, System.currentTimeMillis() - t));

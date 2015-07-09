@@ -30,7 +30,7 @@
                 <constraints nullable="false"/>
             </column>
             <column name="title" type="LONGTEXT"/>
-            <column name="titleId" type="VARCHAR(36)"/>
+            <column name="titleId" type="VARCHAR(1024)"/>
             <column name="type" type="VARCHAR(255)"/>
         </createTable>
         <createIndex tableName="SOC_ACTIVITIES" indexName="IDX_SOC_ACTIVITIES_01">
@@ -101,7 +101,7 @@
                 <constraints nullable="false"/>
             </column>
             <column name="title" type="LONGTEXT"/>
-            <column name="titleId" type="VARCHAR(36)"/>
+            <column name="titleId" type="VARCHAR(1024)"/>
             <column name="ACTIVITY_ID" type="BIGINT"/>
         </createTable>
         <createIndex tableName="SOC_COMMENTS" indexName="IDX_SOC_COMMENTS_01">
