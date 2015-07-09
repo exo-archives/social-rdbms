@@ -134,6 +134,7 @@ public class RelationshipMigrationService extends AbstractMigrationService<Relat
       connectionDAO.create(entity);
       ++doneConnectionNo;
       if(doneConnectionNo % LIMIT_THRESHOLD == 0) {
+        LOG.info(String.format("|     - BATCH MIGRATION::relationship number: %s (%s user)", doneConnectionNo, owner.getRemoteId()));
         endTx(true);
         entityManagerService.endRequest(PortalContainer.getInstance());
         entityManagerService.startRequest(PortalContainer.getInstance());
@@ -199,6 +200,7 @@ public class RelationshipMigrationService extends AbstractMigrationService<Relat
         getSession().remove(relationshipEntity);
         ++offset;
         if (offset % LIMIT_REMOVED_THRESHOLD == 0) {
+          LOG.info(String.format("|     - BATCH CLEANUP::relationship number: %s", offset));
           getSession().save();
         }
       }
