@@ -47,7 +47,6 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
   private static final int LIMIT_ACTIVITY_SAVE_THRESHOLD = 10;
   private static final int LIMIT_ACTIVITY_REF_SAVE_THRESHOLD = 50;
   public static final String EVENT_LISTENER_KEY = "SOC_ACTIVITY_MIGRATION";
-  private final ActivityDAO activityDAO;
   private final ActivityStorage activityStorage;
   private final ActivityStorageImpl activityJCRStorage;
 
@@ -57,7 +56,6 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
   private boolean forceStop = false;
   
   public ActivityMigrationService(InitParams initParams,
-                                  ActivityDAO activityDAO,
                                   ActivityStorage activityStorage,
                                   ActivityStorageImpl activityJCRStorage,
                                   IdentityStorageImpl identityStorage,
@@ -65,7 +63,6 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
                                   EntityManagerService entityManagerService) {
 
     super(initParams, identityStorage, eventManager, entityManagerService);
-    this.activityDAO = activityDAO;
     this.activityStorage = activityStorage;
     this.activityJCRStorage = activityJCRStorage;
     this.LIMIT_THRESHOLD = getInteger(initParams, LIMIT_THRESHOLD_KEY, 100);
@@ -74,13 +71,12 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
   @Managed
   @ManagedDescription("Manual to start run miguration data of activities from JCR to RDBMS.")
   public void doMigration() throws Exception {
-    if(activityDAO.count() > 0) {
-      MigrationContext.setActivityDone(true);
-      return;
-    }
     migrateUserActivities();
     // migrate activities from space
     migrateSpaceActivities();
+    
+    MigrationContext.setActivityDone(true);
+    LOG.info("Done to migration activities from JCR to RDBMS");
   }
 
   private void migrateUserActivities() throws Exception {
@@ -249,6 +245,7 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
         activityStorage.saveActivity(owner, activity);
         //
         doBroadcastListener(activity, activityId);
+        params = null;
         //
         ActivityEntity activityEntity = getSession().findById(ActivityEntity.class, activityId);
         _getMixin(activityEntity, ActivityUpdaterEntity.class, true);
@@ -270,23 +267,24 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
           if (comment != null) {
             String oldCommentId = comment.getId();
             comment.setId(null);
-            params = comment.getTemplateParams();
-            if (params != null) {
+            Map<String, String> commentParams = comment.getTemplateParams();
+            if (commentParams != null) {
               
-              for(Map.Entry<String, String> entry: params.entrySet()) {
+              for(Map.Entry<String, String> entry: commentParams.entrySet()) {
                 String value = entry.getValue();
                 if (value.length() >= 1024) {
                   LOG.info("===================== comment id " + oldCommentId + " new value length = " +  value.length() + " - " + value);
-                  params.put(entry.getKey(), "");
+                  commentParams.put(entry.getKey(), "");
                 }
               }
               
-              comment.setTemplateParams(params);
+              comment.setTemplateParams(commentParams);
             }
             
             activityStorage.saveComment(activity, comment);
             //
             doBroadcastListener(comment, oldCommentId);
+            commentParams = null;
           }
         }
 
@@ -327,9 +325,6 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
         LOG.error("Failed to remove mixin type," + e.getMessage(), e);
       }
     }
-
-    MigrationContext.setActivityDone(true);
-    LOG.info("Done to migration activities from JCR to RDBMS");
   }
 
   public void doRemove() throws Exception {
@@ -381,13 +376,13 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
     node = null;
     offset = 0;
     try {
-      LOG.info(String.format("| \\ START::cleanup Space Activity ---------------------------------"));
+      LOG.info("| \\ START::cleanup Space Activity ---------------------------------");
       while (it.hasNext()) {
         node = (Node) it.next();
         LOG.info(String.format("|  \\ START::cleanup space number: %s (%s space)", offset, node.getName()));
         cleanupActivity(node);
         offset++;
-        LOG.info(String.format("|  / END::cleanup (%s space)", node.getName()));
+        LOG.info("|  / END::cleanup (%s space)", node.getName());
         //
         if (offset % LIMIT_REMOVED_THRESHOLD == 0) {
           RequestLifeCycle.end();

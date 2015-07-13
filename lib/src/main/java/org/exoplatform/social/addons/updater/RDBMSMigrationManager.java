@@ -121,7 +121,12 @@ public class RDBMSMigrationManager implements Startable {
   }
   
   private void updateSettingValue(String key, boolean status) {
-    settingService.set(Context.GLOBAL, Scope.GLOBAL.id(MIGRATION_SETTING_GLOBAL_KEY), key, SettingValue.create(status));
+    try {
+      settingService.set(Context.GLOBAL, Scope.GLOBAL.id(MIGRATION_SETTING_GLOBAL_KEY), key, SettingValue.create(status));
+    } finally {
+      Scope.GLOBAL.id(null);
+    }
+    
   }
 
   @Override

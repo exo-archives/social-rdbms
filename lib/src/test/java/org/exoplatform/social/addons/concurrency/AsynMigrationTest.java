@@ -16,7 +16,9 @@
  */
 package org.exoplatform.social.addons.concurrency;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.exoplatform.commons.api.settings.SettingService;
 import org.exoplatform.commons.api.settings.SettingValue;
@@ -176,9 +178,13 @@ public class AsynMigrationTest extends BaseCoreTest {
       try {
         activity = jcrStorage.saveActivity(targetIdentity, activity);
         //
+        Map<String, String> params = new HashMap<String, String>();
+        params.put("MESSAGE",
+                   "                                CRaSH is the open source shell for the JVM. The shell can be accessed by various ways, remotely using network protocols such as SSH, locally by attaching a shell to a running virtual machine or via a web interface. Commands are written Groovy and can be developed live making the extensibility of the shell easy with quick development cycles. Since the version 1.3, the REPL also speaks the Groovy language, allowing Groovy combination of command using pipes.  CRaSH comes with commands such as thread management, log management, database access and JMX. The session will begin with an introduction to the shell. The main part of the session will focus on showing CRaSH commands development with few examples, showing how easy and powerful the development is.  The audience will learn how to use CRaSH for their own needs: it can be a simple usage or more advanced like developing a command or embedding the shell in their own runtime like a web application or a Grails application.");
         List<ExoSocialActivity> comments = listOf(3, targetIdentity, posterIdentity, true, false);
         for (ExoSocialActivity comment : comments) {
           comment.setTitle("comment of " + posterIdentity.getId());
+          comment.setTemplateParams(params);
           //
           jcrStorage.saveComment(activity, comment);
         }
