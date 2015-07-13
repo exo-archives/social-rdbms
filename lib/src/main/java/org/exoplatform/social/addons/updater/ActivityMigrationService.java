@@ -270,6 +270,20 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
           if (comment != null) {
             String oldCommentId = comment.getId();
             comment.setId(null);
+            params = comment.getTemplateParams();
+            if (params != null) {
+              
+              for(Map.Entry<String, String> entry: params.entrySet()) {
+                String value = entry.getValue();
+                if (value.length() >= 1024) {
+                  LOG.info("===================== comment id " + oldCommentId + " new value length = " +  value.length() + " - " + value);
+                  params.put(entry.getKey(), "");
+                }
+              }
+              
+              comment.setTemplateParams(params);
+            }
+            
             activityStorage.saveComment(activity, comment);
             //
             doBroadcastListener(comment, oldCommentId);
