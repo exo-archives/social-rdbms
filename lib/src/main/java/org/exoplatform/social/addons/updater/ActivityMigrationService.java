@@ -1,11 +1,9 @@
 package org.exoplatform.social.addons.updater;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Set;
+import java.util.Map;
 
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
@@ -14,7 +12,6 @@ import javax.jcr.RepositoryException;
 import org.chromattic.core.api.ChromatticSessionImpl;
 import org.exoplatform.commons.api.event.EventManager;
 import org.exoplatform.commons.persistence.impl.EntityManagerService;
-import org.exoplatform.commons.utils.CommonsUtils;
 import org.exoplatform.commons.utils.XPathUtils;
 import org.exoplatform.container.PortalContainer;
 import org.exoplatform.container.component.RequestLifeCycle;
@@ -34,7 +31,6 @@ import org.exoplatform.social.core.chromattic.entity.ActivityParameters;
 import org.exoplatform.social.core.chromattic.entity.HidableEntity;
 import org.exoplatform.social.core.chromattic.entity.IdentityEntity;
 import org.exoplatform.social.core.chromattic.utils.ActivityIterator;
-import org.exoplatform.social.core.identity.model.ActiveIdentityFilter;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvider;
 import org.exoplatform.social.core.storage.api.ActivityStorage;
@@ -42,9 +38,6 @@ import org.exoplatform.social.core.storage.impl.ActivityStorageImpl;
 import org.exoplatform.social.core.storage.impl.IdentityStorageImpl;
 import org.exoplatform.social.core.storage.impl.StorageUtils;
 import org.exoplatform.social.core.storage.query.JCRProperties;
-import org.exoplatform.social.core.storage.streams.StreamConfig;
-
-import com.google.caja.util.Lists;
 
 @Managed
 @ManagedDescription("Social migration activities from JCR to RDBMS.")
@@ -81,11 +74,10 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
   @Managed
   @ManagedDescription("Manual to start run miguration data of activities from JCR to RDBMS.")
   public void doMigration() throws Exception {
-    if(lastUserProcess == null && activityDAO.count() > 0) {
+    if(activityDAO.count() > 0) {
       MigrationContext.setActivityDone(true);
       return;
     }
-    
     migrateUserActivities();
     // migrate activities from space
     migrateSpaceActivities();
@@ -95,25 +87,8 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
     RequestLifeCycle.begin(PortalContainer.getInstance());
     boolean begunTx = startTx();
     MigrationCounter counter = MigrationCounter.builder().threshold(LIMIT_THRESHOLD).build();
-    
-    List<String> activeUsers = getAdminAndActiveUsers();
-    counter.newTotalAndWatch();
-    LOG.info("| \\ START::Activity User's activity migration ---------------------------------");
-    for (String userName : activeUsers) {
-      if(forceStop) {
-        return;
-      }
-      
-      migrationByIdentity(userName, null);
-      counter.getAndIncrementBatch();
-    }
-    
-    LOG.info(String.format("| / END::Migration User's activity for %s user(s) consumed %s(ms) -------------", counter.getBatch(), counter.endTotalWatch()));
-    //
-    counter.reset();
     counter.newTotalAndWatch();
     // doing with normal users
-    boolean isSkip = (lastUserProcess != null);
     NodeIterator it = getIdentityNodes(counter.getTotal(), LIMIT_THRESHOLD);
     Identity owner = null; 
     Node node = null;
@@ -122,23 +97,11 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
         if(forceStop) {
           return;
         }
-        
         node = (Node) it.next();
         owner = identityStorage.findIdentityById(node.getUUID());
         counter.newBatchAndWatch();
         counter.getAndIncrementTotal();
         LOG.info(String.format("|  \\ START::user number: %s (%s user)", counter.getTotal(), owner.getRemoteId()));
-        if (isSkip) {
-          if (lastUserProcess.equals(owner.getRemoteId())) {
-            lastUserProcess = null;
-            isSkip = false;
-          } else {
-            continue;
-          }
-        }
-        if(activeUsers.contains(owner.getRemoteId())) {
-          continue;
-        }
         IdentityEntity identityEntity = _findById(IdentityEntity.class, owner.getId());
         migrationByIdentity(null, identityEntity);
         
@@ -265,6 +228,19 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
         String activityId = activityIterator.next().getId();
         //
         ExoSocialActivity activity = activityJCRStorage.getActivity(activityId);
+        Map<String, String> params = activity.getTemplateParams();
+        if (params != null) {
+          
+          for(Map.Entry<String, String> entry: params.entrySet()) {
+            String value = entry.getValue();
+            if (value.length() >= 1024) {
+              LOG.info("===================== activity id " + activity.getId() + " new value length = " +  value.length() + " - " + value);
+              params.put(entry.getKey(), "");
+            }
+          }
+          
+          activity.setTemplateParams(params);
+        }
         //
         Identity owner = new Identity(identityEntity.getId());
         owner.setProviderId(providerId);
@@ -291,12 +267,13 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
         List<ActivityEntity> commentEntities = activityEntity.getComments();
         for (ActivityEntity commentEntity : commentEntities) {
           ExoSocialActivity comment = fillCommentFromEntity(commentEntity);
-          //
-          String oldCommentId = comment.getId();
-          comment.setId(null);
-          activityStorage.saveComment(activity, comment);
-          //
-          doBroadcastListener(comment, oldCommentId);
+          if (comment != null) {
+            String oldCommentId = comment.getId();
+            comment.setId(null);
+            activityStorage.saveComment(activity, comment);
+            //
+            doBroadcastListener(comment, oldCommentId);
+          }
         }
 
         previousActivityId = activityId;
@@ -499,33 +476,6 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
     }
   }
 
-  private List<String> getAdminAndActiveUsers() {
-    StreamConfig streamConfig = CommonsUtils.getService(StreamConfig.class);
-    ActiveIdentityFilter filer = new ActiveIdentityFilter(streamConfig.getActiveUserGroups());
-    Set<String> adminAndActiveUsers = identityStorage.getActiveUsers(filer);
-    //
-    filer = new ActiveIdentityFilter(streamConfig.getLastLoginAroundDays());
-    Set<String> actives = identityStorage.getActiveUsers(filer);
-    if (actives != null && !actives.isEmpty()) {
-      adminAndActiveUsers.addAll(actives);
-    }
-    //
-    List<String> users = new ArrayList<String>(adminAndActiveUsers);
-    Collections.sort(users);
-    //
-    if (lastUserProcess != null) {
-      int index = users.indexOf(lastUserProcess);
-      if (index >= 0) {
-        lastUserProcess = null;
-        return users.subList(index, users.size());
-      } else {
-        //Finished administrators and active users
-        return Lists.newArrayList();
-      }
-    }
-    return users;
-  }
-
   private ExoSocialActivity fillCommentFromEntity(ActivityEntity activityEntity) {
     ExoSocialActivity comment = new ExoSocialActivityImpl();
     try {
@@ -565,7 +515,7 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
         comment.isHidden(hidable.getHidden());
       }
     } catch (Exception e) {
-      LOG.debug("Failed to fill comment from entity : entity null or missing property", e);
+      LOG.warn("Failed to fill comment from entity : entity null or missing property", e);
       return null;
     }
     return comment;
