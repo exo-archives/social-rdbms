@@ -16,17 +16,27 @@
  */
 package org.exoplatform.social.addons.storage.dao.jpa.query;
 
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 
 import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
-import javax.persistence.criteria.*;
+import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaBuilder.In;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Path;
+import javax.persistence.criteria.Predicate;
+import javax.persistence.criteria.Root;
+import javax.persistence.criteria.Subquery;
 
 import org.exoplatform.commons.persistence.impl.EntityManagerHolder;
-import org.exoplatform.social.addons.storage.entity.*;
+import org.exoplatform.social.addons.storage.entity.Activity;
+import org.exoplatform.social.addons.storage.entity.Activity_;
+import org.exoplatform.social.addons.storage.entity.Comment;
+import org.exoplatform.social.addons.storage.entity.Comment_;
+import org.exoplatform.social.addons.storage.entity.Connection;
+import org.exoplatform.social.addons.storage.entity.Connection_;
+import org.exoplatform.social.addons.storage.entity.Mention;
+import org.exoplatform.social.addons.storage.entity.Mention_;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.relationship.model.Relationship;
 
@@ -103,75 +113,6 @@ public final class AStreamQueryBuilder {
     this.descOrder = true;
     return this;
   }
-  /**
-   * Builds the Typed Query
-   *
-   * 1. My Activity Stream: owner's activities
-   * 2. My Spaces: spaces's activity what ower is member
-   * 3. My Connections: my owner's connections's activity
-   * @return TypedQuery<Activity> instance
-   */
-  public TypedQuery<Activity> build() {
-    EntityManager em = EntityManagerHolder.get();
-    CriteriaBuilder cb = em.getCriteriaBuilder();
-    CriteriaQuery<Activity> criteria = cb.createQuery(Activity.class);
-    Root<Activity> activity = criteria.from(Activity.class);
-
-    List<Predicate> predicates = new ArrayList<Predicate>();
-    //owner
-    if (this.owner != null) {
-      Predicate pOwner = cb.equal(activity.get(Activity_.posterId), owner.getId());
-      pOwner = cb.or(pOwner, cb.equal(activity.get(Activity_.ownerId), owner.getId()));
-      predicates.add(pOwner);
-    }
-    // space members
-    if (this.memberOfSpaceIds != null && memberOfSpaceIds.size() > 0) {
-      predicates.add(addInClause(cb, activity.get(Activity_.ownerId), memberOfSpaceIds));
-    }
-
-    //connections
-    if (this.connectionSize > 0) {
-      Subquery<String> subQuery1 = criteria.subquery(String.class);
-      Root<Connection> subRoot1 = subQuery1.from(Connection.class);
-      subQuery1.select(subRoot1.<String>get(Connection_.receiverId));
-      subQuery1.where(cb.and(cb.equal(subRoot1.<String>get(Connection_.senderId), this.myIdentity.getId()),
-              cb.equal(subRoot1.<Relationship.Type>get(Connection_.status), Relationship.Type.CONFIRMED)));
-
-      Predicate posterConnection = cb.and(cb.in(activity.get(Activity_.posterId)).value(subQuery1));
-      Predicate ownerConnection = cb.and(cb.in(activity.get(Activity_.ownerId)).value(subQuery1));
-
-      predicates.add(cb.and(posterConnection, ownerConnection));
-    }
-
-    //newer or older
-    if (this.sinceTime > 0) {
-      if (isNewer) {
-        predicates.add(cb.greaterThan(activity.<Long>get(Activity_.lastUpdated), this.sinceTime));
-      } else {
-        predicates.add(cb.lessThan(activity.<Long>get(Activity_.lastUpdated), this.sinceTime));
-      }
-    }
-
-    //filter hidden = FALSE
-    predicates.add(cb.equal(activity.<Boolean>get(Activity_.hidden), Boolean.FALSE));
-
-    CriteriaQuery<Activity> select = criteria.select(activity).distinct(true);
-    select.where(predicates.toArray(new Predicate[0]));
-    if (this.descOrder) {
-      select.orderBy(cb.desc(activity.<Long> get(Activity_.lastUpdated)));
-    } else {
-      select.orderBy(cb.asc(activity.<Long> get(Activity_.lastUpdated)));
-    }
-
-
-    TypedQuery<Activity> typedQuery = em.createQuery(select);
-    if (this.limit > 0) {
-      typedQuery.setFirstResult((int) offset);
-      typedQuery.setMaxResults((int) limit);
-    }
-
-    return typedQuery;
-  }
 
   /**
    * Builds query statement for FEED stream
@@ -180,16 +121,14 @@ public final class AStreamQueryBuilder {
    *
    * @return TypedQuery<Activity> instance
    */
-  public TypedQuery<Activity> buildFeed() {
+  public TypedQuery<Activity> build() {
     EntityManager em = EntityManagerHolder.get();
     CriteriaBuilder cb = em.getCriteriaBuilder();
     CriteriaQuery<Activity> criteria = cb.createQuery(Activity.class);
     Root<Activity> activity = criteria.from(Activity.class);
 
-
-
     CriteriaQuery<Activity> select = criteria.select(activity).distinct(true);
-    select.where(getPredicateForFeed(activity, cb, criteria.subquery(Activity.class), criteria.subquery(Activity.class), criteria.subquery(String.class)));
+    select.where(getPredicate(activity, cb, criteria.subquery(Activity.class), criteria.subquery(Activity.class), criteria.subquery(String.class)));
     if (this.descOrder) {
       select.orderBy(cb.desc(activity.<Long> get(Activity_.lastUpdated)));
     } else {
@@ -206,11 +145,7 @@ public final class AStreamQueryBuilder {
   }
 
   /**
-   * Build count statement to get the number of the activity base on given conditions
-   *
-   * 1. My Activity Stream: owner's activities
-   * 2. My Spaces: spaces's activity what ower is member
-   * 3. My Connections: my owner's connections's activity
+   * Build count statement for FEED stream to get the number of the activity base on given conditions
    *
    * @return TypedQuery<Long> instance 
    */
@@ -220,96 +155,46 @@ public final class AStreamQueryBuilder {
     CriteriaQuery<Long> criteria = cb.createQuery(Long.class);
     Root<Activity> activity = criteria.from(Activity.class);
 
-    List<Predicate> predicates = new ArrayList<Predicate>();
-    //owner
-    if (this.owner != null) {
-      Predicate pOwner = cb.equal(activity.get(Activity_.posterId), owner.getId());
-      pOwner = cb.or(pOwner, cb.equal(activity.get(Activity_.ownerId), owner.getId()));
-      predicates.add(pOwner);
-    }
-    // space members
-    if (this.memberOfSpaceIds != null && memberOfSpaceIds.size() > 0) {
-      predicates.add(addInClause(cb, activity.get(Activity_.ownerId), memberOfSpaceIds));
-    }
-
-    //connections
-    if (this.connectionSize > 0) {
-      Subquery<String> subQuery1 = criteria.subquery(String.class);
-      Root<Connection> subRoot1 = subQuery1.from(Connection.class);
-      subQuery1.select(subRoot1.<String>get(Connection_.receiverId));
-      subQuery1.where(cb.equal(subRoot1.<String>get(Connection_.senderId), this.myIdentity.getId()));
-
-      predicates.add(cb.in(activity.get(Activity_.posterId)).value(subQuery1));
-
-    }
-
-    //newer or older
-    if (this.sinceTime > 0) {
-      if (isNewer) {
-        predicates.add(cb.greaterThan(activity.<Long>get(Activity_.lastUpdated), this.sinceTime));
-      } else {
-        predicates.add(cb.lessThan(activity.<Long>get(Activity_.lastUpdated), this.sinceTime));
-      }
-    }
-
-    //filter hidden = FALSE
-    predicates.add(cb.equal(activity.<Boolean>get(Activity_.hidden), Boolean.FALSE));
-
     CriteriaQuery<Long> select = criteria.select(cb.countDistinct(activity));
-    select.where(predicates.toArray(new Predicate[0]));
-
-    return em.createQuery(select);
-  }
-
-  /**
-   * Build count statement for FEED stream to get the number of the activity base on given conditions
-   *
-   * @return TypedQuery<Long> instance 
-   */
-  public TypedQuery<Long> buildFeedCount() {
-    EntityManager em = EntityManagerHolder.get();
-    CriteriaBuilder cb = em.getCriteriaBuilder();
-    CriteriaQuery<Long> criteria = cb.createQuery(Long.class);
-    Root<Activity> activity = criteria.from(Activity.class);
-
-
-    CriteriaQuery<Long> select = criteria.select(cb.countDistinct(activity));
-    select.where(getPredicateForFeed(activity, cb, criteria.subquery(Activity.class), criteria.subquery(Activity.class),
+    select.where(getPredicate(activity, cb, criteria.subquery(Activity.class), criteria.subquery(Activity.class),
             criteria.subquery(String.class)));
 
     return em.createQuery(select);
   }
 
-  private Predicate getPredicateForFeed(Root<Activity> activity, CriteriaBuilder cb, Subquery<Activity> commentQuery,
-                                        Subquery<Activity> mentionQuery, Subquery<String> subQuery1) {
+  private Predicate getPredicate(Root<Activity> activity, CriteriaBuilder cb, Subquery<Activity> commentQuery,
+                                 Subquery<Activity> mentionQuery, Subquery<String> subQuery1) {
 
     Predicate predicate = null;
     //owner
     if (this.owner != null) {
       predicate = cb.equal(activity.get(Activity_.posterId), owner.getId());
       predicate = cb.or(predicate, cb.equal(activity.get(Activity_.ownerId), owner.getId()));
-    }
 
-    //comment
-    Root<Comment> subRootComment = commentQuery.from(Comment.class);
-    commentQuery.select(subRootComment.<Activity>get(Comment_.activity));
-    commentQuery.where(cb.equal(subRootComment.<String>get(Comment_.posterId), this.owner.getId()));
-    Predicate predCommenter = cb.in(activity).value(commentQuery);
-    if (predicate == null) {
-      predicate = predCommenter;
-    } else {
-      predicate = cb.or(predicate, cb.or(predCommenter));
-    }
+      //comment
+      Root<Comment> subRootComment = commentQuery.from(Comment.class);
+      commentQuery.select(subRootComment.<Activity>get(Comment_.activity));
+      commentQuery.where(cb.equal(subRootComment.<String>get(Comment_.posterId), this.owner.getId()));
+      Predicate predCommenter = cb.in(activity).value(commentQuery);
+      if (predicate == null) {
+        predicate = predCommenter;
+      } else {
+        predicate = cb.or(predicate, cb.or(predCommenter));
+      }
 
-    //mention
-    Root<Mention> subRootMention = mentionQuery.from(Mention.class);
-    mentionQuery.select(subRootMention.<Activity>get(Mention_.activity));
-    mentionQuery.where(cb.equal(subRootMention.<String>get(Mention_.mentionId), this.owner.getId()));
-    Predicate predMentionner = cb.in(activity).value(mentionQuery);
-    if (predicate == null) {
-      predicate = predMentionner;
-    } else {
-      predicate = cb.or(predicate, predMentionner);
+      //mention
+      Root<Mention> subRootMention = mentionQuery.from(Mention.class);
+      mentionQuery.select(subRootMention.<Activity>get(Mention_.activity));
+      mentionQuery.where(cb.equal(subRootMention.<String>get(Mention_.mentionId), this.owner.getId()));
+      Predicate predMentionner = cb.in(activity).value(mentionQuery);
+      if (predicate == null) {
+        predicate = predMentionner;
+      } else {
+        predicate = cb.or(predicate, predMentionner);
+      }
+      
+      //liker
+      predicate = cb.or(predicate, cb.isMember(this.owner.getId(), activity.get(Activity_.likerIds)));
     }
 
     // space members

@@ -50,7 +50,7 @@ public class ActivityDAOImpl extends GenericDAOJPAImpl<Activity, Long> implement
                               .connectionSize(ownerIdentity, nbConnections)
                               .offset(offset)
                               .limit(limit)
-                              .buildFeed()
+                              .build()
                               .getResultList();
   }
 
@@ -59,7 +59,7 @@ public class ActivityDAOImpl extends GenericDAOJPAImpl<Activity, Long> implement
                               .owner(ownerIdentity)
                               .memberOfSpaceIds(spaceIds)
                               .connectionSize(ownerIdentity, nbConnections)
-                              .buildFeedCount().getSingleResult().intValue();
+                              .buildCount().getSingleResult().intValue();
         
   }
   
@@ -73,7 +73,7 @@ public class ActivityDAOImpl extends GenericDAOJPAImpl<Activity, Long> implement
                               .ascOrder()
                               .offset(0)
                               .limit(limit)
-                              .buildFeed()
+                              .build()
                               .getResultList();
   }
 
@@ -85,7 +85,7 @@ public class ActivityDAOImpl extends GenericDAOJPAImpl<Activity, Long> implement
                               .memberOfSpaceIds(spaceIds)
                               .connectionSize(ownerIdentity, nbConnections)
                               .newer(sinceTime)
-                              .buildFeedCount()
+                              .buildCount()
                               .getSingleResult()
                               .intValue();
   }
@@ -99,7 +99,7 @@ public class ActivityDAOImpl extends GenericDAOJPAImpl<Activity, Long> implement
                               .older(sinceTime)
                               .offset(0)
                               .limit(limit)
-                              .buildFeed()
+                              .build()
                               .getResultList();
   }
 
@@ -110,7 +110,7 @@ public class ActivityDAOImpl extends GenericDAOJPAImpl<Activity, Long> implement
                               .memberOfSpaceIds(spaceIds)
                               .connectionSize(ownerIdentity, nbConnections)
                               .older(sinceTime)
-                              .buildFeedCount()
+                              .buildCount()
                               .getSingleResult()
                               .intValue();
   }

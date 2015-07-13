@@ -1308,6 +1308,42 @@ public class ActivityManagerMysqlTest extends AbstractCoreTest {
     assertEquals(0, demoActivityFeed.load(0, 10).length);
   }
   
+  public void testLikeCommentActivity() throws Exception {
+    ExoSocialActivity activity = new ExoSocialActivityImpl();
+    activity.setTitle("hello");
+    activity.setUserId(rootIdentity.getId());
+    activityManager.saveActivityNoReturn(rootIdentity, activity);
+    tearDownActivityList.add(activity);
+    
+    //demo comment on root's activity
+    ExoSocialActivity comment = new ExoSocialActivityImpl();
+    comment.setTitle("demo comment");
+    comment.setUserId(demoIdentity.getId());
+    activityManager.saveComment(activity, comment);
+    
+    //check feed of demo
+    RealtimeListAccess<ExoSocialActivity> demoActivities = activityManager.getActivityFeedWithListAccess(demoIdentity);
+    assertEquals(1, demoActivities.getSize());
+    assertEquals(1, demoActivities.load(0, 10).length);
+    
+    //check my activities of demo
+    demoActivities = activityManager.getActivitiesWithListAccess(demoIdentity);
+    assertEquals(1, demoActivities.getSize());
+    assertEquals(1, demoActivities.load(0, 10).length);
+
+    //john like root activity
+    activityManager.saveLike(activity, johnIdentity);
+    
+    RealtimeListAccess<ExoSocialActivity> johnActivities = activityManager.getActivityFeedWithListAccess(johnIdentity);
+    assertEquals(1, johnActivities.getSize());
+    assertEquals(1, johnActivities.load(0, 10).length);
+    
+    //check my activities of demo
+    johnActivities = activityManager.getActivitiesWithListAccess(johnIdentity);
+    assertEquals(1, johnActivities.getSize());
+    assertEquals(1, johnActivities.load(0, 10).length);
+  }
+  
   /**
    * Populates activity.
    * 
