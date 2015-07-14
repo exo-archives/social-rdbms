@@ -1,14 +1,20 @@
 package org.exoplatform.social.addons.updater;
 
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import javax.jcr.RepositoryException;
 
+import org.apache.commons.lang.ArrayUtils;
 import org.chromattic.core.api.ChromatticSessionImpl;
 import org.exoplatform.commons.api.event.EventManager;
 import org.exoplatform.commons.persistence.impl.EntityManagerService;
@@ -22,6 +28,9 @@ import org.exoplatform.management.jmx.annotations.NameTemplate;
 import org.exoplatform.management.jmx.annotations.Property;
 import org.exoplatform.services.jcr.impl.core.NodeImpl;
 import org.exoplatform.social.addons.storage.dao.ActivityDAO;
+import org.exoplatform.social.addons.storage.dao.CommentDAO;
+import org.exoplatform.social.addons.storage.entity.Activity;
+import org.exoplatform.social.addons.storage.entity.Comment;
 import org.exoplatform.social.addons.updater.utils.MigrationCounter;
 import org.exoplatform.social.core.activity.model.ExoSocialActivity;
 import org.exoplatform.social.core.activity.model.ExoSocialActivityImpl;
@@ -33,6 +42,7 @@ import org.exoplatform.social.core.chromattic.entity.IdentityEntity;
 import org.exoplatform.social.core.chromattic.utils.ActivityIterator;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvider;
+import org.exoplatform.social.core.storage.ActivityStorageException;
 import org.exoplatform.social.core.storage.api.ActivityStorage;
 import org.exoplatform.social.core.storage.impl.ActivityStorageImpl;
 import org.exoplatform.social.core.storage.impl.IdentityStorageImpl;
@@ -47,8 +57,14 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
   private static final int LIMIT_ACTIVITY_SAVE_THRESHOLD = 10;
   private static final int LIMIT_ACTIVITY_REF_SAVE_THRESHOLD = 50;
   public static final String EVENT_LISTENER_KEY = "SOC_ACTIVITY_MIGRATION";
+  private static final Pattern MENTION_PATTERN = Pattern.compile("@([^\\s]+)|@([^\\s]+)$");
+  public static final Pattern USER_NAME_VALIDATOR_REGEX = Pattern.compile("^[\\p{L}][\\p{L}._\\-\\d]+$");
+  public final static String COMMENT_PREFIX = "comment";
+  
   private final ActivityStorage activityStorage;
   private final ActivityStorageImpl activityJCRStorage;
+  private final CommentDAO commentDAO;
+  private final ActivityDAO activityDAO;
 
   private String previousActivityId = null;
   private ActivityEntity lastActivity = null;
@@ -56,6 +72,8 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
   private boolean forceStop = false;
   
   public ActivityMigrationService(InitParams initParams,
+                                  CommentDAO commentDAO,
+                                  ActivityDAO activityDAO,
                                   ActivityStorage activityStorage,
                                   ActivityStorageImpl activityJCRStorage,
                                   IdentityStorageImpl identityStorage,
@@ -63,6 +81,8 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
                                   EntityManagerService entityManagerService) {
 
     super(initParams, identityStorage, eventManager, entityManagerService);
+    this.commentDAO = commentDAO;
+    this.activityDAO = activityDAO;
     this.activityStorage = activityStorage;
     this.activityJCRStorage = activityJCRStorage;
     this.LIMIT_THRESHOLD = getInteger(initParams, LIMIT_THRESHOLD_KEY, 100);
@@ -242,10 +262,10 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
         owner.setProviderId(providerId);
         //
         activity.setId(null);
-        activityStorage.saveActivity(owner, activity);
+        activity = activityStorage.saveActivity(owner, activity);
         //
         doBroadcastListener(activity, activityId);
-        params = null;
+        
         //
         ActivityEntity activityEntity = getSession().findById(ActivityEntity.class, activityId);
         _getMixin(activityEntity, ActivityUpdaterEntity.class, true);
@@ -280,11 +300,12 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
               
               comment.setTemplateParams(commentParams);
             }
-            
-            activityStorage.saveComment(activity, comment);
+            activity.setTemplateParams(params);
+            saveComment(activity, comment);
             //
             doBroadcastListener(comment, oldCommentId);
             commentParams = null;
+            params = null;
           }
         }
 
@@ -546,5 +567,116 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
   @Override
   protected String getListenerKey() {
     return EVENT_LISTENER_KEY;
+  }
+  
+  public void saveComment(ExoSocialActivity activity, ExoSocialActivity eXoComment) throws ActivityStorageException {
+    Activity activityEntity = activityDAO.find(Long.valueOf(activity.getId()));
+    Comment commentEntity = convertCommentToCommentEntity(eXoComment);
+    commentEntity.setActivity(activityEntity);
+    //
+    Identity commenter = identityStorage.findIdentityById(commentEntity.getPosterId());
+    mention(commenter, activityEntity, processMentions(eXoComment.getTitle()));
+    //
+    commentEntity = commentDAO.create(commentEntity);
+    eXoComment.setId(getExoCommentID(commentEntity.getId()));
+    //
+    activityEntity.setMentionerIds(processMentionOfComment(activityEntity, commentEntity, activity.getMentionedIds(), processMentions(eXoComment.getTitle()), true));
+    activityEntity.addComment(commentEntity);
+    activityDAO.update(activityEntity);
+  }
+  
+  private String getExoCommentID(Long commentId) {
+    return String.valueOf(COMMENT_PREFIX + commentId);
+  }
+  
+  private Comment convertCommentToCommentEntity(ExoSocialActivity comment) {
+    Comment commentEntity = new Comment();
+    commentEntity.setTitle(comment.getTitle());
+    commentEntity.setTitleId(comment.getTitleId());
+    commentEntity.setBody(comment.getBody());
+    commentEntity.setPosterId(comment.getPosterId());
+    if (comment.getTemplateParams() != null) {
+      commentEntity.setTemplateParams(comment.getTemplateParams());
+    }
+    //
+    commentEntity.setLocked(comment.isLocked());
+    commentEntity.setHidden(comment.isHidden());
+    //
+    commentEntity.setPosted(commentEntity.getPosted());
+    commentEntity.setLastUpdated(commentEntity.getLastUpdated());
+    //
+    return commentEntity;
+  }
+  
+  private Set<String> processMentionOfComment(Activity activityEntity, Comment commentEntity, String[] activityMentioners, String[] commentMentioners, boolean isAdded) {
+    Set<String> mentioners = new HashSet<String>(Arrays.asList(activityMentioners));
+    if (commentMentioners.length == 0) return mentioners;
+    //
+    for (String mentioner : commentMentioners) {
+      if (!mentioners.contains(mentioner) && isAdded) {
+        mentioners.add(mentioner);
+      }
+      if (mentioners.contains(mentioner) && !isAdded) {
+        if (isAllowedToRemove(activityEntity, commentEntity, mentioner)) {
+          mentioners.remove(mentioner);
+        }
+      }
+    }
+    return mentioners;
+  }
+  
+  private boolean isAllowedToRemove(Activity activity, Comment comment, String mentioner) {
+    if (ArrayUtils.contains(processMentions(activity.getTitle()), mentioner)) {
+      return false;
+    }
+    List<Comment> comments = activity.getComments();
+    comments.remove(comment);
+    for (Comment cmt : comments) {
+      if (ArrayUtils.contains(processMentions(cmt.getTitle()), mentioner)) {
+        return false;
+      }
+    }
+    return true;
+  }
+  
+  /**
+   * Processes Mentioners who has been mentioned via the Activity.
+   * 
+   * @param title
+   */
+  private String[] processMentions(String title) {
+    String[] mentionerIds = new String[0];
+    if (title == null || title.length() == 0) {
+      return ArrayUtils.EMPTY_STRING_ARRAY;
+    }
+
+    Matcher matcher = MENTION_PATTERN.matcher(title);
+    while (matcher.find()) {
+      String remoteId = matcher.group().substring(1);
+      if (!USER_NAME_VALIDATOR_REGEX.matcher(remoteId).matches()) {
+        continue;
+      }
+      Identity identity = identityStorage.findIdentity(OrganizationIdentityProvider.NAME, remoteId);
+      // if not the right mention then ignore
+      if (identity != null) {
+        mentionerIds = (String[]) ArrayUtils.add(mentionerIds, identity.getId());
+      }
+    }
+    return mentionerIds;
+  }
+  
+
+  /**
+   * Creates StreamItem for each user who has mentioned on the activity
+   * 
+   * @param owner
+   * @param activity
+   */
+  private void mention(Identity owner, Activity activity, String [] mentions) {
+    for (String mentioner : mentions) {
+      Identity identity = identityStorage.findIdentityById(mentioner);
+      if(identity != null) {
+      }
+    }
   }
 }
