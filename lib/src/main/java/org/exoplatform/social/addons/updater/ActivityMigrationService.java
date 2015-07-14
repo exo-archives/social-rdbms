@@ -15,7 +15,6 @@ import javax.jcr.NodeIterator;
 import javax.jcr.RepositoryException;
 
 import org.apache.commons.lang.ArrayUtils;
-import org.chromattic.core.api.ChromatticSessionImpl;
 import org.exoplatform.commons.api.event.EventManager;
 import org.exoplatform.commons.persistence.impl.EntityManagerService;
 import org.exoplatform.commons.utils.XPathUtils;
@@ -244,19 +243,19 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
         String activityId = activityIterator.next().getId();
         //
         ExoSocialActivity activity = activityJCRStorage.getActivity(activityId);
-        Map<String, String> params = activity.getTemplateParams();
-        if (params != null) {
-          
-          for(Map.Entry<String, String> entry: params.entrySet()) {
+        Map<String, String> templateParams = activity.getTemplateParams();
+        if (templateParams != null && !templateParams.isEmpty()) {
+          for (Map.Entry<String, String> entry : templateParams.entrySet()) {
             String value = entry.getValue();
             if (value.length() >= 1024) {
-              LOG.info("===================== activity id " + activity.getId() + " new value length = " +  value.length() + " - " + value);
-              params.put(entry.getKey(), "");
+              templateParams.put(entry.getKey(), value.substring(0, 1000));
+              LOG.info("===================== activity id " + activity.getId() + " key: " + entry.getKey() + " value length = " + value.length());
             }
           }
-          
-          activity.setTemplateParams(params);
+        } else {
+          templateParams = new HashMap<String, String>();
         }
+        activity.setTemplateParams(templateParams);
         //
         Identity owner = new Identity(identityEntity.getId());
         owner.setProviderId(providerId);
@@ -287,25 +286,9 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
           if (comment != null) {
             String oldCommentId = comment.getId();
             comment.setId(null);
-            Map<String, String> commentParams = comment.getTemplateParams();
-            if (commentParams != null) {
-              
-              for(Map.Entry<String, String> entry: commentParams.entrySet()) {
-                String value = entry.getValue();
-                if (value.length() >= 1024) {
-                  LOG.info("===================== comment id " + oldCommentId + " new value length = " +  value.length() + " - " + value);
-                  commentParams.put(entry.getKey(), "");
-                }
-              }
-              
-              comment.setTemplateParams(commentParams);
-            }
-            activity.setTemplateParams(params);
             saveComment(activity, comment);
             //
             doBroadcastListener(comment, oldCommentId);
-            commentParams = null;
-            params = null;
           }
         }
 
@@ -516,7 +499,7 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
       comment.setBody(activityEntity.getBody());
       comment.setBodyId(activityEntity.getBodyId());
       comment.setPostedTime(activityEntity.getPostedTime());
-      comment.setUpdated(getLastUpdatedTime(activityEntity));
+      comment.setUpdated(getLastUpdatedTime(activityEntity, comment.getPostedTime()));
       comment.isComment(activityEntity.isComment());
       comment.setType(activityEntity.getType());
       //
@@ -532,11 +515,19 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
       }
       //
       ActivityParameters params = activityEntity.getParams();
-      if (params != null) {
-        comment.setTemplateParams(new LinkedHashMap<String, String>(params.getParams()));
-      } else {
-        comment.setTemplateParams(new HashMap<String, String>());
+      Map<String, String> commentParams = new LinkedHashMap<String, String>();
+      if (params != null && params.getParams() != null && !params.getParams().isEmpty()) {
+        for (Map.Entry<String, String> entry : params.getParams().entrySet()) {
+          String value = entry.getValue();
+          if (value.length() >= 1024) {
+            LOG.info("===================== comment id " + comment.getId() + " key: " + entry.getKey() + " value length = " + value.length());
+            commentParams.put(entry.getKey(), value.substring(0, 1000));
+          } else {
+            commentParams.put(entry.getKey(), value);
+          }
+        }
       }
+      comment.setTemplateParams(commentParams);
       //
       comment.isLocked(false);
       //
@@ -551,17 +542,12 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
     return comment;
   }
 
-  private long getLastUpdatedTime(ActivityEntity activityEntity) {
-    ChromatticSessionImpl chromatticSession = (ChromatticSessionImpl) getSession();
+  private long getLastUpdatedTime(ActivityEntity activityEntity, Long postTime) {
     try {
-      Node node = chromatticSession.getNode(activityEntity);
-      if (node.hasProperty(ActivityEntity.lastUpdated.getName())) {
-        return activityEntity.getLastUpdated();
-      }
-    } catch (RepositoryException e) {
-      LOG.debug("Failed to get last updated by activity with id = " + activityEntity.getId(), e);
+      return activityEntity.getLastUpdated();
+    } catch (Exception e) {
+      return postTime;
     }
-    return activityEntity.getPostedTime();
   }
 
   @Override

@@ -54,7 +54,7 @@ public class Activity extends BaseActivity {
     joinColumns=@JoinColumn(name = "ACTIVITY_ID")
   )
   @MapKeyColumn(name="TEMPLATE_PARAM_KEY")
-  @Column(name="TEMPLATE_PARAM_VALUE", length = 1024)
+  @Column(name="TEMPLATE_PARAM_VALUE", length = 2048)
   private Map<String, String> templateParams = new LinkedHashMap<String, String>();
 
   @OneToMany(cascade=CascadeType.ALL, orphanRemoval=true, mappedBy="activity", fetch=FetchType.LAZY)
