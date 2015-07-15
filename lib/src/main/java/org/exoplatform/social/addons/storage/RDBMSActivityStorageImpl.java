@@ -21,6 +21,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -118,7 +119,8 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
     
     activity.setId(String.valueOf(activityEntity.getId()));
     activity.setLikeIdentityIds(activityEntity.getLikerIds().toArray(new String[]{}));
-    activity.setTemplateParams(activityEntity.getTemplateParams() != null ? activityEntity.getTemplateParams() : new HashMap<String, String>());
+    activity.setTemplateParams(activityEntity.getTemplateParams() != null ? new LinkedHashMap<String, String>(activityEntity.getTemplateParams())
+                                                                         : new HashMap<String, String>());
     
     String ownerIdentityId = activityEntity.getOwnerId();
     ActivityStream stream = new ActivityStreamImpl();
@@ -196,7 +198,8 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
     exoComment.setTitle(comment.getTitle());
     exoComment.setTitleId(comment.getTitleId());
     exoComment.setBody(comment.getBody());
-    exoComment.setTemplateParams(comment.getTemplateParams() != null ? comment.getTemplateParams() : new HashMap<String, String>());
+    exoComment.setTemplateParams(comment.getTemplateParams() != null ? new LinkedHashMap<String, String>(comment.getTemplateParams())
+                                                                    : new HashMap<String, String>());
     exoComment.setPosterId(comment.getPosterId());
     exoComment.isComment(true);
     //

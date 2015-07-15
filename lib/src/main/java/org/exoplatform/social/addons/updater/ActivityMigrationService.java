@@ -1,6 +1,7 @@
 package org.exoplatform.social.addons.updater;
 
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -602,8 +603,10 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
     commentEntity.setLocked(comment.isLocked());
     commentEntity.setHidden(comment.isHidden());
     //
-    commentEntity.setPosted(commentEntity.getPosted());
-    commentEntity.setLastUpdated(commentEntity.getLastUpdated());
+    commentEntity.setPosted(comment.getPostedTime());
+    Calendar c = Calendar.getInstance();
+    c.setTime(comment.getUpdated());
+    commentEntity.setLastUpdated(c.getTimeInMillis());
     //
     return commentEntity;
   }
