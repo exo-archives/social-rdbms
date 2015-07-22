@@ -2,7 +2,6 @@ package org.exoplatform.social.addons.updater;
 
 import java.util.Arrays;
 import java.util.Calendar;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -16,7 +15,6 @@ import javax.jcr.NodeIterator;
 import javax.jcr.RepositoryException;
 
 import org.apache.commons.lang.ArrayUtils;
-import org.chromattic.core.api.ChromatticSessionImpl;
 import org.exoplatform.commons.api.event.EventManager;
 import org.exoplatform.commons.persistence.impl.EntityManagerService;
 import org.exoplatform.commons.utils.XPathUtils;
@@ -246,7 +244,7 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
         //
         ExoSocialActivity activity = activityJCRStorage.getActivity(activityId);
         Map<String, String> params = activity.getTemplateParams();
-        if (params != null) {
+        if (params != null && !params.isEmpty()) {
           
           for(Map.Entry<String, String> entry: params.entrySet()) {
             String value = entry.getValue();
@@ -289,7 +287,7 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
             String oldCommentId = comment.getId();
             comment.setId(null);
             Map<String, String> commentParams = comment.getTemplateParams();
-            if (commentParams != null) {
+            if (commentParams != null && !commentParams.isEmpty()) {
               
               for(Map.Entry<String, String> entry: commentParams.entrySet()) {
                 String value = entry.getValue();
@@ -517,7 +515,7 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
       comment.setBody(activityEntity.getBody());
       comment.setBodyId(activityEntity.getBodyId());
       comment.setPostedTime(activityEntity.getPostedTime());
-      comment.setUpdated(getLastUpdatedTime(activityEntity));
+      comment.setUpdated(getLastUpdatedTime(activityEntity, comment.getPostedTime()));
       comment.isComment(activityEntity.isComment());
       comment.setType(activityEntity.getType());
       //
@@ -536,7 +534,7 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
       if (params != null) {
         comment.setTemplateParams(new LinkedHashMap<String, String>(params.getParams()));
       } else {
-        comment.setTemplateParams(new HashMap<String, String>());
+        comment.setTemplateParams(new LinkedHashMap<String, String>());
       }
       //
       comment.isLocked(false);
@@ -552,17 +550,12 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
     return comment;
   }
 
-  private long getLastUpdatedTime(ActivityEntity activityEntity) {
-    ChromatticSessionImpl chromatticSession = (ChromatticSessionImpl) getSession();
+  private long getLastUpdatedTime(ActivityEntity activityEntity, Long postTime) {
     try {
-      Node node = chromatticSession.getNode(activityEntity);
-      if (node.hasProperty(ActivityEntity.lastUpdated.getName())) {
-        return activityEntity.getLastUpdated();
-      }
-    } catch (RepositoryException e) {
-      LOG.debug("Failed to get last updated by activity with id = " + activityEntity.getId(), e);
+      return activityEntity.getLastUpdated();
+    } catch (Exception e) {
+      return postTime;
     }
-    return activityEntity.getPostedTime();
   }
 
   @Override
