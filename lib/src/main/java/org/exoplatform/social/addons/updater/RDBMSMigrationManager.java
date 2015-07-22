@@ -50,13 +50,17 @@ public class RDBMSMigrationManager implements Startable {
           if (!MigrationContext.isDone()) {
             //
             LOG.info("START ASYNC MIGRATION---------------------------------------------------");
-            profileMigration.start();
-            updateSettingValue(MigrationContext.SOC_RDBMS_PROFILE_MIGRATION_KEY, true);
+            if(!MigrationContext.isProfileDone()) {
+              profileMigration.start();
+              updateSettingValue(MigrationContext.SOC_RDBMS_PROFILE_MIGRATION_KEY, true);
+            }
             //
             if (!MigrationContext.isDone() && MigrationContext.isProfileDone()) {
-              relationshipMigration.start();
-              updateSettingValue(MigrationContext.SOC_RDBMS_CONNECTION_MIGRATION_KEY, true);
-              if (!MigrationContext.isDone() && MigrationContext.isConnectionDone()) {
+              if (!MigrationContext.isConnectionDone()) {
+                relationshipMigration.start();
+                updateSettingValue(MigrationContext.SOC_RDBMS_CONNECTION_MIGRATION_KEY, true);
+              }
+              if (!MigrationContext.isDone() && MigrationContext.isConnectionDone() && !MigrationContext.isActivityDone()) {
                 activityMigration.start();
                 updateSettingValue(MigrationContext.SOC_RDBMS_ACTIVITY_MIGRATION_KEY, true);
               }
@@ -112,7 +116,7 @@ public class RDBMSMigrationManager implements Startable {
       if (migrationValue != null) {
         return Boolean.parseBoolean(migrationValue.getValue().toString());
       } else {
-        settingService.set(Context.GLOBAL, Scope.GLOBAL.id(MIGRATION_SETTING_GLOBAL_KEY), key, SettingValue.create(false));
+        settingService.set(Context.GLOBAL, Scope.GLOBAL.id(MIGRATION_SETTING_GLOBAL_KEY), key, SettingValue.create(Boolean.FALSE));
         return false;
       }
     } finally {
