@@ -67,13 +67,22 @@ public class RDBMSMigrationManager implements Startable {
             }
 
             // cleanup Connections
-            if (!MigrationContext.isDone() && MigrationContext.isConnectionDone()) {
-              relationshipMigration.doRemove();
-              updateSettingValue(MigrationContext.SOC_RDBMS_CONNECTION_CLEANUP_KEY, true);
+            if (!MigrationContext.isDone() && MigrationContext.isConnectionDone() && !MigrationContext.isConnectionCleanupDone()) {
+              try {
+                relationshipMigration.doRemove();
+                updateSettingValue(MigrationContext.SOC_RDBMS_CONNECTION_CLEANUP_KEY, true);
+              } catch(RuntimeException e) {
+                LOG.error("Failed to relationship cleanup", e);
+                if (!MigrationContext.isConnectionCleanupDone()) {
+                  LOG.info("Retry to relationship cleanup.");
+                  relationshipMigration.doRemove();
+                  updateSettingValue(MigrationContext.SOC_RDBMS_CONNECTION_CLEANUP_KEY, true);
+                }
+              }
             }
 
             // cleanup activities
-            if (!MigrationContext.isDone() && MigrationContext.isActivityDone()) {
+            if (!MigrationContext.isDone() && MigrationContext.isActivityDone() && !MigrationContext.isActivityCleanupDone()) {
               activityMigration.doRemove();
               updateSettingValue(MigrationContext.SOC_RDBMS_ACTIVITY_CLEANUP_KEY, true);
               updateSettingValue(MigrationContext.SOC_RDBMS_MIGRATION_STATUS_KEY, true);
@@ -87,10 +96,9 @@ public class RDBMSMigrationManager implements Startable {
           LOG.error("Failed to running Migration data from JCR to RDBMS", e);
         } finally {
           Scope.GLOBAL.id(null);
-          RequestLifeCycle.end();
           migrater.countDown();
+          RequestLifeCycle.end();
         }
-
       }
     };
     this.migrationThread = new Thread(migrateTask);

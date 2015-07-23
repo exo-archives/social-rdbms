@@ -158,36 +158,38 @@ public class RelationshipMigrationService extends AbstractMigrationService<Relat
     long timePerUser = System.currentTimeMillis();
     RequestLifeCycle.begin(PortalContainer.getInstance());
     int offset = 0;
-    NodeIterator nodeIter  = getIdentityNodes(offset, LIMIT_THRESHOLD);
-    Node node = null;
-    
-    while (nodeIter.hasNext()) {
-      node = nodeIter.nextNode();
-      LOG.info(String.format("|  \\ START::cleanup Relationship of user number: %s (%s user)", offset, node.getName()));
-      IdentityEntity identityEntity = _findById(IdentityEntity.class, node.getUUID());
-      offset++;
+    try {
+      NodeIterator nodeIter  = getIdentityNodes(offset, LIMIT_THRESHOLD);
+      Node node = null;
       
-      Collection<RelationshipEntity> entities = identityEntity.getRelationship().getRelationships().values();
-      removeRelationshipEntity(entities);
-      // 
-      entities = identityEntity.getSender().getRelationships().values();
-      removeRelationshipEntity(entities);
-      //
-      entities = identityEntity.getReceiver().getRelationships().values();
-      removeRelationshipEntity(entities);
-      
-      LOG.info(String.format("|  / END::cleanup (%s user) consumed time %s(ms)", node.getName(), System.currentTimeMillis() - timePerUser));
-      
-      timePerUser = System.currentTimeMillis();
-      if(offset % LIMIT_THRESHOLD == 0) {
-        RequestLifeCycle.end();
-        RequestLifeCycle.begin(PortalContainer.getInstance());
-        nodeIter = getIdentityNodes(offset, LIMIT_THRESHOLD);
+      while (nodeIter.hasNext()) {
+        node = nodeIter.nextNode();
+        LOG.info(String.format("|  \\ START::cleanup Relationship of user number: %s (%s user)", offset, node.getName()));
+        IdentityEntity identityEntity = _findById(IdentityEntity.class, node.getUUID());
+        offset++;
+        
+        Collection<RelationshipEntity> entities = identityEntity.getRelationship().getRelationships().values();
+        removeRelationshipEntity(entities);
+        // 
+        entities = identityEntity.getSender().getRelationships().values();
+        removeRelationshipEntity(entities);
+        //
+        entities = identityEntity.getReceiver().getRelationships().values();
+        removeRelationshipEntity(entities);
+        
+        LOG.info(String.format("|  / END::cleanup (%s user) consumed time %s(ms)", node.getName(), System.currentTimeMillis() - timePerUser));
+        
+        timePerUser = System.currentTimeMillis();
+        if(offset % LIMIT_THRESHOLD == 0) {
+          RequestLifeCycle.end();
+          RequestLifeCycle.begin(PortalContainer.getInstance());
+          nodeIter = getIdentityNodes(offset, LIMIT_THRESHOLD);
+        }
       }
+      LOG.info(String.format("| / END::cleanup Relationships migration for (%s) user consumed %s(ms)", offset, System.currentTimeMillis() - t));
+    } finally {
+      RequestLifeCycle.end();
     }
-    //
-    RequestLifeCycle.end();
-    LOG.info(String.format("| / END::cleanup Relationships migration for (%s) user consumed %s(ms)", offset, System.currentTimeMillis() - t));
   }
   
   

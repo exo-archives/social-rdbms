@@ -12,6 +12,7 @@ import java.util.regex.Pattern;
 
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
+import javax.jcr.PropertyIterator;
 import javax.jcr.RepositoryException;
 
 import org.apache.commons.lang.ArrayUtils;
@@ -425,25 +426,15 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
    * @param identityNode
    */
   private void cleanupSubNode(Node activityNode, String userName) {
-    String subNodeQuery = null;
-    try {
-      subNodeQuery = String.format("SELECT * FROM soc:activityref WHERE soc:target = '%s'", activityNode.getUUID());
-    } catch (RepositoryException e) {
-      LOG.error(e.getMessage(), e);
-      return;
-    }
-    
     long totalTime = System.currentTimeMillis();
-    NodeIterator it = nodes(subNodeQuery);
-    NodeImpl node = null;
+    Node node = null;
     long offset = 0;
     try {
-      while (it.hasNext()) {
-        node = (NodeImpl) it.next();
-        if (node.getData() != null) {
-          node.remove();
-          offset++;
-        }
+      PropertyIterator pIt = activityNode.getReferences();
+      while (pIt.hasNext()) {
+        node = pIt.nextProperty().getParent();
+        node.remove();
+        offset++;
         
         if (offset % LIMIT_ACTIVITY_REF_SAVE_THRESHOLD == 0) {
           getSession().save();
