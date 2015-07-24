@@ -8,6 +8,9 @@
     <non-jta-data-source>java:comp/env/exo-jcr_portal</non-jta-data-source>
     <properties>     
       <property name="hibernate.show_sql" value="false" />
+      <property name="hibernate.connection.characterEncoding" value="utf8"/>
+      <property name="hibernate.connection.useUnicode" value="true"/>
+      <property name="hibernate.connection.charSet" value="UTF-8"/>
     </properties>
   </persistence-unit>
 </persistence>

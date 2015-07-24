@@ -33,6 +33,11 @@
             <column name="titleId" type="VARCHAR(1024)"/>
             <column name="type" type="VARCHAR(255)"/>
         </createTable>
+        <modifySql dbms="mysql">
+            <append value="ENGINE=INNODB CHARSET=UTF8 COLLATE utf8_general_ci"/>
+        </modifySql>
+    </changeSet>
+    <changeSet author="tuvd@exoplatform.com" id="1.0.0-1.1">
         <createIndex tableName="SOC_ACTIVITIES" indexName="IDX_SOC_ACTIVITIES_01">
             <column name="lastUpdated" descending="true"/>
         </createIndex>
@@ -46,6 +51,7 @@
             <column name="HIDDEN"/>
         </createIndex>
     </changeSet>
+    
     <changeSet author="tuvd@exoplatform.com" id="1.0.0-2">
         <createTable tableName="SOC_ACTIVITY_LIKERS">
             <column name="ACTIVITY_ID" type="BIGINT">
@@ -80,6 +86,9 @@
                 <constraints nullable="false"/>
             </column>
         </createTable>
+        <modifySql dbms="mysql">
+            <append value="ENGINE=INNODB CHARSET=UTF8 COLLATE utf8_general_ci"/>
+        </modifySql>
     </changeSet>
     <changeSet author="tuvd@exoplatform.com" id="1.0.0-5">
         <createTable tableName="SOC_COMMENTS">
@@ -104,6 +113,11 @@
             <column name="titleId" type="VARCHAR(1024)"/>
             <column name="ACTIVITY_ID" type="BIGINT"/>
         </createTable>
+        <modifySql dbms="mysql">
+            <append value="ENGINE=INNODB CHARSET=UTF8 COLLATE utf8_general_ci"/>
+        </modifySql>
+    </changeSet>
+    <changeSet author="tuvd@exoplatform.com" id="1.0.0-5.1">
         <createIndex tableName="SOC_COMMENTS" indexName="IDX_SOC_COMMENTS_01">
             <column name="lastUpdated" descending="true"/>
         </createIndex>
@@ -111,6 +125,7 @@
             <column name="posterId"/>
         </createIndex>
     </changeSet>
+
     <changeSet author="tuvd@exoplatform.com" id="1.0.0-6">
         <createTable tableName="SOC_COMMENT_TEMPLATE_PARAMS">
             <column name="COMMENT_ID" type="BIGINT">
@@ -121,6 +136,9 @@
                 <constraints nullable="false"/>
             </column>
         </createTable>
+        <modifySql dbms="mysql">
+            <append value="ENGINE=INNODB CHARSET=UTF8 COLLATE utf8_general_ci"/>
+        </modifySql>
     </changeSet>
 	  <changeSet author="tuvd@exoplatform.com" id="1.0.0-7">
         <createTable tableName="SOC_PROFILES">
@@ -136,6 +154,9 @@
             <column name="positions" type="VARCHAR(1024)"/>
             <column name="skills" type="VARCHAR(1024)"/>
         </createTable>
+        <modifySql dbms="mysql">
+            <append value="ENGINE=INNODB CHARSET=UTF8 COLLATE utf8_general_ci"/>
+        </modifySql>
     </changeSet>
     <changeSet author="tuvd@exoplatform.com" id="1.0.0-8">
         <createTable tableName="SOC_CONNECTIONS">
