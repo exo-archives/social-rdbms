@@ -19,7 +19,6 @@ package org.exoplatform.social.addons.storage.dao.jpa.query;
 import static org.exoplatform.social.core.storage.impl.StorageUtils.ASTERISK_STR;
 import static org.exoplatform.social.core.storage.impl.StorageUtils.EMPTY_STR;
 import static org.exoplatform.social.core.storage.impl.StorageUtils.PERCENT_STR;
-import static org.exoplatform.social.core.storage.impl.StorageUtils.SPACE_STR;
 import static org.exoplatform.social.core.storage.impl.StorageUtils.escapeSpecialCharacter;
 
 import java.util.Arrays;
@@ -262,38 +261,42 @@ public final class RelationshipQueryBuilder {
 
     Predicate pFilter = null;
     if (profileFilter != null) {
-      String inputName = addPercentToStringInput(profileFilter.getName()).replace(ASTERISK_STR, SPACE_STR);
-      String position = addPercentToStringInput(StringEscapeUtils.escapeHtml(profileFilter.getPosition()));
-      String skills = addPercentToStringInput(StringEscapeUtils.escapeHtml(profileFilter.getSkills()));
-      String company = addPercentToStringInput(StringEscapeUtils.escapeHtml(profileFilter.getCompany()));
+      String inputName = addPercentToStringInput(profileFilter.getName().toLowerCase());
+      String position = addPercentToStringInput(StringEscapeUtils.escapeHtml(profileFilter.getPosition()).toLowerCase());
+      String skills = addPercentToStringInput(StringEscapeUtils.escapeHtml(profileFilter.getSkills()).toLowerCase());
+      String company = addPercentToStringInput(StringEscapeUtils.escapeHtml(profileFilter.getCompany()).toLowerCase());
+      char firstChar = profileFilter.getFirstCharacterOfName();
       //
-      if (!inputName.isEmpty()) {
-        Predicate pName = cb.like(receiver.get(Profile_.fullName), inputName);
-        pName = cb.or(pName, cb.like(receiver.get(Profile_.firstName), inputName));
-        pFilter = cb.or(pName, cb.like(receiver.get(Profile_.lastName), inputName));
+      if (firstChar != '\u0000') {
+        String fChar = addPercentToStringInput(String.valueOf(firstChar).toLowerCase());
+        pFilter = cb.like(cb.lower(receiver.get(Profile_.lastName)), fChar);
+      } else if (!inputName.isEmpty()) {
+        Predicate pName = cb.like(cb.lower(receiver.get(Profile_.fullName)), inputName);
+        pName = cb.or(pName, cb.like(cb.lower(receiver.get(Profile_.firstName)), inputName));
+        pFilter = cb.or(pName, cb.like(cb.lower(receiver.get(Profile_.lastName)), inputName));
       }
       //
       if (!position.isEmpty()) {
-        pFilter = appendPredicate(cb, pFilter, cb.like(receiver.get(Profile_.positions), position));
+        pFilter = appendPredicate(cb, pFilter, cb.like(cb.lower(receiver.get(Profile_.positions)), position));
       }
       //
       if (!skills.isEmpty()) {
-        pFilter = appendPredicate(cb, pFilter, cb.like(receiver.get(Profile_.skills), skills));
+        pFilter = appendPredicate(cb, pFilter, cb.like(cb.lower(receiver.get(Profile_.skills)), skills));
       }
       if (!company.isEmpty()) {
-        pFilter = appendPredicate(cb, pFilter, cb.like(receiver.get(Profile_.organizations), company));
+        pFilter = appendPredicate(cb, pFilter, cb.like(cb.lower(receiver.get(Profile_.organizations)), company));
       }
-
+      //
       String all = profileFilter.getAll();
       if (all != null && !all.trim().isEmpty()) {
         all = escapeSpecialCharacter(all.trim()).toLowerCase();
-        Predicate pAll = cb.like(receiver.get(Profile_.fullName), all);
-        pAll = cb.or(pAll, cb.like(receiver.get(Profile_.firstName), all));
-        pAll = cb.or(pAll, cb.like(receiver.get(Profile_.lastName), all));
-        pAll = cb.or(pAll, cb.like(receiver.get(Profile_.skills), all));
-        pAll = cb.or(pAll, cb.like(receiver.get(Profile_.positions), all));
-        pAll = cb.or(pAll, cb.like(receiver.get(Profile_.organizations), all));
-        pAll = cb.or(pAll, cb.like(receiver.get(Profile_.jobsDescription), all));
+        Predicate pAll = cb.like(cb.lower(receiver.get(Profile_.fullName)), all);
+        pAll = cb.or(pAll, cb.like(cb.lower(receiver.get(Profile_.firstName)), all));
+        pAll = cb.or(pAll, cb.like(cb.lower(receiver.get(Profile_.lastName)), all));
+        pAll = cb.or(pAll, cb.like(cb.lower(receiver.get(Profile_.skills)), all));
+        pAll = cb.or(pAll, cb.like(cb.lower(receiver.get(Profile_.positions)), all));
+        pAll = cb.or(pAll, cb.like(cb.lower(receiver.get(Profile_.organizations)), all));
+        pAll = cb.or(pAll, cb.like(cb.lower(receiver.get(Profile_.jobsDescription)), all));
         //
         pFilter = appendPredicate(cb, pFilter, pAll);
       }
@@ -310,10 +313,7 @@ public final class RelationshipQueryBuilder {
   
   private static String addPercentToStringInput(final String input) {
     if (input != null && !input.trim().isEmpty()) {
-      if (input.indexOf(PERCENT_STR) == -1) {
-        return PERCENT_STR + input.trim() + PERCENT_STR;
-      }
-      return input.trim();
+      return PERCENT_STR + input.trim().replace(ASTERISK_STR, PERCENT_STR) + PERCENT_STR;
     }
     return EMPTY_STR;
   }

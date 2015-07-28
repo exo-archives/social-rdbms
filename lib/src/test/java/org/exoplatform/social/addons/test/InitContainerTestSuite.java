@@ -20,7 +20,9 @@ import org.exoplatform.commons.testing.BaseExoContainerTestSuite;
 import org.exoplatform.commons.testing.ConfigTestCase;
 import org.exoplatform.social.addons.concurrency.AsynMigrationTest;
 import org.exoplatform.social.addons.storage.ActivityManagerMysqlTest;
+import org.exoplatform.social.addons.storage.PeopleSearchConnectorTestCase;
 import org.exoplatform.social.addons.storage.RDBMSActivityStorageImplTest;
+import org.exoplatform.social.addons.storage.RDBMSIdentityManagerTest;
 import org.exoplatform.social.addons.storage.RDBMSRelationshipManagerTest;
 import org.exoplatform.social.addons.storage.SpaceActivityMySqlPublisherTest;
 import org.exoplatform.social.addons.storage.dao.ActivityDAOTest;
@@ -34,7 +36,9 @@ import org.junit.runners.Suite.SuiteClasses;
   RDBMSActivityStorageImplTest.class,
   ActivityManagerMysqlTest.class,
   SpaceActivityMySqlPublisherTest.class,
-  RDBMSRelationshipManagerTest.class
+  RDBMSRelationshipManagerTest.class,
+  PeopleSearchConnectorTestCase.class,
+  RDBMSIdentityManagerTest.class
   })
 @ConfigTestCase(AbstractCoreTest.class)
 public class InitContainerTestSuite extends BaseExoContainerTestSuite {

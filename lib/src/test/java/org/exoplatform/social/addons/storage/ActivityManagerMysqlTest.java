@@ -24,11 +24,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
+import org.exoplatform.commons.utils.CommonsUtils;
 import org.exoplatform.commons.utils.ListAccess;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 import org.exoplatform.services.organization.OrganizationService;
 import org.exoplatform.services.organization.User;
+import org.exoplatform.social.addons.storage.dao.ProfileItemDAO;
 import org.exoplatform.social.addons.test.AbstractCoreTest;
 import org.exoplatform.social.common.RealtimeListAccess;
 import org.exoplatform.social.core.activity.model.ExoSocialActivity;
@@ -1213,6 +1215,7 @@ public class ActivityManagerMysqlTest extends AbstractCoreTest {
   }
   
   public void testGetLastIdenties() throws Exception {
+    ProfileItemDAO itemDAO = CommonsUtils.getService(ProfileItemDAO.class);
     List<Identity> lastIds = identityManager.getLastIdentities(1);
     assertEquals(1, lastIds.size());
     Identity id1 = lastIds.get(0);
@@ -1230,6 +1233,9 @@ public class ActivityManagerMysqlTest extends AbstractCoreTest {
     assertEquals(1, lastIds.size());
     assertEquals(newId1, lastIds.get(0));
     identityManager.deleteIdentity(newId1);
+    org.exoplatform.social.addons.storage.entity.Profile newId1Profile = itemDAO.findProfileItemByIdentityId(newId1.getId());
+    newId1Profile.setDeleted(true);
+    itemDAO.update(newId1Profile);
     assertNull(identityManager.getIdentity(newId1.getId(), false));
     lastIds = identityManager.getLastIdentities(1);
     assertEquals(1, lastIds.size());
@@ -1241,6 +1247,9 @@ public class ActivityManagerMysqlTest extends AbstractCoreTest {
     assertEquals(5, lastIds.size());
     assertEquals(newId2, lastIds.get(0));
     identityManager.deleteIdentity(newId2);
+    org.exoplatform.social.addons.storage.entity.Profile newId2Profile = itemDAO.findProfileItemByIdentityId(newId2.getId());
+    newId2Profile.setDeleted(true);
+    itemDAO.update(newId2Profile);
     assertNull(identityManager.getIdentity(newId2.getId(), true));
     lastIds = identityManager.getLastIdentities(5);
     assertEquals(5, lastIds.size());
@@ -1255,6 +1264,9 @@ public class ActivityManagerMysqlTest extends AbstractCoreTest {
     assertEquals(newId2, lastIds.get(0));
     assertEquals(newId1, lastIds.get(1));
     identityManager.deleteIdentity(newId1);
+    newId1Profile = itemDAO.findProfileItemByIdentityId(newId1.getId());
+    newId1Profile.setDeleted(true);
+    itemDAO.update(newId1Profile);
     os.getUserHandler().removeUser("newId1", false);
     assertNull(identityManager.getIdentity(newId1.getId(), true));
     lastIds = identityManager.getLastIdentities(1);
@@ -1265,6 +1277,9 @@ public class ActivityManagerMysqlTest extends AbstractCoreTest {
     assertEquals(newId2, lastIds.get(0));
     assertFalse(newId1.equals(lastIds.get(1)));
     identityManager.deleteIdentity(newId2);
+    newId2Profile = itemDAO.findProfileItemByIdentityId(newId2.getId());
+    newId2Profile.setDeleted(true);
+    itemDAO.update(newId2Profile);
     os.getUserHandler().removeUser("newId2", false);
     assertNull(identityManager.getIdentity(newId2.getId(), false));
     lastIds = identityManager.getLastIdentities(1);

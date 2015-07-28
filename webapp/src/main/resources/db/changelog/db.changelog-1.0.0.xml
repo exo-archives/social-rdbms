@@ -153,6 +153,7 @@
             <column name="organizations" type="VARCHAR(1024)"/>
             <column name="positions" type="VARCHAR(1024)"/>
             <column name="skills" type="VARCHAR(1024)"/>
+            <column name="isDeleted" type="BIT"/>
         </createTable>
         <modifySql dbms="mysql">
             <append value="ENGINE=INNODB CHARSET=UTF8 COLLATE utf8_general_ci"/>

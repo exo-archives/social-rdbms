@@ -60,6 +60,11 @@
   </component>
   
   <component>
+    <key>org.exoplatform.social.core.storage.impl.IdentityStorageImpl</key>
+    <type>org.exoplatform.social.addons.storage.RDBMSIdentityStorageImpl</type>
+  </component>
+  
+  <component>
     <key>org.exoplatform.social.core.storage.api.ActivityStorage</key>
     <type>org.exoplatform.social.addons.storage.RDBMSActivityStorageImpl</type>
   </component>
@@ -112,6 +117,15 @@
       <name>ProfileUpdateImpl</name>
       <set-method>registerProfileListener</set-method>
       <type>org.exoplatform.social.addons.profile.ProfileUpdateImpl</type>
+    </component-plugin>
+  </external-component-plugins>
+  
+  <external-component-plugins>
+    <target-component>org.exoplatform.services.organization.OrganizationService</target-component>
+    <component-plugin>
+      <name>social.new.user.event.listener</name>
+      <set-method>addListenerPlugin</set-method>
+      <type>org.exoplatform.social.addons.profile.IdentityUpdateImpl</type>
     </component-plugin>
   </external-component-plugins>
 

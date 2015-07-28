@@ -29,6 +29,8 @@ public class ProfileUtils {
     profileItem.setLastName(getProfileSimpleValue(p, Profile.LAST_NAME));
     profileItem.setFullName(getProfileSimpleValue(p, Profile.FULL_NAME));
     profileItem.setPositions(getProfileSimpleValue(p, Profile.POSITION));
+    boolean isDeleted = "true".equals(getProfileSimpleValue(p, Profile.DELETED)) ? true : false;
+    profileItem.setDeleted(isDeleted);
     // process for experiences
     putExperienceData(profileItem, p);
     //

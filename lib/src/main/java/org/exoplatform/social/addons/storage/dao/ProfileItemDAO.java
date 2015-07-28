@@ -16,8 +16,12 @@
  */
 package org.exoplatform.social.addons.storage.dao;
 
+import java.util.List;
+
 import org.exoplatform.commons.api.persistence.GenericDAO;
 import org.exoplatform.social.addons.storage.entity.Profile;
+import org.exoplatform.social.core.profile.ProfileFilter;
+import org.exoplatform.social.core.storage.IdentityStorageException;
 
 /**
  * Created by The eXo Platform SAS
@@ -28,4 +32,17 @@ import org.exoplatform.social.addons.storage.entity.Profile;
 public interface ProfileItemDAO extends GenericDAO<Profile, Long> {
 
   Profile findProfileItemByIdentityId(String identityId);
+  
+  List<Profile> getIdentitiesForMentions(ProfileFilter profileFilter, long offset, long limit);
+  
+  int getIdentitiesByProfileFilterCount(ProfileFilter profileFilter);
+  
+  List<Profile> getIdentitiesByFirstCharacterOfName(ProfileFilter profileFilter, long offset, long limit);
+  
+  int getIdentitiesByFirstCharacterOfNameCount(ProfileFilter profileFilter);
+  
+  List<Profile> getIdentitiesForUnifiedSearch(ProfileFilter profileFilter, long offset, long limit);
+  
+  List<Profile> getIdentitiesByProfileFilter(ProfileFilter profileFilter, long offset, long limit) throws IdentityStorageException;
+  
 }

@@ -27,6 +27,7 @@ public class Profile {
   private String positions;
   private String organizations;
   private String jobsDescription;
+  private boolean isDeleted = false;
 
   public Profile() {
   }
@@ -101,5 +102,13 @@ public class Profile {
 
   public void setJobsDescription(String jobsDescription) {
     this.jobsDescription = jobsDescription;
+  }
+
+  public boolean isDeleted() {
+    return isDeleted;
+  }
+
+  public void setDeleted(boolean isDeleted) {
+    this.isDeleted = isDeleted;
   }
 }

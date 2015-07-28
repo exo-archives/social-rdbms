@@ -69,7 +69,7 @@ public class ProfileMigrationService extends AbstractMigrationService<Profile> {
           counter.newBatchAndWatch();
           counter.getAndIncrementTotal();
           LOG.info(String.format("|  \\ START::user number: %s (%s user)", counter.getTotal(), owner.getRemoteId()));
-          ProfileUtils.createOrUpdateProfile(owner.getProfile(), false);
+          ProfileUtils.createOrUpdateProfile(identityStorage.loadProfile(owner.getProfile()), false);
           LOG.info(String.format("|  / END::user number %s (%s user) consumed %s(ms)", counter.getTotal(), owner.getRemoteId(), counter.endBatchWatch()));
           
           //
