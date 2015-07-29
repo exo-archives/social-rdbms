@@ -16,21 +16,11 @@
  */
 package org.exoplatform.social.addons.storage;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.NavigableMap;
-import java.util.Random;
-import java.util.Set;
-import java.util.TreeMap;
+import java.util.*;
 
-import org.exoplatform.commons.api.persistence.Transactional;
-import org.exoplatform.social.addons.storage.dao.ProfileItemDAO;
+import org.exoplatform.commons.api.persistence.ExoTransactional;
 import org.exoplatform.social.addons.storage.dao.ConnectionDAO;
+import org.exoplatform.social.addons.storage.dao.ProfileItemDAO;
 import org.exoplatform.social.addons.storage.entity.Connection;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.identity.model.Profile;
@@ -61,7 +51,7 @@ public class RDBMSRelationshipStorageImpl extends RelationshipStorageImpl {
   }
 
   @Override
-  @Transactional
+  @ExoTransactional
   public Relationship saveRelationship(Relationship relationship) throws RelationshipStorageException {
     if (relationship.getId() == null) {//create new relationship
       Connection entity = new Connection();
@@ -95,7 +85,7 @@ public class RDBMSRelationshipStorageImpl extends RelationshipStorageImpl {
   }
   
   @Override
-  @Transactional
+  @ExoTransactional
   public void removeRelationship(Relationship relationship) throws RelationshipStorageException {
     Connection connection = connectionDAO.find(Long.valueOf(relationship.getId()));
     connectionDAO.delete(connection);
@@ -104,7 +94,7 @@ public class RDBMSRelationshipStorageImpl extends RelationshipStorageImpl {
   }
   
   @Override
-  @Transactional
+  @ExoTransactional
   public Relationship getRelationship(Identity identity1, Identity identity2) throws RelationshipStorageException {
     Connection item = connectionDAO.getConnection(identity1, identity2);
     if (item == null) {

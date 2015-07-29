@@ -17,6 +17,7 @@
 package org.exoplatform.social.addons.storage.dao.jpa;
 
 import javax.persistence.EntityManager;
+import javax.persistence.NoResultException;
 import javax.persistence.TypedQuery;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
@@ -46,7 +47,7 @@ public class ProfileItemDAOImpl extends GenericDAOJPAImpl<Profile, Long> impleme
       //
       TypedQuery<Profile> typedQuery = em.createQuery(select);
       return typedQuery.getSingleResult();
-    } catch (RuntimeException e) {
+    } catch (NoResultException e) {
       return null;
     }
     

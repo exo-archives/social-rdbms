@@ -82,13 +82,6 @@
 
   <component>
     <type>org.exoplatform.commons.persistence.impl.EntityManagerService</type>
-    <init-params>    
-      <value-param>
-        <name>persistence.unit.name</name>
-        <description>The name of persistence unit</description>
-        <value>${persistence.unit.name:soc-activity-pu}</value>
-      </value-param>
-    </init-params>
   </component>
   
   <component>

@@ -20,7 +20,7 @@ import java.util.List;
 
 import javax.persistence.NoResultException;
 
-import org.exoplatform.commons.api.persistence.Transactional;
+import org.exoplatform.commons.api.persistence.ExoTransactional;
 import org.exoplatform.commons.persistence.impl.GenericDAOJPAImpl;
 import org.exoplatform.social.addons.storage.dao.CommentDAO;
 import org.exoplatform.social.addons.storage.dao.jpa.query.CommentQueryBuilder;
@@ -83,7 +83,7 @@ public class CommentDAOImpl extends GenericDAOJPAImpl<Comment, Long>  implements
   }
 
   @Override
-  @Transactional
+  @ExoTransactional
   public Activity findActivity(Long commentId) {
     try {
       return CommentQueryBuilder.builder().commentId(commentId).buildActivty();

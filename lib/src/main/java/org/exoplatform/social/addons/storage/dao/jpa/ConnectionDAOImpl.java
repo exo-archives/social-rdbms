@@ -18,9 +18,10 @@ package org.exoplatform.social.addons.storage.dao.jpa;
 
 import java.util.List;
 
+import javax.persistence.NoResultException;
 import javax.persistence.TypedQuery;
 
-import org.exoplatform.commons.api.persistence.Transactional;
+import org.exoplatform.commons.api.persistence.ExoTransactional;
 import org.exoplatform.commons.persistence.impl.GenericDAOJPAImpl;
 import org.exoplatform.social.addons.storage.dao.ConnectionDAO;
 import org.exoplatform.social.addons.storage.dao.jpa.query.RelationshipQueryBuilder;
@@ -39,7 +40,7 @@ import org.exoplatform.social.core.relationship.model.Relationship.Type;
 public class ConnectionDAOImpl extends GenericDAOJPAImpl<Connection, Long> implements ConnectionDAO {
 
   @Override
-  @Transactional
+  @ExoTransactional
   public long count(Identity identity, Type status) {
     return RelationshipQueryBuilder.builder()
                                         .owner(identity)
@@ -56,7 +57,7 @@ public class ConnectionDAOImpl extends GenericDAOJPAImpl<Connection, Long> imple
                                                                  .buildSingleRelationship();
     try {
       return query.getSingleResult();
-    } catch (Exception e) {
+    } catch (NoResultException e) {
       return null;
     }
   }
