@@ -1,5 +1,7 @@
 package org.exoplatform.social.addons.storage.entity;
 
+import org.exoplatform.commons.api.persistence.ExoEntity;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -9,6 +11,7 @@ import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
 
 @Entity
+@ExoEntity
 @Table(name = "SOC_PROFILES", uniqueConstraints = @UniqueConstraint(columnNames = { "IDENTITY_ID" }))
 public class Profile {
 

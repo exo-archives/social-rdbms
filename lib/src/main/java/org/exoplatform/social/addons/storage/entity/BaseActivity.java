@@ -1,5 +1,7 @@
 package org.exoplatform.social.addons.storage.entity;
 
+import org.exoplatform.commons.api.persistence.ExoEntity;
+
 import java.io.Serializable;
 
 import javax.persistence.Column;
@@ -9,6 +11,7 @@ import javax.persistence.MappedSuperclass;
  * Created by bdechateauvieux on 3/25/15.
  */
 @MappedSuperclass
+@ExoEntity
 @SuppressWarnings("serial")
 public abstract class BaseActivity implements Serializable {
   

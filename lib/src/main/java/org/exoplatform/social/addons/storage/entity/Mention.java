@@ -1,11 +1,14 @@
 package org.exoplatform.social.addons.storage.entity;
 
+import org.exoplatform.commons.api.persistence.ExoEntity;
+
 import javax.persistence.*;
 
 /**
  * Created by bdechateauvieux on 7/7/15.
  */
 @Entity
+@ExoEntity
 @Table(name="SOC_MENTIONS")
 public class Mention {
     @Id

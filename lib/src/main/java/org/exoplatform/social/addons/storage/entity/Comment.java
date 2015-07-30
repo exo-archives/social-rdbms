@@ -1,5 +1,7 @@
 package org.exoplatform.social.addons.storage.entity;
 
+import org.exoplatform.commons.api.persistence.ExoEntity;
+
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Map;
@@ -24,6 +26,7 @@ import javax.persistence.Table;
  * Created by bdechateauvieux on 3/24/15.
  */
 @Entity
+@ExoEntity
 @Table(name = "SOC_COMMENTS")
 @NamedQuery(
   name = "getActivityByComment",

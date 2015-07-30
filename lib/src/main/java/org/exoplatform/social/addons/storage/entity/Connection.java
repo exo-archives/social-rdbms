@@ -11,9 +11,11 @@ import javax.persistence.ManyToOne;
 import javax.persistence.NamedQuery;
 import javax.persistence.Table;
 
+import org.exoplatform.commons.api.persistence.ExoEntity;
 import org.exoplatform.social.core.relationship.model.Relationship.Type;
 
 @Entity
+@ExoEntity
 @Table(name = "SOC_CONNECTIONS")
 @NamedQuery(name = "getRelationships",
             query = "select r from Connection r")
