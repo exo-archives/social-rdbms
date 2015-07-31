@@ -105,7 +105,7 @@ public abstract class BaseCoreTest extends BaseExoTestCase {
     if (hasByteMan) {
       count = 0;
       maxQuery = 0;
-      BMUnit.loadScriptFile(getClass(), "queryCount", "src/test/resources");
+      BMUnit.loadScriptFile(getClass(), "queryBaseCount", "src/test/resources");
     }
     
     identityManager = getService(IdentityManager.class);

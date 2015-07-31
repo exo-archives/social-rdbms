@@ -31,6 +31,8 @@ import org.exoplatform.services.log.Log;
 import org.exoplatform.social.addons.storage.dao.ActivityDAO;
 import org.exoplatform.social.addons.storage.entity.Activity;
 import org.exoplatform.social.addons.test.BaseCoreTest;
+import org.exoplatform.social.addons.test.MaxQueryNumber;
+import org.exoplatform.social.addons.test.QueryNumberTest;
 import org.exoplatform.social.addons.updater.ActivityMigrationService;
 import org.exoplatform.social.addons.updater.MigrationContext;
 import org.exoplatform.social.addons.updater.ProfileMigrationService;
@@ -49,6 +51,7 @@ import org.exoplatform.social.core.storage.impl.RelationshipStorageImpl;
  *          exo@exoplatform.com
  * Jun 19, 2015  
  */
+@QueryNumberTest
 public class AsynMigrationTest extends BaseCoreTest {
   protected final Log LOG = ExoLogger.getLogger(AsynMigrationTest.class);
   private ActivityStorageImpl jcrStorage;
@@ -83,7 +86,7 @@ public class AsynMigrationTest extends BaseCoreTest {
     }
     super.tearDown();
   }
-  
+  @MaxQueryNumber(26990)
   public void testMigrationActivities() throws Exception {
     // create jcr data
     LOG.info("Create connection for root,john,mary and demo");

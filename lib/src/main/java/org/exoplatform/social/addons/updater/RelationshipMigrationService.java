@@ -5,6 +5,7 @@ import java.util.Iterator;
 
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
+import javax.jcr.RepositoryException;
 
 import org.exoplatform.commons.api.event.EventManager;
 import org.exoplatform.commons.persistence.impl.EntityManagerService;
@@ -20,8 +21,6 @@ import org.exoplatform.social.addons.storage.dao.ProfileItemDAO;
 import org.exoplatform.social.addons.storage.entity.Connection;
 import org.exoplatform.social.core.chromattic.entity.IdentityEntity;
 import org.exoplatform.social.core.chromattic.entity.RelationshipEntity;
-import org.exoplatform.social.core.identity.model.Identity;
-import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvider;
 import org.exoplatform.social.core.relationship.model.Relationship;
 import org.exoplatform.social.core.storage.impl.IdentityStorageImpl;
 
@@ -63,11 +62,6 @@ public class RelationshipMigrationService extends AbstractMigrationService<Relat
 
       long t = System.currentTimeMillis();
       try {
-        if (connectionDAO.count() > 0) {
-          MigrationContext.setConnectionDone(true);
-          return;
-        }
-        
         LOG.info("| \\ START::Relationships migration ---------------------------------");
         NodeIterator nodeIter  = getIdentityNodes(offset, LIMIT_THRESHOLD);
         
@@ -82,18 +76,36 @@ public class RelationshipMigrationService extends AbstractMigrationService<Relat
           LOG.info(String.format("|  \\ START::user number: %s (%s user)", offset, identityNode.getName()));
           long t1 = System.currentTimeMillis();
           
-          IdentityEntity identityEntity = _findById(IdentityEntity.class, identityNode.getUUID());
-          Identity identityFrom = new Identity(OrganizationIdentityProvider.NAME, identityEntity.getRemoteId());
-          identityFrom.setId(identityEntity.getId());
-          //
-          Iterator<RelationshipEntity> it = identityEntity.getRelationship().getRelationships().values().iterator();
-          relationshipNo += migrateRelationshipEntity(it, identityFrom, false, Relationship.Type.CONFIRMED);
-          //
-          it = identityEntity.getSender().getRelationships().values().iterator();
-          relationshipNo += migrateRelationshipEntity(it, identityFrom, false, Relationship.Type.OUTGOING);
-          //
-          it = identityEntity.getReceiver().getRelationships().values().iterator();
-          relationshipNo += migrateRelationshipEntity(it, identityFrom, true, Relationship.Type.INCOMING);
+          Node relationshipNode = identityNode.getNode("soc:relationship");
+          if (relationshipNode != null) {
+            NodeIterator rIt = relationshipNode.getNodes();
+            long size = rIt.getSize();
+            LOG.info("|     - CONFIRMED:: size = " + size);
+            if (size > 0) {
+              relationshipNo += migrateRelationshipEntity(rIt, identityNode.getName(), false, Relationship.Type.CONFIRMED);
+            }
+          }
+          
+          relationshipNode = identityNode.getNode("soc:sender");
+          if (relationshipNode != null) {
+            NodeIterator rIt = relationshipNode.getNodes();
+            long size = rIt.getSize();
+            LOG.info("|     - SENDER:: size = " + size);
+            if (size > 0) {
+              relationshipNo += migrateRelationshipEntity(rIt, identityNode.getName(), false, Relationship.Type.OUTGOING);
+            }
+          }
+          
+          relationshipNode = identityNode.getNode("soc:receiver");
+          if (relationshipNode != null) {
+            NodeIterator rIt = relationshipNode.getNodes();
+            long size = rIt.getSize();
+            LOG.info("|     - RECEIVER:: size = " + size);
+            if (size > 0) {
+              relationshipNo += migrateRelationshipEntity(rIt, identityNode.getName(), true, Relationship.Type.INCOMING);
+            }
+            
+          }
           //
           offset++;
           total += relationshipNo;
@@ -116,25 +128,26 @@ public class RelationshipMigrationService extends AbstractMigrationService<Relat
       }
   }
   
-  private int migrateRelationshipEntity(Iterator<RelationshipEntity> it, Identity owner, boolean isIncoming, Relationship.Type status) {
+  private int migrateRelationshipEntity(NodeIterator it, String userName, boolean isIncoming, Relationship.Type status) throws RepositoryException {
     int doneConnectionNo = 0;
     startTx();
     while (it.hasNext()) {
-      RelationshipEntity relationshipEntity = it.next();
-      String receiverId = relationshipEntity.getTo().getId().equals(owner.getId()) ? relationshipEntity.getFrom().getId() : relationshipEntity.getTo().getId();
-      Identity receiver = identityStorage.findIdentityById(receiverId);
+      Node relationshipNode = it.nextNode();
+      String receiverId = relationshipNode.getProperty("soc:from").getString();
+      LOG.debug("|     - FROM ID = " + receiverId);
+      String senderId = relationshipNode.getProperty("soc:to").getString();
+      LOG.debug("|     - TO ID = " + senderId);
       //
       Connection entity = new Connection();
-      entity.setSenderId(isIncoming ? receiver.getId() : owner.getId());
-      entity.setReceiverId(isIncoming ? owner.getId() : receiver.getId());
+      entity.setSenderId(isIncoming ? senderId : receiverId);
+      entity.setReceiverId(isIncoming ? receiverId : senderId);
       entity.setStatus(status);
-      entity.setReceiver(profileItemDAO.findProfileItemByIdentityId(isIncoming ? owner.getId() : receiver.getId()));
+      entity.setReceiver(profileItemDAO.findProfileItemByIdentityId(isIncoming ? receiverId : senderId));
       //
-
       connectionDAO.create(entity);
       ++doneConnectionNo;
       if(doneConnectionNo % LIMIT_THRESHOLD == 0) {
-        LOG.info(String.format("|     - BATCH MIGRATION::relationship number: %s (%s user)", doneConnectionNo, owner.getRemoteId()));
+        LOG.info(String.format("|     - BATCH MIGRATION::relationship number: %s (%s user)", doneConnectionNo,  userName));
         endTx(true);
         entityManagerService.endRequest(PortalContainer.getInstance());
         entityManagerService.startRequest(PortalContainer.getInstance());

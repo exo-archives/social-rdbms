@@ -1,5 +1,6 @@
 package org.exoplatform.social.addons.updater;
 
+import java.lang.reflect.Field;
 import java.util.concurrent.CountDownLatch;
 
 import org.exoplatform.commons.api.settings.SettingService;
@@ -7,6 +8,7 @@ import org.exoplatform.commons.api.settings.SettingValue;
 import org.exoplatform.commons.api.settings.data.Context;
 import org.exoplatform.commons.api.settings.data.Scope;
 import org.exoplatform.container.component.RequestLifeCycle;
+import org.exoplatform.services.jcr.impl.core.SessionImpl;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 import org.picocontainer.Startable;
@@ -46,8 +48,17 @@ public class RDBMSMigrationManager implements Startable {
       @Override
       public void run() {
         initMigrationSetting();
+        Field field =  null;
+        
         try {
           if (!MigrationContext.isDone()) {
+            
+            field =  SessionImpl.class.getDeclaredField("FORCE_USE_GET_NODES_LAZILY");
+            if (field != null) {
+              field.setAccessible(true);
+              field.set(null, true);
+            }
+            
             //
             LOG.info("START ASYNC MIGRATION---------------------------------------------------");
             if(!MigrationContext.isProfileDone()) {
@@ -95,6 +106,15 @@ public class RDBMSMigrationManager implements Startable {
         } catch (Exception e) {
           LOG.error("Failed to running Migration data from JCR to RDBMS", e);
         } finally {
+          if (field != null) {
+            try {
+              field.set(null, false);
+            } catch (IllegalArgumentException e) {
+              LOG.warn(e.getMessage(), e);
+            } catch (IllegalAccessException e) {
+              LOG.warn(e.getMessage(), e);
+            }
+          }
           Scope.GLOBAL.id(null);
           migrater.countDown();
           RequestLifeCycle.end();
