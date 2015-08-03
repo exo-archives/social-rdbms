@@ -16,11 +16,20 @@
  */
 package org.exoplatform.social.addons.storage;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.NavigableMap;
+import java.util.Random;
+import java.util.Set;
+import java.util.TreeMap;
 
 import org.exoplatform.commons.api.persistence.ExoTransactional;
 import org.exoplatform.social.addons.storage.dao.ConnectionDAO;
-import org.exoplatform.social.addons.storage.dao.ProfileItemDAO;
 import org.exoplatform.social.addons.storage.entity.Connection;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.identity.model.Profile;
@@ -40,14 +49,12 @@ import org.exoplatform.social.core.storage.impl.RelationshipStorageImpl;
 public class RDBMSRelationshipStorageImpl extends RelationshipStorageImpl {
   
   private final ConnectionDAO connectionDAO;
-  private final ProfileItemDAO profileItemDAO;
   private final IdentityStorage identityStorage;
 
-  public RDBMSRelationshipStorageImpl(IdentityStorage identityStorage, ConnectionDAO connectionDAO, ProfileItemDAO profileItemDAO) {
+  public RDBMSRelationshipStorageImpl(IdentityStorage identityStorage, ConnectionDAO connectionDAO) {
     super(identityStorage);
     this.connectionDAO = connectionDAO;
     this.identityStorage = identityStorage;
-    this.profileItemDAO = profileItemDAO;
   }
 
   @Override
@@ -58,7 +65,6 @@ public class RDBMSRelationshipStorageImpl extends RelationshipStorageImpl {
       entity.setReceiverId(relationship.getReceiver().getId());
       entity.setSenderId(relationship.getSender().getId());
       entity.setStatus(Relationship.Type.PENDING.equals(relationship.getStatus()) ? Relationship.Type.OUTGOING : relationship.getStatus());
-      entity.setReceiver(profileItemDAO.findProfileItemByIdentityId(relationship.getReceiver().getId()));
       //
       connectionDAO.create(entity);
       relationship.setId(Long.toString(entity.getId()));
@@ -68,7 +74,6 @@ public class RDBMSRelationshipStorageImpl extends RelationshipStorageImpl {
       symmetricalEntity.setSenderId(relationship.getReceiver().getId());
       symmetricalEntity.setReceiverId(relationship.getSender().getId());
       symmetricalEntity.setStatus(Relationship.Type.PENDING.equals(relationship.getStatus()) ? Relationship.Type.INCOMING : relationship.getStatus());
-      symmetricalEntity.setReceiver(profileItemDAO.findProfileItemByIdentityId(relationship.getSender().getId()));
       //
       connectionDAO.create(symmetricalEntity);
     } else {//update an relationship

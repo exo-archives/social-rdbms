@@ -35,7 +35,6 @@ import org.exoplatform.social.addons.test.MaxQueryNumber;
 import org.exoplatform.social.addons.test.QueryNumberTest;
 import org.exoplatform.social.addons.updater.ActivityMigrationService;
 import org.exoplatform.social.addons.updater.MigrationContext;
-import org.exoplatform.social.addons.updater.ProfileMigrationService;
 import org.exoplatform.social.addons.updater.RDBMSMigrationManager;
 import org.exoplatform.social.addons.updater.RelationshipMigrationService;
 import org.exoplatform.social.core.activity.model.ExoSocialActivity;
@@ -57,7 +56,6 @@ public class AsynMigrationTest extends BaseCoreTest {
   private ActivityStorageImpl jcrStorage;
   private RelationshipStorageImpl relationshipStorageImpl;
   private ActivityMigrationService activityMigration;
-  private ProfileMigrationService profileMigration;
   private RelationshipMigrationService relationshipMigration;
   private SettingService settingService;
   private RDBMSMigrationManager rdbmsMigrationManager;
@@ -70,9 +68,8 @@ public class AsynMigrationTest extends BaseCoreTest {
     relationshipStorageImpl = getService(RelationshipStorageImpl.class);
     activityMigration = getService(ActivityMigrationService.class);
     relationshipMigration = getService(RelationshipMigrationService.class);
-    profileMigration = getService(ProfileMigrationService.class);
     settingService = getService(SettingService.class);
-    rdbmsMigrationManager = new RDBMSMigrationManager(profileMigration, relationshipMigration, activityMigration, settingService);
+    rdbmsMigrationManager = new RDBMSMigrationManager(relationshipMigration, activityMigration, settingService);
   }
 
   @Override
@@ -152,7 +149,6 @@ public class AsynMigrationTest extends BaseCoreTest {
     rdbmsMigrationManager.start();
     //
     rdbmsMigrationManager.getMigrater().await();
-    assertTrue(getOrCreateSettingValue(MigrationContext.SOC_RDBMS_PROFILE_MIGRATION_KEY));
     assertTrue(getOrCreateSettingValue(MigrationContext.SOC_RDBMS_CONNECTION_MIGRATION_KEY));
     assertTrue(getOrCreateSettingValue(MigrationContext.SOC_RDBMS_ACTIVITY_MIGRATION_KEY));
     assertTrue(getOrCreateSettingValue(MigrationContext.SOC_RDBMS_MIGRATION_STATUS_KEY));

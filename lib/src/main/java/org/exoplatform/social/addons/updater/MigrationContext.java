@@ -26,14 +26,12 @@ public final class MigrationContext {
   public static final String SOC_RDBMS_MIGRATION_STATUS_KEY = "SOC_RDBMS_MIGRATION_DONE";
   public static final String SOC_RDBMS_ACTIVITY_MIGRATION_KEY = "SOC_RDBMS_ACTIVITY_MIGRATION_DONE";
   public static final String SOC_RDBMS_ACTIVITY_CLEANUP_KEY = "SOC_RDBMS_ACTIVITY_CLEANUP_DONE";
-  public static final String SOC_RDBMS_PROFILE_MIGRATION_KEY = "SOC_RDBMS_PROFILE_MIGRATION_DONE";
   public static final String SOC_RDBMS_CONNECTION_MIGRATION_KEY = "SOC_RDBMS_CONNECTION_MIGRATION_DONE";
   public static final String SOC_RDBMS_CONNECTION_CLEANUP_KEY = "SOC_RDBMS_CONNECTION_CLEANUP_DONE";
   //
   private static boolean isDone = false;
   private static boolean isActivityDone = false;
   private static boolean isActivityCleanupDone = false;
-  private static boolean isProfileDone = false;
   private static boolean isConnectionDone = false;
   private static boolean isConnectionCleanupDone = false;
 
@@ -51,14 +49,6 @@ public final class MigrationContext {
 
   public static void setActivityDone(boolean isActivityDoneArg) {
     isActivityDone = isActivityDoneArg;
-  }
-
-  public static boolean isProfileDone() {
-    return isProfileDone;
-  }
-
-  public static void setProfileDone(boolean isProfileDoneArg) {
-    isProfileDone = isProfileDoneArg;
   }
 
   public static boolean isConnectionDone() {

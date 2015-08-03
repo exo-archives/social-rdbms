@@ -24,17 +24,13 @@ public class RDBMSMigrationManager implements Startable {
 
   private final RelationshipMigrationService relationshipMigration;
 
-  private final ProfileMigrationService profileMigration;
-
   private final ActivityMigrationService activityMigration;
   
   private final SettingService settingService;
 
-  public RDBMSMigrationManager(ProfileMigrationService profileMigration,
-                               RelationshipMigrationService relationshipMigration,
+  public RDBMSMigrationManager(RelationshipMigrationService relationshipMigration,
                                ActivityMigrationService activityMigration, 
                                SettingService settingService) {
-    this.profileMigration = profileMigration;
     this.relationshipMigration = relationshipMigration;
     this.activityMigration = activityMigration;
     this.settingService = settingService;
@@ -61,12 +57,8 @@ public class RDBMSMigrationManager implements Startable {
             
             //
             LOG.info("START ASYNC MIGRATION---------------------------------------------------");
-            if(!MigrationContext.isProfileDone()) {
-              profileMigration.start();
-              updateSettingValue(MigrationContext.SOC_RDBMS_PROFILE_MIGRATION_KEY, true);
-            }
             //
-            if (!MigrationContext.isDone() && MigrationContext.isProfileDone()) {
+            if (!MigrationContext.isDone()) {
               if (!MigrationContext.isConnectionDone()) {
                 relationshipMigration.start();
                 updateSettingValue(MigrationContext.SOC_RDBMS_CONNECTION_MIGRATION_KEY, true);
@@ -129,7 +121,6 @@ public class RDBMSMigrationManager implements Startable {
   
   private void initMigrationSetting() {
     MigrationContext.setDone(getOrCreateSettingValue(MigrationContext.SOC_RDBMS_MIGRATION_STATUS_KEY));
-    MigrationContext.setProfileDone(getOrCreateSettingValue(MigrationContext.SOC_RDBMS_PROFILE_MIGRATION_KEY));
     //
     MigrationContext.setConnectionDone(getOrCreateSettingValue(MigrationContext.SOC_RDBMS_CONNECTION_MIGRATION_KEY));
     MigrationContext.setConnectionCleanupDone(getOrCreateSettingValue(MigrationContext.SOC_RDBMS_CONNECTION_CLEANUP_KEY));
@@ -163,7 +154,6 @@ public class RDBMSMigrationManager implements Startable {
 
   @Override
   public void stop() {
-    profileMigration.stop();
     relationshipMigration.stop();
     activityMigration.stop();
     try {
