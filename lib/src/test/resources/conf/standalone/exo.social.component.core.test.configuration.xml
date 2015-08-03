@@ -99,11 +99,6 @@
     <type>org.exoplatform.social.addons.storage.dao.jpa.CommentDAOImpl</type>
   </component>
   
-  <component>
-    <key>org.exoplatform.social.addons.storage.dao.ProfileItemDAO</key>
-    <type>org.exoplatform.social.addons.storage.dao.jpa.ProfileItemDAOImpl</type>
-  </component>
-
 	<component>
 		<type>org.exoplatform.social.addons.updater.ActivityMigrationService</type>
 		<init-params>
@@ -122,17 +117,6 @@
 				<name>LIMIT_THRESHOLD</name>
 				<description>The number limit of items migration each round</description>
 				<value>${exo.social.addons.RelationshipMigrationService.limitThreshold:200}</value>
-			</value-param>
-		</init-params>
-	</component>
-
-	<component>
-		<type>org.exoplatform.social.addons.updater.ProfileMigrationService</type>
-		<init-params>
-			<value-param>
-				<name>LIMIT_THRESHOLD</name>
-				<description>The number limit of items migration each round</description>
-				<value>${exo.social.addons.ProfileMigrationService.limitThreshold:200}</value>
 			</value-param>
 		</init-params>
 	</component>
@@ -508,24 +492,6 @@
           <value>1</value>
         </value-param>
       </init-params>
-    </component-plugin>
-  </external-component-plugins>
-
-  <external-component-plugins>
-    <target-component>org.exoplatform.social.core.manager.IdentityManager</target-component>
-    <component-plugin>
-      <name>ProfileUpdateImpl</name>
-      <set-method>registerProfileListener</set-method>
-      <type>org.exoplatform.social.addons.profile.ProfileUpdateImpl</type>
-    </component-plugin>
-  </external-component-plugins>
-
-  <external-component-plugins>
-    <target-component>org.exoplatform.social.core.manager.IdentityManager</target-component>
-    <component-plugin>
-      <name>ProfileUpdatesPublisher</name>
-      <set-method>addProfileListener</set-method>
-      <type>org.exoplatform.social.core.application.ProfileUpdatesPublisher</type>
     </component-plugin>
   </external-component-plugins>
 

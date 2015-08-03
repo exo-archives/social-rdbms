@@ -17,7 +17,6 @@ import org.exoplatform.management.annotations.ManagedDescription;
 import org.exoplatform.management.jmx.annotations.NameTemplate;
 import org.exoplatform.management.jmx.annotations.Property;
 import org.exoplatform.social.addons.storage.dao.ConnectionDAO;
-import org.exoplatform.social.addons.storage.dao.ProfileItemDAO;
 import org.exoplatform.social.addons.storage.entity.Connection;
 import org.exoplatform.social.core.chromattic.entity.IdentityEntity;
 import org.exoplatform.social.core.chromattic.entity.RelationshipEntity;
@@ -31,19 +30,15 @@ public class RelationshipMigrationService extends AbstractMigrationService<Relat
   public static final String EVENT_LISTENER_KEY = "SOC_RELATIONSHIP_MIGRATION";
   private final ConnectionDAO connectionDAO;
   private static final int LIMIT_REMOVED_THRESHOLD = 10;
-  private final ProfileItemDAO profileItemDAO;
 
   public RelationshipMigrationService(InitParams initParams,
                                       IdentityStorageImpl identityStorage,
                                       ConnectionDAO connectionDAO,
-                                      ProfileItemDAO profileItemDAO,
-                                      ProfileMigrationService profileMigration,
                                       EventManager<Relationship, String> eventManager,
                                       EntityManagerService entityManagerService) {
 
     super(initParams, identityStorage, eventManager, entityManagerService);
     this.connectionDAO = connectionDAO;
-    this.profileItemDAO = profileItemDAO;
     this.LIMIT_THRESHOLD = getInteger(initParams, LIMIT_THRESHOLD_KEY, 200);
   }
 
@@ -142,7 +137,6 @@ public class RelationshipMigrationService extends AbstractMigrationService<Relat
       entity.setSenderId(isIncoming ? senderId : receiverId);
       entity.setReceiverId(isIncoming ? receiverId : senderId);
       entity.setStatus(status);
-      entity.setReceiver(profileItemDAO.findProfileItemByIdentityId(isIncoming ? receiverId : senderId));
       //
       connectionDAO.create(entity);
       ++doneConnectionNo;

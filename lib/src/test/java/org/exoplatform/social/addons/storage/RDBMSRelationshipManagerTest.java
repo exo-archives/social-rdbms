@@ -32,7 +32,6 @@ import org.exoplatform.social.addons.storage.entity.Connection;
 import org.exoplatform.social.addons.test.AbstractCoreTest;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.identity.model.Profile;
-import org.exoplatform.social.core.identity.model.Profile.UpdateType;
 import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvider;
 import org.exoplatform.social.core.manager.IdentityManager;
 import org.exoplatform.social.core.manager.RelationshipManager;
@@ -110,31 +109,6 @@ public class RDBMSRelationshipManagerTest extends AbstractCoreTest {
     ListAccess<Identity> listAccess = relationshipManager.getConnectionsByFilter(maryIdentity, filter);
     Identity[] identities = listAccess.load(0, 10);
     assertEquals(2, identities.length);
-    
-    filter.setName("John");
-    listAccess = relationshipManager.getConnectionsByFilter(maryIdentity, filter);
-    
-    identities = listAccess.load(0, 10);
-    assertEquals(1, identities.length);
-    assertTrue(identities[0].getProfile().getFullName().indexOf("John") >= 0);
-    //
-    relationshipManager.inviteToConnect(maryIdentity, demoIdentity);
-    relationshipManager.confirm(demoIdentity, maryIdentity);
-
-    Profile profile = demoIdentity.getProfile();
-    profile.setProperty(Profile.POSITION, "Business Development Manager");
-    profile.setProperty(Profile.LAST_NAME, "my test");
-    profile.setListUpdateTypes(new ArrayList<UpdateType>());
-    identityManager.updateProfile(profile);
-    //
-//    filter.setName("");
-//    filter.setPosition("manager");
-//    listAccess = relationshipManager.getConnectionsByFilter(maryIdentity, filter);
-//    identities = listAccess.load(0, 10);
-//    assertEquals(1, identities.length);
-//    assertTrue(identities[0].getProfile().getPosition().toLowerCase().indexOf("manager") >= 0);
-//    assertTrue(String.valueOf(identities[0].getProfile().getProperty(Profile.LAST_NAME))
-//                     .toLowerCase().indexOf("test") >= 0);
   }
   
   public void TestPerfomanceGetConnectionsByFilter() throws Exception {
@@ -1467,45 +1441,6 @@ public class RDBMSRelationshipManagerTest extends AbstractCoreTest {
     assertEquals(4, identities.size());
     assertEquals(johnIdentity.getRemoteId(), identities.get(0).getRemoteId());
     
-  }
-  
-  public void testGetRelationshipProfiles() throws Exception {
-    initProfile("demo", "Demo", "Gtn", "Demo Dupont", "developer", "male", "exo");
-    initProfile("ghost", "Ghost", "Gtn", "Ghost Knight", "worker", "female", "exo");
-    initProfile("paul", "Paul", "Walker", "Paul Walker", "worker", "male", "VTV");
-    
-    Relationship maryToGhostRelationship = relationshipManager.inviteToConnect(ghostIdentity, maryIdentity);
-    Relationship maryToDemoRelationship = relationshipManager.inviteToConnect(demoIdentity, maryIdentity);
-    Relationship paulToMaryRelationship = relationshipManager.inviteToConnect(paulIdentity, maryIdentity);
-    Relationship maryToJohnRelationship = relationshipManager.inviteToConnect(maryIdentity, johnIdentity);
-    
-    ProfileFilter filter = new ProfileFilter();
-    filter.setName("Gtn");
-    ListAccess<Identity> identities = relationshipManager.getConnectionsByFilter(maryIdentity, filter);
-    assertEquals(0, identities.getSize());
-    assertEquals(0, identities.load(0, 10).length);
-    
-    relationshipManager.confirm(maryIdentity, ghostIdentity);
-    relationshipManager.confirm(maryIdentity, paulIdentity);
-    relationshipManager.confirm(maryIdentity, demoIdentity);
-    
-    identities = relationshipManager.getConnectionsByFilter(maryIdentity, filter);
-    assertEquals(2, identities.getSize());
-    assertEquals(2, identities.load(0, 10).length);
-    assertEquals(demoIdentity.getRemoteId(), identities.load(0, 10)[0].getRemoteId());
-    assertEquals(ghostIdentity.getRemoteId(), identities.load(0, 10)[1].getRemoteId());
-    
-    filter.setName("");
-    filter.setPosition("developer");
-    identities = relationshipManager.getConnectionsByFilter(maryIdentity, filter);
-    assertEquals(1, identities.getSize());
-    assertEquals(1, identities.load(0, 10).length);
-    
-    filter.setPosition("");
-    filter.setCompany("exo");
-    identities = relationshipManager.getConnectionsByFilter(maryIdentity, filter);
-    assertEquals(2, identities.getSize());
-    assertEquals(2, identities.load(0, 10).length);
   }
   
   private Profile initProfile(String userName, String firstName, String lastName, String fullName,

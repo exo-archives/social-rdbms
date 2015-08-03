@@ -6,8 +6,6 @@ import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
 import javax.persistence.NamedQuery;
 import javax.persistence.Table;
 
@@ -30,10 +28,6 @@ public class Connection {
   
   @Column(length = 36)
   private String receiverId;
-  
-  @ManyToOne
-  @JoinColumn(name="PROFILE_ID")
-  private Profile receiver;
   
   @Enumerated
   private Type status;
@@ -77,13 +71,5 @@ public class Connection {
 
   public void setStatus(Type status) {
     this.status = status;
-  }
-
-  public Profile getReceiver() {
-    return receiver;
-  }
-
-  public void setReceiver(Profile receiver) {
-    this.receiver = receiver;
   }
 }

@@ -45,10 +45,8 @@ import org.exoplatform.component.test.ContainerScope;
 import org.exoplatform.container.component.RequestLifeCycle;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
-import org.exoplatform.social.addons.storage.dao.ProfileItemDAO;
 import org.exoplatform.social.addons.storage.dao.ConnectionDAO;
 import org.exoplatform.social.addons.storage.entity.Connection;
-import org.exoplatform.social.addons.storage.entity.Profile;
 import org.exoplatform.social.core.activity.model.ExoSocialActivity;
 import org.exoplatform.social.core.activity.model.ExoSocialActivityImpl;
 import org.exoplatform.social.core.identity.model.Identity;
@@ -127,12 +125,6 @@ public abstract class BaseCoreTest extends BaseExoTestCase {
     List<Connection> reItems = reDao.findAll();
     for (Connection item :  reItems) {
       reDao.delete(item);
-    }
-
-    ProfileItemDAO dao = getService(ProfileItemDAO.class);
-    List<Profile> items = dao.findAll();
-    for (Profile item : items) {
-      dao.delete(item);
     }
 
     identityManager.deleteIdentity(rootIdentity);

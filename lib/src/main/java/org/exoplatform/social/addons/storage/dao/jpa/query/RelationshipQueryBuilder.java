@@ -16,31 +16,22 @@
  */
 package org.exoplatform.social.addons.storage.dao.jpa.query;
 
-import static org.exoplatform.social.core.storage.impl.StorageUtils.ASTERISK_STR;
-import static org.exoplatform.social.core.storage.impl.StorageUtils.EMPTY_STR;
-import static org.exoplatform.social.core.storage.impl.StorageUtils.PERCENT_STR;
-import static org.exoplatform.social.core.storage.impl.StorageUtils.SPACE_STR;
-import static org.exoplatform.social.core.storage.impl.StorageUtils.escapeSpecialCharacter;
-
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 
 import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaBuilder.In;
 import javax.persistence.criteria.CriteriaQuery;
-import javax.persistence.criteria.Join;
 import javax.persistence.criteria.Path;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 
-import org.apache.commons.lang.StringEscapeUtils;
 import org.exoplatform.commons.persistence.impl.EntityManagerHolder;
 import org.exoplatform.social.addons.storage.entity.Connection;
 import org.exoplatform.social.addons.storage.entity.Connection_;
-import org.exoplatform.social.addons.storage.entity.Profile;
-import org.exoplatform.social.addons.storage.entity.Profile_;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.profile.ProfileFilter;
 import org.exoplatform.social.core.relationship.model.Relationship;
@@ -221,11 +212,9 @@ public final class RelationshipQueryBuilder {
     CriteriaBuilder cb = em.getCriteriaBuilder();
     CriteriaQuery<Connection> criteria = cb.createQuery(Connection.class);
     Root<Connection> connection = criteria.from(Connection.class);
-    Join<Connection, Profile> receiver = connection.join(Connection_.receiver);
     //
     CriteriaQuery<Connection> select = criteria.select(connection);
-    select.where(buildPredicateFilter(cb, receiver, connection));
-    select.orderBy(cb.asc(receiver.get(Profile_.fullName)));
+    select.where(buildPredicateFilter(cb, connection));
     //
     TypedQuery<Connection> typedQuery = em.createQuery(select);
     if (this.limit > 0) {
@@ -241,15 +230,15 @@ public final class RelationshipQueryBuilder {
     CriteriaBuilder cb = em.getCriteriaBuilder();
     CriteriaQuery<Long> criteria = cb.createQuery(Long.class);
     Root<Connection> relationship = criteria.from(Connection.class);
-    Join<Connection, Profile> receiver = relationship.join(Connection_.receiver);
+//    Join<Connection, Profile> receiver = relationship.join(Connection_.receiver);
     CriteriaQuery<Long> select = criteria.select(cb.countDistinct(relationship));
     //
-    select.where(buildPredicateFilter(cb, receiver, relationship));
+    select.where(buildPredicateFilter(cb, relationship));
     //
     return em.createQuery(select);
   }
   
-  private Predicate buildPredicateFilter(CriteriaBuilder cb, Join<Connection, Profile> receiver, Root<Connection> connection) {
+  private Predicate buildPredicateFilter(CriteriaBuilder cb, Root<Connection> connection) {
     Predicate predicate = null;
     // owner
     if (this.owner != null) {
@@ -262,40 +251,14 @@ public final class RelationshipQueryBuilder {
 
     Predicate pFilter = null;
     if (profileFilter != null) {
-      String inputName = addPercentToStringInput(profileFilter.getName()).replace(ASTERISK_STR, SPACE_STR);
-      String position = addPercentToStringInput(StringEscapeUtils.escapeHtml(profileFilter.getPosition()));
-      String skills = addPercentToStringInput(StringEscapeUtils.escapeHtml(profileFilter.getSkills()));
-      String company = addPercentToStringInput(StringEscapeUtils.escapeHtml(profileFilter.getCompany()));
-      //
-      if (!inputName.isEmpty()) {
-        Predicate pName = cb.like(receiver.get(Profile_.fullName), inputName);
-        pName = cb.or(pName, cb.like(receiver.get(Profile_.firstName), inputName));
-        pFilter = cb.or(pName, cb.like(receiver.get(Profile_.lastName), inputName));
-      }
-      //
-      if (!position.isEmpty()) {
-        pFilter = appendPredicate(cb, pFilter, cb.like(receiver.get(Profile_.positions), position));
-      }
-      //
-      if (!skills.isEmpty()) {
-        pFilter = appendPredicate(cb, pFilter, cb.like(receiver.get(Profile_.skills), skills));
-      }
-      if (!company.isEmpty()) {
-        pFilter = appendPredicate(cb, pFilter, cb.like(receiver.get(Profile_.organizations), company));
-      }
-
-      String all = profileFilter.getAll();
-      if (all != null && !all.trim().isEmpty()) {
-        all = escapeSpecialCharacter(all.trim()).toLowerCase();
-        Predicate pAll = cb.like(receiver.get(Profile_.fullName), all);
-        pAll = cb.or(pAll, cb.like(receiver.get(Profile_.firstName), all));
-        pAll = cb.or(pAll, cb.like(receiver.get(Profile_.lastName), all));
-        pAll = cb.or(pAll, cb.like(receiver.get(Profile_.skills), all));
-        pAll = cb.or(pAll, cb.like(receiver.get(Profile_.positions), all));
-        pAll = cb.or(pAll, cb.like(receiver.get(Profile_.organizations), all));
-        pAll = cb.or(pAll, cb.like(receiver.get(Profile_.jobsDescription), all));
-        //
-        pFilter = appendPredicate(cb, pFilter, pAll);
+    //Exclude identities
+      List<Identity> excludedIdentityList = profileFilter.getExcludedIdentityList();
+      if (excludedIdentityList != null && excludedIdentityList.size() > 0) {
+        In<String> in = cb.in(connection.get(Connection_.receiverId));
+        for (Identity id : excludedIdentityList) {
+          in.value(id.getId());
+        }
+        predicate = cb.and(predicate, in.not());  
       }
     }
     //
@@ -306,16 +269,6 @@ public final class RelationshipQueryBuilder {
   public RelationshipQueryBuilder filter(ProfileFilter profileFilter) {
     this.profileFilter = profileFilter;
     return this;
-  }
-  
-  private static String addPercentToStringInput(final String input) {
-    if (input != null && !input.trim().isEmpty()) {
-      if (input.indexOf(PERCENT_STR) == -1) {
-        return PERCENT_STR + input.trim() + PERCENT_STR;
-      }
-      return input.trim();
-    }
-    return EMPTY_STR;
   }
   
   private Predicate appendPredicate(CriteriaBuilder cb, Predicate pSource, Predicate input) {
