@@ -360,17 +360,17 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
     long offset = 0;
     NodeIterator it = getIdentityNodes(offset, LIMIT_REMOVED_THRESHOLD);
     Node node = null;
-    
+    boolean isDone = false;
     try {
       LOG.info("| \\ START::cleanup User Activity ---------------------------------");
       while (it.hasNext()) {
         node = (Node) it.next();
         LOG.info(String.format("|  \\ START::cleanup user number: %s (%s user)", offset, node.getName()));
-        cleanupActivity(node);
+        isDone = cleanupActivity(node);
         offset++;
         LOG.info(String.format("|  / END::cleanup (%s user)", node.getName()));
         //
-        if (offset % LIMIT_REMOVED_THRESHOLD == 0) {
+        if (offset % LIMIT_REMOVED_THRESHOLD == 0 || isDone == false) {
           RequestLifeCycle.end();
           RequestLifeCycle.begin(PortalContainer.getInstance());
           it = getIdentityNodes(offset, LIMIT_REMOVED_THRESHOLD);
@@ -401,11 +401,11 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
       while (it.hasNext()) {
         node = (Node) it.next();
         LOG.info(String.format("|  \\ START::cleanup space number: %s (%s space)", offset, node.getName()));
-        cleanupActivity(node);
+        isDone = cleanupActivity(node);
         offset++;
-        LOG.info("|  / END::cleanup (%s space)", node.getName());
+        LOG.info(String.format("|  / END::cleanup (%s space)", node.getName()));
         //
-        if (offset % LIMIT_REMOVED_THRESHOLD == 0) {
+        if (offset % LIMIT_REMOVED_THRESHOLD == 0 || isDone == false) {
           RequestLifeCycle.end();
           RequestLifeCycle.begin(PortalContainer.getInstance());
           it = getSpaceIdentityNodes(offset, LIMIT_REMOVED_THRESHOLD);
@@ -425,50 +425,53 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
    * Cleanup ActivityRef for Identity
    * @param identityNode
    */
-  private void cleanupSubNode(Node activityNode, String userName) {
+  private boolean cleanupSubNode(Node activityNode, String userName) {
     long totalTime = System.currentTimeMillis();
-    Node node = null;
+    NodeImpl node = null;
     long offset = 0;
     try {
       PropertyIterator pIt = activityNode.getReferences();
       while (pIt.hasNext()) {
-        node = pIt.nextProperty().getParent();
-        node.remove();
-        offset++;
-        
+        node = (NodeImpl) pIt.nextProperty().getParent();
+        if (node.getData() != null) {
+          node.remove();
+          ++offset;
+        }
         if (offset % LIMIT_ACTIVITY_REF_SAVE_THRESHOLD == 0) {
           getSession().save();
         }
       }
-    } catch (Exception e) {
-      LOG.error("Failed to cleanup for Activity Reference.", e);
-    } finally {
       getSession().save();
+    } catch (Exception e) {
+      LOG.error("Failed to cleanup sub node for Activity Reference.", e);
+      return false;
+    } finally {
       LOG.info(String.format("|     - Done cleanup: %s ref(s) of (%s) consumed time %s(ms) ", offset, userName, System.currentTimeMillis() - totalTime));
     }
+    return true;
   }
   
   /**
    * Cleanup Activity for Identity
    * @param identityNode
    */
-  private void cleanupActivity(Node identityNode) {
-    String nodeStreamsPath;
-    String identityName = "";
-
-    StringBuffer sb = new StringBuffer().append("SELECT * FROM soc:activity WHERE ");
-    try {
-      nodeStreamsPath = XPathUtils.escapeIllegalSQLName(identityNode.getNode("soc:activities").getPath());
-      sb.append(JCRProperties.path.getName()).append(" LIKE '").append(nodeStreamsPath + StorageUtils.SLASH_STR + StorageUtils.PERCENT_STR + "'");
-    } catch (RepositoryException e) {
-      LOG.error(e.getMessage(), e);
-    }
-
-    long t = System.currentTimeMillis();
+  private boolean cleanupActivity(Node identityNode) {
+    String identityName = "", path = "";
     long totalTime = System.currentTimeMillis();
     long offset = 0;
     long size = 0;
+    boolean isDone = true;
     try {
+      StringBuffer sb = new StringBuffer().append("SELECT * FROM soc:activity WHERE ");
+      try {
+        String nodeStreamsPath = XPathUtils.escapeIllegalSQLName(identityNode.getNode("soc:activities").getPath());
+        sb.append(JCRProperties.path.getName()).append(" LIKE '").append(nodeStreamsPath + StorageUtils.SLASH_STR + StorageUtils.PERCENT_STR + "'");
+      } catch (RepositoryException e) {
+        LOG.error(e.getMessage(), e);
+      }
+
+      long t = System.currentTimeMillis();
+      boolean reLoad = false;
       NodeIterator it = nodes(sb.toString());
       NodeImpl node = null;
       size = it.getSize();
@@ -476,24 +479,35 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
       LOG.info(String.format("|   \\ START::cleanup: %d (Activity) for %s identity", size, identityName));
       while (it.hasNext()) {
         node = (NodeImpl) it.next();
+        path = node.getPath();
         if (node.getData() != null) {
-          cleanupSubNode(node, identityName);
-          node.remove();
+          if (cleanupSubNode(node, identityName)) {
+            node.remove();
+            reLoad = true;
+          }
           offset++;
         }
-
+        if (reLoad) {
+          RequestLifeCycle.end();
+          RequestLifeCycle.begin(PortalContainer.getInstance());
+          it = nodes(sb.toString(), offset, size - offset);
+          reLoad = false;
+          isDone = false;
+        }
         if (offset % LIMIT_ACTIVITY_SAVE_THRESHOLD == 0) {
           getSession().save();
           LOG.info(String.format("|     - Persist deleted: %s activity consumed time %s(ms) ", LIMIT_ACTIVITY_SAVE_THRESHOLD, System.currentTimeMillis() - t));
           t = System.currentTimeMillis();
         }
       }
-    } catch (Exception e) {
-      LOG.error("Failed to cleanup for Activity.", e);
-    } finally {
       getSession().save();
+    } catch (Exception e) {
+      LOG.error("Failed to cleanup for Activity: " + path, e);
+      return false;
+    } finally {
       LOG.info(String.format("|   / END::cleanup: %d (Activity) for %s identity consumed time %s(ms) ", size, identityName, System.currentTimeMillis() - totalTime));
     }
+    return isDone;
   }
 
   private ExoSocialActivity fillCommentFromEntity(ActivityEntity activityEntity) {
