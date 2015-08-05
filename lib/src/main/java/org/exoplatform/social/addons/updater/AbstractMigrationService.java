@@ -142,7 +142,6 @@ public abstract class AbstractMigrationService<T>  extends AbstractStorage {
   protected NodeIterator getIdentityNodes(long offset, long limit) {
     ProviderEntity providerEntity = getProviderRoot().getProviders().get(OrganizationIdentityProvider.NAME);
     if (providerEntity == null) {
-      MigrationContext.setDone(true);
       return null;
     }
     

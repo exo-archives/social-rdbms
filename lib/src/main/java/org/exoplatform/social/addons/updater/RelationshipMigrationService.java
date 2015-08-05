@@ -59,6 +59,9 @@ public class RelationshipMigrationService extends AbstractMigrationService<Relat
       try {
         LOG.info("| \\ START::Relationships migration ---------------------------------");
         NodeIterator nodeIter  = getIdentityNodes(offset, LIMIT_THRESHOLD);
+        if(nodeIter == null || nodeIter.getSize() == 0) {
+          return;
+        }
         
         int relationshipNo = 0;
         Node identityNode = null;
@@ -167,6 +170,9 @@ public class RelationshipMigrationService extends AbstractMigrationService<Relat
     int offset = 0;
     try {
       NodeIterator nodeIter  = getIdentityNodes(offset, LIMIT_THRESHOLD);
+      if(nodeIter == null || nodeIter.getSize() == 0) {
+        return;
+      }
       Node node = null;
       
       while (nodeIter.hasNext()) {

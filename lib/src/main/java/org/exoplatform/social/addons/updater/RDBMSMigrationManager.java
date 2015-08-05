@@ -7,10 +7,12 @@ import org.exoplatform.commons.api.settings.SettingService;
 import org.exoplatform.commons.api.settings.SettingValue;
 import org.exoplatform.commons.api.settings.data.Context;
 import org.exoplatform.commons.api.settings.data.Scope;
-import org.exoplatform.container.component.RequestLifeCycle;
+import org.exoplatform.commons.chromattic.ChromatticManager;
+import org.exoplatform.commons.utils.CommonsUtils;
 import org.exoplatform.services.jcr.impl.core.SessionImpl;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
+import org.exoplatform.settings.impl.SettingServiceImpl;
 import org.picocontainer.Startable;
 
 public class RDBMSMigrationManager implements Startable {
@@ -54,18 +56,17 @@ public class RDBMSMigrationManager implements Startable {
               field.setAccessible(true);
               field.set(null, true);
             }
-            
             //
             LOG.info("START ASYNC MIGRATION---------------------------------------------------");
             //
             if (!MigrationContext.isDone()) {
               if (!MigrationContext.isConnectionDone()) {
                 relationshipMigration.start();
-                updateSettingValue(MigrationContext.SOC_RDBMS_CONNECTION_MIGRATION_KEY, true);
+                updateSettingValue(MigrationContext.SOC_RDBMS_CONNECTION_MIGRATION_KEY, Boolean.TRUE);
               }
               if (!MigrationContext.isDone() && MigrationContext.isConnectionDone() && !MigrationContext.isActivityDone()) {
                 activityMigration.start();
-                updateSettingValue(MigrationContext.SOC_RDBMS_ACTIVITY_MIGRATION_KEY, true);
+                updateSettingValue(MigrationContext.SOC_RDBMS_ACTIVITY_MIGRATION_KEY, Boolean.TRUE);
               }
             }
 
@@ -73,13 +74,13 @@ public class RDBMSMigrationManager implements Startable {
             if (!MigrationContext.isDone() && MigrationContext.isConnectionDone() && !MigrationContext.isConnectionCleanupDone()) {
               try {
                 relationshipMigration.doRemove();
-                updateSettingValue(MigrationContext.SOC_RDBMS_CONNECTION_CLEANUP_KEY, true);
+                updateSettingValue(MigrationContext.SOC_RDBMS_CONNECTION_CLEANUP_KEY, Boolean.TRUE);
               } catch(RuntimeException e) {
                 LOG.error("Failed to relationship cleanup", e);
                 if (!MigrationContext.isConnectionCleanupDone()) {
                   LOG.info("Retry to relationship cleanup.");
                   relationshipMigration.doRemove();
-                  updateSettingValue(MigrationContext.SOC_RDBMS_CONNECTION_CLEANUP_KEY, true);
+                  updateSettingValue(MigrationContext.SOC_RDBMS_CONNECTION_CLEANUP_KEY, Boolean.TRUE);
                 }
               }
             }
@@ -87,8 +88,8 @@ public class RDBMSMigrationManager implements Startable {
             // cleanup activities
             if (!MigrationContext.isDone() && MigrationContext.isActivityDone() && !MigrationContext.isActivityCleanupDone()) {
               activityMigration.doRemove();
-              updateSettingValue(MigrationContext.SOC_RDBMS_ACTIVITY_CLEANUP_KEY, true);
-              updateSettingValue(MigrationContext.SOC_RDBMS_MIGRATION_STATUS_KEY, true);
+              updateSettingValue(MigrationContext.SOC_RDBMS_ACTIVITY_CLEANUP_KEY, Boolean.TRUE);
+              updateSettingValue(MigrationContext.SOC_RDBMS_MIGRATION_STATUS_KEY, Boolean.TRUE);
               MigrationContext.setDone(true);
             }
             //
@@ -107,9 +108,7 @@ public class RDBMSMigrationManager implements Startable {
               LOG.warn(e.getMessage(), e);
             }
           }
-          Scope.GLOBAL.id(null);
           migrater.countDown();
-          RequestLifeCycle.end();
         }
       }
     };
@@ -135,21 +134,28 @@ public class RDBMSMigrationManager implements Startable {
       if (migrationValue != null) {
         return Boolean.parseBoolean(migrationValue.getValue().toString());
       } else {
-        settingService.set(Context.GLOBAL, Scope.GLOBAL.id(MIGRATION_SETTING_GLOBAL_KEY), key, SettingValue.create(Boolean.FALSE));
+        updateSettingValue(key, Boolean.FALSE);
         return false;
       }
     } finally {
       Scope.GLOBAL.id(null);
     }
   }
-  
-  private void updateSettingValue(String key, boolean status) {
+
+  private void updateSettingValue(String key, Boolean status) {
+    SettingServiceImpl settingService = CommonsUtils.getService(SettingServiceImpl.class);
+    boolean created = settingService.startSynchronization();
     try {
       settingService.set(Context.GLOBAL, Scope.GLOBAL.id(MIGRATION_SETTING_GLOBAL_KEY), key, SettingValue.create(status));
+      try {
+        CommonsUtils.getService(ChromatticManager.class).getLifeCycle("setting").getContext().getSession().save();
+      } catch (Exception e) {
+        LOG.warn(e);
+      }
     } finally {
       Scope.GLOBAL.id(null);
+      settingService.stopSynchronization(created);
     }
-    
   }
 
   @Override

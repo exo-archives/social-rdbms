@@ -106,6 +106,9 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
     counter.newTotalAndWatch();
     // doing with normal users
     NodeIterator it = getIdentityNodes(counter.getTotal(), LIMIT_THRESHOLD);
+    if(it == null || it.getSize() == 0) {
+      return;
+    }
     Identity owner = null; 
     Node node = null;
     try {
@@ -145,7 +148,9 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
     RequestLifeCycle.begin(PortalContainer.getInstance());
     long t = System.currentTimeMillis();
     NodeIterator it = getSpaceIdentityNodes();
-    if (it == null) return;
+    if(it == null || it.getSize() == 0) {
+      return;
+    }
     int size = (int) it.getSize(), count = 0;
     boolean begunTx = startTx();
     Node node = null;
@@ -359,6 +364,9 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
     long t = System.currentTimeMillis();
     long offset = 0;
     NodeIterator it = getIdentityNodes(offset, LIMIT_REMOVED_THRESHOLD);
+    if(it == null || it.getSize() == 0) {
+      return;
+    }
     Node node = null;
     boolean isDone = false;
     try {
@@ -390,7 +398,7 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
     offset = 0;
     it = getSpaceIdentityNodes(offset, LIMIT_REMOVED_THRESHOLD);
     //don't have any space.
-    if (it == null) {
+    if(it == null || it.getSize() == 0) {
       return;
     }
     
