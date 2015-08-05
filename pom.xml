@@ -40,7 +40,6 @@
 
   <properties>
     <!-- Platform Project Dependencies -->
-    <hibernate.version>4.1.12.Final</hibernate.version>
     <exoplatform.version>4.3.x-plf-social-rdbms-SNAPSHOT</exoplatform.version>
     <liquibase.version>3.4.0</liquibase.version>
     <!-- **************************************** -->
@@ -80,11 +79,6 @@
         <scope>import</scope>
       </dependency>
       
-     <dependency>
-      <groupId>org.hibernate</groupId>
-      <artifactId>hibernate-entitymanager</artifactId>
-      <version>${hibernate.version}</version>
-    </dependency>
     <dependency>
       <groupId>org.liquibase</groupId>
       <artifactId>liquibase-core</artifactId>
