@@ -24,8 +24,7 @@ import org.exoplatform.commons.api.settings.SettingService;
 import org.exoplatform.commons.api.settings.SettingValue;
 import org.exoplatform.commons.api.settings.data.Context;
 import org.exoplatform.commons.api.settings.data.Scope;
-import org.exoplatform.container.PortalContainer;
-import org.exoplatform.container.component.RequestLifeCycle;
+import org.exoplatform.commons.persistence.impl.EntityManagerService;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 import org.exoplatform.social.addons.storage.dao.ActivityDAO;
@@ -39,10 +38,18 @@ import org.exoplatform.social.addons.updater.RDBMSMigrationManager;
 import org.exoplatform.social.addons.updater.RelationshipMigrationService;
 import org.exoplatform.social.core.activity.model.ExoSocialActivity;
 import org.exoplatform.social.core.identity.model.Identity;
+import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvider;
+import org.exoplatform.social.core.manager.ActivityManager;
+import org.exoplatform.social.core.manager.IdentityManager;
+import org.exoplatform.social.core.manager.RelationshipManager;
 import org.exoplatform.social.core.relationship.model.Relationship;
 import org.exoplatform.social.core.relationship.model.Relationship.Type;
+import org.exoplatform.social.core.space.spi.SpaceService;
+import org.exoplatform.social.core.storage.api.ActivityStorage;
 import org.exoplatform.social.core.storage.impl.ActivityStorageImpl;
 import org.exoplatform.social.core.storage.impl.RelationshipStorageImpl;
+import org.jboss.byteman.contrib.bmunit.BMUnit;
+import org.junit.FixMethodOrder;
 
 /**
  * Created by The eXo Platform SAS
@@ -51,6 +58,7 @@ import org.exoplatform.social.core.storage.impl.RelationshipStorageImpl;
  * Jun 19, 2015  
  */
 @QueryNumberTest
+@FixMethodOrder
 public class AsynMigrationTest extends BaseCoreTest {
   protected final Log LOG = ExoLogger.getLogger(AsynMigrationTest.class);
   private ActivityStorageImpl jcrStorage;
@@ -63,7 +71,22 @@ public class AsynMigrationTest extends BaseCoreTest {
   
   @Override
   public void setUp() throws Exception {
-    super.setUp();
+    begin();
+    // If is query number test, init byteman
+    hasByteMan = getClass().isAnnotationPresent(QueryNumberTest.class);
+    if (hasByteMan) {
+      count = 0;
+      maxQuery = 0;
+      BMUnit.loadScriptFile(getClass(), "queryBaseCount", "src/test/resources");
+    }
+    
+    identityManager = getService(IdentityManager.class);
+    activityManager =  getService(ActivityManager.class);
+    activityStorage = getService(ActivityStorage.class);
+    relationshipManager = getService(RelationshipManager.class);
+    spaceService = getService(SpaceService.class);
+    entityManagerService = getService(EntityManagerService.class);
+    //
     jcrStorage = getService(ActivityStorageImpl.class);
     relationshipStorageImpl = getService(RelationshipStorageImpl.class);
     activityMigration = getService(ActivityMigrationService.class);
@@ -74,6 +97,7 @@ public class AsynMigrationTest extends BaseCoreTest {
 
   @Override
   public void tearDown() throws Exception {
+    end();
     begin();
     ActivityDAO dao = getService(ActivityDAO.class);
     //
@@ -81,12 +105,42 @@ public class AsynMigrationTest extends BaseCoreTest {
     for (Activity item : items) {
       dao.delete(item);
     }
+    // Reset value of settings
+    updateSettingValue(MigrationContext.SOC_RDBMS_CONNECTION_MIGRATION_KEY, Boolean.FALSE);
+    updateSettingValue(MigrationContext.SOC_RDBMS_ACTIVITY_MIGRATION_KEY, Boolean.FALSE);
+
+    updateSettingValue(MigrationContext.SOC_RDBMS_ACTIVITY_CLEANUP_KEY, Boolean.FALSE);
+    updateSettingValue(MigrationContext.SOC_RDBMS_CONNECTION_CLEANUP_KEY, Boolean.FALSE);
+    updateSettingValue(MigrationContext.SOC_RDBMS_MIGRATION_STATUS_KEY, Boolean.FALSE);
+    Scope.GLOBAL.id(null);
+    //
     super.tearDown();
   }
+
+  public void testMigrationEmptyData() throws Exception {
+    end();
+    begin();
+    //
+    rdbmsMigrationManager.start();
+    //
+    rdbmsMigrationManager.getMigrater().await();
+    assertTrue(getOrCreateSettingValue(MigrationContext.SOC_RDBMS_CONNECTION_MIGRATION_KEY));
+    assertTrue(getOrCreateSettingValue(MigrationContext.SOC_RDBMS_ACTIVITY_MIGRATION_KEY));
+
+    assertTrue(getOrCreateSettingValue(MigrationContext.SOC_RDBMS_ACTIVITY_CLEANUP_KEY));
+    assertTrue(getOrCreateSettingValue(MigrationContext.SOC_RDBMS_CONNECTION_CLEANUP_KEY));
+    assertTrue(getOrCreateSettingValue(MigrationContext.SOC_RDBMS_MIGRATION_STATUS_KEY));
+  }
+
   @MaxQueryNumber(26990)
   public void testMigrationActivities() throws Exception {
     // create jcr data
     LOG.info("Create connection for root,john,mary and demo");
+    rootIdentity = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, "root", false);
+    johnIdentity = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, "john", false);
+    maryIdentity = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, "mary", false);
+    demoIdentity = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, "demo", false);
+
     //John invites Demo
     Relationship johnToDemo = new Relationship(johnIdentity, demoIdentity, Type.PENDING);
     relationshipStorageImpl.saveRelationship(johnToDemo);
@@ -143,12 +197,13 @@ public class AsynMigrationTest extends BaseCoreTest {
     createActivityToOtherIdentity(johnIdentity, demoIdentity, 5);
     createActivityToOtherIdentity(maryIdentity, rootIdentity, 5);
     LOG.info("Done created the activities storage on JCR.");
-    RequestLifeCycle.end();
-    RequestLifeCycle.begin(PortalContainer.getInstance());
+    end();
+    begin();
     //
     rdbmsMigrationManager.start();
     //
     rdbmsMigrationManager.getMigrater().await();
+    //
     assertTrue(getOrCreateSettingValue(MigrationContext.SOC_RDBMS_CONNECTION_MIGRATION_KEY));
     assertTrue(getOrCreateSettingValue(MigrationContext.SOC_RDBMS_ACTIVITY_MIGRATION_KEY));
     assertTrue(getOrCreateSettingValue(MigrationContext.SOC_RDBMS_MIGRATION_STATUS_KEY));
@@ -169,6 +224,10 @@ public class AsynMigrationTest extends BaseCoreTest {
     } else {
       return false;
     }
+  }
+
+  private void updateSettingValue(String key, Boolean value) {
+    settingService.set(Context.GLOBAL, Scope.GLOBAL.id(RDBMSMigrationManager.MIGRATION_SETTING_GLOBAL_KEY), key, new SettingValue<Boolean>(value));
   }
   
   private void createActivityToOtherIdentity(Identity posterIdentity, Identity targetIdentity, int number) {

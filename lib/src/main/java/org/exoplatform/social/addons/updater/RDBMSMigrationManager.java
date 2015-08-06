@@ -143,8 +143,8 @@ public class RDBMSMigrationManager implements Startable {
   }
 
   private void updateSettingValue(String key, Boolean status) {
-    SettingServiceImpl settingService = CommonsUtils.getService(SettingServiceImpl.class);
-    boolean created = settingService.startSynchronization();
+    SettingServiceImpl settingServiceImpl = CommonsUtils.getService(SettingServiceImpl.class);
+    boolean created = settingServiceImpl.startSynchronization();
     try {
       settingService.set(Context.GLOBAL, Scope.GLOBAL.id(MIGRATION_SETTING_GLOBAL_KEY), key, SettingValue.create(status));
       try {
@@ -154,7 +154,7 @@ public class RDBMSMigrationManager implements Startable {
       }
     } finally {
       Scope.GLOBAL.id(null);
-      settingService.stopSynchronization(created);
+      settingServiceImpl.stopSynchronization(created);
     }
   }
 

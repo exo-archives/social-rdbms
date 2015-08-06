@@ -91,9 +91,9 @@ public abstract class BaseCoreTest extends BaseExoTestCase {
   protected Session session;
   
   public static boolean wantCount = false;
-  private static int count;
-  private int maxQuery;
-  private boolean hasByteMan;
+  protected static int count;
+  protected int maxQuery;
+  protected boolean hasByteMan;
 
   @Override
   protected void setUp() throws Exception {
@@ -123,14 +123,16 @@ public abstract class BaseCoreTest extends BaseExoTestCase {
   protected void tearDown() throws Exception {
     ConnectionDAO reDao = getService(ConnectionDAO.class);
     List<Connection> reItems = reDao.findAll();
-    for (Connection item :  reItems) {
+    for (Connection item : reItems) {
       reDao.delete(item);
     }
-
-    identityManager.deleteIdentity(rootIdentity);
-    identityManager.deleteIdentity(johnIdentity);
-    identityManager.deleteIdentity(maryIdentity);
-    identityManager.deleteIdentity(demoIdentity);
+    //
+    if (rootIdentity != null) {
+      identityManager.deleteIdentity(rootIdentity);
+      identityManager.deleteIdentity(johnIdentity);
+      identityManager.deleteIdentity(maryIdentity);
+      identityManager.deleteIdentity(demoIdentity);
+    }
     //
     end();
   }  
