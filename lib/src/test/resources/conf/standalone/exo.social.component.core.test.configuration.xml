@@ -85,6 +85,10 @@
   </component>
   
   <component>
+    <type>org.exoplatform.social.addons.storage.session.SocialSessionLifecycle</type>
+  </component>
+  
+  <component>
     <key>org.exoplatform.social.addons.storage.dao.ActivityDAO</key>
     <type>org.exoplatform.social.addons.storage.dao.jpa.ActivityDAOImpl</type>
   </component>
@@ -130,7 +134,7 @@
 
   <component>
     <key>org.exoplatform.social.core.storage.api.ActivityStorage</key>
-    <type>org.exoplatform.social.addons.storage.RDBMSActivityStorageImpl</type>
+    <type>org.exoplatform.social.addons.storage.SynchronizedRDBMSActivityStorage</type>
   </component>
   
   <component>
@@ -186,7 +190,7 @@
   -->
   <component>
     <key>org.exoplatform.social.core.storage.api.RelationshipStorage</key>
-    <type>org.exoplatform.social.addons.storage.RDBMSRelationshipStorageImpl</type>
+    <type>org.exoplatform.social.addons.storage.SynchronizedRDBMSRelationshipStorage</type>
   </component>
   
   <component>

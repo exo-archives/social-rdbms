@@ -28,7 +28,6 @@ import java.util.Random;
 import java.util.Set;
 import java.util.TreeMap;
 
-import org.exoplatform.commons.api.persistence.ExoTransactional;
 import org.exoplatform.social.addons.storage.dao.ConnectionDAO;
 import org.exoplatform.social.addons.storage.entity.Connection;
 import org.exoplatform.social.core.identity.model.Identity;
@@ -58,7 +57,6 @@ public class RDBMSRelationshipStorageImpl extends RelationshipStorageImpl {
   }
 
   @Override
-  @ExoTransactional
   public Relationship saveRelationship(Relationship relationship) throws RelationshipStorageException {
     if (relationship.getId() == null) {//create new relationship
       Connection entity = new Connection();
@@ -90,7 +88,6 @@ public class RDBMSRelationshipStorageImpl extends RelationshipStorageImpl {
   }
   
   @Override
-  @ExoTransactional
   public void removeRelationship(Relationship relationship) throws RelationshipStorageException {
     Connection connection = connectionDAO.getConnection(relationship.getSender(), relationship.getReceiver());
     connectionDAO.delete(connection);
@@ -99,7 +96,6 @@ public class RDBMSRelationshipStorageImpl extends RelationshipStorageImpl {
   }
   
   @Override
-  @ExoTransactional
   public Relationship getRelationship(Identity identity1, Identity identity2) throws RelationshipStorageException {
     Connection item = connectionDAO.getConnection(identity1, identity2);
     if (item == null) {

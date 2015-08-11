@@ -25,6 +25,7 @@ import org.exoplatform.commons.api.persistence.ExoTransactional;
 import org.exoplatform.commons.persistence.impl.GenericDAOJPAImpl;
 import org.exoplatform.social.addons.storage.dao.ConnectionDAO;
 import org.exoplatform.social.addons.storage.dao.jpa.query.RelationshipQueryBuilder;
+import org.exoplatform.social.addons.storage.dao.jpa.synchronization.SynchronizedGenericDAO;
 import org.exoplatform.social.addons.storage.entity.Connection;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.profile.ProfileFilter;
@@ -37,7 +38,7 @@ import org.exoplatform.social.core.relationship.model.Relationship.Type;
  *          exo@exoplatform.com
  * Jun 4, 2015  
  */
-public class ConnectionDAOImpl extends GenericDAOJPAImpl<Connection, Long> implements ConnectionDAO {
+public class ConnectionDAOImpl extends SynchronizedGenericDAO<Connection, Long> implements ConnectionDAO {
 
   @Override
   @ExoTransactional
