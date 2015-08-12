@@ -58,7 +58,7 @@ public class RDBMSRelationshipStorageImpl extends RelationshipStorageImpl {
 
   @Override
   public Relationship saveRelationship(Relationship relationship) throws RelationshipStorageException {
-    if (relationship.getId() == null) {//create new relationship
+    if (relationship.getId() == null && _isConnected(relationship.getSender(), relationship.getReceiver())) {//create new relationship
       Connection entity = new Connection();
       entity.setReceiverId(relationship.getReceiver().getId());
       entity.setSenderId(relationship.getSender().getId());
@@ -85,6 +85,14 @@ public class RDBMSRelationshipStorageImpl extends RelationshipStorageImpl {
     }
     //
     return relationship;
+  }
+  
+  private boolean _isConnected(Identity identity1, Identity identity2) throws RelationshipStorageException {
+    Connection item = connectionDAO.getConnection(identity1, identity2);
+    if (item == null) {
+      item = connectionDAO.getConnection(identity2, identity1);
+    }
+    return item != null;
   }
   
   @Override

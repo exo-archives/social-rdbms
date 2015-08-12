@@ -8,6 +8,7 @@ import javax.persistence.*;
  * Created by bdechateauvieux on 7/7/15.
  */
 @Entity
+@ExoEntity
 @Table(name="SOC_MENTIONS")
 public class Mention {
     @Id

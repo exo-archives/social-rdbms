@@ -21,8 +21,6 @@ import java.util.List;
 import javax.persistence.NoResultException;
 import javax.persistence.TypedQuery;
 
-import org.exoplatform.commons.api.persistence.ExoTransactional;
-import org.exoplatform.commons.persistence.impl.GenericDAOJPAImpl;
 import org.exoplatform.social.addons.storage.dao.ConnectionDAO;
 import org.exoplatform.social.addons.storage.dao.jpa.query.RelationshipQueryBuilder;
 import org.exoplatform.social.addons.storage.dao.jpa.synchronization.SynchronizedGenericDAO;
@@ -41,7 +39,6 @@ import org.exoplatform.social.core.relationship.model.Relationship.Type;
 public class ConnectionDAOImpl extends SynchronizedGenericDAO<Connection, Long> implements ConnectionDAO {
 
   @Override
-  @ExoTransactional
   public long count(Identity identity, Type status) {
     return RelationshipQueryBuilder.builder()
                                         .owner(identity)

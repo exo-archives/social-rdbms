@@ -24,12 +24,14 @@ import javax.persistence.OneToMany;
 import javax.persistence.OrderBy;
 import javax.persistence.Table;
 
+import org.exoplatform.commons.api.persistence.ExoEntity;
 import org.json.JSONObject;
 
 /**
  * Created by bdechateauvieux on 3/24/15.
  */
 @Entity
+@ExoEntity
 @Table(name = "SOC_ACTIVITIES")
 public class Activity extends BaseActivity {
   @Id

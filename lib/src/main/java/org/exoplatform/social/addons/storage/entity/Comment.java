@@ -17,10 +17,13 @@ import javax.persistence.MapKeyColumn;
 import javax.persistence.NamedQuery;
 import javax.persistence.Table;
 
+import org.exoplatform.commons.api.persistence.ExoEntity;
+
 /**
  * Created by bdechateauvieux on 3/24/15.
  */
 @Entity
+@ExoEntity
 @Table(name = "SOC_COMMENTS")
 @NamedQuery(
   name = "getActivityByComment",
