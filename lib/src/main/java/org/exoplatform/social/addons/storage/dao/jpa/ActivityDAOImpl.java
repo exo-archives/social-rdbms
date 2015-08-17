@@ -239,6 +239,7 @@ public class ActivityDAOImpl extends GenericDAOJPAImpl<Activity, Long> implement
   public List<Activity> getUserSpacesActivities(Identity ownerIdentity, int offset, int limit, List<String> spaceIds) {
     if (spaceIds.size() > 0) {
       return AStreamQueryBuilder.builder()
+                                .owner(ownerIdentity)
                                 .memberOfSpaceIds(spaceIds)
                                 .offset(offset)
                                 .limit(limit)
@@ -252,6 +253,7 @@ public class ActivityDAOImpl extends GenericDAOJPAImpl<Activity, Long> implement
   public int getNumberOfUserSpacesActivities(Identity ownerIdentity, List<String> spaceIds) {
     if (spaceIds.size() > 0) {
       return AStreamQueryBuilder.builder()
+                                .owner(ownerIdentity)
                                 .memberOfSpaceIds(spaceIds)
                                 .buildCount()
                                 .getSingleResult()
@@ -267,6 +269,7 @@ public class ActivityDAOImpl extends GenericDAOJPAImpl<Activity, Long> implement
                                                        int limit, List<String> spaceIds) {
     if (spaceIds.size() > 0) {
       return AStreamQueryBuilder.builder()
+                                .owner(ownerIdentity)
                                 .memberOfSpaceIds(spaceIds)
                                 .newer(sinceTime)
                                 .ascOrder()
@@ -283,6 +286,7 @@ public class ActivityDAOImpl extends GenericDAOJPAImpl<Activity, Long> implement
   public int getNumberOfNewerOnUserSpacesActivities(Identity ownerIdentity, long sinceTime, List<String> spaceIds) {
     if (spaceIds.size() > 0) {
       return AStreamQueryBuilder.builder()
+                                .owner(ownerIdentity)
                                 .memberOfSpaceIds(spaceIds)
                                 .newer(sinceTime)
                                 .buildCount()
@@ -297,6 +301,7 @@ public class ActivityDAOImpl extends GenericDAOJPAImpl<Activity, Long> implement
   public List<Activity> getOlderOnUserSpacesActivities(Identity ownerIdentity, long sinceTime, int limit, List<String> spaceIds) {
     if (spaceIds.size() > 0) {
       return AStreamQueryBuilder.builder()
+                                .owner(ownerIdentity)
                                 .memberOfSpaceIds(spaceIds)
                                 .older(sinceTime)
                                 .offset(0)
@@ -312,6 +317,7 @@ public class ActivityDAOImpl extends GenericDAOJPAImpl<Activity, Long> implement
   public int getNumberOfOlderOnUserSpacesActivities(Identity ownerIdentity, long sinceTime, List<String> spaceIds) {
     if (spaceIds.size() > 0) {
       return AStreamQueryBuilder.builder()
+                                .owner(ownerIdentity)
                                 .memberOfSpaceIds(spaceIds)
                                 .older(sinceTime)
                                 .buildCount()
@@ -327,6 +333,7 @@ public class ActivityDAOImpl extends GenericDAOJPAImpl<Activity, Long> implement
   public List<Activity> getActivitiesOfConnections(Identity ownerIdentity, int offset, int limit, long nbConnections) {
     if (nbConnections > 0) {
       return AStreamQueryBuilder.builder()
+          .owner(ownerIdentity)
           .offset(offset)
           .limit(limit)
           .build()
@@ -341,6 +348,7 @@ public class ActivityDAOImpl extends GenericDAOJPAImpl<Activity, Long> implement
   public int getNumberOfActivitiesOfConnections(Identity ownerIdentity, long nbConnections) {
     if (nbConnections > 0) {
       return AStreamQueryBuilder.builder()
+                                .owner(ownerIdentity)
                                 .buildCount()
                                 .getSingleResult()
                                 .intValue();
@@ -354,6 +362,7 @@ public class ActivityDAOImpl extends GenericDAOJPAImpl<Activity, Long> implement
   public List<Activity> getNewerOnActivitiesOfConnections(Identity ownerIdentity, long sinceTime, long limit, long nbConnections) {
     if (nbConnections > 0) {
       return AStreamQueryBuilder.builder()
+                                .owner(ownerIdentity)
                                 .newer(sinceTime)
                                 .ascOrder()
                                 .offset(0)
@@ -369,6 +378,7 @@ public class ActivityDAOImpl extends GenericDAOJPAImpl<Activity, Long> implement
   public int getNumberOfNewerOnActivitiesOfConnections(Identity ownerIdentity, long sinceTime, long nbConnections) {
     if (nbConnections > 0) {
       return AStreamQueryBuilder.builder()
+                                .owner(ownerIdentity)
                                 .newer(sinceTime)
                                 .buildCount()
                                 .getSingleResult()
@@ -384,6 +394,7 @@ public class ActivityDAOImpl extends GenericDAOJPAImpl<Activity, Long> implement
   public List<Activity> getOlderOnActivitiesOfConnections(Identity ownerIdentity, long sinceTime, int limit, long nbConnections) {
     if (nbConnections > 0) {
       return AStreamQueryBuilder.builder()
+                                .owner(ownerIdentity)
                                 .older(sinceTime)
                                 .offset(0)
                                 .limit(limit)
@@ -398,6 +409,7 @@ public class ActivityDAOImpl extends GenericDAOJPAImpl<Activity, Long> implement
   public int getNumberOfOlderOnActivitiesOfConnections(Identity ownerIdentity, long sinceTime, long nbConnections) {
     if (nbConnections > 0) {
       return AStreamQueryBuilder.builder()
+                                .owner(ownerIdentity)
                                 .older(sinceTime)
                                 .buildCount()
                                 .getSingleResult()
