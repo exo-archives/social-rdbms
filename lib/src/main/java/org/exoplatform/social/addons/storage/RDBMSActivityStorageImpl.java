@@ -31,6 +31,9 @@ import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import javax.jcr.Node;
+import javax.jcr.NodeIterator;
+
 import org.apache.commons.lang.ArrayUtils;
 import org.exoplatform.commons.api.persistence.ExoTransactional;
 import org.exoplatform.container.component.BaseComponentPlugin;
@@ -48,6 +51,7 @@ import org.exoplatform.social.core.activity.model.ActivityStream;
 import org.exoplatform.social.core.activity.model.ActivityStreamImpl;
 import org.exoplatform.social.core.activity.model.ExoSocialActivity;
 import org.exoplatform.social.core.activity.model.ExoSocialActivityImpl;
+import org.exoplatform.social.core.chromattic.entity.IdentityEntity;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvider;
 import org.exoplatform.social.core.identity.provider.SpaceIdentityProvider;
@@ -952,29 +956,26 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
    * @return
    */
   private List<String> memberOfSpaceIds(Identity ownerIdentity) {
-
     List<String> identitiesId = new ArrayList<String>();
-    long offset = 0;
-    long limit = 30;
-    int loaded = loadIdRange(ownerIdentity, offset, offset + limit, identitiesId);
-    while (loaded == limit) {
-      loaded = loadIdRange(ownerIdentity, offset, offset + limit, identitiesId);
-      offset += limit;
-    }
-
-    return identitiesId;
-
-  }
-  
-  private int loadIdRange(Identity ownerIdentity, long offset, long limit, List<String> result) {
-    List<Space> spaces = spaceStorage.getAccessibleSpaces(ownerIdentity.getRemoteId(), offset, limit);
-    Identity identity = null;
-    for (Space space : spaces) {
-      identity = identityStorage.findIdentity(SpaceIdentityProvider.NAME, space.getPrettyName());
-      if (identity != null) {
-        result.add(identity.getId());
+    try {
+      IdentityEntity identityEntity = _findById(IdentityEntity.class, ownerIdentity.getId());
+      Node spaceMemberNode = ((Node) getSession().getJCRSession().getItem(identityEntity.getPath())).getNode("soc:spacemember");
+      NodeIterator iterator = spaceMemberNode.getNodes();
+      while (iterator.hasNext()) {
+        try {
+          String spaceIdentityId = iterator.nextNode().getProperty("soc:target").getString();
+          if (!identitiesId.contains(spaceIdentityId)) {
+            identitiesId.add(spaceIdentityId);
+          }
+        } catch (Exception e) {
+          continue;
+        }
       }
-    }
-    return spaces.size();
-  }
+    } catch (Exception e) {
+      LOG.error("Failed to get list of space identity of current user");
+     }
+     return identitiesId;
+ 
+   }
+  
 }
