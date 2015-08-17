@@ -286,6 +286,13 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
   public List<ExoSocialActivity> getUserActivities(Identity owner, long offset, long limit) throws ActivityStorageException {
     return getUserActivitiesForUpgrade(owner, offset, limit);
   }
+  
+  @Override
+  public List<String> getUserIdsActivities(Identity owner, long offset, long limit) throws ActivityStorageException {
+    return convertActivityEntitiesToIds(activityDAO.getUserActivities(owner, offset, limit));
+  }
+  
+  
 
   @Override
   @ExoTransactional
