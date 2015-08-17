@@ -55,7 +55,6 @@ public final class AStreamQueryBuilder {
   private boolean isNewer = false;
   //memberOfSpaceIds
   private Collection<String> memberOfSpaceIds;
-  private Identity myIdentity;
   //order by
   private boolean descOrder = true;
 
@@ -200,7 +199,7 @@ public final class AStreamQueryBuilder {
 
       Root<Connection> subRoot1 = subQuery1.from(Connection.class);
       subQuery1.select(subRoot1.<String>get(Connection_.receiverId));
-      subQuery1.where(cb.and(cb.equal(subRoot1.<String>get(Connection_.senderId), this.myIdentity.getId()),
+      subQuery1.where(cb.and(cb.equal(subRoot1.<String>get(Connection_.senderId), this.owner.getId()),
               cb.equal(subRoot1.<Relationship.Type>get(Connection_.status), Relationship.Type.CONFIRMED)));
 
       Predicate posterConnection = cb.and(cb.in(activity.get(Activity_.posterId)).value(subQuery1));
