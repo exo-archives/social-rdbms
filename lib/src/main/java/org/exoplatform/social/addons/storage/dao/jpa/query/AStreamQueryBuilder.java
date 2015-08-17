@@ -56,8 +56,6 @@ public final class AStreamQueryBuilder {
   //memberOfSpaceIds
   private Collection<String> memberOfSpaceIds;
   private Identity myIdentity;
-  //connectionSize
-  private long connectionSize = 0;
   //order by
   private boolean descOrder = true;
 
@@ -95,12 +93,6 @@ public final class AStreamQueryBuilder {
 
   public AStreamQueryBuilder memberOfSpaceIds(Collection<String> spaceIds) {
     this.memberOfSpaceIds = spaceIds;
-    return this;
-  }
-
-  public AStreamQueryBuilder connectionSize(Identity myIdentity, long connectionSize) {
-    this.myIdentity = myIdentity;
-    this.connectionSize = connectionSize;
     return this;
   }
 
@@ -206,7 +198,6 @@ public final class AStreamQueryBuilder {
       }
     }
 
-    if (this.connectionSize > 0) {
       Root<Connection> subRoot1 = subQuery1.from(Connection.class);
       subQuery1.select(subRoot1.<String>get(Connection_.receiverId));
       subQuery1.where(cb.and(cb.equal(subRoot1.<String>get(Connection_.senderId), this.myIdentity.getId()),
@@ -220,7 +211,6 @@ public final class AStreamQueryBuilder {
       } else {
         predicate = cb.and(posterConnection, ownerConnection);
       }
-    }
 
     //newer or older
     if (this.sinceTime > 0) {

@@ -47,7 +47,6 @@ public class ActivityDAOImpl extends GenericDAOJPAImpl<Activity, Long> implement
     return AStreamQueryBuilder.builder()
                               .owner(ownerIdentity)
                               .memberOfSpaceIds(spaceIds)
-                              .connectionSize(ownerIdentity, nbConnections)
                               .offset(offset)
                               .limit(limit)
                               .build()
@@ -58,7 +57,6 @@ public class ActivityDAOImpl extends GenericDAOJPAImpl<Activity, Long> implement
     return AStreamQueryBuilder.builder()
                               .owner(ownerIdentity)
                               .memberOfSpaceIds(spaceIds)
-                              .connectionSize(ownerIdentity, nbConnections)
                               .buildCount().getSingleResult().intValue();
         
   }
@@ -68,7 +66,6 @@ public class ActivityDAOImpl extends GenericDAOJPAImpl<Activity, Long> implement
     return AStreamQueryBuilder.builder()
                               .owner(ownerIdentity)
                               .memberOfSpaceIds(spaceIds)
-                              .connectionSize(ownerIdentity, nbConnections)
                               .newer(sinceTime)
                               .ascOrder()
                               .offset(0)
@@ -83,7 +80,6 @@ public class ActivityDAOImpl extends GenericDAOJPAImpl<Activity, Long> implement
     return AStreamQueryBuilder.builder()
                               .owner(ownerIdentity)
                               .memberOfSpaceIds(spaceIds)
-                              .connectionSize(ownerIdentity, nbConnections)
                               .newer(sinceTime)
                               .buildCount()
                               .getSingleResult()
@@ -95,7 +91,6 @@ public class ActivityDAOImpl extends GenericDAOJPAImpl<Activity, Long> implement
     return AStreamQueryBuilder.builder()
                               .owner(ownerIdentity)
                               .memberOfSpaceIds(spaceIds)
-                              .connectionSize(ownerIdentity, nbConnections)
                               .older(sinceTime)
                               .offset(0)
                               .limit(limit)
@@ -108,7 +103,6 @@ public class ActivityDAOImpl extends GenericDAOJPAImpl<Activity, Long> implement
     return AStreamQueryBuilder.builder()
                               .owner(ownerIdentity)
                               .memberOfSpaceIds(spaceIds)
-                              .connectionSize(ownerIdentity, nbConnections)
                               .older(sinceTime)
                               .buildCount()
                               .getSingleResult()
@@ -333,7 +327,6 @@ public class ActivityDAOImpl extends GenericDAOJPAImpl<Activity, Long> implement
   public List<Activity> getActivitiesOfConnections(Identity ownerIdentity, int offset, int limit, long nbConnections) {
     if (nbConnections > 0) {
       return AStreamQueryBuilder.builder()
-          .connectionSize(ownerIdentity, nbConnections)
           .offset(offset)
           .limit(limit)
           .build()
@@ -348,7 +341,6 @@ public class ActivityDAOImpl extends GenericDAOJPAImpl<Activity, Long> implement
   public int getNumberOfActivitiesOfConnections(Identity ownerIdentity, long nbConnections) {
     if (nbConnections > 0) {
       return AStreamQueryBuilder.builder()
-                                .connectionSize(ownerIdentity, nbConnections)
                                 .buildCount()
                                 .getSingleResult()
                                 .intValue();
@@ -362,7 +354,6 @@ public class ActivityDAOImpl extends GenericDAOJPAImpl<Activity, Long> implement
   public List<Activity> getNewerOnActivitiesOfConnections(Identity ownerIdentity, long sinceTime, long limit, long nbConnections) {
     if (nbConnections > 0) {
       return AStreamQueryBuilder.builder()
-                                .connectionSize(ownerIdentity, nbConnections)
                                 .newer(sinceTime)
                                 .ascOrder()
                                 .offset(0)
@@ -378,7 +369,6 @@ public class ActivityDAOImpl extends GenericDAOJPAImpl<Activity, Long> implement
   public int getNumberOfNewerOnActivitiesOfConnections(Identity ownerIdentity, long sinceTime, long nbConnections) {
     if (nbConnections > 0) {
       return AStreamQueryBuilder.builder()
-                                .connectionSize(ownerIdentity, nbConnections)
                                 .newer(sinceTime)
                                 .buildCount()
                                 .getSingleResult()
@@ -394,7 +384,6 @@ public class ActivityDAOImpl extends GenericDAOJPAImpl<Activity, Long> implement
   public List<Activity> getOlderOnActivitiesOfConnections(Identity ownerIdentity, long sinceTime, int limit, long nbConnections) {
     if (nbConnections > 0) {
       return AStreamQueryBuilder.builder()
-                                .connectionSize(ownerIdentity, nbConnections)
                                 .older(sinceTime)
                                 .offset(0)
                                 .limit(limit)
@@ -409,7 +398,6 @@ public class ActivityDAOImpl extends GenericDAOJPAImpl<Activity, Long> implement
   public int getNumberOfOlderOnActivitiesOfConnections(Identity ownerIdentity, long sinceTime, long nbConnections) {
     if (nbConnections > 0) {
       return AStreamQueryBuilder.builder()
-                                .connectionSize(ownerIdentity, nbConnections)
                                 .older(sinceTime)
                                 .buildCount()
                                 .getSingleResult()
