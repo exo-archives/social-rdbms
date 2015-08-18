@@ -31,10 +31,6 @@ import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import javax.jcr.Node;
-import javax.jcr.NodeIterator;
-import javax.jcr.Session;
-
 import org.apache.commons.lang.ArrayUtils;
 import org.exoplatform.commons.api.persistence.ExoTransactional;
 import org.exoplatform.container.component.BaseComponentPlugin;
@@ -53,6 +49,7 @@ import org.exoplatform.social.core.activity.model.ActivityStreamImpl;
 import org.exoplatform.social.core.activity.model.ExoSocialActivity;
 import org.exoplatform.social.core.activity.model.ExoSocialActivityImpl;
 import org.exoplatform.social.core.chromattic.entity.IdentityEntity;
+import org.exoplatform.social.core.chromattic.entity.ProviderEntity;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvider;
 import org.exoplatform.social.core.identity.provider.SpaceIdentityProvider;
@@ -71,7 +68,6 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
   private final IdentityStorage identityStorage;
   private final SpaceStorage spaceStorage;
   private final SortedSet<ActivityProcessor> activityProcessors;
-  private static final String SPACE_PREFIX = "/production/soc:providers/soc:space/";
   private static final Pattern MENTION_PATTERN = Pattern.compile("@([^\\s]+)|@([^\\s]+)$");
   public final static String COMMENT_PREFIX = "comment";
   public RDBMSActivityStorageImpl(RelationshipStorage relationshipStorage, 
@@ -945,26 +941,20 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
   private List<String> memberOfSpaceIds(Identity ownerIdentity) {
     List<String> identitiesId = new ArrayList<String>();
     try {
-      Session session = getSession().getJCRSession();
       IdentityEntity identityEntity = _findById(IdentityEntity.class, ownerIdentity.getId());
-      Node spaceMemberNode = ((Node) session.getItem(identityEntity.getPath())).getNode("soc:spacemember");
-      NodeIterator iterator = spaceMemberNode.getNodes();
-      while (iterator.hasNext()) {
-        try {
-          String spaceName = iterator.nextNode().getName();
-          Node spaceIdentityNode = (Node) session.getItem(SPACE_PREFIX + spaceName);
-          String spaceIdentityId = spaceIdentityNode.getUUID();
-          if (!identitiesId.contains(spaceIdentityId)) {
-            identitiesId.add(spaceIdentityId);
-          }
-        } catch (Exception e) {
-          continue;
+      Set<String> spaceNames = identityEntity.getSpaces().getRefs().keySet();
+      ProviderEntity providerEntity = getProviderRoot().getProvider(SpaceIdentityProvider.NAME);
+      for (String spacePrettyName : spaceNames) {
+        IdentityEntity spaceIdentity = providerEntity.getIdentities().get(spacePrettyName);
+        if (spaceIdentity != null) {
+          identitiesId.add(spaceIdentity.getId());
         }
       }
     } catch (Exception e) {
       LOG.error("Failed to get list of space identity of current user");
-     }
-     return identitiesId;
+    }
+    return identitiesId;
+
  
    }
   
