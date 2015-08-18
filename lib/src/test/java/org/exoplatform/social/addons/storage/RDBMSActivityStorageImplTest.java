@@ -328,13 +328,11 @@ public class RDBMSActivityStorageImplTest extends AbstractCoreTest {
       activity.setTitle("activity title " + i);
       activity.setUserId(demoIdentity.getId());
       activityStorage.saveActivity(spaceIdentity, activity);
-      System.out.println("=============== " + activity.getUpdated().getTime());
       tearDownActivityList.add(activity);
       if (i == 0) {
         baseActivity = activity;
       }
     }
-    System.out.println("=============== " + baseActivity.getUpdated().getTime());
     assertEquals(9, activityStorage.getNewerOnUserSpacesActivities(demoIdentity, baseActivity, 10).size());
     assertEquals(9, activityStorage.getNumberOfNewerOnUserSpacesActivities(demoIdentity, baseActivity));
     //
