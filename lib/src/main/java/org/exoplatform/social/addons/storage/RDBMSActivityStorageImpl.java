@@ -54,9 +54,6 @@ import org.exoplatform.social.core.activity.model.ExoSocialActivityImpl;
 import org.exoplatform.social.core.chromattic.entity.IdentityEntity;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvider;
-import org.exoplatform.social.core.identity.provider.SpaceIdentityProvider;
-import org.exoplatform.social.core.relationship.model.Relationship;
-import org.exoplatform.social.core.space.model.Space;
 import org.exoplatform.social.core.storage.ActivityStorageException;
 import org.exoplatform.social.core.storage.api.IdentityStorage;
 import org.exoplatform.social.core.storage.api.RelationshipStorage;
@@ -69,7 +66,6 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
   private static final Log LOG = ExoLogger.getLogger(RDBMSActivityStorageImpl.class);
   private final ActivityDAO activityDAO;
   private final CommentDAO commentDAO;
-  private final ConnectionDAO connectionDAO;
   private final IdentityStorage identityStorage;
   private final SpaceStorage spaceStorage;
   private final SortedSet<ActivityProcessor> activityProcessors;
@@ -91,7 +87,6 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
     this.activityDAO = activityDAO;
     this.commentDAO = commentDAO;
     this.spaceStorage = spaceStorage;
-    this.connectionDAO = connectionDAO;
   }
   
   private static Comparator<ActivityProcessor> processorComparator() {
@@ -496,7 +491,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
   
   @Override
   public List<String> getActivityIdsFeed(Identity ownerIdentity, int offset, int limit) {
-    return convertActivityEntitiesToIds(activityDAO.getActivityFeed(ownerIdentity, offset, limit, getNumberOfConnections(ownerIdentity), memberOfSpaceIds(ownerIdentity)));
+    return convertActivityEntitiesToIds(activityDAO.getActivityFeed(ownerIdentity, offset, limit, memberOfSpaceIds(ownerIdentity)));
   }
 
 
@@ -512,7 +507,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
   @Override
   @ExoTransactional
   public List<ExoSocialActivity> getActivityFeedForUpgrade(Identity ownerIdentity, int offset, int limit) {
-    return convertActivityEntitiesToActivities(activityDAO.getActivityFeed(ownerIdentity, offset, limit, getNumberOfConnections(ownerIdentity), memberOfSpaceIds(ownerIdentity)));
+    return convertActivityEntitiesToActivities(activityDAO.getActivityFeed(ownerIdentity, offset, limit, memberOfSpaceIds(ownerIdentity)));
   }
 
   @Override
@@ -522,7 +517,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
 
   @Override
   public int getNumberOfActivitesOnActivityFeedForUpgrade(Identity ownerIdentity) {
-    return activityDAO.getNumberOfActivitesOnActivityFeed(ownerIdentity, getNumberOfConnections(ownerIdentity), memberOfSpaceIds(ownerIdentity));
+    return activityDAO.getNumberOfActivitesOnActivityFeed(ownerIdentity, memberOfSpaceIds(ownerIdentity));
   }
 
   @Override
@@ -553,7 +548,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
   @Override
   @ExoTransactional
   public List<ExoSocialActivity> getActivitiesOfConnectionsForUpgrade(Identity ownerIdentity, int offset, int limit) {
-    return convertActivityEntitiesToActivities(activityDAO.getActivitiesOfConnections(ownerIdentity, offset, limit, getNumberOfConnections(ownerIdentity)));
+    return convertActivityEntitiesToActivities(activityDAO.getActivitiesOfConnections(ownerIdentity, offset, limit));
   }
 
   @Override
@@ -563,7 +558,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
 
   @Override
   public int getNumberOfActivitiesOfConnectionsForUpgrade(Identity ownerIdentity) {
-    return activityDAO.getNumberOfActivitiesOfConnections(ownerIdentity, getNumberOfConnections(ownerIdentity));
+    return activityDAO.getNumberOfActivitiesOfConnections(ownerIdentity);
   }
 
   @Override
@@ -715,7 +710,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
 
   @Override
   public int getNumberOfNewerOnActivityFeed(Identity ownerIdentity, Long sinceTime) {
-    return activityDAO.getNumberOfNewerOnActivityFeed(ownerIdentity, sinceTime, getNumberOfConnections(ownerIdentity), memberOfSpaceIds(ownerIdentity));
+    return activityDAO.getNumberOfNewerOnActivityFeed(ownerIdentity, sinceTime, memberOfSpaceIds(ownerIdentity));
   }
 
   @Override
@@ -725,7 +720,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
 
   @Override
   public int getNumberOfNewerOnActivitiesOfConnections(Identity ownerIdentity, Long sinceTime) {
-    return activityDAO.getNumberOfNewerOnActivitiesOfConnections(ownerIdentity, sinceTime, getNumberOfConnections(ownerIdentity));
+    return activityDAO.getNumberOfNewerOnActivitiesOfConnections(ownerIdentity, sinceTime);
   }
 
   @Override
@@ -838,7 +833,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
   @Override
   @ExoTransactional
   public List<ExoSocialActivity> getNewerFeedActivities(Identity owner, Long sinceTime, int limit) {
-    return convertActivityEntitiesToActivities(activityDAO.getNewerOnActivityFeed(owner, sinceTime, limit, getNumberOfConnections(owner), memberOfSpaceIds(owner)));
+    return convertActivityEntitiesToActivities(activityDAO.getNewerOnActivityFeed(owner, sinceTime, limit, memberOfSpaceIds(owner)));
   }
 
   @Override
@@ -856,7 +851,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
   @Override
   @ExoTransactional
   public List<ExoSocialActivity> getNewerActivitiesOfConnections(Identity owner, Long sinceTime, int limit) {
-    return convertActivityEntitiesToActivities(activityDAO.getNewerOnActivitiesOfConnections(owner, sinceTime, limit, getNumberOfConnections(owner)));
+    return convertActivityEntitiesToActivities(activityDAO.getNewerOnActivitiesOfConnections(owner, sinceTime, limit));
   }
 
   @Override
@@ -868,7 +863,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
   @Override
   @ExoTransactional
   public List<ExoSocialActivity> getOlderFeedActivities(Identity owner, Long sinceTime, int limit) {
-    return convertActivityEntitiesToActivities(activityDAO.getOlderOnActivityFeed(owner, sinceTime, limit, getNumberOfConnections(owner), memberOfSpaceIds(owner)));
+    return convertActivityEntitiesToActivities(activityDAO.getOlderOnActivityFeed(owner, sinceTime, limit, memberOfSpaceIds(owner)));
   }
 
   @Override
@@ -886,7 +881,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
   @Override
   @ExoTransactional
   public List<ExoSocialActivity> getOlderActivitiesOfConnections(Identity owner, Long sinceTime, int limit) {
-    return convertActivityEntitiesToActivities(activityDAO.getOlderOnActivitiesOfConnections(owner, sinceTime, limit, getNumberOfConnections(owner)));
+    return convertActivityEntitiesToActivities(activityDAO.getOlderOnActivitiesOfConnections(owner, sinceTime, limit));
   }
 
   @Override
@@ -897,7 +892,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
 
   @Override
   public int getNumberOfOlderOnActivityFeed(Identity ownerIdentity, Long sinceTime) {
-    return activityDAO.getNumberOfOlderOnActivityFeed(ownerIdentity, sinceTime, getNumberOfConnections(ownerIdentity), memberOfSpaceIds(ownerIdentity));
+    return activityDAO.getNumberOfOlderOnActivityFeed(ownerIdentity, sinceTime, memberOfSpaceIds(ownerIdentity));
   }
 
   @Override
@@ -907,7 +902,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
 
   @Override
   public int getNumberOfOlderOnActivitiesOfConnections(Identity ownerIdentity, Long sinceTime) {
-    return activityDAO.getNumberOfOlderOnActivitiesOfConnections(ownerIdentity, sinceTime, getNumberOfConnections(ownerIdentity));
+    return activityDAO.getNumberOfOlderOnActivitiesOfConnections(ownerIdentity, sinceTime);
   }
 
   @Override
@@ -937,16 +932,6 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
         LOG.debug("activity processing failed ");
       }
     }
-  }
-  
-  /**
-   * Return the number of connections of owner
-   * 
-   * @param owner
-   * @return
-   */
-  private long getNumberOfConnections(Identity owner) {
-    return connectionDAO.count(owner, Relationship.Type.CONFIRMED);
   }
   
   /**

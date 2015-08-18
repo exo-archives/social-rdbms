@@ -55,6 +55,7 @@ public final class AStreamQueryBuilder {
   private boolean isNewer = false;
   //memberOfSpaceIds
   private Collection<String> memberOfSpaceIds;
+  private Identity myIdentity;
   //order by
   private boolean descOrder = true;
 
@@ -64,6 +65,11 @@ public final class AStreamQueryBuilder {
 
   public AStreamQueryBuilder owner(Identity owner) {
     this.owner = owner;
+    return this;
+  }
+  
+  public AStreamQueryBuilder myIdentity(Identity myIdentity) {
+    this.myIdentity = myIdentity;
     return this;
   }
 
@@ -196,10 +202,11 @@ public final class AStreamQueryBuilder {
         predicate = addInClause(cb, activity.get(Activity_.ownerId), memberOfSpaceIds);
       }
     }
-
+    
+    if (this.myIdentity != null) {
       Root<Connection> subRoot1 = subQuery1.from(Connection.class);
       subQuery1.select(subRoot1.<String>get(Connection_.receiverId));
-      subQuery1.where(cb.and(cb.equal(subRoot1.<String>get(Connection_.senderId), this.owner.getId()),
+      subQuery1.where(cb.and(cb.equal(subRoot1.<String>get(Connection_.senderId), this.myIdentity.getId()),
               cb.equal(subRoot1.<Relationship.Type>get(Connection_.status), Relationship.Type.CONFIRMED)));
 
       Predicate posterConnection = cb.and(cb.in(activity.get(Activity_.posterId)).value(subQuery1));
@@ -210,7 +217,7 @@ public final class AStreamQueryBuilder {
       } else {
         predicate = cb.and(posterConnection, ownerConnection);
       }
-
+    }
     //newer or older
     if (this.sinceTime > 0) {
       if (isNewer) {
