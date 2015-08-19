@@ -52,7 +52,6 @@ import org.exoplatform.social.core.chromattic.entity.IdentityEntity;
 import org.exoplatform.social.core.chromattic.entity.ProviderEntity;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvider;
-import org.exoplatform.social.core.identity.provider.SpaceIdentityProvider;
 import org.exoplatform.social.core.storage.ActivityStorageException;
 import org.exoplatform.social.core.storage.api.IdentityStorage;
 import org.exoplatform.social.core.storage.api.RelationshipStorage;
@@ -282,6 +281,11 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
   @Override
   public List<ExoSocialActivity> getUserActivities(Identity owner, long offset, long limit) throws ActivityStorageException {
     return getUserActivitiesForUpgrade(owner, offset, limit);
+  }
+  
+  @Override
+  public List<String> getUserSpacesActivityIds(Identity ownerIdentity, int offset, int limit) {
+    return convertActivityEntitiesToIds(activityDAO.getUserActivities(ownerIdentity, offset, limit));
   }
   
   @Override
@@ -542,6 +546,11 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
   public List<ExoSocialActivity> getActivitiesOfConnections(Identity ownerIdentity, int offset, int limit) {
     return getActivitiesOfConnectionsForUpgrade(ownerIdentity, offset, limit);
   }
+  
+  @Override
+  public List<String> getActivityIdsOfConnections(Identity ownerIdentity, int offset, int limit) {
+    return convertActivityEntitiesToIds(activityDAO.getActivitiesOfConnections(ownerIdentity, offset, limit));
+  }
 
   @Override
   @ExoTransactional
@@ -587,6 +596,11 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
   @Override
   public List<ExoSocialActivity> getUserSpacesActivities(Identity ownerIdentity, int offset, int limit) {
     return getUserSpacesActivitiesForUpgrade(ownerIdentity, offset, limit);
+  }
+  
+  @Override
+  public List<String> getSpaceActivityIds(Identity spaceIdentity, int offset, int limit) {
+    return convertActivityEntitiesToIds(activityDAO.getSpaceActivities(spaceIdentity, offset, limit));
   }
 
   @Override
