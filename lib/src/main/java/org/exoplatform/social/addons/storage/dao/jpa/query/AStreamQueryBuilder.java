@@ -16,7 +16,10 @@
  */
 package org.exoplatform.social.addons.storage.dao.jpa.query;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 
 import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
@@ -58,6 +61,7 @@ public final class AStreamQueryBuilder {
   private Identity myIdentity;
   //order by
   private boolean descOrder = true;
+  String[] activityTypes;
 
   public static AStreamQueryBuilder builder() {
     return new AStreamQueryBuilder();
@@ -83,6 +87,10 @@ public final class AStreamQueryBuilder {
     return this;
   }
 
+  public AStreamQueryBuilder activityTypes(String... activityTypes) {
+    this.activityTypes = activityTypes;
+    return this;
+  }
 
   public AStreamQueryBuilder newer(long sinceTime) {
     this.isNewer = true;
@@ -255,5 +263,46 @@ public final class AStreamQueryBuilder {
     }
     return in;
 
+  }
+
+  public TypedQuery<Activity> buildGetActivitiesByPoster() {
+    EntityManager em = EntityManagerHolder.get();
+    CriteriaBuilder cb = em.getCriteriaBuilder();
+    CriteriaQuery<Activity> criteria = cb.createQuery(Activity.class);
+    Root<Activity> activity = criteria.from(Activity.class);
+    Predicate predicate = cb.equal(activity.get(Activity_.posterId), owner.getId());
+    if (this.activityTypes != null && this.activityTypes.length > 0) {
+      List<String> types = new ArrayList<String>(Arrays.asList(this.activityTypes));
+      predicate = cb.and(predicate, addInClause(cb, activity.get(Activity_.type), types));
+    }
+    //
+    CriteriaQuery<Activity> select = criteria.select(activity).distinct(true);
+    select.where(predicate);
+    select.orderBy(cb.desc(activity.<Long> get(Activity_.lastUpdated)));
+
+    TypedQuery<Activity> typedQuery = em.createQuery(select);
+    if (this.limit > 0) {
+      typedQuery.setFirstResult((int) offset);
+      typedQuery.setMaxResults((int) limit);
+    }
+
+    return typedQuery;
+  }
+
+  public TypedQuery<Long> buildActivitiesByPosterCount() {
+    EntityManager em = EntityManagerHolder.get();
+    CriteriaBuilder cb = em.getCriteriaBuilder();
+    CriteriaQuery<Long> criteria = cb.createQuery(Long.class);
+    Root<Activity> activity = criteria.from(Activity.class);
+    Predicate predicate = cb.equal(activity.get(Activity_.posterId), owner.getId());
+    if (this.activityTypes != null && this.activityTypes.length > 0) {
+      List<String> types = new ArrayList<String>(Arrays.asList(this.activityTypes));
+      predicate = cb.and(predicate, addInClause(cb, activity.get(Activity_.type), types));
+    }
+    //
+    CriteriaQuery<Long> select = criteria.select(cb.countDistinct(activity));
+    select.where(predicate);
+
+    return em.createQuery(select);
   }
 }

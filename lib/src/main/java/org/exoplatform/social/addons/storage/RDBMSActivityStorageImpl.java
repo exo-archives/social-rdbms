@@ -769,17 +769,17 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
 
   @Override
   public List<ExoSocialActivity> getActivitiesByPoster(Identity posterIdentity, int offset, int limit) {
-    return null;
+    return getActivitiesByPoster(posterIdentity, offset, limit, new String[]{});
   }
 
   @Override
   public List<ExoSocialActivity> getActivitiesByPoster(Identity posterIdentity, int offset, int limit, String... activityTypes) {
-    return null;
+    return convertActivityEntitiesToActivities(activityDAO.getActivitiesByPoster(posterIdentity, offset, limit, activityTypes));
   }
 
   @Override
   public int getNumberOfActivitiesByPoster(Identity posterIdentity) {
-    return 0;
+    return activityDAO.getNumberOfActivitiesByPoster(posterIdentity, new String[]{});
   }
 
   @Override

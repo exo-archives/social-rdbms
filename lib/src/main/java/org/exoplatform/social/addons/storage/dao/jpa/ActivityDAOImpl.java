@@ -391,4 +391,25 @@ public class ActivityDAOImpl extends GenericDAOJPAImpl<Activity, Long> implement
                               .intValue();
   }
 
+  @Override
+  public List<Activity> getActivitiesByPoster(Identity posterIdentity, int offset, int limit, String... activityTypes) {
+    return AStreamQueryBuilder.builder()
+                              .owner(posterIdentity)
+                              .activityTypes(activityTypes)
+                              .offset(offset)
+                              .limit(limit)
+                              .buildGetActivitiesByPoster()
+                              .getResultList();
+  }
+
+  @Override
+  public int getNumberOfActivitiesByPoster(Identity posterIdentity, String... activityTypes) {
+    return AStreamQueryBuilder.builder()
+                              .owner(posterIdentity)
+                              .activityTypes(activityTypes)
+                              .buildActivitiesByPosterCount()
+                              .getSingleResult()
+                              .intValue();
+  }
+
 }

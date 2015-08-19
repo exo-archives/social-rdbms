@@ -75,6 +75,26 @@ public class RDBMSActivityStorageImplTest extends AbstractCoreTest {
     super.tearDown();
   }
   
+  @MaxQueryNumber(100)
+  public void testGetActivitiesByPoster() {
+    ExoSocialActivity activity1 = createActivity(1);
+    activity1.setType("TYPE1");
+    activityStorage.saveActivity(demoIdentity, activity1);
+    tearDownActivityList.add(activity1);
+    
+    ExoSocialActivity activity2 = createActivity(2);
+    activity2.setType("TYPE2");
+    activityStorage.saveActivity(demoIdentity, activity2);
+    tearDownActivityList.add(activity2);
+    
+    //
+    List<ExoSocialActivity> activities = activityStorage.getActivitiesByPoster(demoIdentity, 0, 10);
+    assertEquals(2, activities.size());
+    assertEquals(2, activityStorage.getNumberOfActivitiesByPoster(demoIdentity));
+    activities = activityStorage.getActivitiesByPoster(demoIdentity, 0, 10, new String[] {"TYPE1"});
+    assertEquals(1, activities.size());
+  }
+  
   @MaxQueryNumber(516)
   public void testSaveActivity() {
     

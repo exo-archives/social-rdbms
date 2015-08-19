@@ -293,5 +293,21 @@ public interface ActivityDAO extends GenericDAO<Activity, Long> {
    * @return
    */
   int getNumberOfOlderOnActivitiesOfConnections(Identity ownerIdentity, long sinceTime);
+
+  /**
+   * @param posterIdentity
+   * @param offset
+   * @param limit
+   * @param activityTypes
+   * @return
+   */
+  List<Activity> getActivitiesByPoster(Identity posterIdentity, int offset, int limit, String... activityTypes);
+
+  /**
+   * @param posterIdentity
+   * @param activityTypes
+   * @return
+   */
+  int getNumberOfActivitiesByPoster(Identity posterIdentity, String... activityTypes);
   
 }
