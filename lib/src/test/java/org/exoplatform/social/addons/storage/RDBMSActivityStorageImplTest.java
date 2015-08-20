@@ -75,7 +75,7 @@ public class RDBMSActivityStorageImplTest extends AbstractCoreTest {
     super.tearDown();
   }
   
-  @MaxQueryNumber(100)
+  @MaxQueryNumber(522)
   public void testGetActivitiesByPoster() {
     ExoSocialActivity activity1 = createActivity(1);
     activity1.setType("TYPE1");
