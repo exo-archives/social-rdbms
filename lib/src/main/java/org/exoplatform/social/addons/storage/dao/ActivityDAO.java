@@ -151,31 +151,14 @@ public interface ActivityDAO extends GenericDAO<Activity, Long> {
    * @param limit
    * @return
    */
-  List<Activity> getActivityFeed(Identity ownerIdentity, int offset, int limit, long nbConnections, List<String> spaceIds);
+  List<Activity> getActivityFeed(Identity ownerIdentity, int offset, int limit, List<String> spaceIds);
   
   /**
    * 
    * @param ownerIdentity
    * @return
    */
-  int getNumberOfActivitesOnActivityFeed(Identity ownerIdentity, long nbConnections, List<String> spaceIds);
-  
-  /**
-   * 
-   * @param ownerIdentity
-   * @param sinceTime
-   * @param limit
-   * @return
-   */
-  List<Activity> getNewerOnActivityFeed(Identity ownerIdentity, long sinceTime, int limit, long nbConnections, List<String> spaceIds);
-  
-  /**
-   * 
-   * @param ownerIdentity
-   * @param sinceTime
-   * @return
-   */
-  int getNumberOfNewerOnActivityFeed(Identity ownerIdentity, long sinceTime, long nbConnections, List<String> spaceIds);
+  int getNumberOfActivitesOnActivityFeed(Identity ownerIdentity, List<String> spaceIds);
   
   /**
    * 
@@ -184,7 +167,7 @@ public interface ActivityDAO extends GenericDAO<Activity, Long> {
    * @param limit
    * @return
    */
-  List<Activity> getOlderOnActivityFeed(Identity ownerIdentity, long sinceTime, int limit, long nbConnections, List<String> spaceIds);
+  List<Activity> getNewerOnActivityFeed(Identity ownerIdentity, long sinceTime, int limit, List<String> spaceIds);
   
   /**
    * 
@@ -192,7 +175,24 @@ public interface ActivityDAO extends GenericDAO<Activity, Long> {
    * @param sinceTime
    * @return
    */
-  int getNumberOfOlderOnActivityFeed(Identity ownerIdentity, long sinceTime, long nbConnections, List<String> spaceIds);
+  int getNumberOfNewerOnActivityFeed(Identity ownerIdentity, long sinceTime, List<String> spaceIds);
+  
+  /**
+   * 
+   * @param ownerIdentity
+   * @param sinceTime
+   * @param limit
+   * @return
+   */
+  List<Activity> getOlderOnActivityFeed(Identity ownerIdentity, long sinceTime, int limit, List<String> spaceIds);
+  
+  /**
+   * 
+   * @param ownerIdentity
+   * @param sinceTime
+   * @return
+   */
+  int getNumberOfOlderOnActivityFeed(Identity ownerIdentity, long sinceTime, List<String> spaceIds);
   
   /**
    * 
@@ -251,31 +251,14 @@ public interface ActivityDAO extends GenericDAO<Activity, Long> {
    * @param limit
    * @return
    */
-  List<Activity> getActivitiesOfConnections(Identity ownerIdentity, int offset, int limit, long nbConnections);
+  List<Activity> getActivitiesOfConnections(Identity ownerIdentity, int offset, int limit);
   
   /**
    * 
    * @param ownerIdentity
    * @return
    */
-  int getNumberOfActivitiesOfConnections(Identity ownerIdentity, long nbConnections);
-  
-  /**
-   * 
-   * @param ownerIdentity
-   * @param sinceTime
-   * @param limit
-   * @return
-   */
-  List<Activity> getNewerOnActivitiesOfConnections(Identity ownerIdentity, long sinceTime, long limit, long nbConnections);
-  
-  /**
-   * 
-   * @param ownerIdentity
-   * @param sinceTime
-   * @return
-   */
-  int getNumberOfNewerOnActivitiesOfConnections(Identity ownerIdentity, long sinceTime, long nbConnections);
+  int getNumberOfActivitiesOfConnections(Identity ownerIdentity);
   
   /**
    * 
@@ -284,7 +267,7 @@ public interface ActivityDAO extends GenericDAO<Activity, Long> {
    * @param limit
    * @return
    */
-  List<Activity> getOlderOnActivitiesOfConnections(Identity ownerIdentity, long sinceTime, int limit, long nbConnections);
+  List<Activity> getNewerOnActivitiesOfConnections(Identity ownerIdentity, long sinceTime, long limit);
   
   /**
    * 
@@ -292,6 +275,39 @@ public interface ActivityDAO extends GenericDAO<Activity, Long> {
    * @param sinceTime
    * @return
    */
-  int getNumberOfOlderOnActivitiesOfConnections(Identity ownerIdentity, long sinceTime, long nbConnections);
+  int getNumberOfNewerOnActivitiesOfConnections(Identity ownerIdentity, long sinceTime);
+  
+  /**
+   * 
+   * @param ownerIdentity
+   * @param sinceTime
+   * @param limit
+   * @return
+   */
+  List<Activity> getOlderOnActivitiesOfConnections(Identity ownerIdentity, long sinceTime, int limit);
+  
+  /**
+   * 
+   * @param ownerIdentity
+   * @param sinceTime
+   * @return
+   */
+  int getNumberOfOlderOnActivitiesOfConnections(Identity ownerIdentity, long sinceTime);
+
+  /**
+   * @param posterIdentity
+   * @param offset
+   * @param limit
+   * @param activityTypes
+   * @return
+   */
+  List<Activity> getActivitiesByPoster(Identity posterIdentity, int offset, int limit, String... activityTypes);
+
+  /**
+   * @param posterIdentity
+   * @param activityTypes
+   * @return
+   */
+  int getNumberOfActivitiesByPoster(Identity posterIdentity, String... activityTypes);
   
 }

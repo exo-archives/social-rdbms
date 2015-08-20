@@ -16,7 +16,10 @@
  */
 package org.exoplatform.social.addons.storage.dao.jpa.query;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 
 import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
@@ -38,6 +41,7 @@ import org.exoplatform.social.addons.storage.entity.Connection_;
 import org.exoplatform.social.addons.storage.entity.Mention;
 import org.exoplatform.social.addons.storage.entity.Mention_;
 import org.exoplatform.social.core.identity.model.Identity;
+import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvider;
 import org.exoplatform.social.core.relationship.model.Relationship;
 
 /**
@@ -56,10 +60,10 @@ public final class AStreamQueryBuilder {
   //memberOfSpaceIds
   private Collection<String> memberOfSpaceIds;
   private Identity myIdentity;
-  //connectionSize
-  private long connectionSize = 0;
+  private Identity viewer;
   //order by
   private boolean descOrder = true;
+  String[] activityTypes;
 
   public static AStreamQueryBuilder builder() {
     return new AStreamQueryBuilder();
@@ -67,6 +71,16 @@ public final class AStreamQueryBuilder {
 
   public AStreamQueryBuilder owner(Identity owner) {
     this.owner = owner;
+    return this;
+  }
+  
+  public AStreamQueryBuilder viewer(Identity viewer) {
+    this.viewer = viewer;
+    return this;
+  }
+  
+  public AStreamQueryBuilder myIdentity(Identity myIdentity) {
+    this.myIdentity = myIdentity;
     return this;
   }
 
@@ -80,6 +94,10 @@ public final class AStreamQueryBuilder {
     return this;
   }
 
+  public AStreamQueryBuilder activityTypes(String... activityTypes) {
+    this.activityTypes = activityTypes;
+    return this;
+  }
 
   public AStreamQueryBuilder newer(long sinceTime) {
     this.isNewer = true;
@@ -95,12 +113,6 @@ public final class AStreamQueryBuilder {
 
   public AStreamQueryBuilder memberOfSpaceIds(Collection<String> spaceIds) {
     this.memberOfSpaceIds = spaceIds;
-    return this;
-  }
-
-  public AStreamQueryBuilder connectionSize(Identity myIdentity, long connectionSize) {
-    this.myIdentity = myIdentity;
-    this.connectionSize = connectionSize;
     return this;
   }
 
@@ -195,7 +207,13 @@ public final class AStreamQueryBuilder {
       
       //liker
       predicate = cb.or(predicate, cb.isMember(this.owner.getId(), activity.get(Activity_.likerIds)));
+      
+      //view user's stream
+      if (this.viewer != null && !this.viewer.getId().equals(this.owner.getId())) {
+        predicate = cb.and(predicate, cb.equal(activity.get(Activity_.providerId), OrganizationIdentityProvider.NAME));
+      }
     }
+    
 
     // space members
     if (this.memberOfSpaceIds != null && memberOfSpaceIds.size() > 0) {
@@ -205,8 +223,8 @@ public final class AStreamQueryBuilder {
         predicate = addInClause(cb, activity.get(Activity_.ownerId), memberOfSpaceIds);
       }
     }
-
-    if (this.connectionSize > 0) {
+    
+    if (this.myIdentity != null) {
       Root<Connection> subRoot1 = subQuery1.from(Connection.class);
       subQuery1.select(subRoot1.<String>get(Connection_.receiverId));
       subQuery1.where(cb.and(cb.equal(subRoot1.<String>get(Connection_.senderId), this.myIdentity.getId()),
@@ -221,7 +239,6 @@ public final class AStreamQueryBuilder {
         predicate = cb.and(posterConnection, ownerConnection);
       }
     }
-
     //newer or older
     if (this.sinceTime > 0) {
       if (isNewer) {
@@ -259,5 +276,46 @@ public final class AStreamQueryBuilder {
     }
     return in;
 
+  }
+
+  public TypedQuery<Activity> buildGetActivitiesByPoster() {
+    EntityManager em = EntityManagerHolder.get();
+    CriteriaBuilder cb = em.getCriteriaBuilder();
+    CriteriaQuery<Activity> criteria = cb.createQuery(Activity.class);
+    Root<Activity> activity = criteria.from(Activity.class);
+    Predicate predicate = cb.equal(activity.get(Activity_.posterId), owner.getId());
+    if (this.activityTypes != null && this.activityTypes.length > 0) {
+      List<String> types = new ArrayList<String>(Arrays.asList(this.activityTypes));
+      predicate = cb.and(predicate, addInClause(cb, activity.get(Activity_.type), types));
+    }
+    //
+    CriteriaQuery<Activity> select = criteria.select(activity).distinct(true);
+    select.where(predicate);
+    select.orderBy(cb.desc(activity.<Long> get(Activity_.lastUpdated)));
+
+    TypedQuery<Activity> typedQuery = em.createQuery(select);
+    if (this.limit > 0) {
+      typedQuery.setFirstResult((int) offset);
+      typedQuery.setMaxResults((int) limit);
+    }
+
+    return typedQuery;
+  }
+
+  public TypedQuery<Long> buildActivitiesByPosterCount() {
+    EntityManager em = EntityManagerHolder.get();
+    CriteriaBuilder cb = em.getCriteriaBuilder();
+    CriteriaQuery<Long> criteria = cb.createQuery(Long.class);
+    Root<Activity> activity = criteria.from(Activity.class);
+    Predicate predicate = cb.equal(activity.get(Activity_.posterId), owner.getId());
+    if (this.activityTypes != null && this.activityTypes.length > 0) {
+      List<String> types = new ArrayList<String>(Arrays.asList(this.activityTypes));
+      predicate = cb.and(predicate, addInClause(cb, activity.get(Activity_.type), types));
+    }
+    //
+    CriteriaQuery<Long> select = criteria.select(cb.countDistinct(activity));
+    select.where(predicate);
+
+    return em.createQuery(select);
   }
 }

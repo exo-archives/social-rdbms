@@ -37,38 +37,39 @@ public class ActivityDAOImpl extends GenericDAOJPAImpl<Activity, Long> implement
   public List<Activity> getActivities(Identity owner, Identity viewer, long offset, long limit) throws ActivityStorageException {
     return AStreamQueryBuilder.builder()
                               .owner(owner)
+                              .viewer(viewer)
                               .offset(offset)
                               .limit(limit)
                               .build()
                               .getResultList();
   }
 
-  public List<Activity> getActivityFeed(Identity ownerIdentity, int offset, int limit, long nbConnections, List<String> spaceIds) {
+  public List<Activity> getActivityFeed(Identity ownerIdentity, int offset, int limit, List<String> spaceIds) {
     return AStreamQueryBuilder.builder()
                               .owner(ownerIdentity)
+                              .myIdentity(ownerIdentity)
                               .memberOfSpaceIds(spaceIds)
-                              .connectionSize(ownerIdentity, nbConnections)
                               .offset(offset)
                               .limit(limit)
                               .build()
                               .getResultList();
   }
 
-  public int getNumberOfActivitesOnActivityFeed(Identity ownerIdentity, long nbConnections, List<String> spaceIds) {
+  public int getNumberOfActivitesOnActivityFeed(Identity ownerIdentity, List<String> spaceIds) {
     return AStreamQueryBuilder.builder()
                               .owner(ownerIdentity)
+                              .myIdentity(ownerIdentity)
                               .memberOfSpaceIds(spaceIds)
-                              .connectionSize(ownerIdentity, nbConnections)
                               .buildCount().getSingleResult().intValue();
         
   }
   
   @Override
-  public List<Activity> getNewerOnActivityFeed(Identity ownerIdentity, long sinceTime, int limit, long nbConnections, List<String> spaceIds) {
+  public List<Activity> getNewerOnActivityFeed(Identity ownerIdentity, long sinceTime, int limit, List<String> spaceIds) {
     return AStreamQueryBuilder.builder()
                               .owner(ownerIdentity)
+                              .myIdentity(ownerIdentity)
                               .memberOfSpaceIds(spaceIds)
-                              .connectionSize(ownerIdentity, nbConnections)
                               .newer(sinceTime)
                               .ascOrder()
                               .offset(0)
@@ -79,11 +80,11 @@ public class ActivityDAOImpl extends GenericDAOJPAImpl<Activity, Long> implement
 
   
   @Override
-  public int getNumberOfNewerOnActivityFeed(Identity ownerIdentity, long sinceTime, long nbConnections, List<String> spaceIds) {
+  public int getNumberOfNewerOnActivityFeed(Identity ownerIdentity, long sinceTime, List<String> spaceIds) {
     return AStreamQueryBuilder.builder()
                               .owner(ownerIdentity)
+                              .myIdentity(ownerIdentity)
                               .memberOfSpaceIds(spaceIds)
-                              .connectionSize(ownerIdentity, nbConnections)
                               .newer(sinceTime)
                               .buildCount()
                               .getSingleResult()
@@ -91,11 +92,11 @@ public class ActivityDAOImpl extends GenericDAOJPAImpl<Activity, Long> implement
   }
 
   @Override
-  public List<Activity> getOlderOnActivityFeed(Identity ownerIdentity, long sinceTime,int limit, long nbConnections, List<String> spaceIds) {
+  public List<Activity> getOlderOnActivityFeed(Identity ownerIdentity, long sinceTime,int limit, List<String> spaceIds) {
     return AStreamQueryBuilder.builder()
                               .owner(ownerIdentity)
+                              .myIdentity(ownerIdentity)
                               .memberOfSpaceIds(spaceIds)
-                              .connectionSize(ownerIdentity, nbConnections)
                               .older(sinceTime)
                               .offset(0)
                               .limit(limit)
@@ -104,11 +105,11 @@ public class ActivityDAOImpl extends GenericDAOJPAImpl<Activity, Long> implement
   }
 
   @Override
-  public int getNumberOfOlderOnActivityFeed(Identity ownerIdentity, long sinceTime, long nbConnections, List<String> spaceIds) {
+  public int getNumberOfOlderOnActivityFeed(Identity ownerIdentity, long sinceTime, List<String> spaceIds) {
     return AStreamQueryBuilder.builder()
                               .owner(ownerIdentity)
+                              .myIdentity(ownerIdentity)
                               .memberOfSpaceIds(spaceIds)
-                              .connectionSize(ownerIdentity, nbConnections)
                               .older(sinceTime)
                               .buildCount()
                               .getSingleResult()
@@ -330,94 +331,86 @@ public class ActivityDAOImpl extends GenericDAOJPAImpl<Activity, Long> implement
   }
 
   @Override
-  public List<Activity> getActivitiesOfConnections(Identity ownerIdentity, int offset, int limit, long nbConnections) {
-    if (nbConnections > 0) {
-      return AStreamQueryBuilder.builder()
-          .connectionSize(ownerIdentity, nbConnections)
-          .offset(offset)
-          .limit(limit)
-          .build()
-          .getResultList();
-    } else {
-      return Collections.emptyList();
-    }
-    
+  public List<Activity> getActivitiesOfConnections(Identity ownerIdentity, int offset, int limit) {
+    return AStreamQueryBuilder.builder()
+                              .myIdentity(ownerIdentity)
+                              .offset(offset)
+                              .limit(limit)
+                              .build()
+                              .getResultList();
   }
 
   @Override
-  public int getNumberOfActivitiesOfConnections(Identity ownerIdentity, long nbConnections) {
-    if (nbConnections > 0) {
+  public int getNumberOfActivitiesOfConnections(Identity ownerIdentity) {
       return AStreamQueryBuilder.builder()
-                                .connectionSize(ownerIdentity, nbConnections)
+                                .myIdentity(ownerIdentity)
                                 .buildCount()
                                 .getSingleResult()
                                 .intValue();
-
-    } else {
-      return 0;
-    }
   }
 
   @Override
-  public List<Activity> getNewerOnActivitiesOfConnections(Identity ownerIdentity, long sinceTime, long limit, long nbConnections) {
-    if (nbConnections > 0) {
-      return AStreamQueryBuilder.builder()
-                                .connectionSize(ownerIdentity, nbConnections)
-                                .newer(sinceTime)
-                                .ascOrder()
-                                .offset(0)
-                                .limit(limit)
-                                .build()
-                                .getResultList();
-    } else {
-      return Collections.emptyList();
-    }
+  public List<Activity> getNewerOnActivitiesOfConnections(Identity ownerIdentity, long sinceTime, long limit) {
+    return AStreamQueryBuilder.builder()
+                              .myIdentity(ownerIdentity)
+                              .newer(sinceTime)
+                              .ascOrder()
+                              .offset(0)
+                              .limit(limit)
+                              .build()
+                              .getResultList();
   }
 
   @Override
-  public int getNumberOfNewerOnActivitiesOfConnections(Identity ownerIdentity, long sinceTime, long nbConnections) {
-    if (nbConnections > 0) {
-      return AStreamQueryBuilder.builder()
-                                .connectionSize(ownerIdentity, nbConnections)
-                                .newer(sinceTime)
-                                .buildCount()
-                                .getSingleResult()
-                                .intValue();
-
-    } else {
-      return 0;
-    }
-
+  public int getNumberOfNewerOnActivitiesOfConnections(Identity ownerIdentity, long sinceTime) {
+    return AStreamQueryBuilder.builder()
+                              .myIdentity(ownerIdentity)
+                              .newer(sinceTime)
+                              .buildCount()
+                              .getSingleResult()
+                              .intValue();
   }
 
   @Override
-  public List<Activity> getOlderOnActivitiesOfConnections(Identity ownerIdentity, long sinceTime, int limit, long nbConnections) {
-    if (nbConnections > 0) {
-      return AStreamQueryBuilder.builder()
-                                .connectionSize(ownerIdentity, nbConnections)
-                                .older(sinceTime)
-                                .offset(0)
-                                .limit(limit)
-                                .build()
-                                .getResultList();
-    } else {
-      return Collections.emptyList();
-    }
+  public List<Activity> getOlderOnActivitiesOfConnections(Identity ownerIdentity, long sinceTime, int limit) {
+    return AStreamQueryBuilder.builder()
+                              .myIdentity(ownerIdentity)
+                              .older(sinceTime)
+                              .offset(0)
+                              .limit(limit)
+                              .build()
+                              .getResultList();
   }
 
   @Override
-  public int getNumberOfOlderOnActivitiesOfConnections(Identity ownerIdentity, long sinceTime, long nbConnections) {
-    if (nbConnections > 0) {
-      return AStreamQueryBuilder.builder()
-                                .connectionSize(ownerIdentity, nbConnections)
-                                .older(sinceTime)
-                                .buildCount()
-                                .getSingleResult()
-                                .intValue();
+  public int getNumberOfOlderOnActivitiesOfConnections(Identity ownerIdentity, long sinceTime) {
+    return AStreamQueryBuilder.builder()
+                              .myIdentity(ownerIdentity)
+                              .older(sinceTime)
+                              .buildCount()
+                              .getSingleResult()
+                              .intValue();
+  }
 
-    } else {
-      return 0;
-    }
+  @Override
+  public List<Activity> getActivitiesByPoster(Identity posterIdentity, int offset, int limit, String... activityTypes) {
+    return AStreamQueryBuilder.builder()
+                              .owner(posterIdentity)
+                              .activityTypes(activityTypes)
+                              .offset(offset)
+                              .limit(limit)
+                              .buildGetActivitiesByPoster()
+                              .getResultList();
+  }
+
+  @Override
+  public int getNumberOfActivitiesByPoster(Identity posterIdentity, String... activityTypes) {
+    return AStreamQueryBuilder.builder()
+                              .owner(posterIdentity)
+                              .activityTypes(activityTypes)
+                              .buildActivitiesByPosterCount()
+                              .getSingleResult()
+                              .intValue();
   }
 
 }
