@@ -17,12 +17,12 @@
 package org.exoplatform.social.addons.storage;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -497,10 +497,9 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
     return convertActivityEntitiesToIds(activityDAO.getActivityFeed(ownerIdentity, offset, limit, memberOfSpaceIds(ownerIdentity)));
   }
 
-
   private List<String> convertActivityEntitiesToIds(List<Activity> activities) {
-    List<String> ids = new ArrayList<String>();
-    if (activities == null) return Collections.emptyList();
+    List<String> ids = new LinkedList<String>();
+    if (activities == null) return ids;
     for (Activity activity : activities) {
       ids.add(String.valueOf(activity.getId()));
     }
