@@ -37,6 +37,7 @@ public class ActivityDAOImpl extends GenericDAOJPAImpl<Activity, Long> implement
   public List<Activity> getActivities(Identity owner, Identity viewer, long offset, long limit) throws ActivityStorageException {
     return AStreamQueryBuilder.builder()
                               .owner(owner)
+                              .viewer(viewer)
                               .offset(offset)
                               .limit(limit)
                               .build()

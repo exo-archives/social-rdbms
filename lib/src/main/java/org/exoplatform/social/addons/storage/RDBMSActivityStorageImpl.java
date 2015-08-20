@@ -286,7 +286,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
   
   @Override
   public List<String> getUserSpacesActivityIds(Identity ownerIdentity, int offset, int limit) {
-    return convertActivityEntitiesToIds(activityDAO.getUserActivities(ownerIdentity, offset, limit));
+    return convertActivityEntitiesToIds(activityDAO.getUserSpacesActivities(ownerIdentity, offset, limit, memberOfSpaceIds(ownerIdentity)));
   }
   
   @Override

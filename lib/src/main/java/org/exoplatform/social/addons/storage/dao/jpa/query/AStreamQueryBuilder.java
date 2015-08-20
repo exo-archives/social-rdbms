@@ -41,6 +41,7 @@ import org.exoplatform.social.addons.storage.entity.Connection_;
 import org.exoplatform.social.addons.storage.entity.Mention;
 import org.exoplatform.social.addons.storage.entity.Mention_;
 import org.exoplatform.social.core.identity.model.Identity;
+import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvider;
 import org.exoplatform.social.core.relationship.model.Relationship;
 
 /**
@@ -59,6 +60,7 @@ public final class AStreamQueryBuilder {
   //memberOfSpaceIds
   private Collection<String> memberOfSpaceIds;
   private Identity myIdentity;
+  private Identity viewer;
   //order by
   private boolean descOrder = true;
   String[] activityTypes;
@@ -69,6 +71,11 @@ public final class AStreamQueryBuilder {
 
   public AStreamQueryBuilder owner(Identity owner) {
     this.owner = owner;
+    return this;
+  }
+  
+  public AStreamQueryBuilder viewer(Identity viewer) {
+    this.viewer = viewer;
     return this;
   }
   
@@ -200,7 +207,13 @@ public final class AStreamQueryBuilder {
       
       //liker
       predicate = cb.or(predicate, cb.isMember(this.owner.getId(), activity.get(Activity_.likerIds)));
+      
+      //view user's stream
+      if (this.viewer != null && !this.viewer.getId().equals(this.owner.getId())) {
+        predicate = cb.and(predicate, cb.equal(activity.get(Activity_.providerId), OrganizationIdentityProvider.NAME));
+      }
     }
+    
 
     // space members
     if (this.memberOfSpaceIds != null && memberOfSpaceIds.size() > 0) {
