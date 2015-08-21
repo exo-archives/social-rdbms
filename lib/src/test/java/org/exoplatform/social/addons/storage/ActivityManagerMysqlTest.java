@@ -43,6 +43,7 @@ import org.exoplatform.social.core.space.impl.DefaultSpaceApplicationHandler;
 import org.exoplatform.social.core.space.model.Space;
 import org.exoplatform.social.core.space.spi.SpaceService;
 import org.exoplatform.social.core.storage.ActivityStorageException;
+import org.exoplatform.social.core.storage.impl.StorageUtils;
 
 /**
  * Unit Test for {@link ActivityManager}, including cache tests.
@@ -1395,28 +1396,31 @@ public class ActivityManagerMysqlTest extends AbstractCoreTest {
    * @throws Exception
    * @since 1.2.0-GA
    */
-  private Space getSpaceInstance(SpaceService spaceService, int number)
-      throws Exception {
-    Space space = new Space();
-    space.setDisplayName("my space " + number);
-    space.setPrettyName(space.getDisplayName());
-    space.setRegistration(Space.OPEN);
-    space.setDescription("add new space " + number);
-    space.setType(DefaultSpaceApplicationHandler.NAME);
-    space.setVisibility(Space.OPEN);
-    space.setRegistration(Space.VALIDATION);
-    space.setPriority(Space.INTERMEDIATE_PRIORITY);
-    space.setGroupId(SpaceUtils.SPACE_GROUP + "/" + space.getPrettyName());
-    space.setUrl(space.getPrettyName());
-    String[] managers = new String[] { "demo", "john" };
-    String[] members = new String[] { "raul", "ghost", "demo", "john" };
-    String[] invitedUsers = new String[] { "mary", "paul"};
-    String[] pendingUsers = new String[] { "jame"};
-    space.setInvitedUsers(invitedUsers);
-    space.setPendingUsers(pendingUsers);
-    space.setManagers(managers);
-    space.setMembers(members);
-    spaceService.saveSpace(space, true);
-    return space;
+  private Space getSpaceInstance(SpaceService spaceService, int number) throws Exception {
+    try {
+      Space space = new Space();
+      space.setDisplayName("my space " + number);
+      space.setPrettyName(space.getDisplayName());
+      space.setRegistration(Space.OPEN);
+      space.setDescription("add new space " + number);
+      space.setType(DefaultSpaceApplicationHandler.NAME);
+      space.setVisibility(Space.OPEN);
+      space.setRegistration(Space.VALIDATION);
+      space.setPriority(Space.INTERMEDIATE_PRIORITY);
+      space.setGroupId(SpaceUtils.SPACE_GROUP + "/" + space.getPrettyName());
+      space.setUrl(space.getPrettyName());
+      String[] managers = new String[] { "demo", "john" };
+      String[] members = new String[] { "raul", "ghost", "demo", "john" };
+      String[] invitedUsers = new String[] { "mary", "paul"};
+      String[] pendingUsers = new String[] { "jame"};
+      space.setInvitedUsers(invitedUsers);
+      space.setPendingUsers(pendingUsers);
+      space.setManagers(managers);
+      space.setMembers(members);
+      spaceService.saveSpace(space, true);
+      return space;
+    } finally {
+      StorageUtils.persist();
+    }
   }
 }
