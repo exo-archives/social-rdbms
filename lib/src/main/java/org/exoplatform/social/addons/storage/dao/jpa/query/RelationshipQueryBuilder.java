@@ -196,7 +196,7 @@ public final class RelationshipQueryBuilder {
     
     CriteriaQuery<Connection> select = criteria.select(connection).distinct(true);
     select.where(predicate);
-    select.orderBy(cb.desc(connection.<Long> get(Connection_.id)));
+    select.orderBy(cb.desc(connection.<Long> get(Connection_.lastUpdated)));
 
     TypedQuery<Connection> typedQuery = em.createQuery(select);
     if (this.limit > 0) {

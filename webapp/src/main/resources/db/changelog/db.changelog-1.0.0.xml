@@ -149,12 +149,16 @@
             <column name="senderId" type="VARCHAR(36)"/>
             <column name="status" type="INT"/>
             <column name="PROFILE_ID" type="BIGINT"/>
+            <column name="lastUpdated" type="BIGINT"/>
         </createTable>
         <createIndex tableName="SOC_CONNECTIONS" indexName="IDX_SOC_CONNECTIONS_01">
             <column name="receiverId"/>
         </createIndex>
         <createIndex tableName="SOC_CONNECTIONS" indexName="IDX_SOC_CONNECTIONS_02">
             <column name="senderId"/>
+        </createIndex>
+        <createIndex tableName="SOC_CONNECTIONS" indexName="IDX_SOC_CONNECTIONS_03">
+            <column name="lastUpdated" descending="true"/>
         </createIndex>
     </changeSet>
     <changeSet author="tuvd@exoplatform.com" id="1.0.0-8">

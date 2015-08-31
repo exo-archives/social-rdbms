@@ -65,6 +65,7 @@ public class RDBMSRelationshipStorageImpl extends RelationshipStorageImpl {
       entity.setReceiverId(relationship.getReceiver().getId());
       entity.setSenderId(relationship.getSender().getId());
       entity.setStatus(Relationship.Type.PENDING.equals(relationship.getStatus()) ? Relationship.Type.OUTGOING : relationship.getStatus());
+      entity.setLastUpdated(System.currentTimeMillis());
       //
       connectionDAO.create(entity);
       relationship.setId(Long.toString(entity.getId()));
@@ -74,15 +75,18 @@ public class RDBMSRelationshipStorageImpl extends RelationshipStorageImpl {
       symmetricalEntity.setSenderId(relationship.getReceiver().getId());
       symmetricalEntity.setReceiverId(relationship.getSender().getId());
       symmetricalEntity.setStatus(Relationship.Type.PENDING.equals(relationship.getStatus()) ? Relationship.Type.INCOMING : relationship.getStatus());
+      symmetricalEntity.setLastUpdated(System.currentTimeMillis());
       //
       connectionDAO.create(symmetricalEntity);
     } else {//update an relationship
       Connection entity = connectionDAO.getConnection(relationship.getSender(), relationship.getReceiver());
       entity.setStatus(relationship.getStatus());
+      entity.setLastUpdated(System.currentTimeMillis());
       connectionDAO.update(entity);
       //
       Connection symmetricalEntity = connectionDAO.getConnection(relationship.getReceiver(), relationship.getSender());
       symmetricalEntity.setStatus(relationship.getStatus());
+      symmetricalEntity.setLastUpdated(System.currentTimeMillis());
       connectionDAO.update(symmetricalEntity);
     }
     //

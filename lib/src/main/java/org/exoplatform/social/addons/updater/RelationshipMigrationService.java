@@ -135,11 +135,17 @@ public class RelationshipMigrationService extends AbstractMigrationService<Relat
       LOG.debug("|     - FROM ID = " + receiverId);
       String senderId = relationshipNode.getProperty("soc:to").getString();
       LOG.debug("|     - TO ID = " + senderId);
+      long lastUpdated = System.currentTimeMillis();
+      if (relationshipNode.hasProperty("exo:lastModifiedDate")) {
+        lastUpdated = relationshipNode.getProperty("exo:lastModifiedDate").getDate().getTimeInMillis();
+      }
+      LOG.debug("|     - LAST UPDATED = " + lastUpdated);
       //
       Connection entity = new Connection();
       entity.setSenderId(isIncoming ? senderId : receiverId);
       entity.setReceiverId(isIncoming ? receiverId : senderId);
       entity.setStatus(status);
+      entity.setLastUpdated(lastUpdated);
       //
       connectionDAO.create(entity);
       ++doneConnectionNo;

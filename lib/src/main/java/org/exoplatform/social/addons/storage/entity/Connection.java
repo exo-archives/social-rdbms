@@ -31,6 +31,9 @@ public class Connection {
   
   @Enumerated
   private Type status;
+  
+  /** */
+  private Long lastUpdated;
 
   public Connection() {
   }
@@ -71,5 +74,13 @@ public class Connection {
 
   public void setStatus(Type status) {
     this.status = status;
+  }
+
+  public Long getLastUpdated() {
+    return lastUpdated;
+  }
+
+  public void setLastUpdated(Long lastUpdated) {
+    this.lastUpdated = lastUpdated;
   }
 }
