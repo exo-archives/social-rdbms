@@ -48,11 +48,8 @@ import org.exoplatform.social.core.activity.model.ActivityStream;
 import org.exoplatform.social.core.activity.model.ActivityStreamImpl;
 import org.exoplatform.social.core.activity.model.ExoSocialActivity;
 import org.exoplatform.social.core.activity.model.ExoSocialActivityImpl;
-import org.exoplatform.social.core.chromattic.entity.IdentityEntity;
-import org.exoplatform.social.core.chromattic.entity.ProviderEntity;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvider;
-import org.exoplatform.social.core.identity.provider.SpaceIdentityProvider;
 import org.exoplatform.social.core.storage.ActivityStorageException;
 import org.exoplatform.social.core.storage.api.IdentityStorage;
 import org.exoplatform.social.core.storage.api.RelationshipStorage;
@@ -953,22 +950,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
    * @return
    */
   private List<String> memberOfSpaceIds(Identity ownerIdentity) {
-    List<String> identitiesId = new ArrayList<String>();
-    try {
-      IdentityEntity identityEntity = _findById(IdentityEntity.class, ownerIdentity.getId());
-      Set<String> spaceNames = identityEntity.getSpaces().getRefs().keySet();
-      ProviderEntity providerEntity = getProviderRoot().getProvider(SpaceIdentityProvider.NAME);
-      for (String spacePrettyName : spaceNames) {
-        IdentityEntity spaceIdentity = providerEntity.getIdentities().get(spacePrettyName);
-        if (spaceIdentity != null) {
-          identitiesId.add(spaceIdentity.getId());
-        }
-      }
-    } catch (Exception e) {
-      LOG.error("Failed to get list of space identity of current user");
-    }
-    return identitiesId;
-
+    return spaceStorage.getMemberSpaceIds(ownerIdentity.getId(), 0, -1);
  
    }
   
