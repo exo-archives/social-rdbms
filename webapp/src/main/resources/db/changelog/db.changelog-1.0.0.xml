@@ -57,7 +57,7 @@
             <column name="ACTIVITY_ID" type="BIGINT">
                 <constraints nullable="false"/>
             </column>
-            <column name="LIKER_ID" type="VARCHAR(255)"/>
+            <column name="LIKER_ID" type="VARCHAR(36)"/>
         </createTable>
     </changeSet>
     <changeSet author="tuvd@exoplatform.com" id="1.0.0-3">
@@ -68,7 +68,7 @@
             <column name="ACTIVITY_ID" type="BIGINT">
                 <constraints nullable="false"/>
             </column>
-            <column name="MENTIONER_ID" type="VARCHAR(255)">
+            <column name="MENTIONER_ID" type="VARCHAR(36)">
                 <constraints nullable="false"/>
             </column>
         </createTable>

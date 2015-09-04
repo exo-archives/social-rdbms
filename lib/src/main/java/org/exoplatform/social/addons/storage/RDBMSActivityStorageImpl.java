@@ -33,6 +33,7 @@ import java.util.regex.Pattern;
 
 import org.apache.commons.lang.ArrayUtils;
 import org.exoplatform.commons.api.persistence.ExoTransactional;
+import org.exoplatform.commons.utils.PropertyManager;
 import org.exoplatform.container.component.BaseComponentPlugin;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
@@ -51,6 +52,7 @@ import org.exoplatform.social.core.activity.model.ExoSocialActivityImpl;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvider;
 import org.exoplatform.social.core.storage.ActivityStorageException;
+import org.exoplatform.social.core.storage.ActivityStorageException.Type;
 import org.exoplatform.social.core.storage.api.IdentityStorage;
 import org.exoplatform.social.core.storage.api.RelationshipStorage;
 import org.exoplatform.social.core.storage.api.SpaceStorage;
@@ -259,16 +261,30 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
     if (activityId == null || activityId.isEmpty()) {
       return null;
     }
-    if(activityId != null && activityId.startsWith(COMMENT_PREFIX)) {
+    if (activityId != null && activityId.startsWith(COMMENT_PREFIX)) {
       return getComment(activityId);
     }
-    Activity entity = activityDAO.find(Long.valueOf(activityId));
-    //
-    return convertActivityEntityToActivity(entity);
+    try {
+      Activity entity = activityDAO.find(Long.valueOf(activityId));
+      return convertActivityEntityToActivity(entity);
+    } catch (Exception e) {
+      if (PropertyManager.isDevelopping()) {
+        throw new ActivityStorageException(Type.FAILED_TO_GET_ACTIVITY, e.getMessage(), e);
+      }
+      return null;
+    }
   }
 
   public ExoSocialActivity getComment(String commentId) throws ActivityStorageException {
-    return convertCommentEntityToComment(commentDAO.find(getCommentID(commentId)));
+    try {
+      Comment entity = commentDAO.find(getCommentID(commentId));
+      return convertCommentEntityToComment(entity);
+    } catch (Exception e) {
+      if (PropertyManager.isDevelopping()) {
+        throw new ActivityStorageException(Type.FAILED_TO_GET_ACTIVITY, e.getMessage(), e);
+      }
+      return null;
+    }
   }
 
   @Override
