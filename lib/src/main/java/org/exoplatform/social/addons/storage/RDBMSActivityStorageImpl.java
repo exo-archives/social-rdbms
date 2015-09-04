@@ -31,9 +31,12 @@ import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import javax.persistence.LockModeType;
+
 import org.apache.commons.lang.ArrayUtils;
 import org.exoplatform.commons.api.persistence.ExoTransactional;
 import org.exoplatform.commons.utils.PropertyManager;
+import org.exoplatform.commons.persistence.impl.EntityManagerHolder;
 import org.exoplatform.container.component.BaseComponentPlugin;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
@@ -325,21 +328,28 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
   @ExoTransactional
   public void saveComment(ExoSocialActivity activity, ExoSocialActivity eXoComment) throws ActivityStorageException {
     Activity activityEntity = activityDAO.find(Long.valueOf(activity.getId()));
-    Comment commentEntity = convertCommentToCommentEntity(eXoComment);
-    commentEntity.setActivity(activityEntity);
-    //
-    Identity commenter = identityStorage.findIdentityById(commentEntity.getPosterId());
-    mention(commenter, activityEntity, processMentions(eXoComment.getTitle()));
-    //
-    commentEntity = commentDAO.create(commentEntity);
-    eXoComment.setId(getExoCommentID(commentEntity.getId()));
-    //
-    activityEntity.setMentionerIds(processMentionOfComment(activityEntity, commentEntity, activity.getMentionedIds(), processMentions(eXoComment.getTitle()), true));
-    activityEntity.addComment(commentEntity);
-    activityEntity.setLastUpdated(System.currentTimeMillis());
-    activityDAO.update(activityEntity);
-    //
-    activity = convertActivityEntityToActivity(activityEntity);
+    try {
+      EntityManagerHolder.get().lock(activityEntity, LockModeType.PESSIMISTIC_WRITE);
+      
+      Comment commentEntity = convertCommentToCommentEntity(eXoComment);
+      commentEntity.setActivity(activityEntity);
+      //
+      Identity commenter = identityStorage.findIdentityById(commentEntity.getPosterId());
+      mention(commenter, activityEntity, processMentions(eXoComment.getTitle()));
+      //
+      commentEntity = commentDAO.create(commentEntity);
+      eXoComment.setId(getExoCommentID(commentEntity.getId()));
+      //
+      activityEntity.setMentionerIds(processMentionOfComment(activityEntity, commentEntity, activity.getMentionedIds(), processMentions(eXoComment.getTitle()), true));
+      activityEntity.addComment(commentEntity);
+      activityEntity.setLastUpdated(System.currentTimeMillis());
+      activityDAO.update(activityEntity);
+      //
+      activity = convertActivityEntityToActivity(activityEntity);
+    } finally {
+      EntityManagerHolder.get().lock(activityEntity, LockModeType.NONE);
+    }
+
   }
   
   private Set<String> processMentionOfComment(Activity activityEntity, Comment commentEntity, String[] activityMentioners, String[] commentMentioners, boolean isAdded) {
