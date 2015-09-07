@@ -17,7 +17,7 @@
 	<!-- Liquibase -->
 	<context-param>
 		<param-name>liquibase.changelog</param-name>
-		<param-value>db/changelog/db.changelog-master.xml</param-value>
+		<param-value>db/changelog/social-rdbms.db.changelog-master.xml</param-value>
 	</context-param>
 
 	<context-param>
