@@ -77,7 +77,7 @@
           <referenceUsername>root</referenceUsername>
           <referencePassword>exo</referencePassword>
           <!-- db.changelog file -->
-          <changeLogFile>src/main/resources/db/changelog/db.changelog-master.xml</changeLogFile>
+          <changeLogFile>src/main/resources/db/changelog/social-rdbms.db.changelog-master.xml</changeLogFile>
         </configuration>
         <!--<executions>
           <execution>
