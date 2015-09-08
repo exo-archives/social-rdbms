@@ -46,7 +46,7 @@ public class RelationshipActivityUpdaterListener extends Listener<ExoSocialActiv
     IdentityStorage identityStorage = CommonsUtils.getService(IdentityStorage.class);
     if (RELATIONSHIP_ACTIVITY_TYPE.equals(activity.getType())) {
       Identity identity = identityStorage.findIdentity(OrganizationIdentityProvider.NAME, activity.getStreamOwner());
-      identityStorage.updateProfileActivityId(identity, newActivityId, Profile.AttachedActivityType.USER);
+      identityStorage.updateProfileActivityId(identity, newActivityId, Profile.AttachedActivityType.RELATIONSHIP);
       LOG.info(String.format("Migration the relationship activity '%s' with old id's %s and new id's %s", activity.getTitle(), activity.getId(), newActivityId));
     }
     
