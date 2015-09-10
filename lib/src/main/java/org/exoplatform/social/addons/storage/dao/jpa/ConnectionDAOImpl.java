@@ -19,6 +19,7 @@ package org.exoplatform.social.addons.storage.dao.jpa;
 import java.util.List;
 
 import javax.persistence.NoResultException;
+import javax.persistence.NonUniqueResultException;
 import javax.persistence.TypedQuery;
 
 import org.exoplatform.commons.api.persistence.ExoTransactional;
@@ -59,6 +60,8 @@ public class ConnectionDAOImpl extends GenericDAOJPAImpl<Connection, Long> imple
       return query.getSingleResult();
     } catch (NoResultException e) {
       return null;
+    } catch (NonUniqueResultException e) {
+      return query.getResultList().get(0);
     }
   }
 

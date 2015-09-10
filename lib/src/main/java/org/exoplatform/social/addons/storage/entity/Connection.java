@@ -8,13 +8,15 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.NamedQuery;
 import javax.persistence.Table;
+import javax.persistence.UniqueConstraint;
 
 import org.exoplatform.commons.api.persistence.ExoEntity;
 import org.exoplatform.social.core.relationship.model.Relationship.Type;
 
 @Entity
 @ExoEntity
-@Table(name = "SOC_CONNECTIONS")
+@Table(name = "SOC_CONNECTIONS",
+       uniqueConstraints=@UniqueConstraint(columnNames = {"senderId", "receiverId"}))
 @NamedQuery(name = "getRelationships",
             query = "select r from Connection r")
 public class Connection {

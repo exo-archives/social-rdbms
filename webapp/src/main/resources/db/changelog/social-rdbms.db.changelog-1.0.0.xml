@@ -161,6 +161,9 @@
         <createIndex tableName="SOC_CONNECTIONS" indexName="IDX_SOC_CONNECTIONS_03">
             <column name="lastUpdated" descending="true"/>
         </createIndex>
+        <createIndex tableName="SOC_CONNECTIONS" indexName="IDX_SOC_CONNECTIONS_04">
+            <column name="status"/>
+        </createIndex>
     </changeSet>
     <changeSet author="tuvd@exoplatform.com" id="1.0.0-8">
         <addPrimaryKey columnNames="ACTIVITY_ID, TEMPLATE_PARAM_KEY" constraintName="PK_SOC_ACTIVITY_TEMPLATE_PARAMS" tableName="SOC_ACTIVITY_TEMPLATE_PARAMS"/>
@@ -183,4 +186,9 @@
     <changeSet author="tuvd@exoplatform.com" id="1.0.0-14">
         <addForeignKeyConstraint baseColumnNames="COMMENT_ID" baseTableName="SOC_COMMENT_TEMPLATE_PARAMS" constraintName="FKB8CEC41347B1AF25" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="COMMENT_ID" referencedTableName="SOC_COMMENTS"/>
     </changeSet>
+    <changeSet author="tuvd@exoplatform.com" id="1.0.0-15">
+		    <addUniqueConstraint columnNames="senderId, receiverId"
+		            constraintName="senderId-receiverId"
+		            tableName="SOC_CONNECTIONS"/>
+		</changeSet>
 </databaseChangeLog>
