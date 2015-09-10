@@ -39,9 +39,6 @@ public class Activity extends BaseActivity {
   @Column(name="ACTIVITY_ID")
   private Long id;
   
-  /** */
-  private String type;
-
   @ElementCollection
   @CollectionTable(
     name = "SOC_ACTIVITY_LIKERS",
@@ -82,14 +79,6 @@ public class Activity extends BaseActivity {
 
   public void addLiker(String likerId) {
     this.likerIds.add(likerId);
-  }
-
-  public String getType() {
-    return type;
-  }
-
-  public void setType(String type) {
-    this.type = type;
   }
 
   public Set<String> getLikerIds() {

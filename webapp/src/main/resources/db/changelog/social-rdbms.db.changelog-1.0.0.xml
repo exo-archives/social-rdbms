@@ -111,6 +111,7 @@
             </column>
             <column name="title" type="LONGTEXT"/>
             <column name="titleId" type="VARCHAR(1024)"/>
+            <column name="type" type="VARCHAR(255)"/>
             <column name="ACTIVITY_ID" type="BIGINT"/>
         </createTable>
         <modifySql dbms="mysql">

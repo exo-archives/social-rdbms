@@ -196,6 +196,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
         comment.getTitle(), comment.getBody(), false);
     exoComment.setId(getExoCommentID(comment.getId()));
     exoComment.setTitle(comment.getTitle());
+    exoComment.setType(comment.getType());
     exoComment.setTitleId(comment.getTitleId());
     exoComment.setBody(comment.getBody());
     exoComment.setTemplateParams(comment.getTemplateParams() != null ? new LinkedHashMap<String, String>(comment.getTemplateParams())
@@ -233,6 +234,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
     }
     commentEntity.setTitle(comment.getTitle());
     commentEntity.setTitleId(comment.getTitleId());
+    commentEntity.setType(comment.getType());
     commentEntity.setBody(comment.getBody());
     commentEntity.setPosterId(comment.getPosterId() != null ? comment.getPosterId() : comment.getUserId());
     if (comment.getTemplateParams() != null) {
