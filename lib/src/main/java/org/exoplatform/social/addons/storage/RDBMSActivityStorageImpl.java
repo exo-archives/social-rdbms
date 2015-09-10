@@ -734,11 +734,11 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
     if (existingActivity.getId().startsWith(COMMENT_PREFIX)) {
       // update comment
       Comment comment = convertCommentToCommentEntity(existingActivity);
-      comment.setLastUpdated(System.currentTimeMillis());
+      //comment.setLastUpdated(System.currentTimeMillis());
       commentDAO.update(comment);
     } else {
       Activity activityEntity = convertActivityToActivityEntity(existingActivity, null);
-      activityEntity.setLastUpdated(System.currentTimeMillis());
+      //activityEntity.setLastUpdated(System.currentTimeMillis());
       activityDAO.update(activityEntity);
     }
   }
