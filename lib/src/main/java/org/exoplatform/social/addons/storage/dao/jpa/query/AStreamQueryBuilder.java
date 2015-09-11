@@ -27,21 +27,17 @@ import javax.persistence.TypedQuery;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaBuilder.In;
 import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Join;
 import javax.persistence.criteria.Path;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 import javax.persistence.criteria.Subquery;
-import javax.persistence.criteria.Join;
 
 import org.exoplatform.commons.persistence.impl.EntityManagerHolder;
 import org.exoplatform.social.addons.storage.entity.Activity;
 import org.exoplatform.social.addons.storage.entity.Activity_;
-import org.exoplatform.social.addons.storage.entity.Comment;
-import org.exoplatform.social.addons.storage.entity.Comment_;
 import org.exoplatform.social.addons.storage.entity.Connection;
 import org.exoplatform.social.addons.storage.entity.Connection_;
-import org.exoplatform.social.addons.storage.entity.Mention;
-import org.exoplatform.social.addons.storage.entity.Mention_;
 import org.exoplatform.social.addons.storage.entity.StreamItem;
 import org.exoplatform.social.addons.storage.entity.StreamItem_;
 import org.exoplatform.social.core.identity.model.Identity;
@@ -236,7 +232,11 @@ public final class AStreamQueryBuilder {
               cb.equal(subRoot1.<Relationship.Type>get(Connection_.status), Relationship.Type.CONFIRMED)));
 
       Predicate posterConnection = cb.and(cb.in(stream.get(StreamItem_.ownerId)).value(subQuery1));
-      predicate = cb.or(predicate, posterConnection);
+      if (predicate != null) {
+        predicate = cb.or(predicate, posterConnection);
+      } else {
+        predicate = posterConnection;
+      }
     }
     //newer or older
     if (this.sinceTime > 0) {
