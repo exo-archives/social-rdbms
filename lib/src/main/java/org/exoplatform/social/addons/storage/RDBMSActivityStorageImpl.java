@@ -36,6 +36,7 @@ import javax.persistence.LockModeType;
 import org.apache.commons.lang.ArrayUtils;
 import org.exoplatform.commons.api.persistence.ExoTransactional;
 import org.exoplatform.commons.persistence.impl.EntityManagerHolder;
+import org.exoplatform.commons.utils.CommonsUtils;
 import org.exoplatform.commons.utils.PropertyManager;
 import org.exoplatform.container.component.BaseComponentPlugin;
 import org.exoplatform.services.log.ExoLogger;
@@ -45,6 +46,8 @@ import org.exoplatform.social.addons.storage.dao.CommentDAO;
 import org.exoplatform.social.addons.storage.dao.ConnectionDAO;
 import org.exoplatform.social.addons.storage.entity.Activity;
 import org.exoplatform.social.addons.storage.entity.Comment;
+import org.exoplatform.social.addons.storage.entity.StreamItem;
+import org.exoplatform.social.addons.storage.entity.StreamType;
 import org.exoplatform.social.core.ActivityProcessor;
 import org.exoplatform.social.core.activity.filter.ActivityFilter;
 import org.exoplatform.social.core.activity.filter.ActivityUpdateFilter;
@@ -54,6 +57,8 @@ import org.exoplatform.social.core.activity.model.ExoSocialActivity;
 import org.exoplatform.social.core.activity.model.ExoSocialActivityImpl;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvider;
+import org.exoplatform.social.core.identity.provider.SpaceIdentityProvider;
+import org.exoplatform.social.core.relationship.model.Relationship;
 import org.exoplatform.social.core.storage.ActivityStorageException;
 import org.exoplatform.social.core.storage.ActivityStorageException.Type;
 import org.exoplatform.social.core.storage.api.IdentityStorage;
@@ -333,6 +338,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
       commentEntity.setActivity(activityEntity);
       //
       Identity commenter = identityStorage.findIdentityById(commentEntity.getPosterId());
+      saveStreamItemForCommenter(commenter, activityEntity);
       mention(commenter, activityEntity, processMentions(eXoComment.getTitle()));
       //
       commentEntity = commentDAO.create(commentEntity);
@@ -348,6 +354,25 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
       EntityManagerHolder.get().lock(activityEntity, LockModeType.NONE);
     }
 
+  }
+  
+  /**
+   * Creates the StreamItem for commenter
+   * @param commenter
+   * @param activityEntity
+   */
+  private void saveStreamItemForCommenter(Identity commenter, Activity activityEntity) {
+    Identity posterActivity = identityStorage.findIdentityById(activityEntity.getPosterId());
+    Identity ownerActivity = identityStorage.findIdentityById(activityEntity.getOwnerId());
+    if (! SpaceIdentityProvider.NAME.equals(ownerActivity.getProviderId()) && ! hasRelationship(commenter, posterActivity)) {
+      createStreamItem(StreamType.COMMENTER, activityEntity, commenter.getId());
+    }
+  }
+  
+  private boolean hasRelationship(Identity identity1, Identity identity2) {
+    RelationshipStorage relationshipStorage = CommonsUtils.getService(RelationshipStorage.class);
+    Relationship relationship = relationshipStorage.getRelationship(identity1, identity2);
+    return relationship != null && relationship.getStatus().equals(Relationship.Type.CONFIRMED);
   }
   
   private Set<String> processMentionOfComment(Activity activityEntity, Comment commentEntity, String[] activityMentioners, String[] commentMentioners, boolean isAdded) {
@@ -387,6 +412,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
     //
     entity.setOwnerId(owner.getId());
     entity.setProviderId(owner.getProviderId());
+    saveStreamItem(owner, entity);
     //
     activityDAO.create(entity);
     activity.setId(Long.toString(entity.getId()));
@@ -394,7 +420,39 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
     
     return activity;
   }
-
+  /**
+   * Creates the StreamIteam for Space Member
+   * @param spaceOwner
+   * @param activity
+   */
+  private void spaceMembers(Identity spaceOwner, Activity activity) {
+    createStreamItem(StreamType.SPACE, activity, spaceOwner.getId());
+  }
+  
+  private void saveStreamItem(Identity owner, Activity activity) {
+    //create StreamItem
+    if (OrganizationIdentityProvider.NAME.equals(owner.getProviderId())) {
+      //poster
+      poster(owner, activity);
+      //connection
+      //connection(poster, activity);
+      //mention
+      mention(owner, activity, processMentions(activity.getTitle()));
+    } else {
+      //for SPACE
+      spaceMembers(owner, activity);
+    }
+  }
+  
+  /**
+   * Creates the StreamItem for poster
+   * @param owner
+   * @param activity
+   */
+  private void poster(Identity owner, Activity activity) {
+    createStreamItem(StreamType.POSTER, activity, owner.getId());
+  }
+  
   /**
    * Creates StreamItem for each user who has mentioned on the activity
    * 
@@ -405,9 +463,29 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
     for (String mentioner : mentions) {
       Identity identity = identityStorage.findIdentityById(mentioner);
       if(identity != null) {
+        createStreamItem(StreamType.MENTIONER, activity, identity.getId());
       }
     }
   }
+  
+  private void createStreamItem(StreamType streamType, Activity activity, String ownerId){
+    StreamItem streamItem = new StreamItem(streamType);
+    streamItem.setOwnerId(ownerId);
+    boolean isExist = false;
+    if (activity.getId() != null) {
+      //TODO need to improve it
+      for (StreamItem item : activity.getStreamItems()) {
+        if (item.getOwnerId().equals(ownerId)) {
+          isExist = true;
+          break;
+        }
+      }
+    }
+    if (!isExist) {
+      activity.addStreamItem(streamItem);
+    }
+  }
+  
 
   /**
    * Processes Mentioners who has been mentioned via the Activity.
@@ -465,7 +543,22 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
     //
     activity.setMentionerIds(processMentionOfComment(activity, comment, activity.getMentionerIds().toArray(new String[activity.getMentionerIds().size()]), processMentions(comment.getTitle()), false));
     //
+    if (!hasOtherComment(activity, comment.getPosterId())) {
+      StreamItem item = new StreamItem(StreamType.COMMENTER);
+      item.setOwnerId(comment.getPosterId());
+      activity.removeStreamItem(item);
+    }
+    //
     activityDAO.update(activity);
+  }
+  
+  private boolean hasOtherComment(Activity activity, String poster) {
+    for (Comment comment : activity.getComments()) {
+      if (poster.equals(comment.getPosterId())) {
+        return true;
+      }
+    }
+    return false;
   }
 
   @Override

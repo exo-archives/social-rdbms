@@ -69,6 +69,11 @@ public class Activity extends BaseActivity {
   /** */
   @Column(length = 36)
   private String providerId;
+  
+  /** */
+  @OneToMany(cascade=CascadeType.ALL, orphanRemoval=true, mappedBy="activity", fetch=FetchType.LAZY)
+  @OrderBy("id DESC")
+  private List<StreamItem> streamItems;
 
   /** */
   public Activity() {
@@ -156,6 +161,35 @@ public class Activity extends BaseActivity {
     }
     comment.setActivity(this);
     this.comments.add(comment);
+  }
+  
+  public List<StreamItem> getStreamItems() {
+    return streamItems;
+  }
+
+  public void setStreamItems(List<StreamItem> streamItems) {
+    this.streamItems = streamItems;
+  }
+
+  /**
+   * Adds the stream item entity to this activity
+   * @param item the stream item
+   */
+  public void addStreamItem(StreamItem item) {
+    if (this.streamItems == null) {
+      this.streamItems = new ArrayList<StreamItem>();
+    }
+    item.setActivity(this);
+    this.streamItems.add(item);
+  }
+  
+  public void removeStreamItem(StreamItem item) {
+    for (StreamItem it : this.getStreamItems()) {
+      if (it.getOwnerId().equals(item.getOwnerId()) && it.getStreamType().equals(item.getStreamType())) {
+        this.streamItems.remove(it);
+        break;
+      }
+    }
   }
   
   public Long getId() {
