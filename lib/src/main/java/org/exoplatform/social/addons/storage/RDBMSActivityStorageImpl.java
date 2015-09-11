@@ -385,6 +385,10 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
       if (mentioners.contains(mentioner) && !isAdded) {
         if (isAllowedToRemove(activityEntity, commentEntity, mentioner)) {
           mentioners.remove(mentioner);
+          //remove stream item
+          StreamItem item = new StreamItem(StreamType.MENTIONER);
+          item.setOwnerId(mentioner);
+          activityEntity.removeStreamItem(item);
         }
       }
     }
@@ -820,7 +824,26 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
     } else {
       Activity activityEntity = convertActivityToActivityEntity(existingActivity, null);
       activityEntity.setLastUpdated(System.currentTimeMillis());
+      //create or remove liker if exist
+      processLikerActivity(new HashSet<String>(Arrays.asList(existingActivity.getLikeIdentityIds())), new HashSet<String>(Arrays.asList(updatedActivity.getLikeIdentityIds())), activityEntity);
       activityDAO.update(activityEntity);
+    }
+  }
+  
+  private void processLikerActivity(Set<String> newLikerList, Set<String> oldLikerList, Activity activity) {
+    for (String id : newLikerList) {
+      if (!oldLikerList.contains(id)) {//new like ==> create stream item
+        createStreamItem(StreamType.LIKER, activity, id);
+      } else {
+        oldLikerList.remove(id);
+      }
+    }
+    if (oldLikerList.size() > 0) {//unlike ==> remove stream item
+      for (String id : oldLikerList) {
+        StreamItem item = new StreamItem(StreamType.LIKER);
+        item.setOwnerId(id);
+        activity.removeStreamItem(item);
+      }
     }
   }
 
