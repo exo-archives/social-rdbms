@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import org.exoplatform.commons.utils.ListAccess;
 import org.exoplatform.social.addons.test.AbstractCoreTest;
 import org.exoplatform.social.addons.test.MaxQueryNumber;
 import org.exoplatform.social.addons.test.QueryNumberTest;
@@ -27,6 +28,7 @@ import org.exoplatform.social.core.activity.model.ExoSocialActivity;
 import org.exoplatform.social.core.activity.model.ExoSocialActivityImpl;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.identity.provider.SpaceIdentityProvider;
+import org.exoplatform.social.core.manager.ActivityManager;
 import org.exoplatform.social.core.relationship.model.Relationship;
 import org.exoplatform.social.core.space.impl.DefaultSpaceApplicationHandler;
 import org.exoplatform.social.core.space.model.Space;
@@ -141,12 +143,77 @@ public class RDBMSActivityStorageImplTest extends AbstractCoreTest {
     tearDownActivityList.addAll(got);
   }
   
+  @MaxQueryNumber(520)
+  public void testGetUserIdsActivities() {
+    ExoSocialActivity activity = createActivity(1);
+    //
+    activityStorage.saveActivity(demoIdentity, activity);
+    List<String> got = activityStorage.getUserIdsActivities(demoIdentity, 0, 20);
+    assertEquals(1, got.size());
+    tearDownActivityList.add(activityStorage.getActivity(got.get(0)));
+  }
+  
+  @MaxQueryNumber(530)
+  public void testGetActivityIdsFeed() {
+    createActivities(3, demoIdentity);
+    List<String> got = activityStorage.getActivityIdsFeed(demoIdentity, 0, 10);
+    assertEquals(3, got.size());
+  }
+  
+  @MaxQueryNumber(650)
+  public void testGetSpaceActivityIds() throws Exception {
+    Space space = this.getSpaceInstance(spaceService, 0);
+    tearDownSpaceList.add(space);
+    Identity spaceIdentity = this.identityManager.getOrCreateIdentity(SpaceIdentityProvider.NAME, space.getPrettyName(), false);
+    
+    int totalNumber = 5;
+    
+    //demo posts activities to space
+    for (int i = 0; i < totalNumber; i ++) {
+      ExoSocialActivity activity = new ExoSocialActivityImpl();
+      activity.setTitle("activity title " + i);
+      activity.setUserId(demoIdentity.getId());
+      activityManager.saveActivityNoReturn(spaceIdentity, activity);
+      tearDownActivityList.add(activity);
+    }
+    
+    List<String> got = activityStorage.getSpaceActivityIds(spaceIdentity, 0, 10);
+    assertEquals(5, got.size());
+  }
+  
+  
   @MaxQueryNumber(516)
   public void testGetActivity() {
     ExoSocialActivity activity = createActivity(1);
     //
     activityStorage.saveActivity(demoIdentity, activity);
   }
+  
+  /**
+   * Unit Test for:
+   * <p>
+   * {@link ActivityManager#getActivitiesOfConnections(Identity)}
+   * 
+   * @throws Exception
+   */
+  @MaxQueryNumber(540)
+  public void testGetActivityIdsOfConnections() throws Exception {
+    createActivities(5, johnIdentity);
+    
+    ListAccess<ExoSocialActivity> demoConnectionActivities = activityManager.getActivitiesOfConnectionsWithListAccess(demoIdentity);
+    assertEquals(0, demoConnectionActivities.load(0, 10).length);
+    assertEquals(0, demoConnectionActivities.getSize());
+    
+    Relationship demoJohnRelationship = relationshipManager.inviteToConnect(demoIdentity, johnIdentity);
+    relationshipManager.confirm(johnIdentity, demoIdentity);
+    
+    List<String> got = activityStorage.getActivityIdsOfConnections(demoIdentity, 0, 10);
+    assertEquals(5, got.size());
+    
+    relationshipManager.delete(demoJohnRelationship);
+    tearDownActivityList.addAll(activityStorage.getActivitiesOfConnections(demoIdentity, 0, 10));
+  }
+  
   @MaxQueryNumber(530)
   public void testGetNewerOnUserActivities() {
     createActivities(2, demoIdentity);

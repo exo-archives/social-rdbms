@@ -22,6 +22,7 @@ import java.util.Collection;
 import java.util.List;
 
 import javax.persistence.EntityManager;
+import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaBuilder.In;
@@ -43,6 +44,7 @@ import org.exoplatform.social.addons.storage.entity.Mention_;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvider;
 import org.exoplatform.social.core.relationship.model.Relationship;
+
 
 /**
  * Created by The eXo Platform SAS
@@ -126,20 +128,16 @@ public final class AStreamQueryBuilder {
     return this;
   }
 
-  /**
-   * Builds query statement for FEED stream
-   *
-   * Feed Stream: owner's activities U space's activity U owner's connections's activities
-   *
-   * @return TypedQuery<Activity> instance
-   */
+  
   public TypedQuery<Activity> build() {
+    
     EntityManager em = EntityManagerHolder.get();
     CriteriaBuilder cb = em.getCriteriaBuilder();
     CriteriaQuery<Activity> criteria = cb.createQuery(Activity.class);
     Root<Activity> activity = criteria.from(Activity.class);
 
-    CriteriaQuery<Activity> select = criteria.select(activity).distinct(true);
+    CriteriaQuery<Activity> select;
+    select = criteria.select(activity).distinct(true);
     select.where(getPredicate(activity, cb, criteria.subquery(Activity.class), criteria.subquery(Activity.class), criteria.subquery(String.class)));
     if (this.descOrder) {
       select.orderBy(cb.desc(activity.<Long> get(Activity_.lastUpdated)));
@@ -148,6 +146,30 @@ public final class AStreamQueryBuilder {
     }
 
     TypedQuery<Activity> typedQuery = em.createQuery(select);
+    if (this.limit > 0) {
+      typedQuery.setFirstResult((int) offset);
+      typedQuery.setMaxResults((int) limit);
+    }
+
+    return typedQuery;
+  }
+  
+  public TypedQuery<Tuple> buildId() {
+    
+    EntityManager em = EntityManagerHolder.get();
+    CriteriaBuilder cb = em.getCriteriaBuilder();
+    CriteriaQuery<Tuple> criteria = cb.createTupleQuery();
+    Root<Activity> activity = criteria.from(Activity.class);
+
+    criteria.multiselect(activity.get(Activity_.id).alias(Activity_.id.getName()), activity.get(Activity_.lastUpdated)).distinct(true);
+    criteria.where(getPredicate(activity, cb, criteria.subquery(Activity.class), criteria.subquery(Activity.class), criteria.subquery(String.class)));
+    if (this.descOrder) {
+      criteria.orderBy(cb.desc(activity.<Long> get(Activity_.lastUpdated)));
+    } else {
+      criteria.orderBy(cb.asc(activity.<Long> get(Activity_.lastUpdated)));
+    }
+
+    TypedQuery<Tuple> typedQuery = em.createQuery(criteria);
     if (this.limit > 0) {
       typedQuery.setFirstResult((int) offset);
       typedQuery.setMaxResults((int) limit);

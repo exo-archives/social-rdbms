@@ -35,8 +35,8 @@ import javax.persistence.LockModeType;
 
 import org.apache.commons.lang.ArrayUtils;
 import org.exoplatform.commons.api.persistence.ExoTransactional;
-import org.exoplatform.commons.utils.PropertyManager;
 import org.exoplatform.commons.persistence.impl.EntityManagerHolder;
+import org.exoplatform.commons.utils.PropertyManager;
 import org.exoplatform.container.component.BaseComponentPlugin;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
@@ -307,10 +307,8 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
   
   @Override
   public List<String> getUserIdsActivities(Identity owner, long offset, long limit) throws ActivityStorageException {
-    return convertActivityEntitiesToIds(activityDAO.getUserActivities(owner, offset, limit));
+    return activityDAO.getUserIdsActivities(owner, offset, limit);
   }
-  
-  
 
   @Override
   @ExoTransactional

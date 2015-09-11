@@ -41,6 +41,19 @@ public interface ActivityDAO extends GenericDAO<Activity, Long> {
    */
   List<Activity> getUserActivities(Identity owner, long offset, long limit) throws ActivityStorageException;
   
+  
+  /**
+   * Gets Ids for User stream
+   * 
+   * @param owner
+   * @param offset
+   * @param limit
+   * @return
+   * @throws ActivityStorageException
+   */
+  List<String> getUserIdsActivities(Identity owner, long offset, long limit) throws ActivityStorageException;
+  
+  
   /**
    * 
    * @param ownerIdentity
@@ -91,6 +104,16 @@ public interface ActivityDAO extends GenericDAO<Activity, Long> {
    * @throws ActivityStorageException
    */
   List<Activity> getSpaceActivities(Identity owner, long offset, long limit) throws ActivityStorageException;
+  
+  /**
+   * 
+   * @param owner
+   * @param offset
+   * @param limit
+   * @return
+   * @throws ActivityStorageException
+   */
+  List<String> getSpaceActivityIds(Identity owner, long offset, long limit) throws ActivityStorageException;
   
   /**
    * 
@@ -156,6 +179,15 @@ public interface ActivityDAO extends GenericDAO<Activity, Long> {
   /**
    * 
    * @param ownerIdentity
+   * @param offset
+   * @param limit
+   * @return
+   */
+  List<String> getActivityIdsFeed(Identity ownerIdentity, int offset, int limit, List<String> spaceIds);
+  
+  /**
+   * 
+   * @param ownerIdentity
    * @return
    */
   int getNumberOfActivitesOnActivityFeed(Identity ownerIdentity, List<String> spaceIds);
@@ -206,6 +238,16 @@ public interface ActivityDAO extends GenericDAO<Activity, Long> {
   /**
    * 
    * @param ownerIdentity
+   * @param offset
+   * @param limit
+   * @return
+   */
+  List<String> getUserSpacesActivityIds(Identity ownerIdentity, int offset, int limit, List<String> spaceIds);
+  
+  
+  /**
+   * 
+   * @param ownerIdentity
    * @return
    */
   int getNumberOfUserSpacesActivities(Identity ownerIdentity, List<String> spaceIds);
@@ -252,6 +294,15 @@ public interface ActivityDAO extends GenericDAO<Activity, Long> {
    * @return
    */
   List<Activity> getActivitiesOfConnections(Identity ownerIdentity, int offset, int limit);
+  
+  /**
+   * 
+   * @param ownerIdentity
+   * @param offset
+   * @param limit
+   * @return
+   */
+  List<String> getActivityIdsOfConnections(Identity ownerIdentity, int offset, int limit);
   
   /**
    * 
