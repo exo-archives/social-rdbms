@@ -22,7 +22,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -307,7 +306,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
   
   @Override
   public List<String> getUserSpacesActivityIds(Identity ownerIdentity, int offset, int limit) {
-    return convertActivityEntitiesToIds(activityDAO.getUserSpacesActivities(ownerIdentity, offset, limit, memberOfSpaceIds(ownerIdentity)));
+    return activityDAO.getUserSpacesActivityIds(ownerIdentity, offset, limit, memberOfSpaceIds(ownerIdentity));
   }
   
   @Override
@@ -608,16 +607,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
   
   @Override
   public List<String> getActivityIdsFeed(Identity ownerIdentity, int offset, int limit) {
-    return convertActivityEntitiesToIds(activityDAO.getActivityFeed(ownerIdentity, offset, limit, memberOfSpaceIds(ownerIdentity)));
-  }
-
-  private List<String> convertActivityEntitiesToIds(List<Activity> activities) {
-    List<String> ids = new LinkedList<String>();
-    if (activities == null) return ids;
-    for (Activity activity : activities) {
-      ids.add(String.valueOf(activity.getId()));
-    }
-    return ids;
+    return activityDAO.getActivityIdsFeed(ownerIdentity, offset, limit, memberOfSpaceIds(ownerIdentity));
   }
 
   @Override
@@ -663,7 +653,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
   
   @Override
   public List<String> getActivityIdsOfConnections(Identity ownerIdentity, int offset, int limit) {
-    return convertActivityEntitiesToIds(activityDAO.getActivitiesOfConnections(ownerIdentity, offset, limit));
+    return activityDAO.getActivityIdsOfConnections(ownerIdentity, offset, limit);
   }
 
   @Override
@@ -714,7 +704,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
   
   @Override
   public List<String> getSpaceActivityIds(Identity spaceIdentity, int offset, int limit) {
-    return convertActivityEntitiesToIds(activityDAO.getSpaceActivities(spaceIdentity, offset, limit));
+    return activityDAO.getSpaceActivityIds(spaceIdentity, offset, limit);
   }
 
   @Override
