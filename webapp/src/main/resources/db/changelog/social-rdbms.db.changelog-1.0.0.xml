@@ -34,7 +34,7 @@
             <column name="type" type="VARCHAR(255)"/>
         </createTable>
         <modifySql dbms="mysql">
-            <append value="ENGINE=INNODB CHARSET=UTF8 COLLATE utf8_general_ci"/>
+            <append value=" ENGINE=INNODB CHARSET=UTF8 COLLATE utf8_general_ci"/>
         </modifySql>
     </changeSet>
     <changeSet author="tuvd@exoplatform.com" id="1.0.0-1.1">
@@ -87,7 +87,7 @@
             </column>
         </createTable>
         <modifySql dbms="mysql">
-            <append value="ENGINE=INNODB CHARSET=UTF8 COLLATE utf8_general_ci"/>
+            <append value=" ENGINE=INNODB CHARSET=UTF8 COLLATE utf8_general_ci"/>
         </modifySql>
     </changeSet>
     <changeSet author="tuvd@exoplatform.com" id="1.0.0-5">
@@ -115,7 +115,7 @@
             <column name="ACTIVITY_ID" type="BIGINT"/>
         </createTable>
         <modifySql dbms="mysql">
-            <append value="ENGINE=INNODB CHARSET=UTF8 COLLATE utf8_general_ci"/>
+            <append value=" ENGINE=INNODB CHARSET=UTF8 COLLATE utf8_general_ci"/>
         </modifySql>
     </changeSet>
     <changeSet author="tuvd@exoplatform.com" id="1.0.0-5.1">
@@ -138,7 +138,7 @@
             </column>
         </createTable>
         <modifySql dbms="mysql">
-            <append value="ENGINE=INNODB CHARSET=UTF8 COLLATE utf8_general_ci"/>
+            <append value=" ENGINE=INNODB CHARSET=UTF8 COLLATE utf8_general_ci"/>
         </modifySql>
     </changeSet>
     <changeSet author="tuvd@exoplatform.com" id="1.0.0-7">
