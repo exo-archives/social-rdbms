@@ -188,7 +188,7 @@
     </changeSet>
     <changeSet author="tuvd@exoplatform.com" id="1.0.0-15">
 		    <addUniqueConstraint columnNames="senderId, receiverId"
-		            constraintName="senderId-receiverId"
+		            constraintName="senderId_receiverId"
 		            tableName="SOC_CONNECTIONS"/>
 		</changeSet>
 </databaseChangeLog>
