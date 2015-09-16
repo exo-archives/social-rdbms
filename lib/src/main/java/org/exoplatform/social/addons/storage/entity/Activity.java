@@ -57,7 +57,6 @@ public class Activity extends BaseActivity {
   private Map<String, String> templateParams = new LinkedHashMap<String, String>();
 
   @OneToMany(cascade=CascadeType.ALL, orphanRemoval=true, mappedBy="activity", fetch=FetchType.LAZY)
-  @OrderBy("posted DESC")
   private List<Comment> comments;
 
   @OneToMany(cascade=CascadeType.ALL, orphanRemoval=true, mappedBy="activity", fetch=FetchType.LAZY)
