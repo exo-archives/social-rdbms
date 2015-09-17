@@ -24,6 +24,7 @@ import org.exoplatform.social.addons.storage.RDBMSActivityStorageImplTest;
 import org.exoplatform.social.addons.storage.RDBMSRelationshipManagerTest;
 import org.exoplatform.social.addons.storage.SpaceActivityMySqlPublisherTest;
 import org.exoplatform.social.addons.storage.dao.ActivityDAOTest;
+import org.exoplatform.social.addons.storage.dao.StreamItemDAOTest;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.runners.Suite.SuiteClasses;
@@ -31,6 +32,7 @@ import org.junit.runners.Suite.SuiteClasses;
 @SuiteClasses({
   AsynMigrationTest.class,
   ActivityDAOTest.class,
+  StreamItemDAOTest.class,
   RDBMSActivityStorageImplTest.class,
   ActivityManagerMysqlTest.class,
   SpaceActivityMySqlPublisherTest.class,
