@@ -34,6 +34,9 @@ public class StreamItem {
    */
   @Column(length = 36)
   private String ownerId;
+  
+  /** */
+  private Long lastUpdated;
 
   @Enumerated
   private StreamType streamType;
@@ -75,6 +78,14 @@ public class StreamItem {
 
   public void setStreamType(StreamType streamType) {
     this.streamType = streamType;
+  }
+  
+  public Long getLastUpdated() {
+    return lastUpdated;
+  }
+  
+  public void setLastUpdated(Long lastUpdated) {
+    this.lastUpdated = lastUpdated;
   }
 
 }

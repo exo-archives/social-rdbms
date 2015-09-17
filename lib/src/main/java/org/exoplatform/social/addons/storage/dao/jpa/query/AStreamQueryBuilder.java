@@ -40,6 +40,7 @@ import org.exoplatform.social.addons.storage.entity.Connection;
 import org.exoplatform.social.addons.storage.entity.Connection_;
 import org.exoplatform.social.addons.storage.entity.StreamItem;
 import org.exoplatform.social.addons.storage.entity.StreamItem_;
+import org.exoplatform.social.addons.storage.entity.StreamType;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvider;
 import org.exoplatform.social.core.relationship.model.Relationship;
@@ -135,8 +136,6 @@ public final class AStreamQueryBuilder {
     CriteriaQuery<Activity> criteria = cb.createQuery(Activity.class);
     Root<Activity> activity = criteria.from(Activity.class);
     Join<Activity, StreamItem> streamItem = activity.join(Activity_.streamItems);
-    
-    
 
     CriteriaQuery<Activity> select;
     select = criteria.select(activity).distinct(true);
@@ -231,7 +230,7 @@ public final class AStreamQueryBuilder {
       subQuery1.where(cb.and(cb.equal(subRoot1.<String>get(Connection_.senderId), this.myIdentity.getId()),
               cb.equal(subRoot1.<Relationship.Type>get(Connection_.status), Relationship.Type.CONFIRMED)));
 
-      Predicate posterConnection = cb.and(cb.in(stream.get(StreamItem_.ownerId)).value(subQuery1));
+      Predicate posterConnection = cb.and(cb.in(stream.get(StreamItem_.ownerId)).value(subQuery1), cb.notEqual(stream.get(StreamItem_.streamType), StreamType.SPACE));
       if (predicate != null) {
         predicate = cb.or(predicate, posterConnection);
       } else {

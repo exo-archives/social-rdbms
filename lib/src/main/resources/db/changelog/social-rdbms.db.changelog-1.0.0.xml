@@ -173,7 +173,16 @@
             <column name="ownerId" type="VARCHAR(36)"/>
             <column name="streamType" type="INT"/>
             <column name="ACTIVITY_ID" type="BIGINT"/>
+            <column name="lastUpdated" type="BIGINT"/>
         </createTable>
+    </changeSet>
+    <changeSet author="thanhvc@exoplatform.com" id="1.0.0-8.1">
+        <createIndex tableName="SOC_STREAM_ITEMS" indexName="IDX_SOC_STREAM_ITEMS_01">
+            <column name="lastUpdated" descending="true"/>
+        </createIndex>
+        <createIndex tableName="SOC_STREAM_ITEMS" indexName="IDX_SOC_STREAM_ITEMS_02">
+            <column name="streamType"/>
+        </createIndex>
     </changeSet>
     <changeSet author="tuvd@exoplatform.com" id="1.0.0-9">
         <addPrimaryKey columnNames="ACTIVITY_ID, TEMPLATE_PARAM_KEY" constraintName="PK_SOC_ACTIVITY_TEMPLATE_PARAMS" tableName="SOC_ACTIVITY_TEMPLATE_PARAMS"/>
