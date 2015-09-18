@@ -497,7 +497,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
     if (activity.getId() != null) {
       //TODO need to improve it
       for (StreamItem item : activity.getStreamItems()) {
-        if (item.getOwnerId().equals(ownerId)) {
+        if (item.getOwnerId().equals(ownerId) && streamType.equals(item.getStreamType())) {
           isExist = true;
           break;
         }
