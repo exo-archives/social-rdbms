@@ -29,6 +29,9 @@ public class StreamItem {
   @JoinColumn(name = "ACTIVITY_ID")
   private Activity activity;
 
+  @Column(name = "ACTIVITY_ID", insertable=false, updatable=false)
+  private Long activityId;
+  
   /**
    * This is id's Identity owner of ActivityStream or SpaceStream
    */
@@ -88,4 +91,12 @@ public class StreamItem {
     this.lastUpdated = lastUpdated;
   }
 
+  public Long getActivityId() {
+    return activityId;
+  }
+
+  public void setActivityId(Long activityId) {
+    this.activityId = activityId;
+  }
+  
 }

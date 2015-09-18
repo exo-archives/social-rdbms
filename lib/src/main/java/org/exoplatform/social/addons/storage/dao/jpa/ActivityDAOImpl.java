@@ -27,6 +27,7 @@ import org.exoplatform.social.addons.storage.dao.ActivityDAO;
 import org.exoplatform.social.addons.storage.dao.jpa.query.AStreamQueryBuilder;
 import org.exoplatform.social.addons.storage.entity.Activity;
 import org.exoplatform.social.addons.storage.entity.Activity_;
+import org.exoplatform.social.addons.storage.entity.StreamItem_;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.storage.ActivityStorageException;
 
@@ -489,7 +490,7 @@ public class ActivityDAOImpl extends GenericDAOJPAImpl<Activity, Long> implement
     List<String> ids = new LinkedList<String>();
     if (list == null) return ids;
     for (Tuple t : list) {
-      ids.add(String.valueOf(t.get(Activity_.id.getName())));
+      ids.add(String.valueOf(t.get(StreamItem_.activityId.getName())));
     }
     return ids;
   }
