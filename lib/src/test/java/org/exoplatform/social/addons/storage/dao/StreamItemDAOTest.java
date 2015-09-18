@@ -27,6 +27,7 @@ import org.exoplatform.social.core.activity.model.ExoSocialActivityImpl;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvider;
 import org.exoplatform.social.core.identity.provider.SpaceIdentityProvider;
+import org.exoplatform.social.core.relationship.model.Relationship;
 import org.exoplatform.social.core.space.impl.DefaultSpaceApplicationHandler;
 import org.exoplatform.social.core.space.model.Space;
 import org.exoplatform.social.core.space.spi.SpaceService;
@@ -98,6 +99,14 @@ public class StreamItemDAOTest extends BaseCoreTest {
     assertEquals(1, items.size());
   }
   
+  public void testGetFeedWithPostActivity() {
+    ExoSocialActivity activity = createActivity("post on my stream", demoIdentity.getId());
+    activityStorage.saveActivity(demoIdentity, activity);
+    tearDownActivityList.add(activity);
+    List<String> ids = activityStorage.getActivityIdsFeed(demoIdentity, 0, 10);
+    assertEquals(1, ids.size());
+  }
+  
   public void testCommentOnHisActivity() {
     ExoSocialActivity activity = createActivity("post on my stream", demoIdentity.getId());
     activityStorage.saveActivity(demoIdentity, activity);
@@ -107,10 +116,22 @@ public class StreamItemDAOTest extends BaseCoreTest {
     activityStorage.saveComment(activity, comment);
     
     List<StreamItem> items = streamItemDAO.findStreamItemByActivityId(Long.valueOf(activity.getId()));
-    assertEquals(1, items.size());
+    assertEquals(2, items.size());
   }
   
   public void testCommentOnOtherActivity() {
+    ExoSocialActivity activity = createActivity("post on my stream", demoIdentity.getId());
+    activityStorage.saveActivity(demoIdentity, activity);
+    tearDownActivityList.add(activity);
+    
+    ExoSocialActivity comment = createActivity("comment on demo's activity", maryIdentity.getId());
+    activityStorage.saveComment(activity, comment);
+    
+    List<String> ids = activityStorage.getActivityIdsFeed(maryIdentity, 0, 10);
+    assertEquals(1, ids.size());
+  }
+  
+  public void testGetFeedWithCommentOnOtherActivity() {
     ExoSocialActivity activity = createActivity("post on my stream", demoIdentity.getId());
     activityStorage.saveActivity(demoIdentity, activity);
     tearDownActivityList.add(activity);
@@ -137,6 +158,54 @@ public class StreamItemDAOTest extends BaseCoreTest {
     assertEquals(2, items.size());
   }
   
+  public void testGetFeedWithDoubleCommentOnOtherActivity() {
+    ExoSocialActivity activity = createActivity("post on my stream", demoIdentity.getId());
+    activityStorage.saveActivity(demoIdentity, activity);
+    tearDownActivityList.add(activity);
+    
+    ExoSocialActivity comment = createActivity("comment on demo's activity 1", maryIdentity.getId());
+    activityStorage.saveComment(activity, comment);
+    
+    comment = createActivity("comment on demo's activity 2", maryIdentity.getId());
+    activityStorage.saveComment(activity, comment);
+    
+    List<String> ids = activityStorage.getActivityIdsFeed(maryIdentity, 0, 10);
+    assertEquals(1, ids.size());
+  }
+  
+  public void testGetFeedWithConnections() throws Exception {
+    ExoSocialActivity activity = createActivity("post on my stream", demoIdentity.getId());
+    activityStorage.saveActivity(demoIdentity, activity);
+    tearDownActivityList.add(activity);
+    
+    Relationship demoMaryConnection = relationshipManager.inviteToConnect(demoIdentity, maryIdentity);
+    relationshipManager.confirm(demoIdentity, maryIdentity);
+    
+    List<String> ids = activityStorage.getActivityIdsFeed(maryIdentity, 0, 10);
+    assertEquals(1, ids.size());
+    relationshipManager.delete(demoMaryConnection);
+  }
+  
+  public void testStreamsWithConnectionsAndMention() throws Exception {
+    ExoSocialActivity activity = createActivity("post on my stream @mary", demoIdentity.getId());
+    activityStorage.saveActivity(demoIdentity, activity);
+    tearDownActivityList.add(activity);
+    
+    Relationship demoMaryConnection = relationshipManager.inviteToConnect(demoIdentity, maryIdentity);
+    relationshipManager.confirm(demoIdentity, maryIdentity);
+    
+    List<String> ids = activityStorage.getActivityIdsFeed(maryIdentity, 0, 10);
+    assertEquals(1, ids.size());
+    
+    ids = activityStorage.getActivityIdsOfConnections(maryIdentity, 0, 10);
+    assertEquals(1, ids.size());
+    
+    ids = activityStorage.getUserIdsActivities(maryIdentity, 0, 10);
+    assertEquals(1, ids.size());
+    
+    relationshipManager.delete(demoMaryConnection);
+  }
+  
   public void testCommentOnOtherActivityAndMention() {
     ExoSocialActivity activity = createActivity("post on my stream", demoIdentity.getId());
     activityStorage.saveActivity(demoIdentity, activity);
@@ -146,7 +215,7 @@ public class StreamItemDAOTest extends BaseCoreTest {
     activityStorage.saveComment(activity, comment);
     
     List<StreamItem> items = streamItemDAO.findStreamItemByActivityId(Long.valueOf(activity.getId()));
-    assertEquals(2, items.size());
+    assertEquals(3, items.size());
   }
   
   public void testCommentOnOtherActivityAndOtherMention() {
@@ -159,6 +228,18 @@ public class StreamItemDAOTest extends BaseCoreTest {
     
     List<StreamItem> items = streamItemDAO.findStreamItemByActivityId(Long.valueOf(activity.getId()));
     assertEquals(3, items.size());
+  }
+  
+  public void testStreamsWithCommentOnOtherActivityAndOtherMention() {
+    ExoSocialActivity activity = createActivity("post on my stream @mary", demoIdentity.getId());
+    activityStorage.saveActivity(demoIdentity, activity);
+    tearDownActivityList.add(activity);
+    
+    ExoSocialActivity comment = createActivity("comment on demo's activity", maryIdentity.getId());
+    activityStorage.saveComment(activity, comment);
+    
+    List<String> ids = activityStorage.getActivityIdsFeed(maryIdentity, 0, 10);
+    assertEquals(1, ids.size());
   }
   
   public void testPostActivityAndMention() {

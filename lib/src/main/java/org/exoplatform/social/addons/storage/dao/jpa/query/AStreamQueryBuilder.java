@@ -160,15 +160,15 @@ public final class AStreamQueryBuilder {
     EntityManager em = EntityManagerHolder.get();
     CriteriaBuilder cb = em.getCriteriaBuilder();
     CriteriaQuery<Tuple> criteria = cb.createTupleQuery();
+    Root<StreamItem> streamItem = criteria.from(StreamItem.class);
     Root<Activity> activity = criteria.from(Activity.class);
-    Join<Activity, StreamItem> streamItem = activity.join(Activity_.streamItems);
 
-    criteria.multiselect(activity.get(Activity_.id).alias(Activity_.id.getName()), activity.get(Activity_.lastUpdated)).distinct(true);
-    criteria.where(getPredicateForStream(activity, streamItem, cb, criteria.subquery(Activity.class), criteria.subquery(Activity.class), criteria.subquery(String.class)));
+    criteria.multiselect(activity.get(Activity_.id).alias(Activity_.id.getName()), streamItem.get(StreamItem_.lastUpdated)).distinct(true);
+    criteria.where(getPredicateForIdsStream(streamItem, cb, criteria.subquery(String.class)));
     if (this.descOrder) {
-      criteria.orderBy(cb.desc(activity.<Long> get(Activity_.lastUpdated)));
+      criteria.orderBy(cb.desc(streamItem.<Long> get(StreamItem_.lastUpdated)));
     } else {
-      criteria.orderBy(cb.asc(activity.<Long> get(Activity_.lastUpdated)));
+      criteria.orderBy(cb.asc(streamItem.<Long> get(StreamItem_.lastUpdated)));
     }
 
     TypedQuery<Tuple> typedQuery = em.createQuery(criteria);
@@ -205,10 +205,7 @@ public final class AStreamQueryBuilder {
     //owner
     if (this.owner != null) {
       predicate = cb.equal(stream.get(StreamItem_.ownerId), owner.getId());
-            
-      //TODO liker 
-      //predicate = cb.or(predicate, cb.isMember(this.owner.getId(), stream.get(Activity_.likerIds)));
-      
+                  
       //view user's stream
       if (this.viewer != null && !this.viewer.getId().equals(this.owner.getId())) {
         predicate = cb.and(predicate, cb.equal(activity.get(Activity_.providerId), OrganizationIdentityProvider.NAME));
@@ -230,7 +227,7 @@ public final class AStreamQueryBuilder {
       subQuery1.where(cb.and(cb.equal(subRoot1.<String>get(Connection_.senderId), this.myIdentity.getId()),
               cb.equal(subRoot1.<Relationship.Type>get(Connection_.status), Relationship.Type.CONFIRMED)));
 
-      Predicate posterConnection = cb.and(cb.in(stream.get(StreamItem_.ownerId)).value(subQuery1), cb.notEqual(stream.get(StreamItem_.streamType), StreamType.SPACE));
+      Predicate posterConnection = cb.and(cb.in(stream.get(StreamItem_.ownerId)).value(subQuery1), cb.equal(stream.get(StreamItem_.streamType), StreamType.POSTER));
       if (predicate != null) {
         predicate = cb.or(predicate, posterConnection);
       } else {
@@ -261,6 +258,72 @@ public final class AStreamQueryBuilder {
     } else {
       predicate = cb.equal(activity.<Boolean>get(Activity_.hidden), Boolean.FALSE);
     }
+    return predicate;
+  }
+  
+  private Predicate getPredicateForIdsStream(Root<StreamItem> stream,
+                                             CriteriaBuilder cb,
+                                             Subquery<String> subQuery1) {
+
+    Predicate predicate = null;
+    // owner
+    if (this.owner != null) {
+      predicate = cb.equal(stream.get(StreamItem_.ownerId), owner.getId());
+
+      // view user's stream
+      if (this.viewer != null && !this.viewer.getId().equals(this.owner.getId())) {
+        predicate = cb.and(predicate,
+                           cb.equal(stream.get(StreamItem_.streamType), StreamType.POSTER));
+      }
+    }
+
+    // space members
+    if (this.memberOfSpaceIds != null && memberOfSpaceIds.size() > 0) {
+      if (predicate != null) {
+        predicate = cb.or(predicate,
+                          addInClause(cb, stream.get(StreamItem_.ownerId), memberOfSpaceIds));
+      } else {
+        predicate = addInClause(cb, stream.get(StreamItem_.ownerId), memberOfSpaceIds);
+      }
+    }
+
+    if (this.myIdentity != null) {
+      Root<Connection> subRoot1 = subQuery1.from(Connection.class);
+      subQuery1.select(subRoot1.<String> get(Connection_.receiverId));
+      subQuery1.where(cb.and(cb.equal(subRoot1.<String> get(Connection_.senderId),
+                                      this.myIdentity.getId()),
+                             cb.equal(subRoot1.<Relationship.Type> get(Connection_.status),
+                                      Relationship.Type.CONFIRMED)));
+
+      Predicate posterConnection = cb.and(cb.in(stream.get(StreamItem_.ownerId)).value(subQuery1),
+                                          cb.equal(stream.get(StreamItem_.streamType),
+                                                   StreamType.POSTER));
+      if (predicate != null) {
+        predicate = cb.or(predicate, posterConnection);
+      } else {
+        predicate = posterConnection;
+      }
+    }
+    // newer or older
+    if (this.sinceTime > 0) {
+      if (isNewer) {
+        if (predicate != null) {
+          predicate = cb.and(predicate, cb.greaterThan(stream.<Long> get(StreamItem_.lastUpdated),
+                                                       this.sinceTime));
+        } else {
+          predicate = cb.greaterThan(stream.<Long> get(StreamItem_.lastUpdated), this.sinceTime);
+        }
+
+      } else {
+        if (predicate != null) {
+          predicate = cb.and(predicate,
+                             cb.lessThan(stream.<Long> get(StreamItem_.lastUpdated), this.sinceTime));
+        } else {
+          predicate = cb.lessThan(stream.<Long> get(StreamItem_.lastUpdated), this.sinceTime);
+        }
+      }
+    }
+
     return predicate;
   }
 
