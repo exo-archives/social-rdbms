@@ -285,7 +285,7 @@ public class StreamItemDAOTest extends BaseCoreTest {
     activityStorage.saveActivity(spaceIdentity, activity);
     
     List<StreamItem> items = streamItemDAO.findStreamItemByActivityId(Long.valueOf(activity.getId()));
-    assertEquals(1, items.size());
+    assertEquals(2, items.size());
     
     tearDownActivityList.add(activity);
     tearDownSpaceList.add(space);
@@ -299,7 +299,7 @@ public class StreamItemDAOTest extends BaseCoreTest {
     activityStorage.saveActivity(spaceIdentity, activity);
     
     List<StreamItem> items = streamItemDAO.findStreamItemByActivityId(Long.valueOf(activity.getId()));
-    assertEquals(2, items.size());
+    assertEquals(3, items.size());
     
     tearDownActivityList.add(activity);
     tearDownSpaceList.add(space);
