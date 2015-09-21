@@ -444,6 +444,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
    */
   private void spaceMembers(Identity spaceOwner, Activity activity) {
     createStreamItem(StreamType.SPACE, activity, spaceOwner.getId());
+    createStreamItem(StreamType.SPACE, activity, activity.getPosterId());
   }
   
   private void saveStreamItem(Identity owner, Activity activity) {
