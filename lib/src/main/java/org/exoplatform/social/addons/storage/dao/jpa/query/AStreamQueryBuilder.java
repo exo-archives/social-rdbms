@@ -165,6 +165,11 @@ public final class AStreamQueryBuilder {
     criteria.multiselect(streamItem.get(StreamItem_.activityId).alias(StreamItem_.activityId.getName()), streamItem.get(StreamItem_.lastUpdated)).distinct(true);
     List<Predicate> predicates = getPredicateForIdsStream(streamItem, cb, criteria.subquery(String.class));
     criteria.where(cb.or(predicates.toArray(new Predicate[predicates.size()])));
+    if (this.descOrder) {
+      criteria.orderBy(cb.desc(streamItem.<Long> get(StreamItem_.lastUpdated)));
+    } else {
+      criteria.orderBy(cb.asc(streamItem.<Long> get(StreamItem_.lastUpdated)));
+    }
 
     TypedQuery<Tuple> typedQuery = em.createQuery(criteria);
     if (this.limit > 0) {
