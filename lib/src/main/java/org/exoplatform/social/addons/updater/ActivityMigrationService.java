@@ -17,6 +17,7 @@ import javax.jcr.RepositoryException;
 
 import org.apache.commons.lang.ArrayUtils;
 import org.exoplatform.commons.api.event.EventManager;
+import org.exoplatform.commons.api.persistence.DataInitializer;
 import org.exoplatform.commons.persistence.impl.EntityManagerService;
 import org.exoplatform.commons.utils.XPathUtils;
 import org.exoplatform.container.PortalContainer;
@@ -78,9 +79,10 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
                                   ActivityStorageImpl activityJCRStorage,
                                   IdentityStorageImpl identityStorage,
                                   EventManager<ExoSocialActivity, String> eventManager,
-                                  EntityManagerService entityManagerService) {
+                                  EntityManagerService entityManagerService,
+                                  DataInitializer dataInitializer) {
 
-    super(initParams, identityStorage, eventManager, entityManagerService);
+    super(initParams, identityStorage, eventManager, entityManagerService, dataInitializer);
     this.commentDAO = commentDAO;
     this.activityDAO = activityDAO;
     this.activityStorage = activityStorage;

@@ -90,6 +90,21 @@
   </component>
   
   <component>
+    <key>org.exoplatform.commons.api.persistence.DataInitializer</key>
+    <type>org.exoplatform.commons.persistence.impl.LiquibaseDataInitializer</type>
+    <init-params>
+      <value-param>
+        <name>liquibase.datasource</name>
+        <value>${exo.jpa.datasource.name:java:/comp/env/exo-jpa_portal}</value>
+      </value-param>
+      <value-param>
+        <name>liquibase.contexts</name>
+        <value>production</value>
+      </value-param>
+    </init-params>
+  </component>
+  
+  <component>
     <key>org.exoplatform.social.addons.storage.dao.ConnectionDAO</key>
     <type>org.exoplatform.social.addons.storage.dao.jpa.ConnectionDAOImpl</type>
   </component>

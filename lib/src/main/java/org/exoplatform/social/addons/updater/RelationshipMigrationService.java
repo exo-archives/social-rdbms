@@ -8,6 +8,7 @@ import javax.jcr.NodeIterator;
 import javax.jcr.RepositoryException;
 
 import org.exoplatform.commons.api.event.EventManager;
+import org.exoplatform.commons.api.persistence.DataInitializer;
 import org.exoplatform.commons.persistence.impl.EntityManagerService;
 import org.exoplatform.container.PortalContainer;
 import org.exoplatform.container.component.RequestLifeCycle;
@@ -35,9 +36,10 @@ public class RelationshipMigrationService extends AbstractMigrationService<Relat
                                       IdentityStorageImpl identityStorage,
                                       ConnectionDAO connectionDAO,
                                       EventManager<Relationship, String> eventManager,
-                                      EntityManagerService entityManagerService) {
+                                      EntityManagerService entityManagerService,
+                                      DataInitializer dataInitializer) {
 
-    super(initParams, identityStorage, eventManager, entityManagerService);
+    super(initParams, identityStorage, eventManager, entityManagerService, dataInitializer);
     this.connectionDAO = connectionDAO;
     this.LIMIT_THRESHOLD = getInteger(initParams, LIMIT_THRESHOLD_KEY, 200);
   }
