@@ -166,29 +166,42 @@
         </createIndex>
     </changeSet>
     <changeSet author="tuvd@exoplatform.com" id="1.0.0-8">
-        <addPrimaryKey columnNames="ACTIVITY_ID, TEMPLATE_PARAM_KEY" constraintName="PK_SOC_ACTIVITY_TEMPLATE_PARAMS" tableName="SOC_ACTIVITY_TEMPLATE_PARAMS"/>
+        <createTable tableName="SOC_STREAM_ITEMS">
+            <column autoIncrement="true" name="STREAM_ITEM_ID" type="BIGINT">
+                <constraints primaryKey="true"/>
+            </column>
+            <column name="ownerId" type="VARCHAR(36)"/>
+            <column name="streamType" type="INT"/>
+            <column name="ACTIVITY_ID" type="BIGINT"/>
+        </createTable>
     </changeSet>
     <changeSet author="tuvd@exoplatform.com" id="1.0.0-9">
-        <addPrimaryKey columnNames="COMMENT_ID, TEMPLATE_PARAM_KEY" constraintName="PK_SOC_COMMENT_TEMPLATE_PARAMS" tableName="SOC_COMMENT_TEMPLATE_PARAMS"/>
+        <addPrimaryKey columnNames="ACTIVITY_ID, TEMPLATE_PARAM_KEY" constraintName="PK_SOC_ACTIVITY_TEMPLATE_PARAMS" tableName="SOC_ACTIVITY_TEMPLATE_PARAMS"/>
     </changeSet>
     <changeSet author="tuvd@exoplatform.com" id="1.0.0-10">
-        <addForeignKeyConstraint baseColumnNames="ACTIVITY_ID" baseTableName="SOC_ACTIVITY_LIKERS" constraintName="FK240B6C70BBA54EEF" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="ACTIVITY_ID" referencedTableName="SOC_ACTIVITIES"/>
+        <addPrimaryKey columnNames="COMMENT_ID, TEMPLATE_PARAM_KEY" constraintName="PK_SOC_COMMENT_TEMPLATE_PARAMS" tableName="SOC_COMMENT_TEMPLATE_PARAMS"/>
     </changeSet>
     <changeSet author="tuvd@exoplatform.com" id="1.0.0-11">
-        <addForeignKeyConstraint baseColumnNames="ACTIVITY_ID" baseTableName="SOC_MENTIONS" constraintName="FK388EF94BBA54EEF" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="ACTIVITY_ID" referencedTableName="SOC_ACTIVITIES"/>
+        <addForeignKeyConstraint baseColumnNames="ACTIVITY_ID" baseTableName="SOC_ACTIVITY_LIKERS" constraintName="FK240B6C70BBA54EEF" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="ACTIVITY_ID" referencedTableName="SOC_ACTIVITIES"/>
     </changeSet>
     <changeSet author="tuvd@exoplatform.com" id="1.0.0-12">
-        <addForeignKeyConstraint baseColumnNames="ACTIVITY_ID" baseTableName="SOC_COMMENTS" constraintName="FK708761CCBBA54EEF" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="ACTIVITY_ID" referencedTableName="SOC_ACTIVITIES"/>
+        <addForeignKeyConstraint baseColumnNames="ACTIVITY_ID" baseTableName="SOC_MENTIONS" constraintName="FK388EF94BBA54EEF" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="ACTIVITY_ID" referencedTableName="SOC_ACTIVITIES"/>
     </changeSet>
     <changeSet author="tuvd@exoplatform.com" id="1.0.0-13">
-        <addForeignKeyConstraint baseColumnNames="ACTIVITY_ID" baseTableName="SOC_ACTIVITY_TEMPLATE_PARAMS" constraintName="FKB6892F93BBA54EEF" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="ACTIVITY_ID" referencedTableName="SOC_ACTIVITIES"/>
+        <addForeignKeyConstraint baseColumnNames="ACTIVITY_ID" baseTableName="SOC_COMMENTS" constraintName="FK708761CCBBA54EEF" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="ACTIVITY_ID" referencedTableName="SOC_ACTIVITIES"/>
     </changeSet>
     <changeSet author="tuvd@exoplatform.com" id="1.0.0-14">
-        <addForeignKeyConstraint baseColumnNames="COMMENT_ID" baseTableName="SOC_COMMENT_TEMPLATE_PARAMS" constraintName="FKB8CEC41347B1AF25" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="COMMENT_ID" referencedTableName="SOC_COMMENTS"/>
+        <addForeignKeyConstraint baseColumnNames="ACTIVITY_ID" baseTableName="SOC_ACTIVITY_TEMPLATE_PARAMS" constraintName="FKB6892F93BBA54EEF" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="ACTIVITY_ID" referencedTableName="SOC_ACTIVITIES"/>
     </changeSet>
     <changeSet author="tuvd@exoplatform.com" id="1.0.0-15">
+        <addForeignKeyConstraint baseColumnNames="COMMENT_ID" baseTableName="SOC_COMMENT_TEMPLATE_PARAMS" constraintName="FKB8CEC41347B1AF25" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="COMMENT_ID" referencedTableName="SOC_COMMENTS"/>
+    </changeSet>
+    <changeSet author="tuvd@exoplatform.com" id="1.0.0-16">
 		    <addUniqueConstraint columnNames="senderId, receiverId"
 		            constraintName="senderId_receiverId"
 		            tableName="SOC_CONNECTIONS"/>
-		</changeSet>
+	</changeSet>
+    <changeSet author="tuvd@exoplatform.com" id="1.0.0-17">
+        <addForeignKeyConstraint baseColumnNames="ACTIVITY_ID" baseTableName="SOC_STREAM_ITEMS" constraintName="FKFBFBDDF9BBA54EEF" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="ACTIVITY_ID" referencedTableName="SOC_ACTIVITIES"/>
+    </changeSet>
 </databaseChangeLog>

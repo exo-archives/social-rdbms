@@ -17,12 +17,17 @@
 package org.exoplatform.social.addons.storage.dao.jpa;
 
 import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 
+import javax.persistence.Tuple;
+
+import org.exoplatform.commons.api.persistence.ExoTransactional;
 import org.exoplatform.commons.persistence.impl.GenericDAOJPAImpl;
 import org.exoplatform.social.addons.storage.dao.ActivityDAO;
 import org.exoplatform.social.addons.storage.dao.jpa.query.AStreamQueryBuilder;
 import org.exoplatform.social.addons.storage.entity.Activity;
+import org.exoplatform.social.addons.storage.entity.StreamItem_;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.storage.ActivityStorageException;
 
@@ -34,6 +39,12 @@ import org.exoplatform.social.core.storage.ActivityStorageException;
  */
 public class ActivityDAOImpl extends GenericDAOJPAImpl<Activity, Long> implements ActivityDAO {
   
+  @Override
+  @ExoTransactional
+  public Activity find(Long id) {
+    return super.find(id);
+  }
+  
   public List<Activity> getActivities(Identity owner, Identity viewer, long offset, long limit) throws ActivityStorageException {
     return AStreamQueryBuilder.builder()
                               .owner(owner)
@@ -42,6 +53,16 @@ public class ActivityDAOImpl extends GenericDAOJPAImpl<Activity, Long> implement
                               .limit(limit)
                               .build()
                               .getResultList();
+  }
+  
+  @Override
+  public List<String> getUserIdsActivities(Identity owner, long offset, long limit) throws ActivityStorageException {
+    return convertActivityEntitiesToIds(AStreamQueryBuilder.builder()
+        .owner(owner)
+        .offset(offset)
+        .limit(limit)
+        .buildId()
+        .getResultList());
   }
 
   public List<Activity> getActivityFeed(Identity ownerIdentity, int offset, int limit, List<String> spaceIds) {
@@ -53,6 +74,22 @@ public class ActivityDAOImpl extends GenericDAOJPAImpl<Activity, Long> implement
                               .limit(limit)
                               .build()
                               .getResultList();
+  }
+  
+  @Override
+  public List<String> getActivityIdsFeed(Identity ownerIdentity,
+                                           int offset,
+                                           int limit,
+                                           List<String> spaceIds) {
+
+    return convertActivityEntitiesToIds(AStreamQueryBuilder.builder()
+                              .owner(ownerIdentity)
+                              .myIdentity(ownerIdentity)
+                              .memberOfSpaceIds(spaceIds)
+                              .offset(offset)
+                              .limit(limit)
+                              .buildId()
+                              .getResultList());
   }
 
   public int getNumberOfActivitesOnActivityFeed(Identity ownerIdentity, List<String> spaceIds) {
@@ -192,6 +229,15 @@ public class ActivityDAOImpl extends GenericDAOJPAImpl<Activity, Long> implement
                               .getResultList();
   }
   
+  public List<String> getSpaceActivityIds(Identity spaceOwner, long offset, long limit) throws ActivityStorageException {
+    return convertActivityEntitiesToIds(AStreamQueryBuilder.builder()
+                                                           .owner(spaceOwner)
+                                                           .offset(offset)
+                                                           .limit(limit)
+                                                           .buildId()
+                                                           .getResultList());
+  }
+  
   @Override
   public int getNumberOfSpaceActivities(Identity spaceIdentity) {
     return AStreamQueryBuilder.builder()
@@ -256,6 +302,23 @@ public class ActivityDAOImpl extends GenericDAOJPAImpl<Activity, Long> implement
     }
   }
   
+  @Override
+  public List<String> getUserSpacesActivityIds(Identity ownerIdentity,
+                                               int offset,
+                                               int limit,
+                                               List<String> spaceIds) {
+    if (spaceIds.size() > 0) {
+      return convertActivityEntitiesToIds(AStreamQueryBuilder.builder()
+                                                             .memberOfSpaceIds(spaceIds)
+                                                             .offset(offset)
+                                                             .limit(limit)
+                                                             .buildId()
+                                                             .getResultList());
+    } else {
+      return Collections.emptyList();
+    }
+  }
+  
   public int getNumberOfUserSpacesActivities(Identity ownerIdentity, List<String> spaceIds) {
     if (spaceIds.size() > 0) {
       return AStreamQueryBuilder.builder()
@@ -269,6 +332,7 @@ public class ActivityDAOImpl extends GenericDAOJPAImpl<Activity, Long> implement
   }
   
   @Override
+  @ExoTransactional
   public List<Activity> getNewerOnUserSpacesActivities(Identity ownerIdentity,
                                                        long sinceTime,
                                                        int limit, List<String> spaceIds) {
@@ -301,6 +365,7 @@ public class ActivityDAOImpl extends GenericDAOJPAImpl<Activity, Long> implement
   }
 
   @Override
+  @ExoTransactional
   public List<Activity> getOlderOnUserSpacesActivities(Identity ownerIdentity, long sinceTime, int limit, List<String> spaceIds) {
     if (spaceIds.size() > 0) {
       return AStreamQueryBuilder.builder()
@@ -331,6 +396,7 @@ public class ActivityDAOImpl extends GenericDAOJPAImpl<Activity, Long> implement
   }
 
   @Override
+  @ExoTransactional
   public List<Activity> getActivitiesOfConnections(Identity ownerIdentity, int offset, int limit) {
     return AStreamQueryBuilder.builder()
                               .myIdentity(ownerIdentity)
@@ -338,6 +404,16 @@ public class ActivityDAOImpl extends GenericDAOJPAImpl<Activity, Long> implement
                               .limit(limit)
                               .build()
                               .getResultList();
+  }
+  
+  @Override
+  public List<String> getActivityIdsOfConnections(Identity ownerIdentity, int offset, int limit) {
+    return convertActivityEntitiesToIds(AStreamQueryBuilder.builder()
+                                                           .myIdentity(ownerIdentity)
+                                                           .offset(offset)
+                                                           .limit(limit)
+                                                           .buildId()
+                                                           .getResultList());
   }
 
   @Override
@@ -350,6 +426,7 @@ public class ActivityDAOImpl extends GenericDAOJPAImpl<Activity, Long> implement
   }
 
   @Override
+  @ExoTransactional
   public List<Activity> getNewerOnActivitiesOfConnections(Identity ownerIdentity, long sinceTime, long limit) {
     return AStreamQueryBuilder.builder()
                               .myIdentity(ownerIdentity)
@@ -372,6 +449,7 @@ public class ActivityDAOImpl extends GenericDAOJPAImpl<Activity, Long> implement
   }
 
   @Override
+  @ExoTransactional
   public List<Activity> getOlderOnActivitiesOfConnections(Identity ownerIdentity, long sinceTime, int limit) {
     return AStreamQueryBuilder.builder()
                               .myIdentity(ownerIdentity)
@@ -411,6 +489,21 @@ public class ActivityDAOImpl extends GenericDAOJPAImpl<Activity, Long> implement
                               .buildActivitiesByPosterCount()
                               .getSingleResult()
                               .intValue();
+  }
+  
+  /**
+   * Gets the activity's ID only and return the list of this one
+   * 
+   * @param list Activity's Ids
+   * @return
+   */
+  private List<String> convertActivityEntitiesToIds(List<Tuple> list) {
+    List<String> ids = new LinkedList<String>();
+    if (list == null) return ids;
+    for (Tuple t : list) {
+      ids.add(String.valueOf(t.get(StreamItem_.activityId.getName())));
+    }
+    return ids;
   }
 
 }
