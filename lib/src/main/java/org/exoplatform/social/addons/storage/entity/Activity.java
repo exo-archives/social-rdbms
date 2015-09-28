@@ -68,7 +68,6 @@ public class Activity extends BaseActivity {
   
   /** */
   @OneToMany(cascade=CascadeType.ALL, orphanRemoval=true, mappedBy="activity", fetch=FetchType.LAZY)
-  @OrderBy("id DESC")
   private List<StreamItem> streamItems;
 
   /** */
