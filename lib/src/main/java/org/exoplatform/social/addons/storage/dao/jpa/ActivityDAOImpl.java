@@ -45,6 +45,7 @@ public class ActivityDAOImpl extends GenericDAOJPAImpl<Activity, Long> implement
     return super.find(id);
   }
   
+  @ExoTransactional
   public List<Activity> getActivities(Identity owner, Identity viewer, long offset, long limit) throws ActivityStorageException {
     return AStreamQueryBuilder.builder()
                               .owner(owner)
@@ -65,6 +66,7 @@ public class ActivityDAOImpl extends GenericDAOJPAImpl<Activity, Long> implement
         .getResultList());
   }
 
+  @ExoTransactional
   public List<Activity> getActivityFeed(Identity ownerIdentity, int offset, int limit, List<String> spaceIds) {
     return AStreamQueryBuilder.builder()
                               .owner(ownerIdentity)
@@ -102,6 +104,7 @@ public class ActivityDAOImpl extends GenericDAOJPAImpl<Activity, Long> implement
   }
   
   @Override
+  @ExoTransactional
   public List<Activity> getNewerOnActivityFeed(Identity ownerIdentity, long sinceTime, int limit, List<String> spaceIds) {
     return AStreamQueryBuilder.builder()
                               .owner(ownerIdentity)
@@ -129,6 +132,7 @@ public class ActivityDAOImpl extends GenericDAOJPAImpl<Activity, Long> implement
   }
 
   @Override
+  @ExoTransactional
   public List<Activity> getOlderOnActivityFeed(Identity ownerIdentity, long sinceTime,int limit, List<String> spaceIds) {
     return AStreamQueryBuilder.builder()
                               .owner(ownerIdentity)
@@ -154,6 +158,7 @@ public class ActivityDAOImpl extends GenericDAOJPAImpl<Activity, Long> implement
   }
 
   @Override
+  @ExoTransactional
   public List<Activity> getUserActivities(Identity owner,
                                           long offset,
                                           long limit) throws ActivityStorageException {
@@ -177,6 +182,7 @@ public class ActivityDAOImpl extends GenericDAOJPAImpl<Activity, Long> implement
   }
   
   @Override
+  @ExoTransactional
   public List<Activity> getNewerOnUserActivities(Identity ownerIdentity, long sinceTime, int limit) {
     return AStreamQueryBuilder.builder()
                               .owner(ownerIdentity)
@@ -200,6 +206,7 @@ public class ActivityDAOImpl extends GenericDAOJPAImpl<Activity, Long> implement
   }
 
   @Override
+  @ExoTransactional
   public List<Activity> getOlderOnUserActivities(Identity ownerIdentity, long sinceTime, int limit) {
     return AStreamQueryBuilder.builder()
                               .owner(ownerIdentity)
@@ -220,6 +227,7 @@ public class ActivityDAOImpl extends GenericDAOJPAImpl<Activity, Long> implement
                               .intValue();
   }
 
+  @ExoTransactional
   public List<Activity> getSpaceActivities(Identity spaceOwner, long offset, long limit) throws ActivityStorageException {
     return AStreamQueryBuilder.builder()
                               .owner(spaceOwner)
@@ -248,6 +256,7 @@ public class ActivityDAOImpl extends GenericDAOJPAImpl<Activity, Long> implement
   }
   
   @Override
+  @ExoTransactional
   public List<Activity> getNewerOnSpaceActivities(Identity spaceIdentity, long sinceTime, int limit) {
     return AStreamQueryBuilder.builder()
                               .owner(spaceIdentity)
@@ -269,6 +278,7 @@ public class ActivityDAOImpl extends GenericDAOJPAImpl<Activity, Long> implement
   }
 
   @Override
+  @ExoTransactional
   public List<Activity> getOlderOnSpaceActivities(Identity spaceIdentity, long sinceTime, int limit) {
     return AStreamQueryBuilder.builder()
                               .owner(spaceIdentity)
@@ -289,6 +299,7 @@ public class ActivityDAOImpl extends GenericDAOJPAImpl<Activity, Long> implement
   }
 
   @Override
+  @ExoTransactional
   public List<Activity> getUserSpacesActivities(Identity ownerIdentity, int offset, int limit, List<String> spaceIds) {
     if (spaceIds.size() > 0) {
       return AStreamQueryBuilder.builder()

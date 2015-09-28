@@ -121,7 +121,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
     super.setInjectStreams(mustInject);
   }
 
-  private ExoSocialActivity convertActivityEntityToActivity(Activity activityEntity, boolean includedComments) {
+  private ExoSocialActivity convertActivityEntityToActivity(Activity activityEntity) {
     if(activityEntity == null) return null;
     //
     ExoSocialActivity activity = new ExoSocialActivityImpl(activityEntity.getPosterId(), activityEntity.getType(),
@@ -149,19 +149,17 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
     activity.setPostedTime(activityEntity.getPosted());
     activity.setUpdated(activityEntity.getLastUpdated());
     //
-    if (includedComments) {
-      List<String> commentIds = new ArrayList<String>();
-      List<String> replyToIds = new ArrayList<String>();
-      List<Comment> comments = activityEntity.getComments() != null ? activityEntity.getComments() : new ArrayList<Comment>();
-      for (Comment comment : comments) {
-        if (!commentIds.contains(comment.getPosterId())) {
-          commentIds.add(comment.getPosterId());
-        }
-        replyToIds.add(getExoCommentID(comment.getId()));
+    List<String> commentIds = new ArrayList<String>();
+    List<String> replyToIds = new ArrayList<String>();
+    List<Comment> comments = activityEntity.getComments() != null ? activityEntity.getComments() : new ArrayList<Comment>();
+    for (Comment comment : comments) {
+      if (!commentIds.contains(comment.getPosterId())) {
+        commentIds.add(comment.getPosterId());
       }
-      activity.setCommentedIds(commentIds.toArray(new String[commentIds.size()]));
-      activity.setReplyToId(replyToIds.toArray(new String[replyToIds.size()]));
+      replyToIds.add(getExoCommentID(comment.getId()));
     }
+    activity.setCommentedIds(commentIds.toArray(new String[commentIds.size()]));
+    activity.setReplyToId(replyToIds.toArray(new String[replyToIds.size()]));
     activity.setMentionedIds(activityEntity.getMentionerIds().toArray(new String[activityEntity.getMentionerIds().size()]));
     //
     
@@ -289,7 +287,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
     List<ExoSocialActivity> exoSocialActivities = new ArrayList<ExoSocialActivity>();
     if (activities == null) return exoSocialActivities;
     for (Activity activity : activities) {
-      exoSocialActivities.add(convertActivityEntityToActivity(activity, false));
+      exoSocialActivities.add(convertActivityEntityToActivity(activity));
     }
     return exoSocialActivities;
   }
@@ -304,7 +302,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
     }
     try {
       Activity entity = activityDAO.find(Long.valueOf(activityId));
-      return convertActivityEntityToActivity(entity, true);
+      return convertActivityEntityToActivity(entity);
     } catch (Exception e) {
       if (PropertyManager.isDevelopping()) {
         throw new ActivityStorageException(Type.FAILED_TO_GET_ACTIVITY, e.getMessage(), e);
@@ -378,6 +376,8 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
       activityDAO.update(activityEntity);
       //
       updateLastUpdatedForStreamItem(activityEntity);
+      //
+      activity = convertActivityEntityToActivity(activityEntity);
     } finally {
       EntityManagerHolder.get().lock(activityEntity, LockModeType.NONE);
     }
@@ -559,11 +559,10 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
   }
   
   @Override
-  @ExoTransactional
   public ExoSocialActivity getParentActivity(ExoSocialActivity comment) throws ActivityStorageException {
     try {
       Long commentId = getCommentID(comment.getId());
-      return convertActivityEntityToActivity(commentDAO.findActivity(commentId), true);
+      return convertActivityEntityToActivity(commentDAO.findActivity(commentId));
     } catch (NumberFormatException e) {
       LOG.warn("The input ExoSocialActivity is not comment, it is Activity");
       return null;
