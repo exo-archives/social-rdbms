@@ -36,13 +36,6 @@ import org.exoplatform.social.addons.storage.entity.Comment;
 public class CommentDAOImpl extends GenericDAOJPAImpl<Comment, Long>  implements CommentDAO {
   
   @Override
-  @ExoTransactional
-  public Comment find(Long id) {
-    return super.find(id);
-  }
-  
-  @Override
-  @ExoTransactional
   public List<Comment> getComments(Activity existingActivity, int offset, int limit) {
     
     return CommentQueryBuilder.builder()
@@ -55,7 +48,6 @@ public class CommentDAOImpl extends GenericDAOJPAImpl<Comment, Long>  implements
   }
   
   @Override
-  @ExoTransactional
   public List<Comment> getNewerOfComments(Activity existingActivity, long sinceTime, int limit) {
     
     return CommentQueryBuilder.builder()
@@ -70,7 +62,6 @@ public class CommentDAOImpl extends GenericDAOJPAImpl<Comment, Long>  implements
   }
   
   @Override
-  @ExoTransactional
   public List<Comment> getOlderOfComments(Activity existingActivity, long sinceTime, int limit) {
     return CommentQueryBuilder.builder()
                               .activityId(existingActivity.getId())

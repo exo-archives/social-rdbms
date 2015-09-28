@@ -22,11 +22,11 @@ import java.util.List;
 
 import javax.persistence.Tuple;
 
-import org.exoplatform.commons.api.persistence.ExoTransactional;
 import org.exoplatform.commons.persistence.impl.GenericDAOJPAImpl;
 import org.exoplatform.social.addons.storage.dao.ActivityDAO;
 import org.exoplatform.social.addons.storage.dao.jpa.query.AStreamQueryBuilder;
 import org.exoplatform.social.addons.storage.entity.Activity;
+import org.exoplatform.social.addons.storage.entity.Activity_;
 import org.exoplatform.social.addons.storage.entity.StreamItem_;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.storage.ActivityStorageException;
@@ -39,13 +39,6 @@ import org.exoplatform.social.core.storage.ActivityStorageException;
  */
 public class ActivityDAOImpl extends GenericDAOJPAImpl<Activity, Long> implements ActivityDAO {
   
-  @Override
-  @ExoTransactional
-  public Activity find(Long id) {
-    return super.find(id);
-  }
-  
-  @ExoTransactional
   public List<Activity> getActivities(Identity owner, Identity viewer, long offset, long limit) throws ActivityStorageException {
     return AStreamQueryBuilder.builder()
                               .owner(owner)
@@ -66,7 +59,6 @@ public class ActivityDAOImpl extends GenericDAOJPAImpl<Activity, Long> implement
         .getResultList());
   }
 
-  @ExoTransactional
   public List<Activity> getActivityFeed(Identity ownerIdentity, int offset, int limit, List<String> spaceIds) {
     return AStreamQueryBuilder.builder()
                               .owner(ownerIdentity)
@@ -104,7 +96,6 @@ public class ActivityDAOImpl extends GenericDAOJPAImpl<Activity, Long> implement
   }
   
   @Override
-  @ExoTransactional
   public List<Activity> getNewerOnActivityFeed(Identity ownerIdentity, long sinceTime, int limit, List<String> spaceIds) {
     return AStreamQueryBuilder.builder()
                               .owner(ownerIdentity)
@@ -132,7 +123,6 @@ public class ActivityDAOImpl extends GenericDAOJPAImpl<Activity, Long> implement
   }
 
   @Override
-  @ExoTransactional
   public List<Activity> getOlderOnActivityFeed(Identity ownerIdentity, long sinceTime,int limit, List<String> spaceIds) {
     return AStreamQueryBuilder.builder()
                               .owner(ownerIdentity)
@@ -158,7 +148,6 @@ public class ActivityDAOImpl extends GenericDAOJPAImpl<Activity, Long> implement
   }
 
   @Override
-  @ExoTransactional
   public List<Activity> getUserActivities(Identity owner,
                                           long offset,
                                           long limit) throws ActivityStorageException {
@@ -182,7 +171,6 @@ public class ActivityDAOImpl extends GenericDAOJPAImpl<Activity, Long> implement
   }
   
   @Override
-  @ExoTransactional
   public List<Activity> getNewerOnUserActivities(Identity ownerIdentity, long sinceTime, int limit) {
     return AStreamQueryBuilder.builder()
                               .owner(ownerIdentity)
@@ -206,7 +194,6 @@ public class ActivityDAOImpl extends GenericDAOJPAImpl<Activity, Long> implement
   }
 
   @Override
-  @ExoTransactional
   public List<Activity> getOlderOnUserActivities(Identity ownerIdentity, long sinceTime, int limit) {
     return AStreamQueryBuilder.builder()
                               .owner(ownerIdentity)
@@ -227,7 +214,6 @@ public class ActivityDAOImpl extends GenericDAOJPAImpl<Activity, Long> implement
                               .intValue();
   }
 
-  @ExoTransactional
   public List<Activity> getSpaceActivities(Identity spaceOwner, long offset, long limit) throws ActivityStorageException {
     return AStreamQueryBuilder.builder()
                               .owner(spaceOwner)
@@ -256,7 +242,6 @@ public class ActivityDAOImpl extends GenericDAOJPAImpl<Activity, Long> implement
   }
   
   @Override
-  @ExoTransactional
   public List<Activity> getNewerOnSpaceActivities(Identity spaceIdentity, long sinceTime, int limit) {
     return AStreamQueryBuilder.builder()
                               .owner(spaceIdentity)
@@ -278,7 +263,6 @@ public class ActivityDAOImpl extends GenericDAOJPAImpl<Activity, Long> implement
   }
 
   @Override
-  @ExoTransactional
   public List<Activity> getOlderOnSpaceActivities(Identity spaceIdentity, long sinceTime, int limit) {
     return AStreamQueryBuilder.builder()
                               .owner(spaceIdentity)
@@ -299,7 +283,6 @@ public class ActivityDAOImpl extends GenericDAOJPAImpl<Activity, Long> implement
   }
 
   @Override
-  @ExoTransactional
   public List<Activity> getUserSpacesActivities(Identity ownerIdentity, int offset, int limit, List<String> spaceIds) {
     if (spaceIds.size() > 0) {
       return AStreamQueryBuilder.builder()
@@ -343,7 +326,6 @@ public class ActivityDAOImpl extends GenericDAOJPAImpl<Activity, Long> implement
   }
   
   @Override
-  @ExoTransactional
   public List<Activity> getNewerOnUserSpacesActivities(Identity ownerIdentity,
                                                        long sinceTime,
                                                        int limit, List<String> spaceIds) {
@@ -376,7 +358,6 @@ public class ActivityDAOImpl extends GenericDAOJPAImpl<Activity, Long> implement
   }
 
   @Override
-  @ExoTransactional
   public List<Activity> getOlderOnUserSpacesActivities(Identity ownerIdentity, long sinceTime, int limit, List<String> spaceIds) {
     if (spaceIds.size() > 0) {
       return AStreamQueryBuilder.builder()
@@ -407,7 +388,6 @@ public class ActivityDAOImpl extends GenericDAOJPAImpl<Activity, Long> implement
   }
 
   @Override
-  @ExoTransactional
   public List<Activity> getActivitiesOfConnections(Identity ownerIdentity, int offset, int limit) {
     return AStreamQueryBuilder.builder()
                               .myIdentity(ownerIdentity)
@@ -437,7 +417,6 @@ public class ActivityDAOImpl extends GenericDAOJPAImpl<Activity, Long> implement
   }
 
   @Override
-  @ExoTransactional
   public List<Activity> getNewerOnActivitiesOfConnections(Identity ownerIdentity, long sinceTime, long limit) {
     return AStreamQueryBuilder.builder()
                               .myIdentity(ownerIdentity)
@@ -460,7 +439,6 @@ public class ActivityDAOImpl extends GenericDAOJPAImpl<Activity, Long> implement
   }
 
   @Override
-  @ExoTransactional
   public List<Activity> getOlderOnActivitiesOfConnections(Identity ownerIdentity, long sinceTime, int limit) {
     return AStreamQueryBuilder.builder()
                               .myIdentity(ownerIdentity)
