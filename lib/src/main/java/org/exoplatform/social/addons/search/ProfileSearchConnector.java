@@ -38,12 +38,12 @@ import org.exoplatform.services.log.Log;
 public class ProfileSearchConnector extends SearchServiceConnector {
   private static final Log LOG = ExoLogger.getLogger(ProfileSearchConnector.class);
 
-  private List<String> indexFields;
+  private List<String> searchFields;
   
   public ProfileSearchConnector(InitParams initParams) {
     super(initParams);
     PropertiesParam param = initParams.getPropertiesParam("constructor.params");
-    this.indexFields = new ArrayList<String>(Arrays.asList(param.getProperty("indexFields").split(",")));
+    this.searchFields = new ArrayList<String>(Arrays.asList(param.getProperty("searchFields").split(",")));
   }
 
   @Override

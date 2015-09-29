@@ -36,7 +36,7 @@ import org.exoplatform.container.xml.PropertiesParam;
 public class ProfileIndexingServiceConnector extends ElasticIndexingServiceConnector {
 
   private String index;
-  private List<String> searchFields;
+  private List<String> indexFields;
 
   //SearchResult information
   private String nameElasticFieldName = "name";
@@ -48,7 +48,7 @@ public class ProfileIndexingServiceConnector extends ElasticIndexingServiceConne
     PropertiesParam param = initParams.getPropertiesParam("constructor.params");
     this.index = param.getProperty("index");
     this.nameElasticFieldName = param.getProperty("nameField");
-    this.searchFields = new ArrayList<String>(Arrays.asList(param.getProperty("searchFields").split(",")));
+    this.indexFields = new ArrayList<String>(Arrays.asList(param.getProperty("indexFields").split(",")));
     //Indicate in which order element will be displayed
     sortMapping.put("name", "name");
   }
