@@ -22,8 +22,7 @@
    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
    xsi:schemaLocation="http://www.exoplatform.org/xml/ns/kernel_1_2.xsd http://www.exoplatform.org/xml/ns/kernel_1_2.xsd"
    xmlns="http://www.exoplatform.org/xml/ns/kernel_1_2.xsd">
-
-	<external-component-plugins>
+   <external-component-plugins>
     <target-component>org.exoplatform.commons.api.persistence.DataInitializer</target-component>
     <component-plugin>
       <name>SocialRDBMSChangeLogsPlugin</name>
@@ -38,5 +37,40 @@
       </init-params>
     </component-plugin>
   </external-component-plugins>
-
+  
+   <external-component-plugins>
+    <target-component>org.exoplatform.addons.es.index.IndexingService</target-component>
+    <component-plugin>
+      <name>ProfileIndexingServiceConnector</name>
+      <set-method>addConnector</set-method>
+      <type>org.exoplatform.social.addons.search.ProfileIndexingServiceConnector</type>
+      <init-params>
+        <properties-param>
+          <name>constructor.params</name>
+          <property name="index" value="profile"/>
+          <property name="type" value="profile"/>
+          <property name="indexFields" value="name, position, skills"/>
+        </properties-param>
+      </init-params>
+    </component-plugin>
+  </external-component-plugins>
+  
+  <external-component-plugins>
+    <target-component>org.exoplatform.commons.api.search.SearchService</target-component>
+    <component-plugin>
+      <name>ProfileSearchConnector</name>
+      <set-method>addConnector</set-method>
+      <type>org.exoplatform.social.addons.search.ProfileSearchConnector</type>
+      <init-params>
+        <properties-param>
+          <name>constructor.params</name>
+          <property name="searchType" value="profile"/>
+          <property name="index" value="profile"/>
+          <property name="nameField" value="name"/>
+          <property name="searchFields" value="name, position, skills"/>
+        </properties-param>
+      </init-params>
+    </component-plugin>
+  </external-component-plugins>
+  
 </configuration>
