@@ -9,7 +9,7 @@
   <property name="autoIncrement" value="true" dbms="mysql,mssql,h2,sybase,db2,hsqldb"/>
   <property name="autoIncrement" value="false" dbms="oracle,postgresql"/>    
     
-    <changeSet author="tuvd@exoplatform.com" id="1.0.0-1">
+    <changeSet author="social" id="1.0.0-1">
         <createTable tableName="SOC_ACTIVITIES">
             <column autoIncrement="true" name="ACTIVITY_ID" type="BIGINT">
                 <constraints primaryKey="true"/>
@@ -37,7 +37,7 @@
             <append value=" ENGINE=INNODB CHARSET=UTF8 COLLATE utf8_general_ci"/>
         </modifySql>
     </changeSet>
-    <changeSet author="tuvd@exoplatform.com" id="1.0.0-1.1">
+    <changeSet author="social" id="1.0.0-1.1">
         <createIndex tableName="SOC_ACTIVITIES" indexName="IDX_SOC_ACTIVITIES_01">
             <column name="lastUpdated" descending="true"/>
         </createIndex>
@@ -52,7 +52,7 @@
         </createIndex>
     </changeSet>
     
-    <changeSet author="tuvd@exoplatform.com" id="1.0.0-2">
+    <changeSet author="social" id="1.0.0-2">
         <createTable tableName="SOC_ACTIVITY_LIKERS">
             <column name="ACTIVITY_ID" type="BIGINT">
                 <constraints nullable="false"/>
@@ -60,7 +60,7 @@
             <column name="LIKER_ID" type="VARCHAR(36)"/>
         </createTable>
     </changeSet>
-    <changeSet author="tuvd@exoplatform.com" id="1.0.0-3">
+    <changeSet author="social" id="1.0.0-3">
         <createTable tableName="SOC_MENTIONS">
             <column autoIncrement="true" name="MENTION_ID" type="BIGINT">
                 <constraints primaryKey="true"/>
@@ -76,7 +76,7 @@
             <column name="MENTIONER_ID"/>
         </createIndex>
     </changeSet>
-    <changeSet author="tuvd@exoplatform.com" id="1.0.0-4">
+    <changeSet author="social" id="1.0.0-4">
         <createTable tableName="SOC_ACTIVITY_TEMPLATE_PARAMS">
             <column name="ACTIVITY_ID" type="BIGINT">
                 <constraints nullable="false"/>
@@ -90,7 +90,7 @@
             <append value=" ENGINE=INNODB CHARSET=UTF8 COLLATE utf8_general_ci"/>
         </modifySql>
     </changeSet>
-    <changeSet author="tuvd@exoplatform.com" id="1.0.0-5">
+    <changeSet author="social" id="1.0.0-5">
         <createTable tableName="SOC_COMMENTS">
             <column autoIncrement="true" name="COMMENT_ID" type="BIGINT">
                 <constraints primaryKey="true"/>
@@ -118,7 +118,7 @@
             <append value=" ENGINE=INNODB CHARSET=UTF8 COLLATE utf8_general_ci"/>
         </modifySql>
     </changeSet>
-    <changeSet author="tuvd@exoplatform.com" id="1.0.0-5.1">
+    <changeSet author="social" id="1.0.0-5.1">
         <createIndex tableName="SOC_COMMENTS" indexName="IDX_SOC_COMMENTS_01">
             <column name="lastUpdated" descending="true"/>
         </createIndex>
@@ -127,7 +127,7 @@
         </createIndex>
     </changeSet>
 
-    <changeSet author="tuvd@exoplatform.com" id="1.0.0-6">
+    <changeSet author="social" id="1.0.0-6">
         <createTable tableName="SOC_COMMENT_TEMPLATE_PARAMS">
             <column name="COMMENT_ID" type="BIGINT">
                 <constraints nullable="false"/>
@@ -141,7 +141,7 @@
             <append value=" ENGINE=INNODB CHARSET=UTF8 COLLATE utf8_general_ci"/>
         </modifySql>
     </changeSet>
-    <changeSet author="tuvd@exoplatform.com" id="1.0.0-7">
+    <changeSet author="social" id="1.0.0-7">
         <createTable tableName="SOC_CONNECTIONS">
             <column autoIncrement="true" name="CONNECTION_ID" type="BIGINT">
                 <constraints primaryKey="true"/>
@@ -165,7 +165,7 @@
             <column name="status"/>
         </createIndex>
     </changeSet>
-    <changeSet author="tuvd@exoplatform.com" id="1.0.0-8">
+    <changeSet author="social" id="1.0.0-8">
         <createTable tableName="SOC_STREAM_ITEMS">
             <column autoIncrement="true" name="STREAM_ITEM_ID" type="BIGINT">
                 <constraints primaryKey="true"/>
@@ -176,7 +176,7 @@
             <column name="lastUpdated" type="BIGINT"/>
         </createTable>
     </changeSet>
-    <changeSet author="thanhvc@exoplatform.com" id="1.0.0-8.1">
+    <changeSet author="social" id="1.0.0-8.1">
         <createIndex tableName="SOC_STREAM_ITEMS" indexName="IDX_SOC_STREAM_ITEMS_01">
             <column name="lastUpdated" descending="true"/>
         </createIndex>
@@ -184,33 +184,33 @@
             <column name="streamType"/>
         </createIndex>
     </changeSet>
-    <changeSet author="tuvd@exoplatform.com" id="1.0.0-9">
+    <changeSet author="social" id="1.0.0-9">
         <addPrimaryKey columnNames="ACTIVITY_ID, TEMPLATE_PARAM_KEY" constraintName="PK_SOC_ACTIVITY_TEMPLATE_PARAMS" tableName="SOC_ACTIVITY_TEMPLATE_PARAMS"/>
     </changeSet>
-    <changeSet author="tuvd@exoplatform.com" id="1.0.0-10">
+    <changeSet author="social" id="1.0.0-10">
         <addPrimaryKey columnNames="COMMENT_ID, TEMPLATE_PARAM_KEY" constraintName="PK_SOC_COMMENT_TEMPLATE_PARAMS" tableName="SOC_COMMENT_TEMPLATE_PARAMS"/>
     </changeSet>
-    <changeSet author="tuvd@exoplatform.com" id="1.0.0-11">
+    <changeSet author="social" id="1.0.0-11">
         <addForeignKeyConstraint baseColumnNames="ACTIVITY_ID" baseTableName="SOC_ACTIVITY_LIKERS" constraintName="FK240B6C70BBA54EEF" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="ACTIVITY_ID" referencedTableName="SOC_ACTIVITIES"/>
     </changeSet>
-    <changeSet author="tuvd@exoplatform.com" id="1.0.0-12">
+    <changeSet author="social" id="1.0.0-12">
         <addForeignKeyConstraint baseColumnNames="ACTIVITY_ID" baseTableName="SOC_MENTIONS" constraintName="FK388EF94BBA54EEF" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="ACTIVITY_ID" referencedTableName="SOC_ACTIVITIES"/>
     </changeSet>
-    <changeSet author="tuvd@exoplatform.com" id="1.0.0-13">
+    <changeSet author="social" id="1.0.0-13">
         <addForeignKeyConstraint baseColumnNames="ACTIVITY_ID" baseTableName="SOC_COMMENTS" constraintName="FK708761CCBBA54EEF" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="ACTIVITY_ID" referencedTableName="SOC_ACTIVITIES"/>
     </changeSet>
-    <changeSet author="tuvd@exoplatform.com" id="1.0.0-14">
+    <changeSet author="social" id="1.0.0-14">
         <addForeignKeyConstraint baseColumnNames="ACTIVITY_ID" baseTableName="SOC_ACTIVITY_TEMPLATE_PARAMS" constraintName="FKB6892F93BBA54EEF" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="ACTIVITY_ID" referencedTableName="SOC_ACTIVITIES"/>
     </changeSet>
-    <changeSet author="tuvd@exoplatform.com" id="1.0.0-15">
+    <changeSet author="social" id="1.0.0-15">
         <addForeignKeyConstraint baseColumnNames="COMMENT_ID" baseTableName="SOC_COMMENT_TEMPLATE_PARAMS" constraintName="FKB8CEC41347B1AF25" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="COMMENT_ID" referencedTableName="SOC_COMMENTS"/>
     </changeSet>
-    <changeSet author="tuvd@exoplatform.com" id="1.0.0-16">
+    <changeSet author="social" id="1.0.0-16">
 		    <addUniqueConstraint columnNames="senderId, receiverId"
 		            constraintName="senderId_receiverId"
 		            tableName="SOC_CONNECTIONS"/>
 	</changeSet>
-    <changeSet author="tuvd@exoplatform.com" id="1.0.0-17">
+    <changeSet author="social" id="1.0.0-17">
         <addForeignKeyConstraint baseColumnNames="ACTIVITY_ID" baseTableName="SOC_STREAM_ITEMS" constraintName="FKFBFBDDF9BBA54EEF" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="ACTIVITY_ID" referencedTableName="SOC_ACTIVITIES"/>
     </changeSet>
 </databaseChangeLog>
