@@ -18,32 +18,48 @@ package org.exoplatform.social.addons.search;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.lang.StringUtils;
 import org.exoplatform.addons.es.domain.Document;
 import org.exoplatform.addons.es.index.elastic.ElasticIndexingServiceConnector;
 import org.exoplatform.container.xml.InitParams;
 import org.exoplatform.container.xml.PropertiesParam;
+import org.exoplatform.social.addons.storage.dao.ConnectionDAO;
+import org.exoplatform.social.addons.storage.entity.Connection;
+import org.exoplatform.social.core.identity.model.Identity;
+import org.exoplatform.social.core.identity.model.Profile;
+import org.exoplatform.social.core.relationship.model.Relationship;
+import org.exoplatform.social.core.storage.api.IdentityStorage;
 
 /**
- * Created by The eXo Platform SAS
- * Author : eXoPlatform
- *          exo@exoplatform.com
- * Sep 29, 2015  
+ * Created by The eXo Platform SAS Author : eXoPlatform exo@exoplatform.com Sep
+ * 29, 2015
  */
 public class ProfileIndexingServiceConnector extends ElasticIndexingServiceConnector {
+  public final static String TYPE = "profile"; 
+  /** */
+  private final IdentityStorage identityStorage;
+  /** */
+  private final ConnectionDAO connectionDAO;
 
+  /** */
   private String index;
+  
+  /** */
   private List<String> indexFields;
 
-  //SearchResult information
+  // SearchResult information
   private String nameElasticFieldName = "name";
 
   private Map<String, String> sortMapping = new HashMap<String, String>();
-  
-  public ProfileIndexingServiceConnector(InitParams initParams) {
+
+  public ProfileIndexingServiceConnector(InitParams initParams,
+                                         IdentityStorage identityStorage,
+                                         ConnectionDAO connectionDAO) {
     super(initParams);
     PropertiesParam param = initParams.getPropertiesParam("constructor.params");
     this.index = param.getProperty("index");
@@ -51,21 +67,90 @@ public class ProfileIndexingServiceConnector extends ElasticIndexingServiceConne
     this.indexFields = new ArrayList<String>(Arrays.asList(param.getProperty("indexFields").split(",")));
     //Indicate in which order element will be displayed
     sortMapping.put("name", "name");
+    
+    this.identityStorage = identityStorage;
+    this.connectionDAO = connectionDAO;
   }
-  
+
   @Override
   public Document create(String id) {
-      return null;
+    if (StringUtils.isBlank(id)) {
+      throw new IllegalArgumentException("Id is null");
+    }
+    Identity identity = identityStorage.findIdentityById(id);
+    Profile profile = identity.getProfile();
+    
+    Map<String, String> fields = new HashMap<String, String>();  
+    fields.put("name", profile.getFullName());
+    fields.put("position", profile.getPosition());
+    fields.put("skills", (String)profile.getProperty(Profile.EXPERIENCES_SKILLS));
+    fields.put("avatarUrl", profile.getAvatarUrl());
+    Date createdDate = new Date(profile.getCreatedTime());
+    //confirmed connections
+    List<Connection> connections = connectionDAO.getConnections(identity, Relationship.Type.CONFIRMED, 0, -1);
+    String connectionsStr = buildConnectionsToStr(identity, connections);
+    fields.put("connections", connectionsStr);
+    //outgoing connections
+    connections = connectionDAO.getConnections(identity, Relationship.Type.OUTGOING, 0, -1);
+    connectionsStr = buildConnectionsToStr(identity, connections);
+    fields.put("outgoing", connectionsStr);
+    //incoming connections
+    connections = connectionDAO.getConnections(identity, Relationship.Type.INCOMING, 0, -1);
+    connectionsStr = buildConnectionsToStr(identity, connections);
+    fields.put("incoming", connectionsStr);
+    return new Document(TYPE, id, null, createdDate, null, fields);
+  }
+  /**
+   * Gets the identityId from connection list
+   * @param identity
+   * @param connections
+   * @return
+   */
+  private String buildConnectionsToStr(Identity identity, List<Connection> connections) {
+    StringBuilder sb = new StringBuilder();
+    String identityId = identity.getId();
+    for(Connection con : connections) {
+      if (identityId.equals(con.getSenderId())) {
+        sb.append(con.getReceiverId()).append(",");
+      } else {
+        sb.append(con.getSenderId()).append(",");
+      }
+    }
+    return sb.toString();
   }
 
   @Override
   public Document update(String id) {
-      return null;
+    if (StringUtils.isBlank(id)) {
+      throw new IllegalArgumentException("Id is null");
+    }
+    Identity identity = identityStorage.findIdentityById(id);
+    Profile profile = identity.getProfile();
+    
+    Map<String, String> fields = new HashMap<String, String>();  
+    fields.put("name", profile.getFullName());
+    fields.put("position", profile.getPosition());
+    fields.put("skills", (String)profile.getProperty(Profile.EXPERIENCES_SKILLS));
+    fields.put("avatarUrl", profile.getAvatarUrl());
+    Date createdDate = new Date(profile.getCreatedTime());
+    //confirmed connections
+    List<Connection> connections = connectionDAO.getConnections(identity, Relationship.Type.CONFIRMED, 0, -1);
+    String connectionsStr = buildConnectionsToStr(identity, connections);
+    fields.put("connections", connectionsStr);
+    //outgoing connections
+    connections = connectionDAO.getConnections(identity, Relationship.Type.OUTGOING, 0, -1);
+    connectionsStr = buildConnectionsToStr(identity, connections);
+    fields.put("outgoing", connectionsStr);
+    //incoming connections
+    connections = connectionDAO.getConnections(identity, Relationship.Type.INCOMING, 0, -1);
+    connectionsStr = buildConnectionsToStr(identity, connections);
+    fields.put("incoming", connectionsStr);
+    return new Document(TYPE, id, null, createdDate, null, fields);
   }
 
   @Override
   public String delete(String id) {
-      return null;
+    return id;
   }
 
 }
