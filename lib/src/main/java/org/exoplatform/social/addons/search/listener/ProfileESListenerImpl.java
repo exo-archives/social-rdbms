@@ -16,6 +16,9 @@
  */
 package org.exoplatform.social.addons.search.listener;
 
+import org.exoplatform.addons.es.domain.OperationType;
+import org.exoplatform.addons.es.index.IndexingService;
+import org.exoplatform.commons.utils.CommonsUtils;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 import org.exoplatform.social.core.profile.ProfileLifeCycleEvent;
@@ -33,23 +36,32 @@ public class ProfileESListenerImpl extends ProfileListenerPlugin {
 
   @Override
   public void avatarUpdated(ProfileLifeCycleEvent event) {
-    LOG.debug("Handled the updated profile avatar!");
+    IndexingService indexingService = CommonsUtils.getService(IndexingService.class);
+    //TODO : do not hard code
+    indexingService.addToIndexingQueue("profile", event.getProfile().getIdentity().getId(), OperationType.UPDATE);
+    LOG.info("Handled the updated profile avatar!");
     
   }
 
   @Override
   public void contactSectionUpdated(ProfileLifeCycleEvent event) {
-    LOG.debug("Handled the updated profile contact!");
+    IndexingService indexingService = CommonsUtils.getService(IndexingService.class);
+    //TODO : do not hard code
+    indexingService.addToIndexingQueue("profile", event.getProfile().getIdentity().getId(), OperationType.UPDATE);
+    LOG.info("Handled the updated profile contact!");
   }
 
   @Override
   public void experienceSectionUpdated(ProfileLifeCycleEvent event) {
-    LOG.debug("Handled the updated profile experience!");
+    LOG.info("Handled the updated profile experience!");
   }
 
   @Override
   public void createProfile(ProfileLifeCycleEvent event) {
-    LOG.debug("Handled the created profile!");
+    IndexingService indexingService = CommonsUtils.getService(IndexingService.class);
+    //TODO : do not hard code
+    indexingService.addToIndexingQueue("profile", event.getProfile().getIdentity().getId(), OperationType.CREATE);
+    LOG.info("Handled the created profile!");
   }
 
 }
