@@ -54,6 +54,15 @@
   </external-component-plugins>
   
   <external-component-plugins>
+    <target-component>org.exoplatform.social.core.manager.RelationshipManager</target-component>
+    <component-plugin>
+      <name>ConnectionESListenerImpl</name>
+      <set-method>addListenerPlugin</set-method>
+      <type>org.exoplatform.social.addons.search.listener.ConnectionESListenerImpl</type>
+    </component-plugin>
+  </external-component-plugins>
+  
+  <external-component-plugins>
     <target-component>org.exoplatform.services.organization.OrganizationService</target-component>
     <component-plugin>
       <name>UserESListenerImpl</name>
