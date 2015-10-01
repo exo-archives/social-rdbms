@@ -60,6 +60,10 @@
   <component>
     <type>org.exoplatform.social.core.storage.cache.CachedActivityStorage</type>
   </component>
+  
+  <component>
+    <type>org.exoplatform.social.core.storage.cache.CachedRelationshipStorage</type>
+  </component>
 
   <component>
     <key>org.exoplatform.social.addons.updater.RDBMSMigrationManager</key>
