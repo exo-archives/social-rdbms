@@ -53,6 +53,15 @@
     </component-plugin>
   </external-component-plugins>
   
+  <external-component-plugins>
+    <target-component>org.exoplatform.services.organization.OrganizationService</target-component>
+    <component-plugin>
+      <name>UserESListenerImpl</name>
+      <set-method>addListenerPlugin</set-method>
+      <type>org.exoplatform.social.addons.search.listener.UserESListenerImpl</type>
+    </component-plugin>
+  </external-component-plugins>
+  
    <external-component-plugins>
     <target-component>org.exoplatform.addons.es.index.IndexingService</target-component>
     <component-plugin>

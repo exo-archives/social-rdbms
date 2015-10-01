@@ -16,11 +16,11 @@
  */
 package org.exoplatform.social.addons.search.listener;
 
-import org.exoplatform.addons.es.domain.OperationType;
 import org.exoplatform.addons.es.index.IndexingService;
 import org.exoplatform.commons.utils.CommonsUtils;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
+import org.exoplatform.social.addons.search.ProfileIndexingServiceConnector;
 import org.exoplatform.social.core.profile.ProfileLifeCycleEvent;
 import org.exoplatform.social.core.profile.ProfileListenerPlugin;
 
@@ -36,31 +36,26 @@ public class ProfileESListenerImpl extends ProfileListenerPlugin {
 
   @Override
   public void avatarUpdated(ProfileLifeCycleEvent event) {
-    IndexingService indexingService = CommonsUtils.getService(IndexingService.class);
-    //TODO : do not hard code
-    indexingService.addToIndexingQueue("profile", event.getProfile().getIdentity().getId(), OperationType.UPDATE);
+    CommonsUtils.getService(IndexingService.class).reindex(ProfileIndexingServiceConnector.TYPE, event.getProfile().getIdentity().getId());
     LOG.info("Handled the updated profile avatar!");
     
   }
 
   @Override
   public void contactSectionUpdated(ProfileLifeCycleEvent event) {
-    IndexingService indexingService = CommonsUtils.getService(IndexingService.class);
-    //TODO : do not hard code
-    indexingService.addToIndexingQueue("profile", event.getProfile().getIdentity().getId(), OperationType.UPDATE);
+    CommonsUtils.getService(IndexingService.class).reindex(ProfileIndexingServiceConnector.TYPE, event.getProfile().getIdentity().getId());
     LOG.info("Handled the updated profile contact!");
   }
 
   @Override
   public void experienceSectionUpdated(ProfileLifeCycleEvent event) {
+    CommonsUtils.getService(IndexingService.class).reindex(ProfileIndexingServiceConnector.TYPE, event.getProfile().getIdentity().getId());
     LOG.info("Handled the updated profile experience!");
   }
 
   @Override
   public void createProfile(ProfileLifeCycleEvent event) {
-    IndexingService indexingService = CommonsUtils.getService(IndexingService.class);
-    //TODO : do not hard code
-    indexingService.addToIndexingQueue("profile", event.getProfile().getIdentity().getId(), OperationType.CREATE);
+    CommonsUtils.getService(IndexingService.class).index(ProfileIndexingServiceConnector.TYPE, event.getProfile().getIdentity().getId());
     LOG.info("Handled the created profile!");
   }
 
