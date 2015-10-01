@@ -36,7 +36,6 @@ import javax.persistence.LockModeType;
 import org.apache.commons.lang.ArrayUtils;
 import org.exoplatform.commons.api.persistence.ExoTransactional;
 import org.exoplatform.commons.persistence.impl.EntityManagerHolder;
-import org.exoplatform.commons.utils.CommonsUtils;
 import org.exoplatform.commons.utils.PropertyManager;
 import org.exoplatform.container.component.BaseComponentPlugin;
 import org.exoplatform.services.log.ExoLogger;
@@ -59,7 +58,6 @@ import org.exoplatform.social.core.activity.model.ExoSocialActivityImpl;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvider;
 import org.exoplatform.social.core.identity.provider.SpaceIdentityProvider;
-import org.exoplatform.social.core.relationship.model.Relationship;
 import org.exoplatform.social.core.storage.ActivityStorageException;
 import org.exoplatform.social.core.storage.ActivityStorageException.Type;
 import org.exoplatform.social.core.storage.api.IdentityStorage;
@@ -401,17 +399,10 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
    * @param activityEntity
    */
   private void saveStreamItemForCommenter(Identity commenter, Activity activityEntity) {
-    Identity posterActivity = identityStorage.findIdentityById(activityEntity.getPosterId());
     Identity ownerActivity = identityStorage.findIdentityById(activityEntity.getOwnerId());
-    if (! SpaceIdentityProvider.NAME.equals(ownerActivity.getProviderId()) && ! hasRelationship(commenter, posterActivity)) {
+    if (! SpaceIdentityProvider.NAME.equals(ownerActivity.getProviderId())) {
       createStreamItem(StreamType.COMMENTER, activityEntity, commenter.getId());
     }
-  }
-  
-  private boolean hasRelationship(Identity identity1, Identity identity2) {
-    RelationshipStorage relationshipStorage = CommonsUtils.getService(RelationshipStorage.class);
-    Relationship relationship = relationshipStorage.getRelationship(identity1, identity2);
-    return relationship != null && relationship.getStatus().equals(Relationship.Type.CONFIRMED);
   }
   
   private Set<String> processMentionOfComment(Activity activityEntity, Comment commentEntity, String[] activityMentioners, String[] commentMentioners, boolean isAdded) {
