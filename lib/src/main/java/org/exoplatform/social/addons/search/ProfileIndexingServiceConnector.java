@@ -89,15 +89,22 @@ public class ProfileIndexingServiceConnector extends ElasticIndexingServiceConne
     //confirmed connections
     List<Connection> connections = connectionDAO.getConnections(identity, Relationship.Type.CONFIRMED, 0, -1);
     String connectionsStr = buildConnectionsToStr(identity, connections);
-    fields.put("connections", connectionsStr);
+    if (connectionsStr.length() > 0) {
+      fields.put("connections", connectionsStr);
+    }
+    
     //outgoing connections
     connections = connectionDAO.getConnections(identity, Relationship.Type.OUTGOING, 0, -1);
     connectionsStr = buildConnectionsToStr(identity, connections);
-    fields.put("outgoing", connectionsStr);
+    if (connectionsStr.length() > 0) {
+      fields.put("outgoing", connectionsStr);
+    }
     //incoming connections
     connections = connectionDAO.getConnections(identity, Relationship.Type.INCOMING, 0, -1);
     connectionsStr = buildConnectionsToStr(identity, connections);
-    fields.put("incoming", connectionsStr);
+    if (connectionsStr.length() > 0) {
+      fields.put("incoming", connectionsStr);
+    }
     return new Document(TYPE, id, null, createdDate, null, fields);
   }
   /**
@@ -132,19 +139,28 @@ public class ProfileIndexingServiceConnector extends ElasticIndexingServiceConne
     fields.put("position", profile.getPosition());
     fields.put("skills", (String)profile.getProperty(Profile.EXPERIENCES_SKILLS));
     fields.put("avatarUrl", profile.getAvatarUrl());
+    fields.put("userName", identity.getRemoteId());
+    fields.put("email", profile.getEmail());
     Date createdDate = new Date(profile.getCreatedTime());
     //confirmed connections
     List<Connection> connections = connectionDAO.getConnections(identity, Relationship.Type.CONFIRMED, 0, -1);
     String connectionsStr = buildConnectionsToStr(identity, connections);
-    fields.put("connections", connectionsStr);
+    if (connectionsStr.length() > 0) {
+      fields.put("connections", connectionsStr);
+    }
     //outgoing connections
     connections = connectionDAO.getConnections(identity, Relationship.Type.OUTGOING, 0, -1);
     connectionsStr = buildConnectionsToStr(identity, connections);
-    fields.put("outgoing", connectionsStr);
+    if (connectionsStr.length() > 0) {     
+      fields.put("outgoing", connectionsStr);
+    }
     //incoming connections
     connections = connectionDAO.getConnections(identity, Relationship.Type.INCOMING, 0, -1);
     connectionsStr = buildConnectionsToStr(identity, connections);
-    fields.put("incoming", connectionsStr);
+    
+    if (connectionsStr.length() > 0) {     
+      fields.put("incoming", connectionsStr);
+    }
     return new Document(TYPE, id, null, createdDate, null, fields);
   }
 

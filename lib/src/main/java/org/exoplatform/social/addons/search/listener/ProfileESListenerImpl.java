@@ -36,14 +36,16 @@ public class ProfileESListenerImpl extends ProfileListenerPlugin {
 
   @Override
   public void avatarUpdated(ProfileLifeCycleEvent event) {
-    CommonsUtils.getService(IndexingService.class).reindex(ProfileIndexingServiceConnector.TYPE, event.getProfile().getIdentity().getId());
+    IndexingService indexingService = CommonsUtils.getService(IndexingService.class);
+    indexingService.reindex(ProfileIndexingServiceConnector.TYPE, event.getProfile().getIdentity().getId());
     LOG.info("Handled the updated profile avatar!");
     
   }
 
   @Override
   public void contactSectionUpdated(ProfileLifeCycleEvent event) {
-    CommonsUtils.getService(IndexingService.class).reindex(ProfileIndexingServiceConnector.TYPE, event.getProfile().getIdentity().getId());
+    IndexingService indexingService = CommonsUtils.getService(IndexingService.class);
+    indexingService.reindex(ProfileIndexingServiceConnector.TYPE, event.getProfile().getIdentity().getId());
     LOG.info("Handled the updated profile contact!");
   }
 
@@ -55,7 +57,8 @@ public class ProfileESListenerImpl extends ProfileListenerPlugin {
 
   @Override
   public void createProfile(ProfileLifeCycleEvent event) {
-    CommonsUtils.getService(IndexingService.class).index(ProfileIndexingServiceConnector.TYPE, event.getProfile().getIdentity().getId());
+    IndexingService indexingService = CommonsUtils.getService(IndexingService.class);
+    indexingService.index(ProfileIndexingServiceConnector.TYPE, event.getProfile().getIdentity().getId());
     LOG.info("Handled the created profile!");
   }
 

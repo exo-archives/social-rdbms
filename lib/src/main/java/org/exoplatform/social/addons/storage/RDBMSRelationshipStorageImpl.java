@@ -29,6 +29,7 @@ import java.util.Set;
 import java.util.TreeMap;
 
 import org.exoplatform.commons.api.persistence.ExoTransactional;
+import org.exoplatform.social.addons.search.ProfileSearchConnector;
 import org.exoplatform.social.addons.storage.dao.ConnectionDAO;
 import org.exoplatform.social.addons.storage.entity.Connection;
 import org.exoplatform.social.core.identity.model.Identity;
@@ -50,11 +51,13 @@ public class RDBMSRelationshipStorageImpl extends RelationshipStorageImpl {
   
   private final ConnectionDAO connectionDAO;
   private final IdentityStorage identityStorage;
+  private final ProfileSearchConnector profileESConnector;
 
-  public RDBMSRelationshipStorageImpl(IdentityStorage identityStorage, ConnectionDAO connectionDAO) {
+  public RDBMSRelationshipStorageImpl(IdentityStorage identityStorage, ConnectionDAO connectionDAO, ProfileSearchConnector profileESConnector) {
     super(identityStorage);
     this.connectionDAO = connectionDAO;
     this.identityStorage = identityStorage;
+    this.profileESConnector = profileESConnector;
   }
 
   @Override
