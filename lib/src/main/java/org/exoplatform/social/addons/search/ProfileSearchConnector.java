@@ -67,7 +67,7 @@ public class ProfileSearchConnector {
                                      Type type,
                                      long offset,
                                      long limit) {
-    String esQuery = buildQueryStatement(identity, filter, offset, limit);
+    String esQuery = buildQueryStatement(identity, filter, type, offset, limit);
     String jsonResponse = this.client.sendRequest(esQuery, this.index, this.searchType);
     return buildResult(jsonResponse);
   }
@@ -115,7 +115,7 @@ public class ProfileSearchConnector {
   }
   
   
-  private String buildQueryStatement(Identity identity, ProfileFilter filter, long offset, long limit) {
+  private String buildQueryStatement(Identity identity, ProfileFilter filter, Type type, long offset, long limit) {
     String expEs = buildExpression(filter);
     StringBuilder esQuery = new StringBuilder();
     esQuery.append("{\n");
@@ -126,15 +126,18 @@ public class ProfileSearchConnector {
     esQuery.append("        \"order\": \"asc\"\n");
     esQuery.append("           }\n");
     esQuery.append("         }\n");
-    esQuery.append("       ],\n");
-    esQuery.append("\"query\" : {\n");
-    esQuery.append("    \"filtered\" :{\n");
-    esQuery.append("      \"query\" : {\n");
-    esQuery.append("        \"query_string\" : {\n");
-    esQuery.append("          \"query\" : \"*"+ identity.getId() +"*\",\n");
-    esQuery.append("          \"fields\" : [\"connections\"]\n");
-    esQuery.append("        }\n");
-    esQuery.append("      }\n");
+    esQuery.append("       ]\n");
+    if (identity != null && type != null) {
+      esQuery.append("       ,\n");
+      esQuery.append("\"query\" : {\n");
+      esQuery.append("    \"filtered\" :{\n");
+      esQuery.append("      \"query\" : {\n");
+      esQuery.append("        \"query_string\" : {\n");
+      esQuery.append("          \"query\" : \"*"+ identity.getId() +"*\",\n");
+      esQuery.append("          \"fields\" : [\"" + buildTypeEx(type) + "\"]\n");
+      esQuery.append("        }\n");
+      esQuery.append("      }\n");
+    }
     //if the search fields are existing.
     if (expEs != null && expEs.length() > 0) {
       esQuery.append("      ,\n");
@@ -144,17 +147,37 @@ public class ProfileSearchConnector {
       esQuery.append(expEs);
       esQuery.append("          ]\n");
       esQuery.append("        }\n");
-      esQuery.append("        }\n");
+      esQuery.append("      }\n");
     } //end if
-    esQuery.append("      }\n");      
-    esQuery.append("    }\n");
-    esQuery.append("  }\n");
+    
+    //don't need add in the case search ALL
+    if (identity != null && type != null) {
+      esQuery.append("     }\n");      
+      esQuery.append("   }\n");
+    }
+    
     esQuery.append("}\n");
     LOG.debug("Search Query request to ES : {} ", esQuery);
 
     return esQuery.toString();
   }
   
+  /**
+   * 
+   * @param type
+   * @return
+   */
+  private String buildTypeEx(Type type) {
+    StringBuilder typeExp = new StringBuilder();
+    if (Type.CONFIRMED.equals(type)) {
+      typeExp.append("connections");
+    } else if (Type.INCOMING.equals(type)) {
+      typeExp.append("incomings");
+    } else if (Type.OUTGOING.equals(type)) {
+      typeExp.append("outgoings");
+    }
+    return typeExp.toString();
+  }
   private String buildExpression(ProfileFilter filter) {
     StringBuilder esExp = new StringBuilder();
     String inputName = filter.getName().replace(StorageUtils.ASTERISK_STR, StorageUtils.SPACE_STR);

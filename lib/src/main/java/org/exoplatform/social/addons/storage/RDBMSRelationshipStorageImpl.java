@@ -257,12 +257,14 @@ public class RDBMSRelationshipStorageImpl extends RelationshipStorageImpl {
 
   @Override
   public List<Identity> getIncomingByFilter(Identity existingIdentity, ProfileFilter profileFilter, long offset, long limit) throws RelationshipStorageException {
-    return convertRelationshipEntitiesToIdentities(connectionDAO.getConnectionsByFilter(existingIdentity, profileFilter, Relationship.Type.INCOMING, offset, limit), existingIdentity.getId());
+    ProfileSearchConnector connector = CommonsUtils.getService(ProfileSearchConnector.class);
+    return connector.search(existingIdentity, profileFilter, Relationship.Type.OUTGOING, offset, limit);
   }
 
   @Override
   public List<Identity> getOutgoingByFilter(Identity existingIdentity, ProfileFilter profileFilter, long offset, long limit) throws RelationshipStorageException {
-    return convertRelationshipEntitiesToIdentities(connectionDAO.getConnectionsByFilter(existingIdentity, profileFilter, Relationship.Type.OUTGOING, offset, limit), existingIdentity.getId());
+    ProfileSearchConnector connector = CommonsUtils.getService(ProfileSearchConnector.class);
+    return connector.search(existingIdentity, profileFilter, Relationship.Type.INCOMING, offset, limit);
   }
 
   @Override

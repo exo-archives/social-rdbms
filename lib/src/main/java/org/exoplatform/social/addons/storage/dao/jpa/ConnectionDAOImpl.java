@@ -16,6 +16,7 @@
  */
 package org.exoplatform.social.addons.storage.dao.jpa;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.persistence.NoResultException;
@@ -28,6 +29,7 @@ import org.exoplatform.social.addons.storage.dao.ConnectionDAO;
 import org.exoplatform.social.addons.storage.dao.jpa.query.RelationshipQueryBuilder;
 import org.exoplatform.social.addons.storage.entity.Connection;
 import org.exoplatform.social.core.identity.model.Identity;
+import org.exoplatform.social.core.identity.model.Profile;
 import org.exoplatform.social.core.profile.ProfileFilter;
 import org.exoplatform.social.core.relationship.model.Relationship;
 import org.exoplatform.social.core.relationship.model.Relationship.Type;
@@ -118,4 +120,5 @@ public class ConnectionDAOImpl extends GenericDAOJPAImpl<Connection, Long> imple
                                    .getSingleResult()
                                    .intValue();
   }
+ 
 }

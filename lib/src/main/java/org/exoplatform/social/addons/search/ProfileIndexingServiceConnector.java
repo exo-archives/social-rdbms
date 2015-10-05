@@ -97,13 +97,13 @@ public class ProfileIndexingServiceConnector extends ElasticIndexingServiceConne
     connections = connectionDAO.getConnections(identity, Relationship.Type.OUTGOING, 0, -1);
     connectionsStr = buildConnectionsToStr(identity, connections);
     if (connectionsStr.length() > 0) {
-      fields.put("outgoing", connectionsStr);
+      fields.put("outgoings", connectionsStr);
     }
     //incoming connections
     connections = connectionDAO.getConnections(identity, Relationship.Type.INCOMING, 0, -1);
     connectionsStr = buildConnectionsToStr(identity, connections);
     if (connectionsStr.length() > 0) {
-      fields.put("incoming", connectionsStr);
+      fields.put("incomings", connectionsStr);
     }
     return new Document(TYPE, id, null, createdDate, null, fields);
   }
@@ -152,14 +152,14 @@ public class ProfileIndexingServiceConnector extends ElasticIndexingServiceConne
     connections = connectionDAO.getConnections(identity, Relationship.Type.OUTGOING, 0, -1);
     connectionsStr = buildConnectionsToStr(identity, connections);
     if (connectionsStr.length() > 0) {     
-      fields.put("outgoing", connectionsStr);
+      fields.put("outgoings", connectionsStr);
     }
     //incoming connections
     connections = connectionDAO.getConnections(identity, Relationship.Type.INCOMING, 0, -1);
     connectionsStr = buildConnectionsToStr(identity, connections);
     
     if (connectionsStr.length() > 0) {     
-      fields.put("incoming", connectionsStr);
+      fields.put("incomings", connectionsStr);
     }
     return new Document(TYPE, id, null, createdDate, null, fields);
   }
