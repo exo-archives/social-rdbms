@@ -34,6 +34,7 @@ import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.identity.model.Profile;
 import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvider;
 import org.exoplatform.social.core.profile.ProfileFilter;
+import org.exoplatform.social.core.relationship.model.Relationship.Type;
 import org.exoplatform.social.core.storage.impl.StorageUtils;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -61,21 +62,21 @@ public class ProfileSearchConnector {
     this.client = client;
   }
 
-  public Collection<Identity> search(SearchContext context,
-                                         ProfileFilter filter,
-                                         int offset,
-                                         int limit) {
-    
-    String esQuery = buildQueryStatement(filter, offset, limit);
+  public List<Identity> search(Identity identity,
+                                     ProfileFilter filter,
+                                     Type type,
+                                     long offset,
+                                     long limit) {
+    String esQuery = buildQueryStatement(identity, filter, offset, limit);
     String jsonResponse = this.client.sendRequest(esQuery, this.index, this.searchType);
     return buildResult(jsonResponse);
   }
   
-  private Collection<Identity> buildResult(String jsonResponse) {
+  private List<Identity> buildResult(String jsonResponse) {
 
     LOG.debug("Search Query response from ES : {} ", jsonResponse);
 
-    Collection<Identity> results = new ArrayList<Identity>();
+    List<Identity> results = new ArrayList<Identity>();
     JSONParser parser = new JSONParser();
 
     Map json = null;
@@ -86,8 +87,10 @@ public class ProfileSearchConnector {
     }
 
     JSONObject jsonResult = (JSONObject) json.get("hits");
-    JSONArray jsonHits = (JSONArray) jsonResult.get("hits");
+    if (jsonResult == null) return results;
 
+    //
+    JSONArray jsonHits = (JSONArray) jsonResult.get("hits");
     Identity identity = null;
     Profile p;
     for(Object jsonHit : jsonHits) {
@@ -103,34 +106,50 @@ public class ProfileSearchConnector {
       p.setAvatarUrl(avatarUrl);
       p.setProperty(Profile.FULL_NAME, name);
       p.setProperty(Profile.POSITION, position);
+      p.setProperty(Profile.EMAIL, email);
       p.setId(profileId);
+      identity.setProfile(p);
       results.add(identity);
     }
     return results;
   }
   
   
-  private String buildQueryStatement(ProfileFilter filter, int offset, int limit) {
+  private String buildQueryStatement(Identity identity, ProfileFilter filter, long offset, long limit) {
+    String expEs = buildExpression(filter);
     StringBuilder esQuery = new StringBuilder();
     esQuery.append("{\n");
-    esQuery.append("     \"from\" : " + offset + ", \"size\" : " + limit + ",\n");
-    esQuery.append("       \"sort\": [\n");
-    esQuery.append("              {    \n");
-    esQuery.append("              \"name\": {\n");
-    esQuery.append("               \"order\": \"desc\")\n");
-    esQuery.append("               }\n");
-    esQuery.append("               ],\n");
-    esQuery.append("     \"query\": {\n");
-    esQuery.append("        \"filtered\" : {\n");
-    esQuery.append("            \"query\" : {\n");
-    esQuery.append("                \"query_string\" : {\n");
-    esQuery.append("                    \"query\" : \"" + buildExpression(filter) + "\"\n");
-    esQuery.append("                }\n");
-    esQuery.append("            }\n");
+    esQuery.append("   \"from\" : " + offset + ", \"size\" : " + limit + ",\n");
+    esQuery.append("   \"sort\": [\n");
+    esQuery.append("       {\n");
+    esQuery.append("        \"name\": {\n");
+    esQuery.append("        \"order\": \"asc\"\n");
+    esQuery.append("           }\n");
+    esQuery.append("         }\n");
+    esQuery.append("       ],\n");
+    esQuery.append("\"query\" : {\n");
+    esQuery.append("    \"filtered\" :{\n");
+    esQuery.append("      \"query\" : {\n");
+    esQuery.append("        \"query_string\" : {\n");
+    esQuery.append("          \"query\" : \"*"+ identity.getId() +"*\",\n");
+    esQuery.append("          \"fields\" : [\"connections\"]\n");
     esQuery.append("        }\n");
-    esQuery.append("     }\n");
-    esQuery.append("}");
-
+    esQuery.append("      }\n");
+    //if the search fields are existing.
+    if (expEs != null && expEs.length() > 0) {
+      esQuery.append("      ,\n");
+      esQuery.append("      \"filter\" : {\n");
+      esQuery.append("        \"bool\" : {\n");
+      esQuery.append("          \"should\" : [\n");
+      esQuery.append(expEs);
+      esQuery.append("          ]\n");
+      esQuery.append("        }\n");
+      esQuery.append("        }\n");
+    } //end if
+    esQuery.append("      }\n");      
+    esQuery.append("    }\n");
+    esQuery.append("  }\n");
+    esQuery.append("}\n");
     LOG.debug("Search Query request to ES : {} ", esQuery);
 
     return esQuery.toString();
@@ -140,25 +159,26 @@ public class ProfileSearchConnector {
     StringBuilder esExp = new StringBuilder();
     String inputName = filter.getName().replace(StorageUtils.ASTERISK_STR, StorageUtils.SPACE_STR);
     if (inputName != null && inputName.length() > 0) {
-      esExp.append("name:").append(inputName);
+      esExp.append("            {\"term\" : {\"name\" : ").append("\"").append(inputName).append("\"}}");
     }
 
     //skills
     String skills = filter.getSkills().replace(StorageUtils.ASTERISK_STR, StorageUtils.SPACE_STR);
     if (skills != null && skills.length() > 0) {
       if (esExp.length() > 0) {
-        esExp.append(" OR ");
+        esExp.append(",\n");
       }
-      esExp.append("skills:").append(skills);
+      //
+      esExp.append("            {\"term\" : {\"skills\" : ").append("\"").append(skills).append("\"}}");
     }
     
-  //skills
-    String postition = filter.getPosition().replace(StorageUtils.ASTERISK_STR, StorageUtils.SPACE_STR);
-    if (skills != null && skills.length() > 0) {
+    //position
+    String position = filter.getPosition().replace(StorageUtils.ASTERISK_STR, StorageUtils.SPACE_STR);
+    if (position != null && position.length() > 0) {
       if (esExp.length() > 0) {
-        esExp.append(" OR ");
+        esExp.append(",\n");
       }
-      esExp.append("position:").append(postition);
+      esExp.append("            {\"term\" : {\"position\" : ").append("\"").append(position).append("\"}}");
     }
     return esExp.toString();
   }

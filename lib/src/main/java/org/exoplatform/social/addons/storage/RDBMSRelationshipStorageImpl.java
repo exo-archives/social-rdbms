@@ -29,6 +29,7 @@ import java.util.Set;
 import java.util.TreeMap;
 
 import org.exoplatform.commons.api.persistence.ExoTransactional;
+import org.exoplatform.commons.utils.CommonsUtils;
 import org.exoplatform.social.addons.search.ProfileSearchConnector;
 import org.exoplatform.social.addons.storage.dao.ConnectionDAO;
 import org.exoplatform.social.addons.storage.entity.Connection;
@@ -250,7 +251,8 @@ public class RDBMSRelationshipStorageImpl extends RelationshipStorageImpl {
 
   @Override
   public List<Identity> getConnectionsByFilter(Identity existingIdentity, ProfileFilter profileFilter, long offset, long limit) throws RelationshipStorageException {
-    return convertRelationshipEntitiesToIdentities(connectionDAO.getConnectionsByFilter(existingIdentity, profileFilter, Relationship.Type.CONFIRMED, offset, limit), existingIdentity.getId());
+    ProfileSearchConnector connector = CommonsUtils.getService(ProfileSearchConnector.class);
+    return connector.search(existingIdentity, profileFilter, Relationship.Type.CONFIRMED, offset, limit);
   }
 
   @Override
