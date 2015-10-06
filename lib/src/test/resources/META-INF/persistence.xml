@@ -6,6 +6,8 @@
     <persistence-unit name="exo-pu" transaction-type="RESOURCE_LOCAL">
         <provider>org.hibernate.ejb.HibernatePersistence</provider>
 
+        <class>org.exoplatform.addons.es.domain.IndexingOperation</class>
+
         <properties>
             <property name="javax.persistence.provider" value="org.hibernate.ejb.HibernatePersistence"/>
             <property name="javax.persistence.jdbc.driver" value="org.hsqldb.jdbcDriver"/>
