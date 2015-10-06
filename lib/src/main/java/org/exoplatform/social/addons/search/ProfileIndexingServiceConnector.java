@@ -86,6 +86,8 @@ public class ProfileIndexingServiceConnector extends ElasticIndexingServiceConne
     fields.put("position", profile.getPosition());
     fields.put("skills", (String)profile.getProperty(Profile.EXPERIENCES_SKILLS));
     fields.put("avatarUrl", profile.getAvatarUrl());
+    fields.put("userName", identity.getRemoteId());
+    fields.put("email", profile.getEmail());
     Date createdDate = new Date(profile.getCreatedTime());
     //confirmed connections
     List<Connection> connections = connectionDAO.getConnections(identity, Relationship.Type.CONFIRMED, 0, -1);
