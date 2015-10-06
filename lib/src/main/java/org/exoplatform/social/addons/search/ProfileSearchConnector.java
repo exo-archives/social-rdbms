@@ -98,14 +98,14 @@ public class ProfileSearchConnector {
       String userName = (String) hitSource.get("userName");
       String avatarUrl = (String) hitSource.get("avatarUrl");
       String email = (String) hitSource.get("email");
-      String profileId = (String) hitSource.get("_id");
+      String identityId = (String) ((JSONObject) jsonHit).get("_id");
       identity = new Identity(OrganizationIdentityProvider.NAME, userName);
+      identity.setId(identityId);
       p = new Profile(identity);
       p.setAvatarUrl(avatarUrl);
       p.setProperty(Profile.FULL_NAME, name);
       p.setProperty(Profile.POSITION, position);
       p.setProperty(Profile.EMAIL, email);
-      p.setId(profileId);
       identity.setProfile(p);
       results.add(identity);
     }

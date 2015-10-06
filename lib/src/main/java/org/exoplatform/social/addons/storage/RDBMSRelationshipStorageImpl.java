@@ -251,20 +251,17 @@ public class RDBMSRelationshipStorageImpl extends RelationshipStorageImpl {
 
   @Override
   public List<Identity> getConnectionsByFilter(Identity existingIdentity, ProfileFilter profileFilter, long offset, long limit) throws RelationshipStorageException {
-    ProfileSearchConnector connector = CommonsUtils.getService(ProfileSearchConnector.class);
-    return connector.search(existingIdentity, profileFilter, Relationship.Type.CONFIRMED, offset, limit);
+    return profileESConnector.search(existingIdentity, profileFilter, Relationship.Type.CONFIRMED, offset, limit);
   }
 
   @Override
   public List<Identity> getIncomingByFilter(Identity existingIdentity, ProfileFilter profileFilter, long offset, long limit) throws RelationshipStorageException {
-    ProfileSearchConnector connector = CommonsUtils.getService(ProfileSearchConnector.class);
-    return connector.search(existingIdentity, profileFilter, Relationship.Type.OUTGOING, offset, limit);
+    return profileESConnector.search(existingIdentity, profileFilter, Relationship.Type.OUTGOING, offset, limit);
   }
 
   @Override
   public List<Identity> getOutgoingByFilter(Identity existingIdentity, ProfileFilter profileFilter, long offset, long limit) throws RelationshipStorageException {
-    ProfileSearchConnector connector = CommonsUtils.getService(ProfileSearchConnector.class);
-    return connector.search(existingIdentity, profileFilter, Relationship.Type.INCOMING, offset, limit);
+    return profileESConnector.search(existingIdentity, profileFilter, Relationship.Type.INCOMING, offset, limit);
   }
 
   @Override
