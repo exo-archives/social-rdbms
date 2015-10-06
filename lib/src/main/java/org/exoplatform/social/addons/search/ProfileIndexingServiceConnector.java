@@ -32,6 +32,7 @@ import org.exoplatform.social.addons.storage.dao.ConnectionDAO;
 import org.exoplatform.social.addons.storage.entity.Connection;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.identity.model.Profile;
+import org.exoplatform.social.core.manager.IdentityManager;
 import org.exoplatform.social.core.relationship.model.Relationship;
 import org.exoplatform.social.core.storage.api.IdentityStorage;
 
@@ -42,7 +43,7 @@ import org.exoplatform.social.core.storage.api.IdentityStorage;
 public class ProfileIndexingServiceConnector extends ElasticIndexingServiceConnector {
   public final static String TYPE = "profile"; 
   /** */
-  private final IdentityStorage identityStorage;
+  private final IdentityManager identityManager;
   /** */
   private final ConnectionDAO connectionDAO;
 
@@ -58,7 +59,7 @@ public class ProfileIndexingServiceConnector extends ElasticIndexingServiceConne
   private Map<String, String> sortMapping = new HashMap<String, String>();
 
   public ProfileIndexingServiceConnector(InitParams initParams,
-                                         IdentityStorage identityStorage,
+                                         IdentityManager identityManager,
                                          ConnectionDAO connectionDAO) {
     super(initParams);
     PropertiesParam param = initParams.getPropertiesParam("constructor.params");
@@ -68,7 +69,7 @@ public class ProfileIndexingServiceConnector extends ElasticIndexingServiceConne
     //Indicate in which order element will be displayed
     sortMapping.put("name", "name");
     
-    this.identityStorage = identityStorage;
+    this.identityManager = identityManager;
     this.connectionDAO = connectionDAO;
   }
 
@@ -77,7 +78,7 @@ public class ProfileIndexingServiceConnector extends ElasticIndexingServiceConne
     if (StringUtils.isBlank(id)) {
       throw new IllegalArgumentException("Id is null");
     }
-    Identity identity = identityStorage.findIdentityById(id);
+    Identity identity = identityManager.getIdentity(id, true);
     Profile profile = identity.getProfile();
     
     Map<String, String> fields = new HashMap<String, String>();  
@@ -131,7 +132,7 @@ public class ProfileIndexingServiceConnector extends ElasticIndexingServiceConne
     if (StringUtils.isBlank(id)) {
       throw new IllegalArgumentException("Id is null");
     }
-    Identity identity = identityStorage.findIdentityById(id);
+    Identity identity = identityManager.getIdentity(id, true);
     Profile profile = identity.getProfile();
     
     Map<String, String> fields = new HashMap<String, String>();  

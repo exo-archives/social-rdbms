@@ -18,14 +18,12 @@ package org.exoplatform.social.addons.search;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
 import org.exoplatform.addons.es.client.ElasticSearchingClient;
 import org.exoplatform.addons.es.search.ElasticSearchException;
-import org.exoplatform.commons.api.search.data.SearchContext;
-import org.exoplatform.commons.api.search.data.SearchResult;
 import org.exoplatform.container.xml.InitParams;
 import org.exoplatform.container.xml.PropertiesParam;
 import org.exoplatform.services.log.ExoLogger;
@@ -137,6 +135,23 @@ public class ProfileSearchConnector {
       esQuery.append("          \"fields\" : [\"" + buildTypeEx(type) + "\"]\n");
       esQuery.append("        }\n");
       esQuery.append("      }\n");
+    } else if (filter.getExcludedIdentityList() != null && filter.getExcludedIdentityList().size() > 0) {
+      esQuery.append("       ,\n");
+      esQuery.append("\"query\" : {\n");
+      esQuery.append("\"filtered\" :{\n");
+      esQuery.append("  \"query\" : {\n");
+        esQuery.append("    \"bool\" : {\n");
+      esQuery.append("\"must_not\": [\n");
+      esQuery.append("        {\n");
+      esQuery.append("          \"ids\" : {\n");
+      esQuery.append("             \"values\" : [" + buildExcludedIdentities(filter) + "]\n");
+      esQuery.append("          }\n");
+      esQuery.append("        }\n");
+      esQuery.append("      ]\n");
+      esQuery.append("    }\n");
+      esQuery.append("  }\n");
+      esQuery.append("  }\n");
+      esQuery.append("}\n");
     }
     //if the search fields are existing.
     if (expEs != null && expEs.length() > 0) {
@@ -160,6 +175,31 @@ public class ProfileSearchConnector {
     LOG.debug("Search Query request to ES : {} ", esQuery);
 
     return esQuery.toString();
+  }
+  
+  /**
+   * 
+   * @param type
+   * @return
+   */
+  private String buildExcludedIdentities(ProfileFilter filter) {
+    StringBuilder typeExp = new StringBuilder();
+    if (filter.getExcludedIdentityList() != null && filter.getExcludedIdentityList().size() > 0) {
+      
+      Iterator<Identity> iter = filter.getExcludedIdentityList().iterator();
+      Identity first = iter.next();
+      typeExp.append("\"").append(first.getId()).append("\"");
+      
+      if (!iter.hasNext()) {
+        return typeExp.toString();
+      }
+      Identity next;
+      while (iter.hasNext()) {
+        next = iter.next();
+        typeExp.append(",\"").append(next.getId()).append("\"");
+      }
+    }
+    return typeExp.toString();
   }
   
   /**

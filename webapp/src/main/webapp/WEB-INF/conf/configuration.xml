@@ -48,6 +48,11 @@
   </component>
   
   <component>
+    <key>org.exoplatform.social.core.storage.api.IdentityStorage</key>
+    <type>org.exoplatform.social.addons.storage.RDBMSIdentityStorageImpl</type>
+  </component>
+  
+  <component>
     <key>org.exoplatform.social.core.storage.api.RelationshipStorage</key>
     <type>org.exoplatform.social.addons.storage.RDBMSRelationshipStorageImpl</type>
   </component>
