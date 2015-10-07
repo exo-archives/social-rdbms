@@ -226,28 +226,28 @@ public class ProfileSearchConnector {
   }
   private String buildExpression(ProfileFilter filter) {
     StringBuilder esExp = new StringBuilder();
-    String inputName = filter.getName().replace(StorageUtils.ASTERISK_STR, StorageUtils.SPACE_STR);
+    String inputName = filter.getName().replace(StorageUtils.ASTERISK_STR, StorageUtils.EMPTY_STR);
     if (inputName != null && inputName.length() > 0) {
-      esExp.append("name:").append(inputName);
+      esExp.append("name:").append(StorageUtils.ASTERISK_STR).append(inputName).append(StorageUtils.ASTERISK_STR);
     }
 
     //skills
-    String skills = filter.getSkills().replace(StorageUtils.ASTERISK_STR, StorageUtils.SPACE_STR);
+    String skills = filter.getSkills().replace(StorageUtils.ASTERISK_STR, StorageUtils.EMPTY_STR);
     if (skills != null && skills.length() > 0) {
       if (esExp.length() > 0) {
         esExp.append(" OR ");
       }
       //
-      esExp.append("skills:").append(skills);
+      esExp.append("skills:").append(StorageUtils.ASTERISK_STR).append(skills).append(StorageUtils.ASTERISK_STR);
     }
     
     //position
-    String position = filter.getPosition().replace(StorageUtils.ASTERISK_STR, StorageUtils.SPACE_STR);
+    String position = filter.getPosition().replace(StorageUtils.ASTERISK_STR, StorageUtils.EMPTY_STR);
     if (position != null && position.length() > 0) {
       if (esExp.length() > 0) {
         esExp.append(" OR ");
       }
-      esExp.append("position:").append(position);
+      esExp.append("position:").append(StorageUtils.ASTERISK_STR).append(position).append(StorageUtils.ASTERISK_STR);
     }
     return esExp.toString();
   }
