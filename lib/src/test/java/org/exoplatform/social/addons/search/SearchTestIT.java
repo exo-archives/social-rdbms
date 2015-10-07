@@ -16,8 +16,18 @@
  */
 package org.exoplatform.social.addons.search;
 
+import java.io.IOException;
 import java.util.Date;
+import java.util.List;
 
+import org.apache.http.HttpResponse;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.exoplatform.commons.utils.PropertyManager;
+import org.exoplatform.social.core.profile.ProfileFilter;
+import org.exoplatform.social.core.relationship.model.Relationship;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -35,6 +45,9 @@ import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvider;
 import org.exoplatform.social.core.manager.IdentityManager;
 
+import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertThat;
+
 /**
  * Created by The eXo Platform SAS
  * Author : eXoPlatform
@@ -46,6 +59,7 @@ public class SearchTestIT extends AbstractCoreTest {
   private Identity ghostIdentity, paulIdentity;
   private static KernelBootstrap bootstrap;
   private IndexingService indexingService;
+  private ProfileSearchConnector searchConnector;
 
   @BeforeClass
   public static void setUpBeforeClass() throws Exception {
@@ -67,6 +81,7 @@ public class SearchTestIT extends AbstractCoreTest {
     super.setUp();
     indexingService = getService(IndexingService.class);
     identityManager = getService(IdentityManager.class);
+    searchConnector = getService(ProfileSearchConnector.class);
     assertNotNull("identityManager must not be null", identityManager);
 
     ghostIdentity = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, "ghost", true);
@@ -81,13 +96,26 @@ public class SearchTestIT extends AbstractCoreTest {
   }
 
   @Test
-  public void testProfileCreateIndexProfile() throws Exception {
+  public void test_indexedProfile_isReturnedBySearch() throws Exception {
     //Given
     indexingService.index(ProfileIndexingServiceConnector.TYPE, paulIdentity.getId());
     setIndexingOperationTimestamp();
     indexingService.process();
+    refreshIndices();
+    ProfileFilter filter = new ProfileFilter();
     //When
+    List<Identity> results = searchConnector.search(ghostIdentity, filter, null, 0, 10);
+    //Then
+    assertThat(results.size(), is(1));
+  }
 
+  private void refreshIndices() throws IOException {
+    String urlClient = PropertyManager.getProperty("exo.es.search.client");
+    HttpClient client = new DefaultHttpClient();
+    HttpPost request = new HttpPost(urlClient + "/profile/_refresh");
+    LOG.info("Refreshing ES by calling {}", request.getURI());
+    HttpResponse response = client.execute(request);
+    assertThat(response.getStatusLine().getStatusCode(), is(200));
   }
 
   // TODO This method MUST be removed : we MUST find a way to use exo-es-search Liquibase changelogs

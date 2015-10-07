@@ -219,7 +219,7 @@ public class ProfileSearchConnector {
   
   /**
    * 
-   * @param type
+   * @param filter
    * @return
    */
   private String buildExcludedIdentities(ProfileFilter filter) {
@@ -248,16 +248,23 @@ public class ProfileSearchConnector {
    * @return
    */
   private String buildTypeEx(Type type) {
-    StringBuilder typeExp = new StringBuilder();
-    if (Type.CONFIRMED.equals(type)) {
-      typeExp.append("connections");
-    } else if (Type.INCOMING.equals(type)) {
-      typeExp.append("incomings");
-    } else if (Type.OUTGOING.equals(type)) {
-      typeExp.append("outgoings");
+    String result;
+    switch(type) {
+      case CONFIRMED:
+        result = "connections";
+        break;
+      case INCOMING:
+        result = "incomings";
+        break;
+      case OUTGOING:
+        result = "outgoings";
+        break;
+      default:
+        throw new IllegalArgumentException("Type ["+type+"] not supported");
     }
-    return typeExp.toString();
+    return result;
   }
+
   private String buildExpression(ProfileFilter filter) {
     StringBuilder esExp = new StringBuilder();
     char firstChar = filter.getFirstCharacterOfName();
