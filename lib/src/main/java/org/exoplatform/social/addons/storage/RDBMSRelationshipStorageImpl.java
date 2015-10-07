@@ -29,7 +29,6 @@ import java.util.Set;
 import java.util.TreeMap;
 
 import org.exoplatform.commons.api.persistence.ExoTransactional;
-import org.exoplatform.commons.utils.CommonsUtils;
 import org.exoplatform.social.addons.search.ProfileSearchConnector;
 import org.exoplatform.social.addons.storage.dao.ConnectionDAO;
 import org.exoplatform.social.addons.storage.entity.Connection;
@@ -266,17 +265,17 @@ public class RDBMSRelationshipStorageImpl extends RelationshipStorageImpl {
 
   @Override
   public int getConnectionsCountByFilter(Identity existingIdentity, ProfileFilter profileFilter) throws RelationshipStorageException {
-    return connectionDAO.getConnectionsByFilterCount(existingIdentity, profileFilter, Relationship.Type.CONFIRMED);
+    return profileESConnector.count(existingIdentity, profileFilter, Relationship.Type.CONFIRMED);
   }
 
   @Override
   public int getIncomingCountByFilter(Identity existingIdentity, ProfileFilter profileFilter) throws RelationshipStorageException {
-    return connectionDAO.getConnectionsByFilterCount(existingIdentity, profileFilter, Relationship.Type.INCOMING);
+    return profileESConnector.count(existingIdentity, profileFilter, Relationship.Type.INCOMING);
   }
 
   @Override
   public int getOutgoingCountByFilter(Identity existingIdentity, ProfileFilter profileFilter) throws RelationshipStorageException {
-    return connectionDAO.getConnectionsByFilterCount(existingIdentity, profileFilter, Relationship.Type.OUTGOING);
+    return profileESConnector.count(existingIdentity, profileFilter, Relationship.Type.OUTGOING);
   }
 
   @Override

@@ -83,6 +83,7 @@ public class ProfileIndexingServiceConnector extends ElasticIndexingServiceConne
     
     Map<String, String> fields = new HashMap<String, String>();  
     fields.put("name", profile.getFullName());
+    fields.put("lastName", (String) profile.getProperty(Profile.LAST_NAME));
     fields.put("position", profile.getPosition());
     fields.put("skills", (String)profile.getProperty(Profile.EXPERIENCES_SKILLS));
     fields.put("avatarUrl", profile.getAvatarUrl());
@@ -139,6 +140,7 @@ public class ProfileIndexingServiceConnector extends ElasticIndexingServiceConne
     
     Map<String, String> fields = new HashMap<String, String>();  
     fields.put("name", profile.getFullName());
+    fields.put("lastName", (String) profile.getProperty(Profile.LAST_NAME));
     fields.put("position", profile.getPosition());
     fields.put("skills", (String)profile.getProperty(Profile.EXPERIENCES_SKILLS));
     fields.put("avatarUrl", profile.getAvatarUrl());

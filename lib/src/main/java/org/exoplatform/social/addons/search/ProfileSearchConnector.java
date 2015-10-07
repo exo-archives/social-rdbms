@@ -69,6 +69,40 @@ public class ProfileSearchConnector {
     String jsonResponse = this.client.sendRequest(esQuery, this.index, this.searchType);
     return buildResult(jsonResponse);
   }
+  /**
+   * TODO it will be remove to use "_count" query
+   * 
+   * @param identity
+   * @param filter
+   * @param type
+   * @return
+   */
+  public int count(Identity identity,
+                               ProfileFilter filter,
+                               Type type) {
+    String esQuery = buildQueryStatement(identity, filter, type, 0, 1);
+    String jsonResponse = this.client.sendRequest(esQuery, this.index, this.searchType);
+    return getCount(jsonResponse);
+  }
+  
+  private int getCount(String jsonResponse) {
+    
+    LOG.debug("Search Query response from ES : {} ", jsonResponse);
+    JSONParser parser = new JSONParser();
+
+    Map<?, ?> json = null;
+    try {
+      json = (Map<?, ?>)parser.parse(jsonResponse);
+    } catch (ParseException e) {
+      throw new ElasticSearchException("Unable to parse JSON response", e);
+    }
+
+    JSONObject jsonResult = (JSONObject) json.get("hits");
+    if (jsonResult == null) return 0;
+
+    int count = Integer.parseInt(jsonResult.get("total").toString());
+    return count;
+  }
   
   private List<Identity> buildResult(String jsonResponse) {
 
@@ -226,6 +260,13 @@ public class ProfileSearchConnector {
   }
   private String buildExpression(ProfileFilter filter) {
     StringBuilder esExp = new StringBuilder();
+    char firstChar = filter.getFirstCharacterOfName();
+    //
+    if (firstChar != '\u0000') {
+      esExp.append("lastName:").append(firstChar).append(StorageUtils.ASTERISK_STR);
+      return esExp.toString();
+    }
+    //
     String inputName = filter.getName().replace(StorageUtils.ASTERISK_STR, StorageUtils.EMPTY_STR);
     if (inputName != null && inputName.length() > 0) {
       esExp.append("name:").append(StorageUtils.ASTERISK_STR).append(inputName).append(StorageUtils.ASTERISK_STR);
