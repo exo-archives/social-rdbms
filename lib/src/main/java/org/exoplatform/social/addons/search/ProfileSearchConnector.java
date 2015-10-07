@@ -156,13 +156,19 @@ public class ProfileSearchConnector {
     //if the search fields are existing.
     if (expEs != null && expEs.length() > 0) {
       esQuery.append("      ,\n");
-      esQuery.append("      \"filter\" : {\n");
-      esQuery.append("        \"bool\" : {\n");
-      esQuery.append("          \"should\" : [\n");
-      esQuery.append(expEs);
-      esQuery.append("          ]\n");
-      esQuery.append("        }\n");
+      esQuery.append("\"filter\" : {\n");
+      esQuery.append("  \"bool\" : {\n");
+      esQuery.append("    \"must\": [\n");
+      esQuery.append("      {");
+      esQuery.append("        \"query\": {\n");
+      esQuery.append("          \"query_string\": {\n");
+      esQuery.append("            \"query\": \"" + expEs + "\"\n");
+      esQuery.append("          }\n");
+      esQuery.append("         }\n");
       esQuery.append("      }\n");
+      esQuery.append("    ]\n");
+      esQuery.append("  }\n");
+      esQuery.append("}\n");
     } //end if
     
     //don't need add in the case search ALL
@@ -222,26 +228,26 @@ public class ProfileSearchConnector {
     StringBuilder esExp = new StringBuilder();
     String inputName = filter.getName().replace(StorageUtils.ASTERISK_STR, StorageUtils.SPACE_STR);
     if (inputName != null && inputName.length() > 0) {
-      esExp.append("            {\"term\" : {\"name\" : ").append("\"").append(inputName).append("\"}}");
+      esExp.append("name:").append(inputName);
     }
 
     //skills
     String skills = filter.getSkills().replace(StorageUtils.ASTERISK_STR, StorageUtils.SPACE_STR);
     if (skills != null && skills.length() > 0) {
       if (esExp.length() > 0) {
-        esExp.append(",\n");
+        esExp.append(" OR ");
       }
       //
-      esExp.append("            {\"term\" : {\"skills\" : ").append("\"").append(skills).append("\"}}");
+      esExp.append("skills:").append(skills);
     }
     
     //position
     String position = filter.getPosition().replace(StorageUtils.ASTERISK_STR, StorageUtils.SPACE_STR);
     if (position != null && position.length() > 0) {
       if (esExp.length() > 0) {
-        esExp.append(",\n");
+        esExp.append(" OR ");
       }
-      esExp.append("            {\"term\" : {\"position\" : ").append("\"").append(position).append("\"}}");
+      esExp.append("position:").append(position);
     }
     return esExp.toString();
   }
