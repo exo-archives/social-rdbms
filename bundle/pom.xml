@@ -43,13 +43,6 @@
       <type>war</type>
       <scope>provided</scope>
     </dependency>
-    <dependency>
-      <groupId>org.liquibase</groupId>
-      <artifactId>liquibase-core</artifactId>
-      <version>${liquibase.version}</version>
-      <type>jar</type>
-      <scope>provided</scope>
-    </dependency>
   </dependencies>
   <profiles>
     <profile>

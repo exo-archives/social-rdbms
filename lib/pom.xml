@@ -287,29 +287,6 @@
       <plugin>
         <groupId>com.jcabi</groupId>
         <artifactId>jcabi-maven-plugin</artifactId>
-        <version>0.13.1</version>
-        <executions>
-          <execution>
-            <id>weave-classes</id>
-            <goals>
-              <goal>ajc</goal>
-            </goals>
-            <phase>compile</phase>
-            <configuration>
-              <classesDirectory>target/classes</classesDirectory>
-            </configuration>
-          </execution>
-          <execution>
-            <id>weave-test-classes</id>
-            <goals>
-              <goal>ajc</goal>
-            </goals>
-            <phase>test-compile</phase>
-            <configuration>
-              <classesDirectory>target/test-classes</classesDirectory>
-            </configuration>
-          </execution>
-        </executions>
       </plugin>
     </plugins>
   </build>
@@ -360,6 +337,7 @@
                     <artifactItem>
                       <groupId>org.elasticsearch</groupId>
                       <artifactId>elasticsearch</artifactId>
+                      <version>${elasticsearch.version}</version>
                       <type>zip</type>
                     </artifactItem>
                   </artifactItems>
@@ -382,8 +360,8 @@
                   <goal>reserve-network-port</goal>
                 </goals>
                 <configuration>
-                  <minPortNumber>9215</minPortNumber>
-                  <maxPortNumber>9299</maxPortNumber>
+                  <minPortNumber>${es.port.range.min}</minPortNumber>
+                  <maxPortNumber>${es.port.range.max}</maxPortNumber>
                   <portNames>
                     <portName>es.http.port</portName>
                   </portNames>
@@ -397,7 +375,7 @@
             <version>0.4</version>
             <executions>
               <execution>
-                <id>Start ES</id>
+                <id>Start_ES</id>
                 <phase>pre-integration-test</phase>
                 <goals>
                   <goal>start</goal>
@@ -414,7 +392,7 @@
                 </configuration>
               </execution>
               <execution>
-                <id>shutdown ES</id>
+                <id>shutdown_ES</id>
                 <phase>post-integration-test</phase>
                 <goals><goal>stop-all</goal></goals>
               </execution>
@@ -423,22 +401,6 @@
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-failsafe-plugin</artifactId>
-            <executions>
-              <execution>
-                <id>integration-test</id>
-                <phase>integration-test</phase>
-                <goals>
-                  <goal>integration-test</goal>
-                </goals>
-              </execution>
-              <execution>
-                <id>verify</id>
-                <phase>verify</phase>
-                <goals>
-                  <goal>verify</goal>
-                </goals>
-              </execution>
-            </executions>
             <configuration>
               <systemPropertyVariables>
                 <exo.es.index.client>http://localhost:${es.http.port}</exo.es.index.client>

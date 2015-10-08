@@ -23,7 +23,7 @@
   <parent>
     <artifactId>addons-parent-pom</artifactId>
     <groupId>org.exoplatform.addons</groupId>
-    <version>4</version>
+    <version>6</version>
     <relativePath />
   </parent>
   <groupId>org.exoplatform.addons.social</groupId>
@@ -41,10 +41,11 @@
   <properties>
     <!-- Platform Project Dependencies -->
     <exoplatform.version>4.3.x-plf-social-rdbms-SNAPSHOT</exoplatform.version>
-    <liquibase.version>3.4.0</liquibase.version>
      <!-- Issue with the PLF pom parent that trigger lucene 3.6.2 (Only working with elastic version < 0.20.6) -->
-    <elasticsearch.version>1.7.0</elasticsearch.version>
     <lucene.version>4.10.4</lucene.version>
+    <elasticsearch.version>1.7.0</elasticsearch.version>
+    <es.port.range.min>9215</es.port.range.min>
+    <es.port.range.max>9299</es.port.range.max>
     <exo-es-search-service.version>1.0.x-SNAPSHOT</exo-es-search-service.version>
     <!-- **************************************** -->
     <!-- Jenkins Settings -->
@@ -82,23 +83,11 @@
         <type>pom</type>
         <scope>import</scope>
       </dependency>
-      
-      <dependency>
-        <groupId>org.liquibase</groupId>
-        <artifactId>liquibase-core</artifactId>
-        <version>${liquibase.version}</version>
-      </dependency>
 
        <dependency>
         <groupId>org.exoplatform.addons.es</groupId>
         <artifactId>exo-es-search-service</artifactId>
         <version>${exo-es-search-service.version}</version>
-      </dependency>
-
-      <dependency>
-        <groupId>org.elasticsearch</groupId>
-        <artifactId>elasticsearch</artifactId>
-        <version>${elasticsearch.version}</version>
       </dependency>
     
       <dependency>

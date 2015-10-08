@@ -41,7 +41,6 @@
 			<outputDirectory>/</outputDirectory>
 			<includes>
 				<include>${project.groupId}:*:jar</include>
-				<include>org.liquibase:liquibase-core:jar</include>
 			</includes>
 			<scope>provided</scope>
 			<outputFileNameMapping>${artifact.artifactId}-${artifact.baseVersion}.${artifact.extension}</outputFileNameMapping>

@@ -18,78 +18,46 @@
     02110-1301 USA, or see the FSF site: http://www.fsf.org.
 
 -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
-  <modelVersion>4.0.0</modelVersion>
-  <parent>
-    <groupId>org.exoplatform.addons.social</groupId>
-    <artifactId>social-rdbms-addons</artifactId>
-    <version>1.0.x-SNAPSHOT</version>
-  </parent>
-  <artifactId>social-rdbms-addons-webapp</artifactId>
-  <packaging>war</packaging>
-  <name>Social RDBMS Addon Webapp</name>
-  <description>Social RDBMS Addon Webapp</description>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>org.exoplatform.addons.social</groupId>
+        <artifactId>social-rdbms-addons</artifactId>
+        <version>1.0.x-SNAPSHOT</version>
+    </parent>
+    <artifactId>social-rdbms-addons-webapp</artifactId>
+    <packaging>war</packaging>
+    <name>Social RDBMS Addon Webapp</name>
+    <description>Social RDBMS Addon Webapp</description>
 
-  <dependencies>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>social-rdbms-addons-lib</artifactId>
-      <version>${project.version}</version>
-      <scope>provided</scope>
-    </dependency>
-    <!-- Liquibase -->
-    <dependency>
-      <groupId>org.liquibase</groupId>
-      <artifactId>liquibase-core</artifactId>
-    </dependency>
-  
-  </dependencies>
-  
-  <build>
-    <finalName>social-rdbms-addons</finalName>
-    
-    <plugins>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-war-plugin</artifactId>
-				<configuration>
-					<webResources>
-						<resource>
-							<directory>${basedir}/src/main/resources</directory>
-						</resource>
-					</webResources>
-				</configuration>
-			</plugin>
-			<!-- Liquibase Plugin -->
-      <plugin>
-        <groupId>org.liquibase</groupId>
-        <artifactId>liquibase-maven-plugin</artifactId>
-        <version>${liquibase.version}</version>
-        <configuration>
-          <!-- $ mvn liquibase:update -->
-          <driver>com.mysql.jdbc.Driver</driver>
-          <url>jdbc:mysql://localhost:3306/exo_social?autoReconnect=true</url>
-          <username>root</username>
-          <password>exo</password>
-          <!-- $ mvn liquibase:diff -->
-          <referenceDriver>com.mysql.jdbc.Driver</referenceDriver>
-          <referenceUrl>jdbc:mysql://localhost:3306/exo_social?autoReconnect=true</referenceUrl>
-          <referenceUsername>root</referenceUsername>
-          <referencePassword>exo</referencePassword>
-          <!-- db.changelog file -->
-          <changeLogFile>src/main/resources/db/changelog/social-rdbms.db.changelog-master.xml</changeLogFile>
-        </configuration>
-        <!--<executions>
-          <execution>
-            <phase>process-resources</phase>
-            <goals>
-              <goal>update</goal>
-            </goals>
-          </execution>
-        </executions>-->
-      </plugin>
-    </plugins>
-    
-  </build>
-  
+    <dependencies>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>social-rdbms-addons-lib</artifactId>
+            <version>${project.version}</version>
+            <scope>provided</scope>
+        </dependency>
+
+    </dependencies>
+
+    <build>
+        <finalName>social-rdbms-addons</finalName>
+
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-war-plugin</artifactId>
+                <configuration>
+                    <webResources>
+                        <resource>
+                            <directory>${basedir}/src/main/resources</directory>
+                        </resource>
+                    </webResources>
+                </configuration>
+            </plugin>
+        </plugins>
+
+    </build>
+
 </project>
