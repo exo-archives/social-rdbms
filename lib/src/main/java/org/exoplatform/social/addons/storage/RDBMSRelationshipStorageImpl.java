@@ -270,12 +270,12 @@ public class RDBMSRelationshipStorageImpl extends RelationshipStorageImpl {
 
   @Override
   public int getIncomingCountByFilter(Identity existingIdentity, ProfileFilter profileFilter) throws RelationshipStorageException {
-    return profileESConnector.count(existingIdentity, profileFilter, Relationship.Type.INCOMING);
+    return profileESConnector.count(existingIdentity, profileFilter, Relationship.Type.OUTGOING);
   }
 
   @Override
   public int getOutgoingCountByFilter(Identity existingIdentity, ProfileFilter profileFilter) throws RelationshipStorageException {
-    return profileESConnector.count(existingIdentity, profileFilter, Relationship.Type.OUTGOING);
+    return profileESConnector.count(existingIdentity, profileFilter, Relationship.Type.INCOMING);
   }
 
   @Override
