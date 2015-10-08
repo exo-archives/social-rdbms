@@ -174,8 +174,9 @@ public class ProfileIndexingServiceConnector extends ElasticIndexingServiceConne
   }
 
   @Override
-  public String delete(String id) {
-    return id;
+  public List<String> getAllIds() {
+    //TODO implement
+    return null;
   }
 
 }
