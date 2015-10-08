@@ -261,11 +261,31 @@ public class RDBMSRelationshipStorageImpl extends RelationshipStorageImpl {
 
   @Override
   public List<Identity> getIncomingByFilter(Identity existingIdentity, ProfileFilter profileFilter, long offset, long limit) throws RelationshipStorageException {
+    //1. John requested connecting to Mary
+    //John indexing: {_id = JohnId, outgoings : maryId}
+    //Mary indexing: {_id = MaryId, incomings : johnId}
+    //2. John requested connecting to Demo
+    //John indexing: {_id = JohnId, outgoings : maryId, demoId}
+    //Demo indexing: {_id = DemoId, incomings : johnId}
+    //------------------------------------------------------
+    //the expectation of Mary's Incoming(Received UI Tab):  John
+    //that means: get All the user has MaryId in the outgoing list
+    //this code tells, find existingIdentity in the outgoing list of others
     return profileESConnector.search(existingIdentity, profileFilter, Relationship.Type.OUTGOING, offset, limit);
   }
 
   @Override
   public List<Identity> getOutgoingByFilter(Identity existingIdentity, ProfileFilter profileFilter, long offset, long limit) throws RelationshipStorageException {
+    //1. John requested connecting to Mary
+    //John indexing: {_id = JohnId, outgoings : maryId}
+    //Mary indexing: {_id = MaryId, incomings : johnId}
+    //2. John requested connecting to Demo
+    //John indexing: {_id = JohnId, outgoings : maryId, demoId}
+    //Demo indexing: {_id = DemoId, incomings : johnId}
+    //------------------------------------------------------
+    //the expectation of John's Outgoing(Pending UI tab):  Mary, Demo
+    //that means: get All the user has JohnId in the incoming list
+    //this code tells, find existingIdentity in the incoming list of others
     return profileESConnector.search(existingIdentity, profileFilter, Relationship.Type.INCOMING, offset, limit);
   }
 

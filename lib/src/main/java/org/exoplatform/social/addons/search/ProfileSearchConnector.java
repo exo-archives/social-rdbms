@@ -130,6 +130,8 @@ public class ProfileSearchConnector {
       String position = (String) hitSource.get("position");
       String name = (String) hitSource.get("name");
       String userName = (String) hitSource.get("userName");
+      String firstName = (String) hitSource.get("firstName");
+      String lastName = (String) hitSource.get("lastName");
       String avatarUrl = (String) hitSource.get("avatarUrl");
       String email = (String) hitSource.get("email");
       String identityId = (String) ((JSONObject) jsonHit).get("_id");
@@ -138,6 +140,8 @@ public class ProfileSearchConnector {
       p = new Profile(identity);
       p.setAvatarUrl(avatarUrl);
       p.setProperty(Profile.FULL_NAME, name);
+      p.setProperty(Profile.FIRST_NAME, firstName);
+      p.setProperty(Profile.LAST_NAME, lastName);
       p.setProperty(Profile.POSITION, position);
       p.setProperty(Profile.EMAIL, email);
       identity.setProfile(p);
@@ -153,12 +157,9 @@ public class ProfileSearchConnector {
     esQuery.append("{\n");
     esQuery.append("   \"from\" : " + offset + ", \"size\" : " + limit + ",\n");
     esQuery.append("   \"sort\": [\n");
-    esQuery.append("       {\n");
-    esQuery.append("        \"name\": {\n");
-    esQuery.append("        \"order\": \"asc\"\n");
-    esQuery.append("           }\n");
-    esQuery.append("         }\n");
-    esQuery.append("       ]\n");
+    esQuery.append("             {\"lastName\": {\"order\": \"asc\"}},\n");
+    esQuery.append("             {\"firstName\": {\"order\": \"asc\"}}\n");
+    esQuery.append("             ]\n");
     if (identity != null && type != null) {
       esQuery.append("       ,\n");
       esQuery.append("\"query\" : {\n");

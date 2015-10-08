@@ -62,7 +62,8 @@ public class ProfileIndexingServiceConnector extends ElasticIndexingServiceConne
     this.nameElasticFieldName = param.getProperty("nameField");
     this.indexFields = new ArrayList<String>(Arrays.asList(param.getProperty("indexFields").split(",")));
     //Indicate in which order element will be displayed
-    sortMapping.put("name", "name");
+    sortMapping.put("firstName", "firstName");
+    sortMapping.put("lastName", "lastName");
     
     this.identityManager = identityManager;
     this.connectionDAO = connectionDAO;
@@ -78,6 +79,7 @@ public class ProfileIndexingServiceConnector extends ElasticIndexingServiceConne
     
     Map<String, String> fields = new HashMap<>();
     fields.put("name", profile.getFullName());
+    fields.put("firstName", (String) profile.getProperty(Profile.FIRST_NAME));
     fields.put("lastName", (String) profile.getProperty(Profile.LAST_NAME));
     fields.put("position", profile.getPosition());
     fields.put("skills", (String)profile.getProperty(Profile.EXPERIENCES_SKILLS));
@@ -139,6 +141,7 @@ public class ProfileIndexingServiceConnector extends ElasticIndexingServiceConne
     
     Map<String, String> fields = new HashMap<String, String>();  
     fields.put("name", profile.getFullName());
+    fields.put("firstName", (String) profile.getProperty(Profile.FIRST_NAME));
     fields.put("lastName", (String) profile.getProperty(Profile.LAST_NAME));
     fields.put("position", profile.getPosition());
     fields.put("skills", (String)profile.getProperty(Profile.EXPERIENCES_SKILLS));

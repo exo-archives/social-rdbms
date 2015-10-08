@@ -94,7 +94,7 @@
           <name>constructor.params</name>
           <property name="index" value="profile"/>
           <property name="type" value="profile"/>
-          <property name="indexFields" value="name, position, skills, avatarUrl, userName, email"/>
+          <property name="indexFields" value="name, lastName, position, skills, avatarUrl, userName, email"/>
         </properties-param>
       </init-params>
     </component-plugin>
