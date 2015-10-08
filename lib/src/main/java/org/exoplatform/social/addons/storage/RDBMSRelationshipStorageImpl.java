@@ -67,7 +67,7 @@ public class RDBMSRelationshipStorageImpl extends RelationshipStorageImpl {
       Connection entity = new Connection();
       entity.setReceiverId(relationship.getReceiver().getId());
       entity.setSenderId(relationship.getSender().getId());
-      entity.setStatus(Relationship.Type.PENDING.equals(relationship.getStatus()) ? Relationship.Type.OUTGOING : relationship.getStatus());
+      entity.setStatus((Relationship.Type.PENDING == relationship.getStatus()) ? Relationship.Type.OUTGOING : relationship.getStatus());
       entity.setLastUpdated(System.currentTimeMillis());
       //
       connectionDAO.create(entity);
@@ -77,7 +77,7 @@ public class RDBMSRelationshipStorageImpl extends RelationshipStorageImpl {
       Connection symmetricalEntity = new Connection();
       symmetricalEntity.setSenderId(relationship.getReceiver().getId());
       symmetricalEntity.setReceiverId(relationship.getSender().getId());
-      symmetricalEntity.setStatus(Relationship.Type.PENDING.equals(relationship.getStatus()) ? Relationship.Type.INCOMING : relationship.getStatus());
+      symmetricalEntity.setStatus((Relationship.Type.PENDING == relationship.getStatus()) ? Relationship.Type.INCOMING : relationship.getStatus());
       symmetricalEntity.setLastUpdated(System.currentTimeMillis());
       //
       connectionDAO.create(symmetricalEntity);
@@ -108,6 +108,12 @@ public class RDBMSRelationshipStorageImpl extends RelationshipStorageImpl {
   @Override
   @ExoTransactional
   public Relationship getRelationship(Identity identity1, Identity identity2) throws RelationshipStorageException {
+    if (identity1==null) {
+      throw new IllegalArgumentException("Argument identity1 is null");
+    }
+    if (identity2==null) {
+      throw new IllegalArgumentException("Argument identity2 is null");
+    }
     Connection item = connectionDAO.getConnection(identity1, identity2);
     if (item == null) {
       item = connectionDAO.getConnection(identity2, identity1);

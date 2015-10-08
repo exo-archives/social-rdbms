@@ -397,7 +397,7 @@ public class RDBMSRelationshipManagerTest extends AbstractCoreTest {
     relationshipManager.deny(johnIdentity, rootIdentity);
     assertNotNull(relationshipManager.get(rootToJohnRelationship.getId()));
     
-    rootToJohnRelationship.setStatus(Relationship.Type.PENDING);
+    rootToJohnRelationship.setStatus(Type.OUTGOING);
     relationshipManager.update(rootToJohnRelationship);
     
     relationshipManager.deny(demoIdentity, rootIdentity);

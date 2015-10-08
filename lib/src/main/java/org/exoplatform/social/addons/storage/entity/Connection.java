@@ -75,6 +75,9 @@ public class Connection {
   }
 
   public void setStatus(Type status) {
+    if ((status == Type.ALL) || (status == Type.IGNORED) || (status == Type.PENDING)) {
+      throw new IllegalArgumentException("Illegal status ["+status+"]");
+    }
     this.status = status;
   }
 

@@ -16,6 +16,9 @@
  */
 package org.exoplatform.social.addons.search;
 
+import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertThat;
+
 import java.io.IOException;
 import java.util.Date;
 import java.util.List;
@@ -23,19 +26,16 @@ import java.util.List;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
-import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
-import org.exoplatform.commons.utils.PropertyManager;
-import org.exoplatform.social.core.profile.ProfileFilter;
-import org.exoplatform.social.core.relationship.model.Relationship;
+import org.exoplatform.social.core.storage.api.RelationshipStorage;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
-import org.junit.Test;
 
 import org.exoplatform.addons.es.index.IndexingService;
 import org.exoplatform.commons.api.persistence.ExoTransactional;
 import org.exoplatform.commons.persistence.impl.EntityManagerService;
 import org.exoplatform.commons.testing.BaseExoTestCase;
+import org.exoplatform.commons.utils.PropertyManager;
 import org.exoplatform.component.test.KernelBootstrap;
 import org.exoplatform.container.PortalContainer;
 import org.exoplatform.services.security.ConversationState;
@@ -44,9 +44,8 @@ import org.exoplatform.social.addons.test.AbstractCoreTest;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvider;
 import org.exoplatform.social.core.manager.IdentityManager;
-
-import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.assertThat;
+import org.exoplatform.social.core.profile.ProfileFilter;
+import org.exoplatform.social.core.relationship.model.Relationship;
 
 /**
  * Created by The eXo Platform SAS
@@ -55,11 +54,12 @@ import static org.junit.Assert.assertThat;
  * Sep 30, 2015  
  */
 public class SearchTestIT extends AbstractCoreTest {
-  private IdentityManager identityManager;
-  private Identity ghostIdentity, paulIdentity;
   private static KernelBootstrap bootstrap;
   private IndexingService indexingService;
   private ProfileSearchConnector searchConnector;
+  private RelationshipStorage relationshipStorage;
+  private String urlClient;
+  private HttpClient client = new DefaultHttpClient();
 
   @BeforeClass
   public static void setUpBeforeClass() throws Exception {
@@ -82,12 +82,13 @@ public class SearchTestIT extends AbstractCoreTest {
     indexingService = getService(IndexingService.class);
     identityManager = getService(IdentityManager.class);
     searchConnector = getService(ProfileSearchConnector.class);
+    relationshipStorage = getService(RelationshipStorage.class);
     assertNotNull("identityManager must not be null", identityManager);
+    urlClient = PropertyManager.getProperty("exo.es.search.client");
 
-    ghostIdentity = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, "ghost", true);
-    paulIdentity = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, "paul", true);
     org.exoplatform.services.security.Identity identity = getService(IdentityRegistry.class).getIdentity("root");
     ConversationState.setCurrent(new ConversationState(identity));
+    deleteAllProfilesInES();
   }
 
   @Override
@@ -95,9 +96,10 @@ public class SearchTestIT extends AbstractCoreTest {
 
   }
 
-  @Test
-  public void test_indexedProfile_isReturnedBySearch() throws Exception {
+  public void test_indexedProfile_isReturnedBySearch() throws IOException {
     //Given
+    Identity ghostIdentity = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, "ghost", true);
+    Identity paulIdentity = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, "paul", true);
     indexingService.index(ProfileIndexingServiceConnector.TYPE, paulIdentity.getId());
     setIndexingOperationTimestamp();
     indexingService.process();
@@ -109,18 +111,48 @@ public class SearchTestIT extends AbstractCoreTest {
     assertThat(results.size(), is(1));
   }
 
+  public void test_outgoingConnection_isReturnedBySearch() throws IOException {
+    //Given
+    relationshipManager.inviteToConnect(johnIdentity, maryIdentity);
+
+    indexingService.index(ProfileIndexingServiceConnector.TYPE, johnIdentity.getId());
+    indexingService.index(ProfileIndexingServiceConnector.TYPE, maryIdentity.getId());
+    setIndexingOperationTimestamp();
+    indexingService.process();
+    refreshIndices();
+    ProfileFilter filter = new ProfileFilter();
+    //When
+    //  All the users that have an incoming request from John
+    List<Identity> resultsOutJohn = searchConnector.search(johnIdentity, filter, Relationship.Type.INCOMING, 0, 10);
+    //  All the users that have sent an outgoing request to John
+    List<Identity> resultsInJohn = searchConnector.search(johnIdentity, filter, Relationship.Type.OUTGOING, 0, 10);
+    //  All the users that have an incoming request from Mary
+    List<Identity> resultsOutMary = searchConnector.search(maryIdentity, filter, Relationship.Type.INCOMING, 0, 10);
+    //  All the users that have sent an outgoing request to Mary
+    List<Identity> resultsInMary = searchConnector.search(maryIdentity, filter, Relationship.Type.OUTGOING, 0, 10);
+    //Then
+    assertThat(resultsOutJohn.size(), is(1));
+    assertThat(resultsInJohn.size(), is(0));
+    assertThat(resultsOutMary.size(), is(0));
+    assertThat(resultsInMary.size(), is(1));
+  }
+
   private void refreshIndices() throws IOException {
-    String urlClient = PropertyManager.getProperty("exo.es.search.client");
-    HttpClient client = new DefaultHttpClient();
     HttpPost request = new HttpPost(urlClient + "/profile/_refresh");
     LOG.info("Refreshing ES by calling {}", request.getURI());
     HttpResponse response = client.execute(request);
     assertThat(response.getStatusLine().getStatusCode(), is(200));
   }
 
+  private void deleteAllProfilesInES() {
+    indexingService.unindexAll(ProfileIndexingServiceConnector.TYPE);
+    setIndexingOperationTimestamp();
+    indexingService.process();
+  }
+
   // TODO This method MUST be removed : we MUST find a way to use exo-es-search Liquibase changelogs
   @ExoTransactional
-  private void setIndexingOperationTimestamp() throws NoSuchFieldException, IllegalAccessException {
+  private void setIndexingOperationTimestamp() {
     EntityManagerService emService = PortalContainer.getInstance().getComponentInstanceOfType(EntityManagerService.class);
     emService.getEntityManager()
             .createQuery("UPDATE IndexingOperation set timestamp = :now")

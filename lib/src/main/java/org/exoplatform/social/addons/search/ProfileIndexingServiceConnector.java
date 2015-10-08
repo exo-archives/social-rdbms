@@ -81,7 +81,7 @@ public class ProfileIndexingServiceConnector extends ElasticIndexingServiceConne
     Identity identity = identityManager.getIdentity(id, true);
     Profile profile = identity.getProfile();
     
-    Map<String, String> fields = new HashMap<String, String>();  
+    Map<String, String> fields = new HashMap<>();
     fields.put("name", profile.getFullName());
     fields.put("lastName", (String) profile.getProperty(Profile.LAST_NAME));
     fields.put("position", profile.getPosition());
@@ -126,6 +126,10 @@ public class ProfileIndexingServiceConnector extends ElasticIndexingServiceConne
       } else {
         sb.append(con.getSenderId()).append(",");
       }
+    }
+    //Remove the last ","
+    if (sb.length()>0) {
+      sb.deleteCharAt(sb.length()-1);
     }
     return sb.toString();
   }
