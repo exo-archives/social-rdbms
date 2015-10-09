@@ -40,6 +40,14 @@ public class RDBMSMigrationManager implements Startable {
     //
   }
 
+  /**
+   * Gets the relationship service
+   * @return
+   */
+  public RelationshipMigrationService getRelationshipMigration() {
+    return relationshipMigration;
+  }
+
   @Override
   public void start() {
     Runnable migrateTask = new Runnable() {

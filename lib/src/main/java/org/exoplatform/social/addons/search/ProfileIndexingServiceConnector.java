@@ -22,10 +22,13 @@ import org.apache.commons.lang.StringUtils;
 
 import org.exoplatform.addons.es.domain.Document;
 import org.exoplatform.addons.es.index.elastic.ElasticIndexingServiceConnector;
+import org.exoplatform.commons.utils.CommonsUtils;
 import org.exoplatform.container.xml.InitParams;
 import org.exoplatform.container.xml.PropertiesParam;
 import org.exoplatform.social.addons.storage.dao.ConnectionDAO;
 import org.exoplatform.social.addons.storage.entity.Connection;
+import org.exoplatform.social.addons.updater.RDBMSMigrationManager;
+import org.exoplatform.social.addons.updater.RelationshipMigrationService;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.identity.model.Profile;
 import org.exoplatform.social.core.manager.IdentityManager;
@@ -173,8 +176,8 @@ public class ProfileIndexingServiceConnector extends ElasticIndexingServiceConne
 
   @Override
   public List<String> getAllIds() {
-    //TODO implement
-    return null;
+    RelationshipMigrationService identityService = CommonsUtils.getService(RDBMSMigrationManager.class).getRelationshipMigration();
+    return identityService.getIdentityIds();
   }
 
 }

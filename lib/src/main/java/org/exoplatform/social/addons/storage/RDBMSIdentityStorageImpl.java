@@ -51,4 +51,16 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
     ProfileSearchConnector connector = CommonsUtils.getService(ProfileSearchConnector.class);
     return connector.search(null, profileFilter, null, offset, limit);
   }
+  
+  @Override
+  public int getIdentitiesByProfileFilterCount(String providerId, ProfileFilter profileFilter) throws IdentityStorageException {
+    ProfileSearchConnector connector = CommonsUtils.getService(ProfileSearchConnector.class);
+    return connector.count(null, profileFilter, null);
+  }
+  
+  @Override
+  public int getIdentitiesByFirstCharacterOfNameCount(String providerId, ProfileFilter profileFilter) throws IdentityStorageException {
+    ProfileSearchConnector connector = CommonsUtils.getService(ProfileSearchConnector.class);
+    return connector.count(null, profileFilter, null);
+  }
 }

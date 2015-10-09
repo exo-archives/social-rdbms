@@ -1,10 +1,14 @@
 package org.exoplatform.social.addons.updater;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import javax.jcr.NodeIterator;
+import javax.jcr.RepositoryException;
+import javax.jcr.UnsupportedRepositoryOperationException;
 import javax.persistence.EntityManager;
 
 import org.exoplatform.commons.api.event.EventManager;
@@ -122,7 +126,7 @@ public abstract class AbstractMigrationService<T>  extends AbstractStorage {
   }
   
   /**
-   * Gets the all of ALL SPACE identity nodes
+   * Gets the all of ALL USER identity nodes
    * @return
    */
   protected NodeIterator getIdentityNodes() {
@@ -135,7 +139,31 @@ public abstract class AbstractMigrationService<T>  extends AbstractStorage {
                                         .append(JCRProperties.path.getName()).append(" LIKE '")
                                         .append(getProviderRoot().getProviders().get(OrganizationIdentityProvider.NAME).getPath())
                                         .append(StorageUtils.SLASH_STR).append(StorageUtils.PERCENT_STR).append("'").toString();
+    
     return nodes(identityQuery);
+  }
+  
+  /**
+   * Gets the all of ALL IDENTITY IDs
+   * @return
+   */
+  public List<String> getIdentityIds() {
+    NodeIterator iter = getIdentityNodes();
+    if (iter == null) {
+      return Collections.emptyList();
+    }
+    //
+    List<String> results = new ArrayList<String>();
+    while(iter.hasNext()) {
+      try {
+        results.add(iter.nextNode().getUUID());
+      } catch (RepositoryException e) {
+        LOG.error(e.getMessage(), e);
+      }
+    }
+    //
+    LOG.info("Number of Identity Ids: " + results.size());
+    return results;
   }
   /**
    * Gets the all of USER identity nodes with given offset and limit;
