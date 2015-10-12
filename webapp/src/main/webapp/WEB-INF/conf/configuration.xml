@@ -24,22 +24,56 @@
    xmlns="http://www.exoplatform.org/xml/ns/kernel_1_2.xsd">
 
   <component>
+    <type>org.exoplatform.commons.persistence.impl.EntityManagerService</type>
+  </component>
+  
+  <component>
+    <key>org.exoplatform.social.addons.storage.dao.StreamItemDAO</key>
+    <type>org.exoplatform.social.addons.storage.dao.jpa.StreamItemDAOImpl</type>
+  </component>
+  
+  <component>
+    <key>org.exoplatform.social.addons.storage.dao.CommentDAO</key>
+    <type>org.exoplatform.social.addons.storage.dao.jpa.CommentDAOImpl</type>
+  </component>
+  
+   <component>
+    <key>org.exoplatform.social.addons.storage.dao.ConnectionDAO</key>
+    <type>org.exoplatform.social.addons.storage.dao.jpa.ConnectionDAOImpl</type>
+  </component>
+  
+  <component>
+    <key>org.exoplatform.social.addons.storage.dao.ActivityDAO</key>
+    <type>org.exoplatform.social.addons.storage.dao.jpa.ActivityDAOImpl</type>
+  </component>
+  
+  <component>
+    <key>org.exoplatform.social.core.storage.api.IdentityStorage</key>
+    <type>org.exoplatform.social.addons.storage.RDBMSIdentityStorageImpl</type>
+  </component>
+  
+  <component>
+    <key>org.exoplatform.social.core.storage.api.RelationshipStorage</key>
+    <type>org.exoplatform.social.addons.storage.RDBMSRelationshipStorageImpl</type>
+  </component>
+  
+  <component>
+    <key>org.exoplatform.social.core.storage.api.ActivityStorage</key>
+    <type>org.exoplatform.social.addons.storage.RDBMSActivityStorageImpl</type>
+  </component>
+  
+  <component>
+    <type>org.exoplatform.social.core.storage.cache.CachedActivityStorage</type>
+  </component>
+  
+  <component>
+    <type>org.exoplatform.social.core.storage.cache.CachedRelationshipStorage</type>
+  </component>
+
+  <component>
     <key>org.exoplatform.social.addons.updater.RDBMSMigrationManager</key>
     <type>org.exoplatform.social.addons.updater.RDBMSMigrationManager</type>
   </component>
-     
-   <component>
-     <type>org.exoplatform.social.addons.search.ProfileSearchConnector</type>
-     <init-params>
-        <properties-param>
-          <name>constructor.params</name>
-          <property name="searchType" value="profile"/>
-          <property name="index" value="profile"/>
-          <property name="nameField" value="name"/>
-          <property name="searchFields" value="name, position, skills"/>
-        </properties-param>
-      </init-params>
-   </component> 
 
 	<component>
 		<type>org.exoplatform.social.addons.updater.ActivityMigrationService</type>
@@ -171,22 +205,5 @@
 			<type>org.exoplatform.social.addons.updater.listener.SpaceActivityUpdaterListener</type>
 		</component-plugin>
 	</external-component-plugins>
-  
-  <external-component-plugins>
-    <target-component>org.exoplatform.addons.es.index.IndexingService</target-component>
-    <component-plugin>
-      <name>ProfileIndexingServiceConnector</name>
-      <set-method>addConnector</set-method>
-      <type>org.exoplatform.social.addons.search.ProfileIndexingServiceConnector</type>
-      <init-params>
-        <properties-param>
-          <name>constructor.params</name>
-          <property name="index" value="profile"/>
-          <property name="type" value="profile"/>
-          <property name="indexFields" value="name, lastName, position, skills, avatarUrl, userName, email"/>
-        </properties-param>
-      </init-params>
-    </component-plugin>
-  </external-component-plugins>
 
 </configuration>
