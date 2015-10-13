@@ -36,10 +36,9 @@ public class RelationshipMigrationService extends AbstractMigrationService<Relat
                                       IdentityStorageImpl identityStorage,
                                       ConnectionDAO connectionDAO,
                                       EventManager<Relationship, String> eventManager,
-                                      EntityManagerService entityManagerService,
-                                      DataInitializer dataInitializer) {
+                                      EntityManagerService entityManagerService) {
 
-    super(initParams, identityStorage, eventManager, entityManagerService, dataInitializer);
+    super(initParams, identityStorage, eventManager, entityManagerService);
     this.connectionDAO = connectionDAO;
     this.LIMIT_THRESHOLD = getInteger(initParams, LIMIT_THRESHOLD_KEY, 200);
   }

@@ -3,6 +3,7 @@ package org.exoplatform.social.addons.updater;
 import java.lang.reflect.Field;
 import java.util.concurrent.CountDownLatch;
 
+import org.exoplatform.commons.api.persistence.DataInitializer;
 import org.exoplatform.commons.api.settings.SettingService;
 import org.exoplatform.commons.api.settings.SettingValue;
 import org.exoplatform.commons.api.settings.data.Context;
@@ -24,41 +25,48 @@ public class RDBMSMigrationManager implements Startable {
   
   private final CountDownLatch migrater;
 
-  private final RelationshipMigrationService relationshipMigration;
+  private RelationshipMigrationService relationshipMigration;
 
-  private final ActivityMigrationService activityMigration;
+  private ActivityMigrationService activityMigration;
   
-  private final SettingService settingService;
+  private SettingService settingService;
 
-  public RDBMSMigrationManager(RelationshipMigrationService relationshipMigration,
-                               ActivityMigrationService activityMigration, 
-                               SettingService settingService) {
-    this.relationshipMigration = relationshipMigration;
-    this.activityMigration = activityMigration;
-    this.settingService = settingService;
+//  public RDBMSMigrationManager(RelationshipMigrationService relationshipMigration,
+//                               ActivityMigrationService activityMigration, 
+//                               SettingService settingService) {
+//    this.relationshipMigration = relationshipMigration;
+//    this.activityMigration = activityMigration;
+//    this.settingService = settingService;
+//    migrater = new CountDownLatch(1);
+//    //
+//  }
+  
+  public RDBMSMigrationManager() {
+    CommonsUtils.getService(DataInitializer.class);
     migrater = new CountDownLatch(1);
     //
   }
+  
+  
 
   /**
    * Gets the relationship service
    * @return
    */
   public RelationshipMigrationService getRelationshipMigration() {
-    return relationshipMigration;
+    return relationshipMigration == null ? CommonsUtils.getService(RelationshipMigrationService.class) : relationshipMigration;
   }
 
   @Override
   public void start() {
+    initMigrationSetting();
     Runnable migrateTask = new Runnable() {
       @Override
       public void run() {
-        initMigrationSetting();
+        //
         Field field =  null;
-        
         try {
           if (!MigrationContext.isDone()) {
-            
             field =  SessionImpl.class.getDeclaredField("FORCE_USE_GET_NODES_LAZILY");
             if (field != null) {
               field.setAccessible(true);
@@ -69,10 +77,12 @@ public class RDBMSMigrationManager implements Startable {
             //
             if (!MigrationContext.isDone()) {
               if (!MigrationContext.isConnectionDone()) {
+                relationshipMigration = CommonsUtils.getService(RelationshipMigrationService.class);
                 relationshipMigration.start();
                 updateSettingValue(MigrationContext.SOC_RDBMS_CONNECTION_MIGRATION_KEY, Boolean.TRUE);
               }
               if (!MigrationContext.isDone() && MigrationContext.isConnectionDone() && !MigrationContext.isActivityDone()) {
+                activityMigration = CommonsUtils.getService(ActivityMigrationService.class);
                 activityMigration.start();
                 updateSettingValue(MigrationContext.SOC_RDBMS_ACTIVITY_MIGRATION_KEY, Boolean.TRUE);
               }
@@ -127,6 +137,7 @@ public class RDBMSMigrationManager implements Startable {
   }
   
   private void initMigrationSetting() {
+    settingService = CommonsUtils.getService(SettingService.class);
     MigrationContext.setDone(getOrCreateSettingValue(MigrationContext.SOC_RDBMS_MIGRATION_STATUS_KEY));
     //
     MigrationContext.setConnectionDone(getOrCreateSettingValue(MigrationContext.SOC_RDBMS_CONNECTION_MIGRATION_KEY));
@@ -180,4 +191,6 @@ public class RDBMSMigrationManager implements Startable {
   public CountDownLatch getMigrater() {
     return migrater;
   }
+  
+  
 }

@@ -36,7 +36,6 @@ public abstract class AbstractMigrationService<T>  extends AbstractStorage {
   protected final IdentityStorage identityStorage;
   protected final EventManager<T, String> eventManager;
   protected final EntityManagerService entityManagerService;
-  protected final DataInitializer dataInitializer;
   protected boolean forkStop = false;
   protected int LIMIT_THRESHOLD = 100;
   protected String process = "";
@@ -48,13 +47,10 @@ public abstract class AbstractMigrationService<T>  extends AbstractStorage {
   public AbstractMigrationService(InitParams initParams,
                                   IdentityStorage identityStorage,
                                   EventManager<T, String> eventManager,
-                                  EntityManagerService entityManagerService,
-                                  DataInitializer dataInitializer) {
-    super();
+                                  EntityManagerService entityManagerService) {
     this.identityStorage = identityStorage;
     this.eventManager = eventManager;
     this.entityManagerService = entityManagerService;
-    this.dataInitializer = dataInitializer;
     LOG = ExoLogger.getLogger(this.getClass().getName());
   }
 
