@@ -27,10 +27,7 @@ import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.DefaultHttpClient;
-import org.exoplatform.social.core.storage.api.RelationshipStorage;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-
+import org.exoplatform.addons.es.index.IndexingOperationProcessor;
 import org.exoplatform.addons.es.index.IndexingService;
 import org.exoplatform.commons.api.persistence.ExoTransactional;
 import org.exoplatform.commons.persistence.impl.EntityManagerService;
@@ -46,6 +43,9 @@ import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvide
 import org.exoplatform.social.core.manager.IdentityManager;
 import org.exoplatform.social.core.profile.ProfileFilter;
 import org.exoplatform.social.core.relationship.model.Relationship;
+import org.exoplatform.social.core.storage.api.RelationshipStorage;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 
 /**
  * Created by The eXo Platform SAS
@@ -56,6 +56,7 @@ import org.exoplatform.social.core.relationship.model.Relationship;
 public class SearchTestIT extends AbstractCoreTest {
   private static KernelBootstrap bootstrap;
   private IndexingService indexingService;
+  private IndexingOperationProcessor indexingProcessor;
   private ProfileSearchConnector searchConnector;
   private RelationshipStorage relationshipStorage;
   private String urlClient;
@@ -80,6 +81,7 @@ public class SearchTestIT extends AbstractCoreTest {
   protected void setUp() throws Exception {
     super.setUp();
     indexingService = getService(IndexingService.class);
+    indexingProcessor = getService(IndexingOperationProcessor.class);
     identityManager = getService(IdentityManager.class);
     searchConnector = getService(ProfileSearchConnector.class);
     relationshipStorage = getService(RelationshipStorage.class);
@@ -102,7 +104,7 @@ public class SearchTestIT extends AbstractCoreTest {
     Identity paulIdentity = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, "paul", true);
     indexingService.index(ProfileIndexingServiceConnector.TYPE, paulIdentity.getId());
     setIndexingOperationTimestamp();
-    indexingService.process();
+    indexingProcessor.process();
     refreshIndices();
     ProfileFilter filter = new ProfileFilter();
     //When
@@ -118,7 +120,7 @@ public class SearchTestIT extends AbstractCoreTest {
     indexingService.index(ProfileIndexingServiceConnector.TYPE, johnIdentity.getId());
     indexingService.index(ProfileIndexingServiceConnector.TYPE, maryIdentity.getId());
     setIndexingOperationTimestamp();
-    indexingService.process();
+    indexingProcessor.process();
     refreshIndices();
     ProfileFilter filter = new ProfileFilter();
     //When
@@ -147,7 +149,7 @@ public class SearchTestIT extends AbstractCoreTest {
   private void deleteAllProfilesInES() {
     indexingService.unindexAll(ProfileIndexingServiceConnector.TYPE);
     setIndexingOperationTimestamp();
-    indexingService.process();
+    indexingProcessor.process();
   }
 
   // TODO This method MUST be removed : we MUST find a way to use exo-es-search Liquibase changelogs

@@ -54,7 +54,7 @@
    </component> 
     
     <external-component-plugins>
-    <target-component>org.exoplatform.addons.es.index.IndexingService</target-component>
+    <target-component>org.exoplatform.addons.es.index.IndexingOperationProcessor</target-component>
     <component-plugin>
       <name>ProfileIndexingServiceConnector</name>
       <set-method>addConnector</set-method>

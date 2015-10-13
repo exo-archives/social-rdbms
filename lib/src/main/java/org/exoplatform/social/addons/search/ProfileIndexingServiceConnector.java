@@ -16,12 +16,16 @@
  */
 package org.exoplatform.social.addons.search;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import org.apache.commons.lang.StringUtils;
-
 import org.exoplatform.addons.es.domain.Document;
-import org.exoplatform.addons.es.index.elastic.ElasticIndexingServiceConnector;
+import org.exoplatform.addons.es.index.impl.ElasticIndexingServiceConnector;
 import org.exoplatform.commons.utils.CommonsUtils;
 import org.exoplatform.container.xml.InitParams;
 import org.exoplatform.container.xml.PropertiesParam;
@@ -46,13 +50,7 @@ public class ProfileIndexingServiceConnector extends ElasticIndexingServiceConne
   private final ConnectionDAO connectionDAO;
 
   /** */
-  private String index;
-  
-  /** */
   private List<String> indexFields;
-
-  // SearchResult information
-  private String nameElasticFieldName = "name";
 
   private Map<String, String> sortMapping = new HashMap<String, String>();
 
@@ -61,8 +59,6 @@ public class ProfileIndexingServiceConnector extends ElasticIndexingServiceConne
                                          ConnectionDAO connectionDAO) {
     super(initParams);
     PropertiesParam param = initParams.getPropertiesParam("constructor.params");
-    this.index = param.getProperty("index");
-    this.nameElasticFieldName = param.getProperty("nameField");
     this.indexFields = new ArrayList<String>(Arrays.asList(param.getProperty("indexFields").split(",")));
     //Indicate in which order element will be displayed
     sortMapping.put("firstName", "firstName");
