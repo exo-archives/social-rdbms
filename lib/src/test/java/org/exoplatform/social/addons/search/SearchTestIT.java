@@ -20,21 +20,20 @@ import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 
 import java.io.IOException;
-import java.util.Date;
 import java.util.List;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.DefaultHttpClient;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+
 import org.exoplatform.addons.es.index.IndexingOperationProcessor;
 import org.exoplatform.addons.es.index.IndexingService;
-import org.exoplatform.commons.api.persistence.ExoTransactional;
-import org.exoplatform.commons.persistence.impl.EntityManagerService;
 import org.exoplatform.commons.testing.BaseExoTestCase;
 import org.exoplatform.commons.utils.PropertyManager;
 import org.exoplatform.component.test.KernelBootstrap;
-import org.exoplatform.container.PortalContainer;
 import org.exoplatform.services.security.ConversationState;
 import org.exoplatform.services.security.IdentityRegistry;
 import org.exoplatform.social.addons.test.AbstractCoreTest;
@@ -44,8 +43,6 @@ import org.exoplatform.social.core.manager.IdentityManager;
 import org.exoplatform.social.core.profile.ProfileFilter;
 import org.exoplatform.social.core.relationship.model.Relationship;
 import org.exoplatform.social.core.storage.api.RelationshipStorage;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
 
 /**
  * Created by The eXo Platform SAS
@@ -86,7 +83,7 @@ public class SearchTestIT extends AbstractCoreTest {
     searchConnector = getService(ProfileSearchConnector.class);
     relationshipStorage = getService(RelationshipStorage.class);
     assertNotNull("identityManager must not be null", identityManager);
-    urlClient = PropertyManager.getProperty("exo.es.search.client");
+    urlClient = PropertyManager.getProperty("exo.es.search.server.url");
 
     org.exoplatform.services.security.Identity identity = getService(IdentityRegistry.class).getIdentity("root");
     ConversationState.setCurrent(new ConversationState(identity));
@@ -103,7 +100,6 @@ public class SearchTestIT extends AbstractCoreTest {
     Identity ghostIdentity = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, "ghost", true);
     Identity paulIdentity = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, "paul", true);
     indexingService.index(ProfileIndexingServiceConnector.TYPE, paulIdentity.getId());
-    setIndexingOperationTimestamp();
     indexingProcessor.process();
     refreshIndices();
     ProfileFilter filter = new ProfileFilter();
@@ -119,7 +115,6 @@ public class SearchTestIT extends AbstractCoreTest {
 
     indexingService.index(ProfileIndexingServiceConnector.TYPE, johnIdentity.getId());
     indexingService.index(ProfileIndexingServiceConnector.TYPE, maryIdentity.getId());
-    setIndexingOperationTimestamp();
     indexingProcessor.process();
     refreshIndices();
     ProfileFilter filter = new ProfileFilter();
@@ -148,20 +143,7 @@ public class SearchTestIT extends AbstractCoreTest {
 
   private void deleteAllProfilesInES() {
     indexingService.unindexAll(ProfileIndexingServiceConnector.TYPE);
-    setIndexingOperationTimestamp();
     indexingProcessor.process();
-  }
-
-  // TODO This method MUST be removed : we MUST find a way to use exo-es-search Liquibase changelogs
-  @ExoTransactional
-  private void setIndexingOperationTimestamp() {
-    EntityManagerService emService = PortalContainer.getInstance().getComponentInstanceOfType(EntityManagerService.class);
-    emService.getEntityManager()
-            .createQuery("UPDATE IndexingOperation set timestamp = :now")
-            .setParameter("now", new Date(0L))
-            .executeUpdate();
-    //Refresh updated entities of the entity manager
-    emService.getEntityManager().clear();
   }
 
 }

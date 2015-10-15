@@ -24,7 +24,11 @@
   
   <component>
         <key>org.exoplatform.addons.es.index.IndexingService</key>
-        <type>org.exoplatform.addons.es.index.elastic.ElasticIndexingService</type>
+        <type>org.exoplatform.addons.es.index.impl.QueueIndexingService</type>
+    </component>
+    <component>
+        <key>org.exoplatform.addons.es.index.IndexingOperationProcessor</key>
+        <type>org.exoplatform.addons.es.index.impl.ElasticIndexingOperationProcessor</type>
     </component>
     <component>
         <key>org.exoplatform.addons.es.dao.IndexingOperationDAO</key>
