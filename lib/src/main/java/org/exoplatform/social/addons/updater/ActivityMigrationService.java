@@ -248,83 +248,90 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
       while (activityIterator.hasNext()) {
         String activityId = activityIterator.next().getId();
         //
-        ExoSocialActivity activity = activityJCRStorage.getActivity(activityId);
-        Map<String, String> params = activity.getTemplateParams();
-        if (params != null && !params.isEmpty()) {
-          
-          for(Map.Entry<String, String> entry: params.entrySet()) {
-            String value = entry.getValue();
-            if (value.length() >= 1024) {
-              LOG.info("===================== activity id " + activity.getId() + " new value length = " +  value.length() + " - " + value);
-              params.put(entry.getKey(), "");
-            }
-          }
-          
-          activity.setTemplateParams(params);
-        }
-        //
-        Identity owner = new Identity(identityEntity.getId());
-        owner.setProviderId(providerId);
-        //
-        activity.setId(null);
-        activity = activityStorage.saveActivity(owner, activity);
-        //
-        doBroadcastListener(activity, activityId);
-        
-        //
-        ActivityEntity activityEntity = getSession().findById(ActivityEntity.class, activityId);
-        _getMixin(activityEntity, ActivityUpdaterEntity.class, true);
-        //
-        if (previousActivityId != null) {
-          try {
-            ActivityEntity previousActivity = getSession().findById(ActivityEntity.class, previousActivityId);
-            if (previousActivity != null) {
-              _removeMixin(previousActivity, ActivityUpdaterEntity.class);
-            }
-          } catch (Exception e) {
-            LOG.error("Failed to remove mixin type," + e.getMessage(), e);
-          }
-        }
-
-        List<ActivityEntity> commentEntities = activityEntity.getComments();
-        for (ActivityEntity commentEntity : commentEntities) {
-          ExoSocialActivity comment = fillCommentFromEntity(commentEntity);
-          if (comment != null) {
-            String oldCommentId = comment.getId();
-            comment.setId(null);
-            Map<String, String> commentParams = comment.getTemplateParams();
-            if (commentParams != null && !commentParams.isEmpty()) {
-              
-              for(Map.Entry<String, String> entry: commentParams.entrySet()) {
-                String value = entry.getValue();
-                if (value.length() >= 1024) {
-                  LOG.info("===================== comment id " + oldCommentId + " new value length = " +  value.length() + " - " + value);
-                  commentParams.put(entry.getKey(), "");
-                }
+        try {
+          ExoSocialActivity activity = activityJCRStorage.getActivity(activityId);
+          Map<String, String> params = activity.getTemplateParams();
+          if (params != null && !params.isEmpty()) {
+            
+            for(Map.Entry<String, String> entry: params.entrySet()) {
+              String value = entry.getValue();
+              if (value.length() >= 1024) {
+                LOG.info("===================== activity id " + activity.getId() + " new value length = " +  value.length() + " - " + value);
+                params.put(entry.getKey(), "");
               }
-              
-              comment.setTemplateParams(commentParams);
             }
+            
             activity.setTemplateParams(params);
-            saveComment(activity, comment);
-            //
-            doBroadcastListener(comment, oldCommentId);
-            commentParams = null;
-            params = null;
           }
-        }
-
-        previousActivityId = activityId;
-        ++count;
-        //
-        if(count % LIMIT_ACTIVITY_SAVE_THRESHOLD == 0) {
-          endTx(begunTx);
-          entityManagerService.endRequest(PortalContainer.getInstance());
-          entityManagerService.startRequest(PortalContainer.getInstance());
-          begunTx = startTx();
+          //
+          Identity owner = new Identity(identityEntity.getId());
+          owner.setProviderId(providerId);
+          //
+          activity.setId(null);
+          activity = activityStorage.saveActivity(owner, activity);
+          //
+          doBroadcastListener(activity, activityId);
+          
+          //
+          ActivityEntity activityEntity = getSession().findById(ActivityEntity.class, activityId);
+          _getMixin(activityEntity, ActivityUpdaterEntity.class, true);
+          //
+          if (previousActivityId != null) {
+            try {
+              ActivityEntity previousActivity = getSession().findById(ActivityEntity.class, previousActivityId);
+              if (previousActivity != null) {
+                _removeMixin(previousActivity, ActivityUpdaterEntity.class);
+              }
+            } catch (Exception e) {
+              LOG.error("Failed to remove mixin type," + e.getMessage(), e);
+            }
+          }
+          
+          List<ActivityEntity> commentEntities = activityEntity.getComments();
+          for (ActivityEntity commentEntity : commentEntities) {
+            ExoSocialActivity comment = fillCommentFromEntity(commentEntity);
+            if (comment != null) {
+              String oldCommentId = comment.getId();
+              comment.setId(null);
+              Map<String, String> commentParams = comment.getTemplateParams();
+              if (commentParams != null && !commentParams.isEmpty()) {
+                
+                for(Map.Entry<String, String> entry: commentParams.entrySet()) {
+                  String value = entry.getValue();
+                  if (value.length() >= 1024) {
+                    LOG.info("===================== comment id " + oldCommentId + " new value length = " +  value.length() + " - " + value);
+                    commentParams.put(entry.getKey(), "");
+                  }
+                }
+                
+                comment.setTemplateParams(commentParams);
+              }
+              activity.setTemplateParams(params);
+              saveComment(activity, comment);
+              //
+              doBroadcastListener(comment, oldCommentId);
+              commentParams = null;
+              params = null;
+            }
+          }
+          
+          previousActivityId = activityId;
+          ++count;
+          //
+          if(count % LIMIT_ACTIVITY_SAVE_THRESHOLD == 0) {
+            endTx(begunTx);
+            entityManagerService.endRequest(PortalContainer.getInstance());
+            entityManagerService.startRequest(PortalContainer.getInstance());
+            begunTx = startTx();
+          }
+          
+        } catch (Exception e) {
+          LOG.error("Failed to migrate activity id : " + activityId, e);
         }
       }
       LOG.info(String.format("    Done migration %s activitie(s) for %s consumed %s(ms) ", count, identityEntity.getRemoteId(), System.currentTimeMillis() - t));
+    } catch (Exception e) {
+      LOG.error("Failed to migrate activities of user " + userName, e);
     } finally {
       endTx(begunTx);
     }
