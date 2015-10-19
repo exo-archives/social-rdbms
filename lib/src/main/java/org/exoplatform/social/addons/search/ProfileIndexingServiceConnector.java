@@ -171,9 +171,9 @@ public class ProfileIndexingServiceConnector extends ElasticIndexingServiceConne
   }
 
   @Override
-  public List<String> getAllIds() {
+  public List<String> getAllIds(int offset, int limit) {
     RelationshipMigrationService identityService = CommonsUtils.getService(RDBMSMigrationManager.class).getRelationshipMigration();
-    return identityService.getIdentityIds();
+    return identityService.getIdentityIds(offset, limit);
   }
 
 }

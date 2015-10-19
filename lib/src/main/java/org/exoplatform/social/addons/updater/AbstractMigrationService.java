@@ -143,8 +143,8 @@ public abstract class AbstractMigrationService<T>  extends AbstractStorage {
    * Gets the all of ALL IDENTITY IDs
    * @return
    */
-  public List<String> getIdentityIds() {
-    NodeIterator iter = getIdentityNodes();
+  public List<String> getIdentityIds(int offset, int limit) {
+    NodeIterator iter = getIdentityNodes(offset, limit);
     if (iter == null) {
       return Collections.emptyList();
     }
