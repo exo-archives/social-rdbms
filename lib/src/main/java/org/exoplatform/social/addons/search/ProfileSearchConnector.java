@@ -284,7 +284,7 @@ public class ProfileSearchConnector {
     String skills = filter.getSkills().replace(StorageUtils.ASTERISK_STR, StorageUtils.EMPTY_STR);
     if (skills != null && skills.length() > 0) {
       if (esExp.length() > 0) {
-        esExp.append(" OR ");
+        esExp.append(" AND ");
       }
       //
       esExp.append("skills:").append(StorageUtils.ASTERISK_STR).append(skills).append(StorageUtils.ASTERISK_STR);
@@ -294,7 +294,7 @@ public class ProfileSearchConnector {
     String position = filter.getPosition().replace(StorageUtils.ASTERISK_STR, StorageUtils.EMPTY_STR);
     if (position != null && position.length() > 0) {
       if (esExp.length() > 0) {
-        esExp.append(" OR ");
+        esExp.append(" AND ");
       }
       esExp.append("position:").append(StorageUtils.ASTERISK_STR).append(position).append(StorageUtils.ASTERISK_STR);
     }
