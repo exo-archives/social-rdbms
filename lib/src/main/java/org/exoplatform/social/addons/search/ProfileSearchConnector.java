@@ -144,6 +144,7 @@ public class ProfileSearchConnector {
       p.setProperty(Profile.LAST_NAME, lastName);
       p.setProperty(Profile.POSITION, position);
       p.setProperty(Profile.EMAIL, email);
+      p.setProperty(Profile.USERNAME, userName);
       identity.setProfile(p);
       results.add(identity);
     }
