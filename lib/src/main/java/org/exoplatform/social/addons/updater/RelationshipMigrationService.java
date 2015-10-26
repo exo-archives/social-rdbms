@@ -7,9 +7,10 @@ import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import javax.jcr.RepositoryException;
 
+import org.exoplatform.addons.es.index.IndexingService;
 import org.exoplatform.commons.api.event.EventManager;
-import org.exoplatform.commons.api.persistence.DataInitializer;
 import org.exoplatform.commons.persistence.impl.EntityManagerService;
+import org.exoplatform.commons.utils.CommonsUtils;
 import org.exoplatform.container.PortalContainer;
 import org.exoplatform.container.component.RequestLifeCycle;
 import org.exoplatform.container.xml.InitParams;
@@ -17,6 +18,7 @@ import org.exoplatform.management.annotations.Managed;
 import org.exoplatform.management.annotations.ManagedDescription;
 import org.exoplatform.management.jmx.annotations.NameTemplate;
 import org.exoplatform.management.jmx.annotations.Property;
+import org.exoplatform.social.addons.search.ProfileIndexingServiceConnector;
 import org.exoplatform.social.addons.storage.dao.ConnectionDAO;
 import org.exoplatform.social.addons.storage.entity.Connection;
 import org.exoplatform.social.core.chromattic.entity.IdentityEntity;
@@ -124,6 +126,12 @@ public class RelationshipMigrationService extends AbstractMigrationService<Relat
         RequestLifeCycle.end();
         RequestLifeCycle.begin(PortalContainer.getInstance());
         LOG.info(String.format("| / END::Relationships migration for (%s) user(s) with %s relationship(s) consumed %s(ms)", offset, total, System.currentTimeMillis() - t));
+        
+        LOG.info("| \\ START::Re-indexing profile(s) ---------------------------------");
+        //To be sure all of the profile will be indexed in ES after migrated
+        IndexingService indexingService = CommonsUtils.getService(IndexingService.class);
+        indexingService.reindexAll(ProfileIndexingServiceConnector.TYPE);
+        LOG.info("| / END::Re-indexing profile(s) ---------------------------------");
       }
   }
   
