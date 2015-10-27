@@ -26,23 +26,26 @@ import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.DefaultHttpClient;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-
 import org.exoplatform.addons.es.index.IndexingOperationProcessor;
 import org.exoplatform.addons.es.index.IndexingService;
-import org.exoplatform.commons.testing.BaseExoTestCase;
+import org.exoplatform.commons.utils.CommonsUtils;
 import org.exoplatform.commons.utils.PropertyManager;
-import org.exoplatform.component.test.KernelBootstrap;
+import org.exoplatform.services.log.ExoLogger;
+import org.exoplatform.services.log.Log;
 import org.exoplatform.services.security.ConversationState;
 import org.exoplatform.services.security.IdentityRegistry;
 import org.exoplatform.social.addons.test.AbstractCoreTest;
+import org.exoplatform.social.addons.updater.RelationshipMigrationService;
 import org.exoplatform.social.core.identity.model.Identity;
+import org.exoplatform.social.core.identity.model.Profile;
 import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvider;
 import org.exoplatform.social.core.manager.IdentityManager;
 import org.exoplatform.social.core.profile.ProfileFilter;
 import org.exoplatform.social.core.relationship.model.Relationship;
+import org.exoplatform.social.core.relationship.model.Relationship.Type;
+import org.exoplatform.social.core.storage.api.IdentityStorage;
 import org.exoplatform.social.core.storage.api.RelationshipStorage;
+import org.exoplatform.social.core.storage.impl.RelationshipStorageImpl;
 
 /**
  * Created by The eXo Platform SAS
@@ -51,29 +54,17 @@ import org.exoplatform.social.core.storage.api.RelationshipStorage;
  * Sep 30, 2015  
  */
 public class SearchTestIT extends AbstractCoreTest {
-  private static KernelBootstrap bootstrap;
+  
+  protected final Log LOG = ExoLogger.getLogger(SearchTestIT.class);
   private IndexingService indexingService;
   private IndexingOperationProcessor indexingProcessor;
   private ProfileSearchConnector searchConnector;
-  private RelationshipStorage relationshipStorage;
   private String urlClient;
   private HttpClient client = new DefaultHttpClient();
-
-  @BeforeClass
-  public static void setUpBeforeClass() throws Exception {
-    bootstrap = new KernelBootstrap(Thread.currentThread().getContextClassLoader());
-    bootstrap.addConfiguration(AbstractCoreTest.class);
-    bootstrap.boot();
-    BaseExoTestCase.ownBootstrap = bootstrap;
-  }
-
-  @AfterClass
-  public static void tearDownAfterClass() throws Exception {
-    bootstrap.dispose();
-    bootstrap = null;
-    BaseExoTestCase.ownBootstrap = null;
-  }
-
+  
+  private RelationshipStorageImpl relationshipStorageImpl;
+  private RelationshipMigrationService relationshipMigration;
+  
   @Override
   protected void setUp() throws Exception {
     super.setUp();
@@ -81,18 +72,23 @@ public class SearchTestIT extends AbstractCoreTest {
     indexingProcessor = getService(IndexingOperationProcessor.class);
     identityManager = getService(IdentityManager.class);
     searchConnector = getService(ProfileSearchConnector.class);
-    relationshipStorage = getService(RelationshipStorage.class);
+    deleteAllProfilesInES();
+    
     assertNotNull("identityManager must not be null", identityManager);
     urlClient = PropertyManager.getProperty("exo.es.search.server.url");
 
     org.exoplatform.services.security.Identity identity = getService(IdentityRegistry.class).getIdentity("root");
     ConversationState.setCurrent(new ConversationState(identity));
-    deleteAllProfilesInES();
+    
+    identityManager = getService(IdentityManager.class);
+    //
+    relationshipStorageImpl = getService(RelationshipStorageImpl.class);
+    relationshipMigration = getService(RelationshipMigrationService.class);
   }
 
   @Override
-  protected void tearDown() throws Exception {
-
+  public void tearDown() throws Exception {
+    super.tearDown();
   }
 
   public void test_indexedProfile_isReturnedBySearch() throws IOException {
@@ -132,6 +128,111 @@ public class SearchTestIT extends AbstractCoreTest {
     assertThat(resultsInJohn.size(), is(0));
     assertThat(resultsOutMary.size(), is(0));
     assertThat(resultsInMary.size(), is(1));
+  }
+  
+  public void testMigrationAndReIndexing() throws Exception {
+    // create jcr data
+    LOG.info("Create connection for root,john,mary and demo");
+    rootIdentity = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, "root", false);
+    johnIdentity = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, "john", false);
+    maryIdentity = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, "mary", false);
+    demoIdentity = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, "demo", false);
+    
+    IdentityStorage identityStorage = CommonsUtils.getService(IdentityStorage.class);
+    
+    //ROOT
+    Profile profile = rootIdentity.getProfile();
+    profile.setProperty(Profile.FIRST_NAME, "Root");
+    profile.setProperty(Profile.LAST_NAME, "Root");
+    profile.setProperty(Profile.FULL_NAME, "Root Root");
+    profile.setProperty(Profile.POSITION, "Admin");
+    identityStorage.updateProfile(profile);
+    
+    //MARY
+    profile = maryIdentity.getProfile();
+    profile.setProperty(Profile.FIRST_NAME, "Kelly");
+    profile.setProperty(Profile.LAST_NAME, "Mary");
+    profile.setProperty(Profile.FULL_NAME, "Mary Kelly");
+    profile.setProperty(Profile.POSITION, "Team Leader");
+    identityStorage.updateProfile(profile);
+    
+    //DEMO
+    profile = demoIdentity.getProfile();
+    profile.setProperty(Profile.FIRST_NAME, "Exo");
+    profile.setProperty(Profile.LAST_NAME, "Demo");
+    profile.setProperty(Profile.FULL_NAME, "Demo Exo");
+    profile.setProperty(Profile.POSITION, "Team member");
+    identityStorage.updateProfile(profile);
+    indexingProcessor.process();
+
+    //John invites Demo
+    Relationship johnToDemo = new Relationship(johnIdentity, demoIdentity, Type.PENDING);
+    relationshipStorageImpl.saveRelationship(johnToDemo);
+    
+    //John invites Mary
+    Relationship johnToMary = new Relationship(johnIdentity, maryIdentity, Type.PENDING);
+    relationshipStorageImpl.saveRelationship(johnToMary);
+    
+    //John invites Root
+    Relationship johnToRoot = new Relationship(johnIdentity, rootIdentity, Type.PENDING);
+    relationshipStorageImpl.saveRelationship(johnToRoot);
+    
+    //Root invites Mary
+    Relationship rootToMary = new Relationship(rootIdentity, maryIdentity, Type.PENDING);
+    relationshipStorageImpl.saveRelationship(rootToMary);
+    
+    //Demo invites Mary
+    Relationship demoToMary = new Relationship(demoIdentity, maryIdentity, Type.PENDING);
+    relationshipStorageImpl.saveRelationship(demoToMary);
+    
+    //Demo invites Root
+    Relationship demoToRoot = new Relationship(demoIdentity, rootIdentity, Type.PENDING);
+    relationshipStorageImpl.saveRelationship(demoToRoot);
+    
+    
+    //confirmed john and demo
+    johnToDemo.setStatus(Type.CONFIRMED);
+    relationshipStorageImpl.saveRelationship(johnToDemo);
+    
+    //confirmed john and demo
+    johnToMary.setStatus(Type.CONFIRMED);
+    relationshipStorageImpl.saveRelationship(johnToMary);
+    
+    //confirmed john and root
+    johnToRoot.setStatus(Type.CONFIRMED);
+    relationshipStorageImpl.saveRelationship(johnToRoot);
+    
+    //confirmed demo and mary
+    demoToMary.setStatus(Type.CONFIRMED);
+    relationshipStorageImpl.saveRelationship(demoToMary);
+    
+    //
+    relationshipMigration.doMigration();
+    end();
+    begin();
+    //phase 1: create the profiles re-indexing and push to queue what created by RelationshipMigration    
+    indexingProcessor.process();
+    //phase 2: create all the profiles indexing from queue
+    indexingProcessor.process();
+    refreshIndices();
+    //
+    RelationshipStorage relationshipStorage = CommonsUtils.getService(RelationshipStorage.class);
+    
+    ProfileFilter profileFilter = new ProfileFilter();
+    List<Identity> results = relationshipStorage.getConnectionsByFilter(johnIdentity, profileFilter, 0, 10);
+    assertEquals(3, results.size());
+    
+    ProfileFilter nameFilter = new ProfileFilter();
+    nameFilter.setName("Root");
+    results = relationshipStorage.getConnectionsByFilter(johnIdentity, nameFilter, 0, 10);
+    assertEquals(1, results.size());
+    
+    //
+    results = relationshipStorage.getOutgoingByFilter(rootIdentity, profileFilter, 0, 10);
+    assertEquals(1, results.size());
+    //
+    results = relationshipStorage.getIncomingByFilter(rootIdentity, profileFilter, 0, 10);
+    assertEquals(1, results.size());
   }
 
   private void refreshIndices() throws IOException {

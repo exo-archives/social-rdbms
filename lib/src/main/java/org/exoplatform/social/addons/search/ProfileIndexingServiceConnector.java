@@ -37,6 +37,7 @@ import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.identity.model.Profile;
 import org.exoplatform.social.core.manager.IdentityManager;
 import org.exoplatform.social.core.relationship.model.Relationship;
+import org.json.simple.JSONObject;
 
 /**
  * Created by The eXo Platform SAS Author : eXoPlatform exo@exoplatform.com Sep
@@ -172,8 +173,35 @@ public class ProfileIndexingServiceConnector extends ElasticIndexingServiceConne
 
   @Override
   public List<String> getAllIds(int offset, int limit) {
-    RelationshipMigrationService identityService = CommonsUtils.getService(RDBMSMigrationManager.class).getRelationshipMigration();
-    return identityService.getIdentityIds(offset, limit);
+    RelationshipMigrationService  relationshipMigration = CommonsUtils.getService(RelationshipMigrationService.class);
+    return relationshipMigration.getIdentityIds(offset, limit);
+  }
+  
+  @Override
+  public String getMapping() {
+
+    JSONObject notAnalyzedField = new JSONObject();
+    notAnalyzedField.put("type", "string");
+    notAnalyzedField.put("index", "not_analyzed");
+
+    JSONObject properties = new JSONObject();
+    properties.put("permissions", notAnalyzedField);
+    properties.put("sites", notAnalyzedField);
+    //properties.put("name", notAnalyzedField);
+    //properties.put("firstName", notAnalyzedField);
+    //properties.put("lastName", notAnalyzedField);
+    //properties.put("position", notAnalyzedField);
+    //properties.put("skills", notAnalyzedField);
+    properties.put("userName", notAnalyzedField);
+    properties.put("email", notAnalyzedField);
+
+    JSONObject mappingProperties = new JSONObject();
+    mappingProperties.put("properties", properties);
+
+    JSONObject mappingJSON = new JSONObject();
+    mappingJSON.put(getType(), mappingProperties);
+
+    return mappingJSON.toJSONString();
   }
 
 }
