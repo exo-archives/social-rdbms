@@ -43,6 +43,9 @@
     <component>
         <type>org.exoplatform.addons.es.client.ElasticContentRequestBuilder</type>
     </component>
+    <component>
+        <type>org.exoplatform.addons.es.client.ElasticIndexingAuditTrail</type>
+    </component>
     
     <component>
      <type>org.exoplatform.social.addons.search.ProfileSearchConnector</type>
