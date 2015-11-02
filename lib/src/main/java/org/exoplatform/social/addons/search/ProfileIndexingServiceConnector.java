@@ -16,28 +16,25 @@
  */
 package org.exoplatform.social.addons.search;
 
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.lang.StringUtils;
+import org.json.simple.JSONObject;
+
 import org.exoplatform.addons.es.domain.Document;
 import org.exoplatform.addons.es.index.impl.ElasticIndexingServiceConnector;
 import org.exoplatform.commons.utils.CommonsUtils;
 import org.exoplatform.container.xml.InitParams;
-import org.exoplatform.container.xml.PropertiesParam;
 import org.exoplatform.social.addons.storage.dao.ConnectionDAO;
 import org.exoplatform.social.addons.storage.entity.Connection;
-import org.exoplatform.social.addons.updater.RDBMSMigrationManager;
 import org.exoplatform.social.addons.updater.RelationshipMigrationService;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.identity.model.Profile;
 import org.exoplatform.social.core.manager.IdentityManager;
 import org.exoplatform.social.core.relationship.model.Relationship;
-import org.json.simple.JSONObject;
 
 /**
  * Created by The eXo Platform SAS Author : eXoPlatform exo@exoplatform.com Sep
@@ -50,21 +47,10 @@ public class ProfileIndexingServiceConnector extends ElasticIndexingServiceConne
   /** */
   private final ConnectionDAO connectionDAO;
 
-  /** */
-  private List<String> indexFields;
-
-  private Map<String, String> sortMapping = new HashMap<String, String>();
-
   public ProfileIndexingServiceConnector(InitParams initParams,
                                          IdentityManager identityManager,
                                          ConnectionDAO connectionDAO) {
     super(initParams);
-    PropertiesParam param = initParams.getPropertiesParam("constructor.params");
-    this.indexFields = new ArrayList<String>(Arrays.asList(param.getProperty("indexFields").split(",")));
-    //Indicate in which order element will be displayed
-    sortMapping.put("firstName", "firstName");
-    sortMapping.put("lastName", "lastName");
-    
     this.identityManager = identityManager;
     this.connectionDAO = connectionDAO;
   }
@@ -187,11 +173,6 @@ public class ProfileIndexingServiceConnector extends ElasticIndexingServiceConne
     JSONObject properties = new JSONObject();
     properties.put("permissions", notAnalyzedField);
     properties.put("sites", notAnalyzedField);
-    //properties.put("name", notAnalyzedField);
-    //properties.put("firstName", notAnalyzedField);
-    //properties.put("lastName", notAnalyzedField);
-    //properties.put("position", notAnalyzedField);
-    //properties.put("skills", notAnalyzedField);
     properties.put("userName", notAnalyzedField);
     properties.put("email", notAnalyzedField);
 

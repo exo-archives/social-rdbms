@@ -17,10 +17,14 @@
 package org.exoplatform.social.addons.search;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
 
 import org.exoplatform.addons.es.client.ElasticSearchingClient;
 import org.exoplatform.addons.es.search.ElasticSearchException;
@@ -34,10 +38,6 @@ import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvide
 import org.exoplatform.social.core.profile.ProfileFilter;
 import org.exoplatform.social.core.relationship.model.Relationship.Type;
 import org.exoplatform.social.core.storage.impl.StorageUtils;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
 
 /**
  * Created by The eXo Platform SAS
@@ -48,13 +48,11 @@ import org.json.simple.parser.ParseException;
 public class ProfileSearchConnector {
   private static final Log LOG = ExoLogger.getLogger(ProfileSearchConnector.class);
   private final ElasticSearchingClient client;
-  private List<String> searchFields;
   private String index;
   private String searchType;
   
   public ProfileSearchConnector(InitParams initParams, ElasticSearchingClient client) {
     PropertiesParam param = initParams.getPropertiesParam("constructor.params");
-    this.searchFields = new ArrayList<String>(Arrays.asList(param.getProperty("searchFields").split(",")));
     this.index = param.getProperty("index");
     this.searchType = param.getProperty("searchType");
     this.client = client;
