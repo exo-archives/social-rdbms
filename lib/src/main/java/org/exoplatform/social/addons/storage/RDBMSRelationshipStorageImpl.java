@@ -106,7 +106,7 @@ public class RDBMSRelationshipStorageImpl extends RelationshipStorageImpl {
   }
   
   @Override
-  @ExoTransactional
+//  @ExoTransactional
   public Relationship getRelationship(Identity identity1, Identity identity2) throws RelationshipStorageException {
     if (identity1==null) {
       throw new IllegalArgumentException("Argument identity1 is null");
@@ -114,11 +114,12 @@ public class RDBMSRelationshipStorageImpl extends RelationshipStorageImpl {
     if (identity2==null) {
       throw new IllegalArgumentException("Argument identity2 is null");
     }
-    Connection item = connectionDAO.getConnection(identity1, identity2);
-    if (item == null) {
-      item = connectionDAO.getConnection(identity2, identity1);
-    }
-    return convertRelationshipItemToRelationship(item);
+//    Connection item = connectionDAO.getConnection(identity1, identity2);
+//    if (item == null) {
+//      item = connectionDAO.getConnection(identity2, identity1);
+//    }
+//    return convertRelationshipItemToRelationship(item);
+    return null;
   }
   
   @Override
