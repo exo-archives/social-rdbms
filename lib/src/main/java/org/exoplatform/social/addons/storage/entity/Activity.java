@@ -21,7 +21,7 @@ import javax.persistence.JoinColumn;
 import javax.persistence.JoinTable;
 import javax.persistence.MapKeyColumn;
 import javax.persistence.OneToMany;
-import javax.persistence.OrderBy;
+import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
 
 import org.exoplatform.commons.api.persistence.ExoEntity;
@@ -35,7 +35,8 @@ import org.json.JSONObject;
 @Table(name = "SOC_ACTIVITIES")
 public class Activity extends BaseActivity {
   @Id
-  @GeneratedValue(strategy = GenerationType.AUTO)
+  @SequenceGenerator(name="SEQ_SOC_ACTIVITIES_ID", sequenceName="SEQ_SOC_ACTIVITIES_ID")
+  @GeneratedValue(strategy=GenerationType.AUTO, generator="SEQ_SOC_ACTIVITIES_ID")
   @Column(name="ACTIVITY_ID")
   private Long id;
   

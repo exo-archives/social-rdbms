@@ -11,33 +11,33 @@
     
     <changeSet author="social" id="1.0.0-1">
         <createTable tableName="SOC_ACTIVITIES">
-            <column autoIncrement="true" name="ACTIVITY_ID" type="BIGINT">
-                <constraints primaryKey="true"/>
+            <column name="ACTIVITY_ID" type="BIGINT" autoIncrement="${autoIncrement}" startWith="1">
+              <constraints nullable="false" primaryKey="true" primaryKeyName="PK_SOC_ACTIVITIES"/>
             </column>
-            <column name="appId" type="VARCHAR(36)"/>
+            <column name="appId" type="NVARCHAR(36)"/>
             <column name="body" type="LONGTEXT"/>
-            <column name="bodyId" type="VARCHAR(36)"/>
-            <column name="externalId" type="VARCHAR(36)"/>
-            <column name="providerId" type="VARCHAR(36)"/>
+            <column name="bodyId" type="NVARCHAR(36)"/>
+            <column name="externalId" type="NVARCHAR(36)"/>
+            <column name="providerId" type="NVARCHAR(36)"/>
             <column name="hidden" type="BIT"/>
             <column name="lastUpdated" type="BIGINT"/>
             <column name="locked" type="BIT"/>
-            <column name="ownerId" type="VARCHAR(36)"/>
-            <column name="permaLink" type="VARCHAR(255)"/>
+            <column name="ownerId" type="NVARCHAR(36)"/>
+            <column name="permaLink" type="NVARCHAR(255)"/>
             <column name="posted" type="BIGINT"/>
-            <column name="posterId" type="VARCHAR(36)"/>
+            <column name="posterId" type="NVARCHAR(36)"/>
             <column name="priority" type="FLOAT(12)">
                 <constraints nullable="false"/>
             </column>
             <column name="title" type="LONGTEXT"/>
-            <column name="titleId" type="VARCHAR(1024)"/>
-            <column name="type" type="VARCHAR(255)"/>
+            <column name="titleId" type="NVARCHAR(1024)"/>
+            <column name="type" type="NVARCHAR(255)"/>
         </createTable>
         <modifySql dbms="mysql">
             <append value=" ENGINE=INNODB CHARSET=UTF8 COLLATE utf8_general_ci"/>
         </modifySql>
     </changeSet>
-    <changeSet author="social" id="1.0.0-1.1">
+      <changeSet author="social" id="1.0.0-1.1">
         <createIndex tableName="SOC_ACTIVITIES" indexName="IDX_SOC_ACTIVITIES_01">
             <column name="lastUpdated" descending="true"/>
         </createIndex>
@@ -57,18 +57,18 @@
             <column name="ACTIVITY_ID" type="BIGINT">
                 <constraints nullable="false"/>
             </column>
-            <column name="LIKER_ID" type="VARCHAR(36)"/>
+            <column name="LIKER_ID" type="NVARCHAR(36)"/>
         </createTable>
     </changeSet>
     <changeSet author="social" id="1.0.0-3">
         <createTable tableName="SOC_MENTIONS">
-            <column autoIncrement="true" name="MENTION_ID" type="BIGINT">
-                <constraints primaryKey="true"/>
+            <column name="MENTION_ID" type="BIGINT" autoIncrement="${autoIncrement}" startWith="1">
+              <constraints nullable="false" primaryKey="true" primaryKeyName="PK_SOC_MENTIONS"/>
             </column>
             <column name="ACTIVITY_ID" type="BIGINT">
                 <constraints nullable="false"/>
             </column>
-            <column name="MENTIONER_ID" type="VARCHAR(36)">
+            <column name="MENTIONER_ID" type="NVARCHAR(36)">
                 <constraints nullable="false"/>
             </column>
         </createTable>
@@ -81,8 +81,8 @@
             <column name="ACTIVITY_ID" type="BIGINT">
                 <constraints nullable="false"/>
             </column>
-            <column name="TEMPLATE_PARAM_VALUE" type="VARCHAR(1024)"/>
-            <column name="TEMPLATE_PARAM_KEY" type="VARCHAR(255)">
+            <column name="TEMPLATE_PARAM_VALUE" type="NVARCHAR(1024)"/>
+            <column name="TEMPLATE_PARAM_KEY" type="NVARCHAR(255)">
                 <constraints nullable="false"/>
             </column>
         </createTable>
@@ -92,26 +92,26 @@
     </changeSet>
     <changeSet author="social" id="1.0.0-5">
         <createTable tableName="SOC_COMMENTS">
-            <column autoIncrement="true" name="COMMENT_ID" type="BIGINT">
-                <constraints primaryKey="true"/>
+            <column name="COMMENT_ID" type="BIGINT" autoIncrement="${autoIncrement}" startWith="1">
+              <constraints nullable="false" primaryKey="true" primaryKeyName="PK_SOC_COMMENTS"/>
             </column>
-            <column name="appId" type="VARCHAR(36)"/>
+            <column name="appId" type="NVARCHAR(36)"/>
             <column name="body" type="LONGTEXT"/>
-            <column name="bodyId" type="VARCHAR(36)"/>
-            <column name="externalId" type="VARCHAR(36)"/>
+            <column name="bodyId" type="NVARCHAR(36)"/>
+            <column name="externalId" type="NVARCHAR(36)"/>
             <column name="hidden" type="BIT"/>
             <column name="lastUpdated" type="BIGINT"/>
             <column name="locked" type="BIT"/>
-            <column name="ownerId" type="VARCHAR(36)"/>
-            <column name="permaLink" type="VARCHAR(255)"/>
+            <column name="ownerId" type="NVARCHAR(36)"/>
+            <column name="permaLink" type="NVARCHAR(255)"/>
             <column name="posted" type="BIGINT"/>
-            <column name="posterId" type="VARCHAR(36)"/>
+            <column name="posterId" type="NVARCHAR(36)"/>
             <column name="priority" type="FLOAT(12)">
                 <constraints nullable="false"/>
             </column>
             <column name="title" type="LONGTEXT"/>
-            <column name="titleId" type="VARCHAR(1024)"/>
-            <column name="type" type="VARCHAR(255)"/>
+            <column name="titleId" type="NVARCHAR(1024)"/>
+            <column name="type" type="NVARCHAR(255)"/>
             <column name="ACTIVITY_ID" type="BIGINT"/>
         </createTable>
         <modifySql dbms="mysql">
@@ -132,8 +132,8 @@
             <column name="COMMENT_ID" type="BIGINT">
                 <constraints nullable="false"/>
             </column>
-            <column name="TEMPLATE_PARAM_VALUE" type="VARCHAR(1024)"/>
-            <column name="TEMPLATE_PARAM_KEY" type="VARCHAR(255)">
+            <column name="TEMPLATE_PARAM_VALUE" type="NVARCHAR(1024)"/>
+            <column name="TEMPLATE_PARAM_KEY" type="NVARCHAR(255)">
                 <constraints nullable="false"/>
             </column>
         </createTable>
@@ -143,11 +143,11 @@
     </changeSet>
     <changeSet author="social" id="1.0.0-7">
         <createTable tableName="SOC_CONNECTIONS">
-            <column autoIncrement="true" name="CONNECTION_ID" type="BIGINT">
-                <constraints primaryKey="true"/>
+            <column name="CONNECTION_ID" type="BIGINT" autoIncrement="${autoIncrement}" startWith="1">
+              <constraints nullable="false" primaryKey="true" primaryKeyName="PK_SOC_CONNECTIONS"/>
             </column>
-            <column name="receiverId" type="VARCHAR(36)"/>
-            <column name="senderId" type="VARCHAR(36)"/>
+            <column name="receiverId" type="NVARCHAR(36)"/>
+            <column name="senderId" type="NVARCHAR(36)"/>
             <column name="status" type="INT"/>
             <column name="PROFILE_ID" type="BIGINT"/>
             <column name="lastUpdated" type="BIGINT"/>
@@ -167,10 +167,10 @@
     </changeSet>
     <changeSet author="social" id="1.0.0-8">
         <createTable tableName="SOC_STREAM_ITEMS">
-            <column autoIncrement="true" name="STREAM_ITEM_ID" type="BIGINT">
-                <constraints primaryKey="true"/>
+            <column name="STREAM_ITEM_ID" type="BIGINT" autoIncrement="${autoIncrement}" startWith="1">
+              <constraints nullable="false" primaryKey="true" primaryKeyName="PK_SOC_STREAM_ITEMS"/>
             </column>
-            <column name="ownerId" type="VARCHAR(36)"/>
+            <column name="ownerId" type="NVARCHAR(36)"/>
             <column name="streamType" type="INT"/>
             <column name="ACTIVITY_ID" type="BIGINT"/>
             <column name="lastUpdated" type="BIGINT"/>
@@ -212,5 +212,21 @@
 	</changeSet>
     <changeSet author="social" id="1.0.0-17">
         <addForeignKeyConstraint baseColumnNames="ACTIVITY_ID" baseTableName="SOC_STREAM_ITEMS" constraintName="FKFBFBDDF9BBA54EEF" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="ACTIVITY_ID" referencedTableName="SOC_ACTIVITIES"/>
+    </changeSet>
+    <!-- defines PK -->
+    <changeSet author="social" id="1.0.0-18" dbms="oracle,postgresql">
+        <createSequence sequenceName="SEQ_SOC_ACTIVITIES_ID" startValue="1"/>
+    </changeSet>
+    <changeSet author="social" id="1.0.0-19" dbms="oracle,postgresql">
+        <createSequence sequenceName="SEQ_SOC_MENTIONS_ID" startValue="1"/>
+    </changeSet>
+    <changeSet author="social" id="1.0.0-20" dbms="oracle,postgresql">
+        <createSequence sequenceName="SEQ_SOC_COMMENTS_ID" startValue="1"/>
+    </changeSet>
+    <changeSet author="social" id="1.0.0-21" dbms="oracle,postgresql">
+        <createSequence sequenceName="SEQ_SOC_CONNECTIONS_ID" startValue="1"/>
+    </changeSet>
+    <changeSet author="social" id="1.0.0-22" dbms="oracle,postgresql">
+        <createSequence sequenceName="SEQ_SOC_STREAM_ITEMS_ID" startValue="1"/>
     </changeSet>
 </databaseChangeLog>

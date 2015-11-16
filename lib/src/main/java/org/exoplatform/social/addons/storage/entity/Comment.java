@@ -20,6 +20,7 @@ import javax.persistence.JoinTable;
 import javax.persistence.ManyToOne;
 import javax.persistence.MapKeyColumn;
 import javax.persistence.NamedQuery;
+import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
 
 /**
@@ -34,7 +35,8 @@ import javax.persistence.Table;
 )
 public class Comment extends BaseActivity {
   @Id
-  @GeneratedValue(strategy = GenerationType.AUTO)
+  @SequenceGenerator(name="SEQ_SOC_COMMENTS_ID", sequenceName="SEQ_SOC_COMMENTS_ID")
+  @GeneratedValue(strategy=GenerationType.AUTO, generator="SEQ_SOC_COMMENTS_ID")
   @Column(name="COMMENT_ID")
   private Long id;
 

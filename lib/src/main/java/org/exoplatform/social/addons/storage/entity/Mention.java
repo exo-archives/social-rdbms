@@ -1,8 +1,17 @@
 package org.exoplatform.social.addons.storage.entity;
 
-import org.exoplatform.commons.api.persistence.ExoEntity;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.FetchType;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.SequenceGenerator;
+import javax.persistence.Table;
 
-import javax.persistence.*;
+import org.exoplatform.commons.api.persistence.ExoEntity;
 
 /**
  * Created by bdechateauvieux on 7/7/15.
@@ -12,7 +21,8 @@ import javax.persistence.*;
 @Table(name="SOC_MENTIONS")
 public class Mention {
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @SequenceGenerator(name="SEQ_SOC_MENTIONS_ID", sequenceName="SEQ_SOC_MENTIONS_ID")
+    @GeneratedValue(strategy=GenerationType.AUTO, generator="SEQ_SOC_MENTIONS_ID")
     @Column(name="MENTION_ID")
     private Long id;
 
