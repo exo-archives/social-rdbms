@@ -34,10 +34,13 @@
         <key>org.exoplatform.addons.es.dao.IndexingOperationDAO</key>
         <type>org.exoplatform.addons.es.dao.impl.IndexingOperationDAOImpl</type>
     </component>
+    <component>   
+        <type>org.exoplatform.addons.es.client.ElasticIndexingAuditTrail</type>
+    </component>
     <component>
         <type>org.exoplatform.addons.es.client.ElasticIndexingClient</type>
     </component>
-    <component>
+    <component>   
         <type>org.exoplatform.addons.es.client.ElasticSearchingClient</type>
     </component>
     <component>
