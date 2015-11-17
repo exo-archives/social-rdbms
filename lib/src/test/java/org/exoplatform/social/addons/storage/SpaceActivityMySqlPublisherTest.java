@@ -187,6 +187,9 @@ public class SpaceActivityMySqlPublisherTest extends AbstractCoreTest {
    assertEquals("Space has a new avatar.", comments.get(3).getTitle());
 
    // delete this activity
+   //Noted: Removed the activity here to make the exception in rdbms.
+   //[main] ERROR org.exoplatform.commons.persistence.impl.ExoTransactionalAspect - Error while processing transactional method.
+   //java.lang.NullPointerException
    activityManager.deleteActivity(activityId);
    assertEquals(0, activityManager.getActivitiesWithListAccess(spaceIdentity).getSize());
    

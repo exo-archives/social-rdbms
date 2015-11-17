@@ -565,7 +565,6 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
   }
 
   @Override
-  @ExoTransactional
   public void deleteActivity(String activityId) throws ActivityStorageException {
     Activity a = activityDAO.find(Long.valueOf(activityId));
     activityDAO.delete(a);
