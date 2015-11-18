@@ -567,7 +567,11 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
   @Override
   public void deleteActivity(String activityId) throws ActivityStorageException {
     Activity a = activityDAO.find(Long.valueOf(activityId));
-    activityDAO.delete(a);
+    if (a != null) {
+      activityDAO.delete(a);
+    } else {
+      LOG.warn("The activity's " + activityId + " is not found!" );
+    }
   }
 
   @Override
