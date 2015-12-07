@@ -23,6 +23,7 @@ import org.exoplatform.social.addons.storage.dao.ConnectionDAO;
 import org.exoplatform.social.addons.storage.entity.Connection;
 import org.exoplatform.social.core.chromattic.entity.IdentityEntity;
 import org.exoplatform.social.core.chromattic.entity.RelationshipEntity;
+import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.relationship.model.Relationship;
 import org.exoplatform.social.core.storage.impl.IdentityStorageImpl;
 
@@ -149,15 +150,27 @@ public class RelationshipMigrationService extends AbstractMigrationService<Relat
         lastUpdated = relationshipNode.getProperty("exo:lastModifiedDate").getDate().getTimeInMillis();
       }
       LOG.debug("|     - LAST UPDATED = " + lastUpdated);
-      //
-      Connection entity = new Connection();
-      entity.setSenderId(isIncoming ? senderId : receiverId);
-      entity.setReceiverId(isIncoming ? receiverId : senderId);
-      entity.setStatus(status);
-      entity.setLastUpdated(lastUpdated);
-      //
-      connectionDAO.create(entity);
-      ++doneConnectionNo;
+      //handle the duplicate connection key by catch exception
+      try {
+        //check the sender
+        Identity sender = new Identity(isIncoming ? senderId : receiverId);
+        Identity receiver = new Identity(isIncoming ? receiverId : senderId);
+        Connection exist = connectionDAO.getConnection(sender, receiver);
+        if (exist == null) {
+          Connection entity = new Connection();       
+          entity.setSenderId(sender.getId());
+          entity.setReceiverId(receiver.getId());
+          entity.setStatus(status);
+          entity.setLastUpdated(lastUpdated);
+          //
+          connectionDAO.create(entity);
+          ++doneConnectionNo;
+        }       
+      } catch(Exception e) {
+        LOG.warn(e.getMessage());
+        continue;
+      }
+      
       if(doneConnectionNo % LIMIT_THRESHOLD == 0) {
         LOG.info(String.format("|     - BATCH MIGRATION::relationship number: %s (%s user)", doneConnectionNo,  userName));
         endTx(true);
