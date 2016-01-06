@@ -16,55 +16,63 @@ import javax.persistence.MappedSuperclass;
 public abstract class BaseActivity implements Serializable {
   
   /** */
-  @Column(length = 2000)
+  @Column(name="TITLE", length = 2000)
   private String title;
   
   /** */
+  @Column(name="TYPE")
   private String type;
   
   /** */
-  @Column(length = 36)
+  @Column(name="TITLE_ID", length = 36)
   private String titleId;
   
   /** */
+  @Column(name="POSTED")
   protected Long posted;
   
   /** */
+  @Column(name="LAST_UPDATED")
   private Long lastUpdated;
   
   /** */
-  @Column(length = 36)
+  @Column(name="POSTER_ID", length = 36)
   private String posterId;// creator
   
   /** */
-  @Column(length = 36)
+  @Column(name="OWNER_ID", length = 36)
   private String ownerId;// owner of stream
   
   /** */
-  @Column(length = 255)
+  @Column(name="PERMALINK", length = 255)
   private String permaLink;
   
   /** */
-  @Column(length = 36)
+  @Column(name="APP_ID", length = 36)
   private String appId;
   
   /** */
-  @Column(length = 36)
+  @Column(name="EXTERNAL_ID", length = 36)
   private String externalId;
   
   /** */
+  @Column(name="LOCKED")
   private Boolean locked = false;
   
   /** */
+  @Column(name="HIDDEN")
   private Boolean hidden = false;
   
   @Deprecated
-  @Column(length = 2000)
+  @Column(name="BODY", length = 2000)
   private String body;
+
   @Deprecated
-  @Column(length = 36)
+  @Column(name="BODY_ID", length = 36)
   private String bodyId;
+
   @Deprecated
+  @Column(name="PRIORITY")
   private float priority;
 
   public String getTitle() {

@@ -63,7 +63,7 @@ public class Activity extends BaseActivity {
   private List<Mention> mentions;
 
   /** */
-  @Column(length = 36)
+  @Column(name="PROVIDER_ID", length = 36)
   private String providerId;
   
   /** */

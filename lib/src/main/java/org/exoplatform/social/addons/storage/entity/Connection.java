@@ -16,7 +16,7 @@ import org.exoplatform.social.core.relationship.model.Relationship.Type;
 @Entity
 @ExoEntity
 @Table(name = "SOC_CONNECTIONS",
-       uniqueConstraints=@UniqueConstraint(columnNames = {"senderId", "receiverId"}))
+       uniqueConstraints=@UniqueConstraint(columnNames = {"SENDER_ID", "RECEIVER_ID"}))
 @NamedQuery(name = "getRelationships",
             query = "select r from Connection r")
 public class Connection {
@@ -25,16 +25,18 @@ public class Connection {
   @Column(name = "CONNECTION_ID")
   private Long id;
 
-  @Column(length = 36)
+  @Column(name="SENDER_ID", length = 36)
   private String senderId;
   
-  @Column(length = 36)
+  @Column(name="RECEIVER_ID", length = 36)
   private String receiverId;
   
   @Enumerated
+  @Column(name="STATUS")
   private Type status;
   
   /** */
+  @Column(name="LAST_UPDATED")
   private Long lastUpdated;
 
   public Connection() {

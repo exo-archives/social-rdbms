@@ -14,24 +14,24 @@
             <column autoIncrement="true" name="ACTIVITY_ID" type="BIGINT">
                 <constraints primaryKey="true"/>
             </column>
-            <column name="appId" type="VARCHAR(36)"/>
-            <column name="body" type="LONGTEXT"/>
-            <column name="bodyId" type="VARCHAR(36)"/>
-            <column name="externalId" type="VARCHAR(36)"/>
-            <column name="providerId" type="VARCHAR(36)"/>
-            <column name="hidden" type="BIT"/>
-            <column name="lastUpdated" type="BIGINT"/>
-            <column name="locked" type="BIT"/>
-            <column name="ownerId" type="VARCHAR(36)"/>
-            <column name="permaLink" type="VARCHAR(255)"/>
-            <column name="posted" type="BIGINT"/>
-            <column name="posterId" type="VARCHAR(36)"/>
-            <column name="priority" type="FLOAT(12)">
+            <column name="APP_ID" type="VARCHAR(36)"/>
+            <column name="BODY" type="LONGTEXT"/>
+            <column name="BODY_ID" type="VARCHAR(36)"/>
+            <column name="EXTERNAL_ID" type="VARCHAR(36)"/>
+            <column name="PROVIDER_ID" type="VARCHAR(36)"/>
+            <column name="HIDDEN" type="BIT"/>
+            <column name="LAST_UPDATED" type="BIGINT"/>
+            <column name="LOCKED" type="BIT"/>
+            <column name="OWNER_ID" type="VARCHAR(36)"/>
+            <column name="PERMALINK" type="VARCHAR(255)"/>
+            <column name="POSTED" type="BIGINT"/>
+            <column name="POSTER_ID" type="VARCHAR(36)"/>
+            <column name="PRIORITY" type="FLOAT(12)">
                 <constraints nullable="false"/>
             </column>
-            <column name="title" type="LONGTEXT"/>
-            <column name="titleId" type="VARCHAR(1024)"/>
-            <column name="type" type="VARCHAR(255)"/>
+            <column name="TITLE" type="LONGTEXT"/>
+            <column name="TITLE_ID" type="VARCHAR(1024)"/>
+            <column name="TYPE" type="VARCHAR(255)"/>
         </createTable>
         <modifySql dbms="mysql">
             <append value=" ENGINE=INNODB CHARSET=UTF8 COLLATE utf8_general_ci"/>
@@ -39,13 +39,13 @@
     </changeSet>
     <changeSet author="social" id="1.0.0-1.1">
         <createIndex tableName="SOC_ACTIVITIES" indexName="IDX_SOC_ACTIVITIES_01">
-            <column name="lastUpdated" descending="true"/>
+            <column name="LAST_UPDATED" descending="true"/>
         </createIndex>
         <createIndex tableName="SOC_ACTIVITIES" indexName="IDX_SOC_ACTIVITIES_02">
-            <column name="POSTERID"/>
+            <column name="POSTER_ID"/>
         </createIndex>
         <createIndex tableName="SOC_ACTIVITIES" indexName="IDX_SOC_ACTIVITIES_03">
-            <column name="OWNERID"/>
+            <column name="OWNER_ID"/>
         </createIndex>
         <createIndex tableName="SOC_ACTIVITIES" indexName="IDX_SOC_ACTIVITIES_04">
             <column name="HIDDEN"/>
@@ -95,23 +95,23 @@
             <column autoIncrement="true" name="COMMENT_ID" type="BIGINT">
                 <constraints primaryKey="true"/>
             </column>
-            <column name="appId" type="VARCHAR(36)"/>
-            <column name="body" type="LONGTEXT"/>
-            <column name="bodyId" type="VARCHAR(36)"/>
-            <column name="externalId" type="VARCHAR(36)"/>
-            <column name="hidden" type="BIT"/>
-            <column name="lastUpdated" type="BIGINT"/>
-            <column name="locked" type="BIT"/>
-            <column name="ownerId" type="VARCHAR(36)"/>
-            <column name="permaLink" type="VARCHAR(255)"/>
-            <column name="posted" type="BIGINT"/>
-            <column name="posterId" type="VARCHAR(36)"/>
-            <column name="priority" type="FLOAT(12)">
+            <column name="APP_ID" type="VARCHAR(36)"/>
+            <column name="BODY" type="LONGTEXT"/>
+            <column name="BODY_ID" type="VARCHAR(36)"/>
+            <column name="EXTERNAL_ID" type="VARCHAR(36)"/>
+            <column name="HIDDEN" type="BIT"/>
+            <column name="LAST_UPDATED" type="BIGINT"/>
+            <column name="LOCKED" type="BIT"/>
+            <column name="OWNER_ID" type="VARCHAR(36)"/>
+            <column name="PERMALINK" type="VARCHAR(255)"/>
+            <column name="POSTED" type="BIGINT"/>
+            <column name="POSTER_ID" type="VARCHAR(36)"/>
+            <column name="PRIORITY" type="FLOAT(12)">
                 <constraints nullable="false"/>
             </column>
-            <column name="title" type="LONGTEXT"/>
-            <column name="titleId" type="VARCHAR(1024)"/>
-            <column name="type" type="VARCHAR(255)"/>
+            <column name="TITLE" type="LONGTEXT"/>
+            <column name="TITLE_ID" type="VARCHAR(1024)"/>
+            <column name="TYPE" type="VARCHAR(255)"/>
             <column name="ACTIVITY_ID" type="BIGINT"/>
         </createTable>
         <modifySql dbms="mysql">
@@ -120,10 +120,10 @@
     </changeSet>
     <changeSet author="social" id="1.0.0-5.1">
         <createIndex tableName="SOC_COMMENTS" indexName="IDX_SOC_COMMENTS_01">
-            <column name="lastUpdated" descending="true"/>
+            <column name="LAST_UPDATED" descending="true"/>
         </createIndex>
         <createIndex tableName="SOC_COMMENTS" indexName="IDX_SOC_COMMENTS_02">
-            <column name="posterId"/>
+            <column name="POSTER_ID"/>
         </createIndex>
     </changeSet>
 
@@ -146,23 +146,23 @@
             <column autoIncrement="true" name="CONNECTION_ID" type="BIGINT">
                 <constraints primaryKey="true"/>
             </column>
-            <column name="receiverId" type="VARCHAR(36)"/>
-            <column name="senderId" type="VARCHAR(36)"/>
-            <column name="status" type="INT"/>
+            <column name="RECEIVER_ID" type="VARCHAR(36)"/>
+            <column name="SENDER_ID" type="VARCHAR(36)"/>
+            <column name="STATUS" type="INT"/>
             <column name="PROFILE_ID" type="BIGINT"/>
-            <column name="lastUpdated" type="BIGINT"/>
+            <column name="LAST_UPDATED" type="BIGINT"/>
         </createTable>
         <createIndex tableName="SOC_CONNECTIONS" indexName="IDX_SOC_CONNECTIONS_01">
-            <column name="receiverId"/>
+            <column name="RECEIVER_ID"/>
         </createIndex>
         <createIndex tableName="SOC_CONNECTIONS" indexName="IDX_SOC_CONNECTIONS_02">
-            <column name="senderId"/>
+            <column name="SENDER_ID"/>
         </createIndex>
         <createIndex tableName="SOC_CONNECTIONS" indexName="IDX_SOC_CONNECTIONS_03">
-            <column name="lastUpdated" descending="true"/>
+            <column name="LAST_UPDATED" descending="true"/>
         </createIndex>
         <createIndex tableName="SOC_CONNECTIONS" indexName="IDX_SOC_CONNECTIONS_04">
-            <column name="status"/>
+            <column name="STATUS"/>
         </createIndex>
     </changeSet>
     <changeSet author="social" id="1.0.0-8">
@@ -170,47 +170,47 @@
             <column autoIncrement="true" name="STREAM_ITEM_ID" type="BIGINT">
                 <constraints primaryKey="true"/>
             </column>
-            <column name="ownerId" type="VARCHAR(36)"/>
-            <column name="streamType" type="INT"/>
+            <column name="OWNER_ID" type="VARCHAR(36)"/>
+            <column name="STREAM_TYPE" type="INT"/>
             <column name="ACTIVITY_ID" type="BIGINT"/>
-            <column name="lastUpdated" type="BIGINT"/>
+            <column name="LAST_UPDATED" type="BIGINT"/>
         </createTable>
     </changeSet>
     <changeSet author="social" id="1.0.0-8.1">
         <createIndex tableName="SOC_STREAM_ITEMS" indexName="IDX_SOC_STREAM_ITEMS_01">
-            <column name="lastUpdated" descending="true"/>
+            <column name="LAST_UPDATED" descending="true"/>
         </createIndex>
         <createIndex tableName="SOC_STREAM_ITEMS" indexName="IDX_SOC_STREAM_ITEMS_02">
-            <column name="streamType"/>
+            <column name="STREAM_TYPE"/>
         </createIndex>
     </changeSet>
     <changeSet author="social" id="1.0.0-9">
-        <addPrimaryKey columnNames="ACTIVITY_ID, TEMPLATE_PARAM_KEY" constraintName="PK_SOC_ACTIVITY_TEMPLATE_PARAMS" tableName="SOC_ACTIVITY_TEMPLATE_PARAMS"/>
+        <addPrimaryKey columnNames="ACTIVITY_ID, TEMPLATE_PARAM_KEY" constraintName="PK_SOC_ACT_TEMPLATE_PARAMS_01" tableName="SOC_ACTIVITY_TEMPLATE_PARAMS"/>
     </changeSet>
     <changeSet author="social" id="1.0.0-10">
-        <addPrimaryKey columnNames="COMMENT_ID, TEMPLATE_PARAM_KEY" constraintName="PK_SOC_COMMENT_TEMPLATE_PARAMS" tableName="SOC_COMMENT_TEMPLATE_PARAMS"/>
+        <addPrimaryKey columnNames="COMMENT_ID, TEMPLATE_PARAM_KEY" constraintName="PK_SOC_CMT_TEMPLATE_PARAMS_01" tableName="SOC_COMMENT_TEMPLATE_PARAMS"/>
     </changeSet>
     <changeSet author="social" id="1.0.0-11">
-        <addForeignKeyConstraint baseColumnNames="ACTIVITY_ID" baseTableName="SOC_ACTIVITY_LIKERS" constraintName="FK240B6C70BBA54EEF" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="ACTIVITY_ID" referencedTableName="SOC_ACTIVITIES"/>
+        <addForeignKeyConstraint baseColumnNames="ACTIVITY_ID" baseTableName="SOC_ACTIVITY_LIKERS" constraintName="FK_SOC_ACT_LIKERS_ACT_01" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="ACTIVITY_ID" referencedTableName="SOC_ACTIVITIES"/>
     </changeSet>
     <changeSet author="social" id="1.0.0-12">
-        <addForeignKeyConstraint baseColumnNames="ACTIVITY_ID" baseTableName="SOC_MENTIONS" constraintName="FK388EF94BBA54EEF" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="ACTIVITY_ID" referencedTableName="SOC_ACTIVITIES"/>
+        <addForeignKeyConstraint baseColumnNames="ACTIVITY_ID" baseTableName="SOC_MENTIONS" constraintName="FK_SOC_MENTIONS_ACT_01" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="ACTIVITY_ID" referencedTableName="SOC_ACTIVITIES"/>
     </changeSet>
     <changeSet author="social" id="1.0.0-13">
-        <addForeignKeyConstraint baseColumnNames="ACTIVITY_ID" baseTableName="SOC_COMMENTS" constraintName="FK708761CCBBA54EEF" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="ACTIVITY_ID" referencedTableName="SOC_ACTIVITIES"/>
+        <addForeignKeyConstraint baseColumnNames="ACTIVITY_ID" baseTableName="SOC_COMMENTS" constraintName="FK_SOC_CMT_ACT_01" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="ACTIVITY_ID" referencedTableName="SOC_ACTIVITIES"/>
     </changeSet>
     <changeSet author="social" id="1.0.0-14">
-        <addForeignKeyConstraint baseColumnNames="ACTIVITY_ID" baseTableName="SOC_ACTIVITY_TEMPLATE_PARAMS" constraintName="FKB6892F93BBA54EEF" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="ACTIVITY_ID" referencedTableName="SOC_ACTIVITIES"/>
+        <addForeignKeyConstraint baseColumnNames="ACTIVITY_ID" baseTableName="SOC_ACTIVITY_TEMPLATE_PARAMS" constraintName="FK_SOC_ACT_TEMP_PAR_ACT_01" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="ACTIVITY_ID" referencedTableName="SOC_ACTIVITIES"/>
     </changeSet>
     <changeSet author="social" id="1.0.0-15">
-        <addForeignKeyConstraint baseColumnNames="COMMENT_ID" baseTableName="SOC_COMMENT_TEMPLATE_PARAMS" constraintName="FKB8CEC41347B1AF25" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="COMMENT_ID" referencedTableName="SOC_COMMENTS"/>
+        <addForeignKeyConstraint baseColumnNames="COMMENT_ID" baseTableName="SOC_COMMENT_TEMPLATE_PARAMS" constraintName="FK_SOC_CMT_TEMP_PAR_CMT_01" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="COMMENT_ID" referencedTableName="SOC_COMMENTS"/>
     </changeSet>
     <changeSet author="social" id="1.0.0-16">
-		    <addUniqueConstraint columnNames="senderId, receiverId"
-		            constraintName="senderId_receiverId"
+		    <addUniqueConstraint columnNames="SENDER_ID, RECEIVER_ID"
+		            constraintName="UK_SENDER_ID_RECEIVER_ID_01"
 		            tableName="SOC_CONNECTIONS"/>
 	</changeSet>
     <changeSet author="social" id="1.0.0-17">
-        <addForeignKeyConstraint baseColumnNames="ACTIVITY_ID" baseTableName="SOC_STREAM_ITEMS" constraintName="FKFBFBDDF9BBA54EEF" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="ACTIVITY_ID" referencedTableName="SOC_ACTIVITIES"/>
+        <addForeignKeyConstraint baseColumnNames="ACTIVITY_ID" baseTableName="SOC_STREAM_ITEMS" constraintName="FK_SOC_STREAM_ITEMS_ACT_01" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="ACTIVITY_ID" referencedTableName="SOC_ACTIVITIES"/>
     </changeSet>
 </databaseChangeLog>

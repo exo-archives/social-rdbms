@@ -35,13 +35,15 @@ public class StreamItem {
   /**
    * This is id's Identity owner of ActivityStream or SpaceStream
    */
-  @Column(length = 36)
+  @Column(name="OWNER_ID", length = 36)
   private String ownerId;
   
   /** */
+  @Column(name="LAST_UPDATED")
   private Long lastUpdated;
 
   @Enumerated
+  @Column(name="STREAM_TYPE")
   private StreamType streamType;
 
   public StreamItem() {
