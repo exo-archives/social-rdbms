@@ -1,17 +1,9 @@
 package org.exoplatform.social.addons.storage.entity;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Enumerated;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.NamedQuery;
-import javax.persistence.Table;
-import javax.persistence.UniqueConstraint;
-
 import org.exoplatform.commons.api.persistence.ExoEntity;
 import org.exoplatform.social.core.relationship.model.Relationship.Type;
+
+import javax.persistence.*;
 
 @Entity
 @ExoEntity
@@ -20,8 +12,10 @@ import org.exoplatform.social.core.relationship.model.Relationship.Type;
 @NamedQuery(name = "getRelationships",
             query = "select r from Connection r")
 public class Connection {
+
   @Id
-  @GeneratedValue(strategy = GenerationType.AUTO)
+  @SequenceGenerator(name="SEQ_SOC_CONNECTIONS_ID", sequenceName="SEQ_SOC_CONNECTIONS_ID")
+  @GeneratedValue(strategy=GenerationType.AUTO, generator="SEQ_SOC_CONNECTIONS_ID")
   @Column(name = "CONNECTION_ID")
   private Long id;
 

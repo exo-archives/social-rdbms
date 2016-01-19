@@ -2,25 +2,9 @@ package org.exoplatform.social.addons.storage.entity;
 
 import org.exoplatform.commons.api.persistence.ExoEntity;
 
+import javax.persistence.*;
 import java.util.Date;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
-
-import javax.persistence.CollectionTable;
-import javax.persistence.Column;
-import javax.persistence.ElementCollection;
-import javax.persistence.Entity;
-import javax.persistence.FetchType;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.JoinTable;
-import javax.persistence.ManyToOne;
-import javax.persistence.MapKeyColumn;
-import javax.persistence.NamedQuery;
-import javax.persistence.Table;
 
 /**
  * Created by bdechateauvieux on 3/24/15.
@@ -33,8 +17,10 @@ import javax.persistence.Table;
   query = "select a from Activity a join a.comments Comment where Comment.id = :COMMENT_ID"
 )
 public class Comment extends BaseActivity {
+
   @Id
-  @GeneratedValue(strategy = GenerationType.AUTO)
+  @SequenceGenerator(name="SEQ_SOC_COMMENTS_ID", sequenceName="SEQ_SOC_COMMENTS_ID")
+  @GeneratedValue(strategy=GenerationType.AUTO, generator="SEQ_SOC_COMMENTS_ID")
   @Column(name="COMMENT_ID")
   private Long id;
 

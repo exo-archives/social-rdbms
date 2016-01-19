@@ -1,31 +1,12 @@
 package org.exoplatform.social.addons.storage.entity;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
-import javax.persistence.CascadeType;
-import javax.persistence.CollectionTable;
-import javax.persistence.Column;
-import javax.persistence.ElementCollection;
-import javax.persistence.Entity;
-import javax.persistence.FetchType;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.JoinTable;
-import javax.persistence.MapKeyColumn;
-import javax.persistence.OneToMany;
-import javax.persistence.OrderBy;
-import javax.persistence.Table;
+import javax.persistence.*;
+
+import org.json.JSONObject;
 
 import org.exoplatform.commons.api.persistence.ExoEntity;
-import org.json.JSONObject;
 
 /**
  * Created by bdechateauvieux on 3/24/15.
@@ -34,8 +15,10 @@ import org.json.JSONObject;
 @ExoEntity
 @Table(name = "SOC_ACTIVITIES")
 public class Activity extends BaseActivity {
+
   @Id
-  @GeneratedValue(strategy = GenerationType.AUTO)
+  @SequenceGenerator(name="SEQ_SOC_ACTIVITIES_ID", sequenceName="SEQ_SOC_ACTIVITIES_ID")
+  @GeneratedValue(strategy=GenerationType.AUTO, generator="SEQ_SOC_ACTIVITIES_ID")
   @Column(name="ACTIVITY_ID")
   private Long id;
   

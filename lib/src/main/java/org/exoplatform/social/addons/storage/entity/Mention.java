@@ -11,39 +11,41 @@ import javax.persistence.*;
 @ExoEntity
 @Table(name="SOC_MENTIONS")
 public class Mention {
-    @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
-    @Column(name="MENTION_ID")
-    private Long id;
 
-    @ManyToOne(fetch=FetchType.LAZY)
-    @JoinColumn(name="ACTIVITY_ID")
-    private Activity activity;
+  @Id
+  @SequenceGenerator(name="SEQ_SOC_MENTIONS_ID", sequenceName="SEQ_SOC_MENTIONS_ID")
+  @GeneratedValue(strategy=GenerationType.AUTO, generator="SEQ_SOC_MENTIONS_ID")
+  @Column(name="MENTION_ID")
+  private Long id;
 
-    @Column(name="MENTIONER_ID")
-    private String mentionId;
+  @ManyToOne(fetch=FetchType.LAZY)
+  @JoinColumn(name="ACTIVITY_ID")
+  private Activity activity;
 
-    public Long getId() {
-        return id;
-    }
+  @Column(name="MENTIONER_ID")
+  private String mentionId;
 
-    public void setId(Long id) {
-        this.id = id;
-    }
+  public Long getId() {
+    return id;
+  }
 
-    public Activity getActivity() {
-        return activity;
-    }
+  public void setId(Long id) {
+    this.id = id;
+  }
 
-    public void setActivity(Activity activity) {
-        this.activity = activity;
-    }
+  public Activity getActivity() {
+    return activity;
+  }
 
-    public String getMentionId() {
-        return mentionId;
-    }
+  public void setActivity(Activity activity) {
+    this.activity = activity;
+  }
 
-    public void setMentionId(String mentionId) {
-        this.mentionId = mentionId;
-    }
+  public String getMentionId() {
+    return mentionId;
+  }
+
+  public void setMentionId(String mentionId) {
+    this.mentionId = mentionId;
+  }
 }
