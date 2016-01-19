@@ -16,6 +16,7 @@ import javax.jcr.PropertyIterator;
 import javax.jcr.RepositoryException;
 
 import org.apache.commons.lang.ArrayUtils;
+
 import org.exoplatform.commons.api.event.EventManager;
 import org.exoplatform.commons.persistence.impl.EntityManagerService;
 import org.exoplatform.commons.utils.XPathUtils;
@@ -32,6 +33,7 @@ import org.exoplatform.social.addons.storage.dao.CommentDAO;
 import org.exoplatform.social.addons.storage.entity.Activity;
 import org.exoplatform.social.addons.storage.entity.Comment;
 import org.exoplatform.social.addons.updater.utils.MigrationCounter;
+import org.exoplatform.social.addons.updater.utils.StringUtil;
 import org.exoplatform.social.core.activity.model.ExoSocialActivity;
 import org.exoplatform.social.core.activity.model.ExoSocialActivityImpl;
 import org.exoplatform.social.core.chromattic.entity.ActivityEntity;
@@ -59,7 +61,7 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
   public static final String EVENT_LISTENER_KEY = "SOC_ACTIVITY_MIGRATION";
   private static final Pattern MENTION_PATTERN = Pattern.compile("@([^\\s]+)|@([^\\s]+)$");
   public static final Pattern USER_NAME_VALIDATOR_REGEX = Pattern.compile("^[\\p{L}][\\p{L}._\\-\\d]+$");
-  public final static String COMMENT_PREFIX = "comment";
+  public final static String COMMENT_PREFIX = "comment";  
   
   private final ActivityStorage activityStorage;
   private final ActivityStorageImpl activityJCRStorage;
@@ -263,11 +265,16 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
           if (params != null && !params.isEmpty()) {
             
             for(Map.Entry<String, String> entry: params.entrySet()) {
+
               String value = entry.getValue();
+
               if (value.length() >= 1024) {
                 LOG.info("===================== activity id " + activity.getId() + " new value length = " +  value.length() + " - " + value);
                 params.put(entry.getKey(), "");
               }
+
+              //Remove long UTF-8 char
+              params.put(entry.getKey(), StringUtil.removeLongUTF(entry.getValue()));
             }
             
             activity.setTemplateParams(params);
@@ -277,6 +284,8 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
           owner.setProviderId(providerId);
           //
           activity.setId(null);
+          activity.setTitle(StringUtil.removeLongUTF(activity.getTitle()));
+          activity.setBody(StringUtil.removeLongUTF(activity.getBody()));         
           activity = activityStorage.saveActivity(owner, activity);
           //
           doBroadcastListener(activity, activityId);
@@ -306,11 +315,17 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
               if (commentParams != null && !commentParams.isEmpty()) {
                 
                 for(Map.Entry<String, String> entry: commentParams.entrySet()) {
+
                   String value = entry.getValue();
+
                   if (value.length() >= 1024) {
                     LOG.info("===================== comment id " + oldCommentId + " new value length = " +  value.length() + " - " + value);
                     commentParams.put(entry.getKey(), "");
                   }
+
+                  //remove long UTF-8 char
+                  commentParams.put(entry.getKey(), StringUtil.removeLongUTF(entry.getValue()));
+
                 }
                 
                 comment.setTemplateParams(commentParams);
@@ -543,9 +558,9 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
     try {
       //
       comment.setId(activityEntity.getId());
-      comment.setTitle(activityEntity.getTitle());
+      comment.setTitle(StringUtil.removeLongUTF(activityEntity.getTitle()));
       comment.setTitleId(activityEntity.getTitleId());
-      comment.setBody(activityEntity.getBody());
+      comment.setBody(StringUtil.removeLongUTF(activityEntity.getBody()));
       comment.setBodyId(activityEntity.getBodyId());
       comment.setPostedTime(activityEntity.getPostedTime());
       comment.setUpdated(getLastUpdatedTime(activityEntity, comment.getPostedTime()));
@@ -707,5 +722,5 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
       if(identity != null) {
       }
     }
-  }
+  }  
 }
