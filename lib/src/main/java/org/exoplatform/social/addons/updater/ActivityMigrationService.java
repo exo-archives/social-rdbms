@@ -16,6 +16,7 @@ import javax.jcr.PropertyIterator;
 import javax.jcr.RepositoryException;
 
 import org.apache.commons.lang.ArrayUtils;
+import org.apache.commons.lang.StringUtils;
 import org.exoplatform.commons.api.event.EventManager;
 import org.exoplatform.commons.persistence.impl.EntityManagerService;
 import org.exoplatform.commons.utils.XPathUtils;
@@ -60,6 +61,9 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
   private static final Pattern MENTION_PATTERN = Pattern.compile("@([^\\s]+)|@([^\\s]+)$");
   public static final Pattern USER_NAME_VALIDATOR_REGEX = Pattern.compile("^[\\p{L}][\\p{L}._\\-\\d]+$");
   public final static String COMMENT_PREFIX = "comment";
+  
+  private static final String EMOJI_RANGE_REGEX = "[\uD83C\uDF00-\uD83D\uDDFF]|[\uD83D\uDE00-\uD83D\uDE4F]|[\uD83D\uDE80-\uD83D\uDEFF]|[\u2600-\u26FF]|[\u2700-\u27BF]";
+  private static final Pattern PATTERN = Pattern.compile(EMOJI_RANGE_REGEX);
   
   private final ActivityStorage activityStorage;
   private final ActivityStorageImpl activityJCRStorage;
@@ -268,6 +272,8 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
           owner.setProviderId(providerId);
           //
           activity.setId(null);
+          activity.setTitle(removeEmojis(activity.getTitle()));
+          activity.setBody(removeEmojis(activity.getBody()));         
           activity = activityStorage.saveActivity(owner, activity);
           //
           doBroadcastListener(activity, activityId);
@@ -530,9 +536,9 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
     try {
       //
       comment.setId(activityEntity.getId());
-      comment.setTitle(activityEntity.getTitle());
+      comment.setTitle(removeEmojis(activityEntity.getTitle()));
       comment.setTitleId(activityEntity.getTitleId());
-      comment.setBody(activityEntity.getBody());
+      comment.setBody(removeEmojis(activityEntity.getBody()));
       comment.setBodyId(activityEntity.getBodyId());
       comment.setPostedTime(activityEntity.getPostedTime());
       comment.setUpdated(getLastUpdatedTime(activityEntity, comment.getPostedTime()));
@@ -694,5 +700,24 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
       if(identity != null) {
       }
     }
+  }
+  
+  /**
+   * Finds and removes emojies from @param input
+   * 
+   * @param input the input string potentially containing emojis (comes as unicode stringfied)
+   * @return input string with emojis replaced
+   */
+  private String removeEmojis(String input) {
+      if (StringUtils.isEmpty(input)) {
+          return input;
+      }
+      Matcher matcher = PATTERN.matcher(input);
+      StringBuffer sb = new StringBuffer();
+      while (matcher.find()) {
+          matcher.appendReplacement(sb, "");
+      }
+      matcher.appendTail(sb);
+      return sb.toString();
   }
 }

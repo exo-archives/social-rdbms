@@ -196,6 +196,7 @@ public class AsynMigrationTest extends BaseCoreTest {
     createActivityToOtherIdentity(demoIdentity, maryIdentity, 5);
     createActivityToOtherIdentity(johnIdentity, demoIdentity, 5);
     createActivityToOtherIdentity(maryIdentity, rootIdentity, 5);
+    createActivityEmoji(rootIdentity, rootIdentity);
     LOG.info("Done created the activities storage on JCR.");
     end();
     begin();
@@ -211,10 +212,10 @@ public class AsynMigrationTest extends BaseCoreTest {
     assertTrue(getOrCreateSettingValue(MigrationContext.SOC_RDBMS_ACTIVITY_CLEANUP_KEY));
     assertTrue(getOrCreateSettingValue(MigrationContext.SOC_RDBMS_CONNECTION_CLEANUP_KEY));
     //
-    assertEquals(20, activityStorage.getActivityFeed(rootIdentity, 0, 100).size());
-    assertEquals(20, activityStorage.getActivityFeed(maryIdentity, 0, 100).size());
-    assertEquals(20, activityStorage.getActivityFeed(johnIdentity, 0, 100).size());
-    assertEquals(20, activityStorage.getActivityFeed(demoIdentity, 0, 100).size());
+    assertEquals(21, activityStorage.getActivityFeed(rootIdentity, 0, 100).size());
+    assertEquals(21, activityStorage.getActivityFeed(maryIdentity, 0, 100).size());
+    assertEquals(21, activityStorage.getActivityFeed(johnIdentity, 0, 100).size());
+    assertEquals(21, activityStorage.getActivityFeed(demoIdentity, 0, 100).size());
   }
   
   private boolean getOrCreateSettingValue(String key) {
@@ -249,6 +250,29 @@ public class AsynMigrationTest extends BaseCoreTest {
       } catch (Exception e) {
         LOG.error("can not save activity.", e);
       }
+    }
+  }
+  
+  private void createActivityEmoji(Identity posterIdentity, Identity targetIdentity) {
+    ExoSocialActivity activity = oneOfActivity("Thats a nice joke 😆😆😆 😛",
+                                               posterIdentity,
+                                               false,
+                                               false);
+    try {
+      activity = jcrStorage.saveActivity(targetIdentity, activity);
+      //
+      Map<String, String> params = new HashMap<String, String>();
+      params.put("MESSAGE",
+                 "                                CRaSH is the open source shell for the JVM. The shell can be accessed by various ways, remotely using network protocols such as SSH, locally by attaching a shell to a running virtual machine or via a web interface. Commands are written Groovy and can be developed live making the extensibility of the shell easy with quick development cycles. Since the version 1.3, the REPL also speaks the Groovy language, allowing Groovy combination of command using pipes.  CRaSH comes with commands such as thread management, log management, database access and JMX. The session will begin with an introduction to the shell. The main part of the session will focus on showing CRaSH commands development with few examples, showing how easy and powerful the development is.  The audience will learn how to use CRaSH for their own needs: it can be a simple usage or more advanced like developing a command or embedding the shell in their own runtime like a web application or a Grails application.");
+      List<ExoSocialActivity> comments = listOf(3, targetIdentity, posterIdentity, true, false);
+      for (ExoSocialActivity comment : comments) {
+        comment.setTitle("comment of " + posterIdentity.getId());
+        comment.setTemplateParams(params);
+        //
+        jcrStorage.saveComment(activity, comment);
+      }
+    } catch (Exception e) {
+      LOG.error("can not save activity.", e);
     }
   }
 }
