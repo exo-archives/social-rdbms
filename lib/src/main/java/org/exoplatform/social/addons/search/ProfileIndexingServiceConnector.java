@@ -16,10 +16,7 @@
  */
 package org.exoplatform.social.addons.search;
 
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import org.apache.commons.lang.StringUtils;
 import org.json.simple.JSONObject;
@@ -92,7 +89,7 @@ public class ProfileIndexingServiceConnector extends ElasticIndexingServiceConne
     if (connectionsStr.length() > 0) {
       fields.put("incomings", connectionsStr);
     }
-    return new Document(TYPE, id, null, createdDate, null, fields);
+    return new Document(TYPE, id, null, createdDate, (Set<String>)null, fields);
   }
   /**
    * Gets the identityId from connection list
@@ -154,7 +151,7 @@ public class ProfileIndexingServiceConnector extends ElasticIndexingServiceConne
     if (connectionsStr.length() > 0) {     
       fields.put("incomings", connectionsStr);
     }
-    return new Document(TYPE, id, null, createdDate, null, fields);
+    return new Document(TYPE, id, null, createdDate, (Set<String>)null, fields);
   }
 
   @Override
