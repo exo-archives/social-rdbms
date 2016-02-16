@@ -125,8 +125,7 @@ public class RDBMSMigrationManager implements Startable {
                 updateSettingValue(MigrationContext.SOC_RDBMS_CONNECTION_MIGRATION_KEY, Boolean.TRUE);
               }
               if (!MigrationContext.isDone() && MigrationContext.isConnectionDone() && !MigrationContext.isActivityDone()) {
-                activityMigration = CommonsUtils.getService(ActivityMigrationService.class);
-                activityMigration.start();
+                getActivityMigrationService().start();
                 updateSettingValue(MigrationContext.SOC_RDBMS_ACTIVITY_MIGRATION_KEY, Boolean.TRUE);
               }
               if (!MigrationContext.isDone() && MigrationContext.isConnectionDone() && MigrationContext.isActivityDone() 
@@ -161,7 +160,7 @@ public class RDBMSMigrationManager implements Startable {
 
             // cleanup activities
             if (!MigrationContext.isDone() && MigrationContext.isActivityDone() && !MigrationContext.isActivityCleanupDone()) {
-              activityMigration.doRemove();
+              getActivityMigrationService().doRemove();
               updateSettingValue(MigrationContext.SOC_RDBMS_ACTIVITY_CLEANUP_KEY, Boolean.TRUE);
             }
             
@@ -253,10 +252,17 @@ public class RDBMSMigrationManager implements Startable {
     }
   }
 
+  private ActivityMigrationService getActivityMigrationService() {
+    if (activityMigration == null) {
+      activityMigration = CommonsUtils.getService(ActivityMigrationService.class);
+    }
+    return activityMigration;
+  }
+
   @Override
   public void stop() {
     relationshipMigration.stop();
-    activityMigration.stop();
+    getActivityMigrationService().stop();
     try {
       this.migrationThread.join();
     } catch (InterruptedException e) {
