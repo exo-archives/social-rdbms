@@ -55,6 +55,8 @@ public class UserESListenerImpl extends UserEventListener {
       Identity identity = idm.getOrCreateIdentity(OrganizationIdentityProvider.NAME, user.getUserName(), false);
       if (! user.isEnabled()) {
         CommonsUtils.getService(IndexingService.class).unindex(ProfileIndexingServiceConnector.TYPE, identity.getId());
+      } else {
+        CommonsUtils.getService(IndexingService.class).reindex(ProfileIndexingServiceConnector.TYPE, identity.getId());
       }
     } finally {
       RequestLifeCycle.end();
