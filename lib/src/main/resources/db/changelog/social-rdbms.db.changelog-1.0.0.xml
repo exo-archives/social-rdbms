@@ -54,7 +54,7 @@
 
     <changeSet author="social" id="1.0.0-2">
         <createTable tableName="SOC_ACTIVITY_LIKERS">
-            <column name="ACTIVITY_ID" type="BIGINT">
+            <column name="ACTIVITY_ID" type="BIGINT"> 
                 <constraints nullable="false"/>
             </column>
             <column name="LIKER_ID" type="NVARCHAR(36)"/>
@@ -229,4 +229,41 @@
   <changeSet author="social" id="1.0.0-22" dbms="oracle,postgresql">
     <createSequence sequenceName="SEQ_SOC_STREAM_ITEMS_ID" startValue="1"/>
   </changeSet>
+  
+  <changeSet author="social" id="1.0.0-23">
+    <createTable tableName="SOC_SPACES">
+        <column name="SPACE_ID" type="BIGINT" autoIncrement="${autoIncrement}" startWith="1">
+          <constraints nullable="false" primaryKey="true" primaryKeyName="PK_SOC_SPACES"/>
+        </column>
+        <column name="APP" type="LONGTEXT"/>
+        <column name="PRETTY_NAME" type="NVARCHAR(36)"/>
+        <column name="DISPLAY_NAME" type="NVARCHAR(36)"/>
+        <column name="REGISTRATION" type="NVARCHAR(36)"/>
+        <column name="DESCRIPTION" type="LONGTEXT"/>
+        <column name="AVATAR_LAST_UPDATED" type="BIGINT"/>
+        <column name="VISIBILITY" type="NVARCHAR(36)"/>
+        <column name="PRIORITY" type="NVARCHAR(36)"/>
+        <column name="GROUP_ID" type="NVARCHAR(255)"/>
+        <column name="URL" type="NVARCHAR(255)"/>
+        <column name="CREATED_TIME" type="BIGINT"/>
+    </createTable>
+    <modifySql dbms="mysql">
+        <append value=" ENGINE=INNODB CHARSET=UTF8 COLLATE utf8_general_ci"/>
+    </modifySql>
+  </changeSet>
+  <changeSet author="social" id="1.0.0-24">
+    <createTable tableName="SOC_SPACES_MEMBERS">
+      <column name="SPACE_MEMBER_ID" type="BIGINT" autoIncrement="${autoIncrement}" startWith="1">
+        <constraints nullable="false" primaryKey="true" primaryKeyName="PK_SOC_SPACES_MEMBERS"/>
+      </column>
+      <column name="SPACE_ID" type="BIGINT">
+        <constraints foreignKeyName="FK_SOC_MEM_SPACE_01" references="SOC_SPACES(SPACE_ID)" nullable="false"/>
+      </column>
+      <column name="USER_ID" type="NVARCHAR(36)" />
+      <column name="STATUS" type="NVARCHAR(36)" />
+    </createTable>
+    <modifySql dbms="mysql">
+      <append value=" ENGINE=INNODB CHARSET=UTF8 COLLATE utf8_general_ci"/>
+    </modifySql>    
+  </changeSet>  
 </databaseChangeLog>

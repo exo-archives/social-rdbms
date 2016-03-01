@@ -20,7 +20,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import org.mockito.Mockito;
+
 import org.exoplatform.commons.utils.ListAccess;
+import org.exoplatform.social.addons.search.ESSpaceFilter;
 import org.exoplatform.social.addons.test.AbstractCoreTest;
 import org.exoplatform.social.addons.test.MaxQueryNumber;
 import org.exoplatform.social.addons.test.QueryNumberTest;
@@ -34,6 +37,7 @@ import org.exoplatform.social.core.space.impl.DefaultSpaceApplicationHandler;
 import org.exoplatform.social.core.space.model.Space;
 import org.exoplatform.social.core.space.spi.SpaceService;
 import org.exoplatform.social.core.storage.api.IdentityStorage;
+import org.exoplatform.social.core.storage.api.SpaceStorage;
 
 @QueryNumberTest
 public class RDBMSActivityStorageImplTest extends AbstractCoreTest {
@@ -47,6 +51,8 @@ public class RDBMSActivityStorageImplTest extends AbstractCoreTest {
   protected void setUp() throws Exception {
     super.setUp();
     identityStorage = getService(IdentityStorage.class);
+    RDBMSSpaceStorageImpl spaceStorage = (RDBMSSpaceStorageImpl)getService(SpaceStorage.class);
+    spaceStorage.setSpaceSearchConnector(mockSpaceSearch);
     
     assertNotNull(identityStorage);
     assertNotNull(activityStorage);
@@ -163,7 +169,7 @@ public class RDBMSActivityStorageImplTest extends AbstractCoreTest {
   @MaxQueryNumber(650)
   public void testGetSpaceActivityIds() throws Exception {
     Space space = this.getSpaceInstance(spaceService, 0);
-    tearDownSpaceList.add(space);
+    Mockito.when(mockSpaceSearch.search(Mockito.<ESSpaceFilter>any(), Mockito.anyInt(), Mockito.anyInt())).thenReturn(Arrays.asList(space));
     Identity spaceIdentity = this.identityManager.getOrCreateIdentity(SpaceIdentityProvider.NAME, space.getPrettyName(), false);
     
     int totalNumber = 5;
@@ -405,6 +411,7 @@ public class RDBMSActivityStorageImplTest extends AbstractCoreTest {
   public void testGetNewerOnUserSpacesActivities() throws Exception {
     Space space = this.getSpaceInstance(spaceService, 0);
     tearDownSpaceList.add(space);
+    Mockito.when(mockSpaceSearch.search(Mockito.<ESSpaceFilter>any(), Mockito.anyInt(), Mockito.anyInt())).thenReturn(Arrays.asList(space));
     Identity spaceIdentity = identityManager.getOrCreateIdentity(SpaceIdentityProvider.NAME, space.getPrettyName(), false);
     
     int totalNumber = 10;
@@ -420,6 +427,7 @@ public class RDBMSActivityStorageImplTest extends AbstractCoreTest {
         baseActivity = activity;
       }
     }
+    
     assertEquals(9, activityStorage.getNewerOnUserSpacesActivities(demoIdentity, baseActivity, 10).size());
     assertEquals(9, activityStorage.getNumberOfNewerOnUserSpacesActivities(demoIdentity, baseActivity));
     //
@@ -428,6 +436,7 @@ public class RDBMSActivityStorageImplTest extends AbstractCoreTest {
     
     Space space2 = this.getSpaceInstance(spaceService, 1);
     tearDownSpaceList.add(space2);
+    Mockito.when(mockSpaceSearch.search(Mockito.<ESSpaceFilter>any(), Mockito.anyInt(), Mockito.anyInt())).thenReturn(Arrays.asList(space2));
     Identity spaceIdentity2 = identityManager.getOrCreateIdentity(SpaceIdentityProvider.NAME, space2.getPrettyName(), false);
     //demo posts activities to space2
     for (int i = 0; i < totalNumber; i ++) {
@@ -438,6 +447,7 @@ public class RDBMSActivityStorageImplTest extends AbstractCoreTest {
       tearDownActivityList.add(activity);
     }
     
+    Mockito.when(mockSpaceSearch.search(Mockito.<ESSpaceFilter>any(), Mockito.anyInt(), Mockito.anyInt())).thenReturn(Arrays.asList(space, space2));
     assertEquals(19, activityStorage.getNewerOnUserSpacesActivities(demoIdentity, baseActivity, 20).size());
     assertEquals(19, activityStorage.getNumberOfNewerOnUserSpacesActivities(demoIdentity, baseActivity));
   }
@@ -445,6 +455,7 @@ public class RDBMSActivityStorageImplTest extends AbstractCoreTest {
   public void testGetOlderOnUserSpacesActivities() throws Exception {
     Space space = this.getSpaceInstance(spaceService, 0);
     tearDownSpaceList.add(space);
+    Mockito.when(mockSpaceSearch.search(Mockito.<ESSpaceFilter>any(), Mockito.anyInt(), Mockito.anyInt())).thenReturn(Arrays.asList(space));
     Identity spaceIdentity = identityManager.getOrCreateIdentity(SpaceIdentityProvider.NAME, space.getPrettyName(), false);
     
     int totalNumber = 5;
@@ -473,6 +484,7 @@ public class RDBMSActivityStorageImplTest extends AbstractCoreTest {
     
     Space space2 = this.getSpaceInstance(spaceService, 1);
     tearDownSpaceList.add(space2);
+    Mockito.when(mockSpaceSearch.search(Mockito.<ESSpaceFilter>any(), Mockito.anyInt(), Mockito.anyInt())).thenReturn(Arrays.asList(space2));
     Identity spaceIdentity2 = identityManager.getOrCreateIdentity(SpaceIdentityProvider.NAME, space2.getPrettyName(), false);
     //demo posts activities to space2
     for (int i = 0; i < totalNumber; i ++) {
@@ -483,7 +495,7 @@ public class RDBMSActivityStorageImplTest extends AbstractCoreTest {
       sleep(10);
       tearDownActivityList.add(activity);
     }
-    
+    Mockito.when(mockSpaceSearch.search(Mockito.<ESSpaceFilter>any(), Mockito.anyInt(), Mockito.anyInt())).thenReturn(Arrays.asList(space, space2));
     assertEquals(4, activityStorage.getOlderOnUserSpacesActivities(demoIdentity, baseActivity, 10).size());
     assertEquals(4, activityStorage.getNumberOfOlderOnUserSpacesActivities(demoIdentity, baseActivity));
   }

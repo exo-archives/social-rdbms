@@ -36,6 +36,17 @@
           <property name="index" value="profile"/>
         </properties-param>
       </init-params>
+   </component>
+   
+   <component>
+     <type>org.exoplatform.social.addons.search.SpaceSearchConnector</type>
+     <init-params>
+        <properties-param>
+          <name>constructor.params</name>
+          <property name="searchType" value="space"/>
+          <property name="index" value="space"/>
+        </properties-param>
+      </init-params>
    </component> 
     
    <external-component-plugins>
@@ -81,6 +92,15 @@
     </component-plugin>
   </external-component-plugins>
   
+  <external-component-plugins>
+    <target-component>org.exoplatform.social.core.space.spi.SpaceService</target-component>
+    <component-plugin>
+      <name>SpaceESListenerImpl</name>
+      <set-method>addSpaceListener</set-method>
+      <type>org.exoplatform.social.addons.search.listener.SpaceESListenerImpl</type>
+    </component-plugin>
+  </external-component-plugins>
+  
    <external-component-plugins>
     <target-component>org.exoplatform.addons.es.index.IndexingOperationProcessor</target-component>
     <component-plugin>
@@ -92,6 +112,22 @@
           <name>constructor.params</name>
           <property name="index" value="profile"/>
           <property name="type" value="profile"/>
+        </properties-param>
+      </init-params>
+    </component-plugin>
+  </external-component-plugins>
+  
+  <external-component-plugins>
+    <target-component>org.exoplatform.addons.es.index.IndexingOperationProcessor</target-component>
+    <component-plugin>
+      <name>SpaceIndexingServiceConnector</name>
+      <set-method>addConnector</set-method>
+      <type>org.exoplatform.social.addons.search.SpaceIndexingServiceConnector</type>
+      <init-params>
+        <properties-param>
+          <name>constructor.params</name>
+          <property name="index" value="space"/>
+          <property name="type" value="space"/>
         </properties-param>
       </init-params>
     </component-plugin>

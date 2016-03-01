@@ -45,6 +45,7 @@ import org.exoplatform.component.test.ContainerScope;
 import org.exoplatform.container.component.RequestLifeCycle;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
+import org.exoplatform.social.addons.search.SpaceSearchConnector;
 import org.exoplatform.social.addons.storage.dao.ConnectionDAO;
 import org.exoplatform.social.addons.storage.entity.Connection;
 import org.exoplatform.social.core.activity.model.ExoSocialActivity;
@@ -57,6 +58,7 @@ import org.exoplatform.social.core.manager.RelationshipManager;
 import org.exoplatform.social.core.space.spi.SpaceService;
 import org.exoplatform.social.core.storage.api.ActivityStorage;
 import org.jboss.byteman.contrib.bmunit.BMUnit;
+import org.mockito.Mockito;
 
 /**
  * @author <a href="mailto:thanhvc@exoplatform.com">Thanh Vu</a>
@@ -96,6 +98,8 @@ public abstract class BaseCoreTest extends BaseExoTestCase {
   protected static int count;
   protected int maxQuery;
   protected boolean hasByteMan;
+  
+  protected SpaceSearchConnector mockSpaceSearch = Mockito.mock(SpaceSearchConnector.class);
 
   @Override
   protected void setUp() throws Exception {

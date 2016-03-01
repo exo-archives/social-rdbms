@@ -17,9 +17,14 @@
 package org.exoplatform.social.addons.storage.dao;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
+import org.mockito.Mockito;
+
 import org.exoplatform.services.security.ConversationState;
+import org.exoplatform.social.addons.search.ESSpaceFilter;
+import org.exoplatform.social.addons.storage.RDBMSSpaceStorageImpl;
 import org.exoplatform.social.addons.storage.entity.StreamItem;
 import org.exoplatform.social.addons.test.BaseCoreTest;
 import org.exoplatform.social.core.activity.model.ExoSocialActivity;
@@ -32,6 +37,7 @@ import org.exoplatform.social.core.space.impl.DefaultSpaceApplicationHandler;
 import org.exoplatform.social.core.space.model.Space;
 import org.exoplatform.social.core.space.spi.SpaceService;
 import org.exoplatform.social.core.storage.api.IdentityStorage;
+import org.exoplatform.social.core.storage.api.SpaceStorage;
 
 /**
  * Created by The eXo Platform SAS
@@ -53,6 +59,9 @@ public class StreamItemDAOTest extends BaseCoreTest {
   @Override
   public void setUp() throws Exception {
     super.setUp();
+    
+    RDBMSSpaceStorageImpl spaceStorage = (RDBMSSpaceStorageImpl)getService(SpaceStorage.class);
+    spaceStorage.setSpaceSearchConnector(mockSpaceSearch);
     
     identityStorage = getService(IdentityStorage.class);
     streamItemDAO = getService(StreamItemDAO.class);
@@ -279,6 +288,8 @@ public class StreamItemDAOTest extends BaseCoreTest {
   
   public void testPostOnSpace() throws Exception {
     Space space = this.getSpaceInstance(spaceService, 0);
+    Mockito.when(mockSpaceSearch.search(Mockito.<ESSpaceFilter>any(), Mockito.anyInt(), Mockito.anyInt()))
+      .thenReturn(Arrays.asList(space));
     Identity spaceIdentity = this.identityManager.getOrCreateIdentity(SpaceIdentityProvider.NAME, space.getPrettyName(), false);
     //
     ExoSocialActivity activity = createActivity("demo post on the space 1", demoIdentity.getId());
@@ -288,11 +299,12 @@ public class StreamItemDAOTest extends BaseCoreTest {
     assertEquals(2, items.size());
     
     tearDownActivityList.add(activity);
-    tearDownSpaceList.add(space);
   }
   
   public void testPostOnSpaceAndMention() throws Exception {
     Space space = this.getSpaceInstance(spaceService, 0);
+    Mockito.when(mockSpaceSearch.search(Mockito.<ESSpaceFilter>any(), Mockito.anyInt(), Mockito.anyInt()))
+      .thenReturn(Arrays.asList(space));
     Identity spaceIdentity = this.identityManager.getOrCreateIdentity(SpaceIdentityProvider.NAME, space.getPrettyName(), false);
     //
     ExoSocialActivity activity = createActivity("demo post on the space 1 and mention @mary", demoIdentity.getId());
@@ -302,7 +314,6 @@ public class StreamItemDAOTest extends BaseCoreTest {
     assertEquals(3, items.size());
     
     tearDownActivityList.add(activity);
-    tearDownSpaceList.add(space);
   }
   
   public void testDeleteActivity() {
