@@ -3,6 +3,8 @@ package org.exoplatform.social.addons.updater;
 import java.lang.reflect.Field;
 import java.util.concurrent.CountDownLatch;
 
+import org.picocontainer.Startable;
+
 import org.exoplatform.commons.api.persistence.DataInitializer;
 import org.exoplatform.commons.api.settings.SettingService;
 import org.exoplatform.commons.api.settings.SettingValue;
@@ -14,7 +16,6 @@ import org.exoplatform.services.jcr.impl.core.SessionImpl;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 import org.exoplatform.settings.impl.SettingServiceImpl;
-import org.picocontainer.Startable;
 
 public class RDBMSMigrationManager implements Startable {
   private static final Log LOG = ExoLogger.getLogger(RDBMSMigrationManager.class);
@@ -28,6 +29,8 @@ public class RDBMSMigrationManager implements Startable {
   private RelationshipMigrationService relationshipMigration;
 
   private ActivityMigrationService activityMigration;
+  
+  private SpaceMigrationService spaceMigration;
   
   private SettingService settingService;
 
@@ -86,6 +89,12 @@ public class RDBMSMigrationManager implements Startable {
                 activityMigration.start();
                 updateSettingValue(MigrationContext.SOC_RDBMS_ACTIVITY_MIGRATION_KEY, Boolean.TRUE);
               }
+              if (!MigrationContext.isDone() && MigrationContext.isConnectionDone() && MigrationContext.isActivityDone() 
+                  && !MigrationContext.isSpaceDone()) {
+                spaceMigration = CommonsUtils.getService(SpaceMigrationService.class);
+                spaceMigration.start();
+                updateSettingValue(MigrationContext.SOC_RDBMS_SPACE_MIGRATION_KEY, Boolean.TRUE);
+              }
             }
 
             // cleanup Connections
@@ -107,9 +116,16 @@ public class RDBMSMigrationManager implements Startable {
             if (!MigrationContext.isDone() && MigrationContext.isActivityDone() && !MigrationContext.isActivityCleanupDone()) {
               activityMigration.doRemove();
               updateSettingValue(MigrationContext.SOC_RDBMS_ACTIVITY_CLEANUP_KEY, Boolean.TRUE);
+            }
+            
+            // cleanup spaces
+            if (!MigrationContext.isDone() && MigrationContext.isSpaceDone() && !MigrationContext.isSpaceCleanupDone()) {
+              spaceMigration.doRemove();
+              updateSettingValue(MigrationContext.SOC_RDBMS_SPACE_CLEANUP_KEY, Boolean.TRUE);
               updateSettingValue(MigrationContext.SOC_RDBMS_MIGRATION_STATUS_KEY, Boolean.TRUE);
               MigrationContext.setDone(true);
             }
+            
             //
             LOG.info("END ASYNC MIGRATION-----------------------------------------------------");
           }

@@ -28,13 +28,16 @@ import org.json.simple.JSONObject;
 
 import org.exoplatform.addons.es.domain.Document;
 import org.exoplatform.addons.es.index.impl.ElasticIndexingServiceConnector;
-import org.exoplatform.commons.utils.ListAccess;
+import org.exoplatform.container.ExoContainer;
+import org.exoplatform.container.ExoContainerContext;
+import org.exoplatform.container.component.RequestLifeCycle;
 import org.exoplatform.container.xml.InitParams;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 import org.exoplatform.social.addons.storage.entity.SpaceMember.Status;
 import org.exoplatform.social.core.space.model.Space;
 import org.exoplatform.social.core.space.spi.SpaceService;
+import org.exoplatform.social.core.storage.api.SpaceStorage;
 
 public class SpaceIndexingServiceConnector extends ElasticIndexingServiceConnector {
   
@@ -45,10 +48,13 @@ public class SpaceIndexingServiceConnector extends ElasticIndexingServiceConnect
   public final static String TYPE = "space"; 
   
   private SpaceService spaceService;
+  
+  private SpaceStorage spaceStorage;
 
-  public SpaceIndexingServiceConnector(InitParams initParams, SpaceService spaceService) {
+  public SpaceIndexingServiceConnector(InitParams initParams, SpaceService spaceService, SpaceStorage spaceStorage) {
     super(initParams);
     this.spaceService = spaceService;
+    this.spaceStorage = spaceStorage;
   }
 
   @Override
@@ -84,11 +90,16 @@ public class SpaceIndexingServiceConnector extends ElasticIndexingServiceConnect
 
   @Override
   public List<String> getAllIds(int offset, int limit) {
-    ListAccess<Space> spaces = spaceService.getAllSpacesWithListAccess();
     
     List<String> ids = new LinkedList<>();
     try {
-      for (Space space : spaces.load(offset, limit)) {
+//      ExoContainer container = ExoContainerContext.getCurrentContainer();
+//      RequestLifeCycle.begin(container);          
+      List<Space> spaces = spaceStorage.getAllSpaces();
+//      RequestLifeCycle.end();
+      int to = offset + limit;
+      to = to > spaces.size() ? spaces.size() : to;
+      for (Space space : spaces.subList(offset, to)) {
         ids.add(space.getId());
       }      
     } catch (Exception ex) {

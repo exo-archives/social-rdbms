@@ -111,6 +111,17 @@
 			</value-param>
 		</init-params>
 	</component>
+	
+	<component>
+		<type>org.exoplatform.social.addons.updater.SpaceMigrationService</type>
+		<init-params>
+			<value-param>
+				<name>LIMIT_THRESHOLD</name>
+				<description>The number limit of items migration each round</description>
+				<value>${exo.social.addons.SpaceMigrationService.limitThreshold:200}</value>
+			</value-param>
+		</init-params>
+	</component>
 
   <external-component-plugins>
     <target-component>org.exoplatform.services.jcr.RepositoryService</target-component>

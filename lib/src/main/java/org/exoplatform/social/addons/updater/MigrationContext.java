@@ -28,12 +28,17 @@ public final class MigrationContext {
   public static final String SOC_RDBMS_ACTIVITY_CLEANUP_KEY = "SOC_RDBMS_ACTIVITY_CLEANUP_DONE";
   public static final String SOC_RDBMS_CONNECTION_MIGRATION_KEY = "SOC_RDBMS_CONNECTION_MIGRATION_DONE";
   public static final String SOC_RDBMS_CONNECTION_CLEANUP_KEY = "SOC_RDBMS_CONNECTION_CLEANUP_DONE";
+  public static final String SOC_RDBMS_SPACE_MIGRATION_KEY = "SOC_RDBMS_SPACE_MIGRATION_DONE";
+  public static final String SOC_RDBMS_SPACE_CLEANUP_KEY = "SOC_RDBMS_SPACE_CLEANUP_DONE";
+  
   //
   private static boolean isDone = false;
   private static boolean isActivityDone = false;
   private static boolean isActivityCleanupDone = false;
   private static boolean isConnectionDone = false;
   private static boolean isConnectionCleanupDone = false;
+  private static boolean isSpaceDone = false;
+  private static boolean isSpaceCleanupDone = false;
 
   public static boolean isDone() {
     return isDone;
@@ -73,6 +78,22 @@ public final class MigrationContext {
 
   public static void setConnectionCleanupDone(boolean isConnectionCleanupDone) {
     MigrationContext.isConnectionCleanupDone = isConnectionCleanupDone;
+  }
+
+  public static boolean isSpaceDone() {
+    return isSpaceDone;
+  }
+
+  public static void setSpaceDone(boolean isSpaceDone) {
+    MigrationContext.isSpaceDone = isSpaceDone;
+  }
+
+  public static boolean isSpaceCleanupDone() {
+    return isSpaceCleanupDone;
+  }
+
+  public static void setSpaceCleanupDone(boolean isSpaceCleanupDone) {
+    MigrationContext.isSpaceCleanupDone = isSpaceCleanupDone;
   }
 
 }
