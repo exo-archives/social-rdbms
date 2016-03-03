@@ -4,6 +4,7 @@ import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 
 import java.io.IOException;
+import java.util.List;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
@@ -56,6 +57,10 @@ public class SearchSpaceTestIT extends AbstractCoreTest {
 
   @Override
   protected void tearDown() throws Exception {
+    List<Space> spaces = spaceStorage.getAllSpaces();
+    for (Space space : spaces) {
+      spaceStorage.deleteSpace(space.getId());
+    }
     deleteAllSpaceInES();
   }
 
