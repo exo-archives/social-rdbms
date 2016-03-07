@@ -265,5 +265,75 @@
     <modifySql dbms="mysql">
       <append value=" ENGINE=INNODB CHARSET=UTF8 COLLATE utf8_general_ci"/>
     </modifySql>    
-  </changeSet>  
+  </changeSet>
+
+  <changeSet author="social" id="1.0.0-25">
+    <createTable tableName="SOC_IDENTITY">
+      <column name="IDENTITY_ID" type="BIGINT" autoIncrement="${autoIncrement}" startWith="1">
+        <constraints nullable="false" primaryKey="true" primaryKeyName="PK_SOC_IDENTITIES"/>
+      </column>
+      <column name="PROVIDER_ID" type="NVARCHAR(50)"/>
+      <column name="REMOTE_ID" type="NVARCHAR(100)"/>
+      <column name="ENABLE"  type="BIT" defaultValue="1"/>
+      <column name="DELETED" type="BIT" defaultValue="0"/>
+    </createTable>
+    <modifySql dbms="mysql">
+      <append value=" ENGINE=INNODB CHARSET=UTF8 COLLATE utf8_general_ci"/>
+    </modifySql>
+  </changeSet>
+  <changeSet author="social" id="1.0.0-24" dbms="oracle,postgresql">
+    <createSequence sequenceName="SEQ_SOC_IDENTITY_ID" startValue="1"/>
+  </changeSet>
+
+  <changeSet author="social" id="1.0.0-26">
+    <createTable tableName="SOC_IDENTITY_PROFILE">
+      <column name="PROFILE_ID" type="BIGINT" autoIncrement="${autoIncrement}" startWith="1">
+        <constraints nullable="false" primaryKey="true" primaryKeyName="PK_SOC_IDENTITY_PROFILE"/>
+      </column>
+      <column name="IDENTITY_ID" type="BIGINT">
+        <constraints foreignKeyName="FK_SOC_IDENTITY_PROFILE" references="SOC_IDENTITY(IDENTITY_ID)" nullable="false"/>
+      </column>
+      <column name="URL" type="NVARCHAR(250)"/>
+      <column name="AVATAR_URL" type="NVARCHAR(250)"/>
+      <column name="AVATAR_MIMTYPE" type="NVARCHAR(250)"/>
+      <column name="AVATAR_IMAGE" type="BLOB"/>
+      <column name="CREATED_TIME" type="BIGINT"/>
+    </createTable>
+    <modifySql dbms="mysql">
+      <append value=" ENGINE=INNODB CHARSET=UTF8 COLLATE utf8_general_ci"/>
+    </modifySql>
+  </changeSet>
+  <changeSet author="social" id="1.0.0-27" dbms="oracle,postgresql">
+    <createSequence sequenceName="SEQ_SOC_IDENTITY_PROFILE_ID" startValue="1"/>
+  </changeSet>
+
+  <changeSet author="social" id="1.0.0-28">
+    <createTable tableName="SOC_IDENTITY_PROFILE_PROPERTY">
+      <column name="PROFILE_ID" type="BIGINT">
+        <constraints foreignKeyName="FK_SOC_IDENTITY_PROFILE_PROPERTY" references="SOC_IDENTITY_PROFILE(PROFILE_ID)" nullable="false"/>
+      </column>
+      <column name="NAME" type="NVARCHAR(250)"/>
+      <column name="VALUE" type="NVARCHAR(500)"/>
+    </createTable>
+    <modifySql dbms="mysql">
+      <append value=" ENGINE=INNODB CHARSET=UTF8 COLLATE utf8_general_ci"/>
+    </modifySql>
+  </changeSet>
+
+  <changeSet author="social" id="1.0.0-29">
+    <createTable tableName="SOC_IDENTITY_PROFILE_EXPERIENCE">
+      <column name="PROFILE_ID" type="BIGINT">
+        <constraints foreignKeyName="FK_SOC_IDENTITY_PROFILE_EXPERIENCE" references="SOC_IDENTITY_PROFILE(PROFILE_ID)" nullable="false"/>
+      </column>
+      <column name="COMPANY" type="NVARCHAR(250)"/>
+      <column name="POSITION" type="NVARCHAR(250)"/>
+      <column name="START_DATE" type="NCHAR(10)"/>
+      <column name="END_DATE" type="NCHAR(10)"/>
+      <column name="SKILLS" type="NVARCHAR(500)"/>
+      <column name="DESCRIPTION" type="NVARCHAR(500)"/>
+    </createTable>
+    <modifySql dbms="mysql">
+      <append value=" ENGINE=INNODB CHARSET=UTF8 COLLATE utf8_general_ci"/>
+    </modifySql>
+  </changeSet>
 </databaseChangeLog>
