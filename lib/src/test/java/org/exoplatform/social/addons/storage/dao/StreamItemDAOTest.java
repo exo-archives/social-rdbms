@@ -17,14 +17,9 @@
 package org.exoplatform.social.addons.storage.dao;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
-import org.mockito.Mockito;
-
 import org.exoplatform.services.security.ConversationState;
-import org.exoplatform.social.addons.search.ESSpaceFilter;
-import org.exoplatform.social.addons.storage.RDBMSSpaceStorageImpl;
 import org.exoplatform.social.addons.storage.entity.StreamItem;
 import org.exoplatform.social.addons.test.BaseCoreTest;
 import org.exoplatform.social.core.activity.model.ExoSocialActivity;
@@ -37,7 +32,6 @@ import org.exoplatform.social.core.space.impl.DefaultSpaceApplicationHandler;
 import org.exoplatform.social.core.space.model.Space;
 import org.exoplatform.social.core.space.spi.SpaceService;
 import org.exoplatform.social.core.storage.api.IdentityStorage;
-import org.exoplatform.social.core.storage.api.SpaceStorage;
 
 /**
  * Created by The eXo Platform SAS
@@ -47,7 +41,6 @@ import org.exoplatform.social.core.storage.api.SpaceStorage;
  */
 public class StreamItemDAOTest extends BaseCoreTest {
   private List<ExoSocialActivity> tearDownActivityList;
-  private List<Space> tearDownSpaceList;
   private Identity ghostIdentity;
   private Identity raulIdentity;
   private Identity jameIdentity;
@@ -55,19 +48,17 @@ public class StreamItemDAOTest extends BaseCoreTest {
   
   private IdentityStorage identityStorage;
   private StreamItemDAO streamItemDAO;
+  private SpaceService spaceService;
 
   @Override
   public void setUp() throws Exception {
-    super.setUp();
-    
-    RDBMSSpaceStorageImpl spaceStorage = (RDBMSSpaceStorageImpl)getService(SpaceStorage.class);
-    spaceStorage.setSpaceSearchConnector(mockSpaceSearch);
+    super.setUp();    
     
     identityStorage = getService(IdentityStorage.class);
     streamItemDAO = getService(StreamItemDAO.class);
+    spaceService = getService(SpaceService.class);
     //
     tearDownActivityList = new ArrayList<ExoSocialActivity>();
-    tearDownSpaceList = new ArrayList<Space>();
     //
     ghostIdentity = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, "ghost", true);
     raulIdentity = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, "raul", true);
@@ -82,7 +73,7 @@ public class StreamItemDAOTest extends BaseCoreTest {
     }
     
     //
-    for (Space space : tearDownSpaceList) {
+    for (Space space : spaceService.getAllSpaces()) {
       Identity spaceIdentity = identityStorage.findIdentity(SpaceIdentityProvider.NAME, space.getPrettyName());
       if (spaceIdentity != null) {
         identityStorage.deleteIdentity(spaceIdentity);
@@ -288,8 +279,6 @@ public class StreamItemDAOTest extends BaseCoreTest {
   
   public void testPostOnSpace() throws Exception {
     Space space = this.getSpaceInstance(spaceService, 0);
-    Mockito.when(mockSpaceSearch.search(Mockito.<ESSpaceFilter>any(), Mockito.anyInt(), Mockito.anyInt()))
-      .thenReturn(Arrays.asList(space));
     Identity spaceIdentity = this.identityManager.getOrCreateIdentity(SpaceIdentityProvider.NAME, space.getPrettyName(), false);
     //
     ExoSocialActivity activity = createActivity("demo post on the space 1", demoIdentity.getId());
@@ -303,8 +292,6 @@ public class StreamItemDAOTest extends BaseCoreTest {
   
   public void testPostOnSpaceAndMention() throws Exception {
     Space space = this.getSpaceInstance(spaceService, 0);
-    Mockito.when(mockSpaceSearch.search(Mockito.<ESSpaceFilter>any(), Mockito.anyInt(), Mockito.anyInt()))
-      .thenReturn(Arrays.asList(space));
     Identity spaceIdentity = this.identityManager.getOrCreateIdentity(SpaceIdentityProvider.NAME, space.getPrettyName(), false);
     //
     ExoSocialActivity activity = createActivity("demo post on the space 1 and mention @mary", demoIdentity.getId());

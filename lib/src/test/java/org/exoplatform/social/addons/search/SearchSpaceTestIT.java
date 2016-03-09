@@ -18,7 +18,6 @@ import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 import org.exoplatform.services.security.ConversationState;
 import org.exoplatform.services.security.IdentityRegistry;
-import org.exoplatform.social.addons.storage.entity.SpaceMember.Status;
 import org.exoplatform.social.addons.test.AbstractCoreTest;
 import org.exoplatform.social.core.space.impl.DefaultSpaceApplicationHandler;
 import org.exoplatform.social.core.space.model.Space;
@@ -76,7 +75,7 @@ public class SearchSpaceTestIT extends AbstractCoreTest {
     indexingProcessor.process();
     refreshIndices();
 
-    ESSpaceFilter filter = new ESSpaceFilter();
+    XSpaceFilter filter = new XSpaceFilter();
     filter.setSpaceNameSearchCondition("test");
     assertEquals(1, searchConnector.search(filter, 0, -1).size());
     
@@ -85,95 +84,7 @@ public class SearchSpaceTestIT extends AbstractCoreTest {
     
     filter.setSpaceNameSearchCondition("abcd");
     assertEquals(1, searchConnector.search(filter, 0, -1).size());
-  }
-  
-  public void testManager() throws Exception {
-    Space space = new Space();
-    space.setPrettyName("testManager");
-    space.setType(DefaultSpaceApplicationHandler.NAME);
-    space.setManagers(new String[] {"root", "john"});
-    space.setPendingUsers(new String[] {"mary", "demo"});
-    spaceStorage.saveSpace(space, true);
-    space = spaceStorage.getAllSpaces().get(0);
-
-    indexingService.index(SpaceIndexingServiceConnector.TYPE, space.getId());
-    indexingProcessor.process();
-    refreshIndices();
-
-    ESSpaceFilter filter = new ESSpaceFilter();
-    filter.addStatus("root", Status.MANAGER);
-    assertEquals(1, searchConnector.search(filter, 0, -1).size());
-    
-    ESSpaceFilter filter2 = new ESSpaceFilter();
-    filter2.addStatus("root", Status.PENDING);
-    assertEquals(0, searchConnector.search(filter2, 0, -1).size());
-    
-    ESSpaceFilter filter3 = new ESSpaceFilter();
-    filter3.addStatus("john", Status.MANAGER);
-    filter3.addStatus("mary", Status.PENDING);
-    filter3.addStatus("demo", Status.PENDING);
-    assertEquals(1, searchConnector.search(filter3, 0, -1).size());
-  }
-  
-  public void testVisibility() throws Exception {
-    Space space = new Space();
-    space.setPrettyName("testVisibility");
-    space.setType(DefaultSpaceApplicationHandler.NAME);
-    space.setManagers(new String[] {"root", "john"});
-    space.setVisibility(Space.HIDDEN);
-    spaceStorage.saveSpace(space, true);
-    space = spaceStorage.getAllSpaces().get(0);
-
-    indexingService.index(SpaceIndexingServiceConnector.TYPE, space.getId());
-    indexingProcessor.process();
-    refreshIndices();
-
-    ESSpaceFilter filter = new ESSpaceFilter();
-    filter.setNotHidden(true);
-    assertEquals(0, searchConnector.search(filter, 0, -1).size());
-    
-    ESSpaceFilter filter2 = new ESSpaceFilter();
-    filter2.setNotHidden(true);
-    assertEquals(0, searchConnector.search(filter2, 0, -1).size());    
-  }
-  
-  public void testVisibility2() throws Exception {
-    Space space = new Space();
-    space.setPrettyName("testVisibility2");
-    space.setType(DefaultSpaceApplicationHandler.NAME);
-    space.setManagers(new String[] {"root", "john"});
-    space.setVisibility(Space.PRIVATE);
-    spaceStorage.saveSpace(space, true);
-    space = spaceStorage.getAllSpaces().get(0);
-
-    indexingService.index(SpaceIndexingServiceConnector.TYPE, space.getId());
-    indexingProcessor.process();
-    refreshIndices();
-
-    ESSpaceFilter filter = new ESSpaceFilter();
-    filter.setSpaceNameSearchCondition("visibility");
-    filter.setNotHidden(true);
-    assertEquals(1, searchConnector.search(filter, 0, -1).size()); 
-  }
-  
-  public void testPrivate() throws Exception {
-    Space space = new Space();
-    space.setPrettyName("testPrivate");
-    space.setType(DefaultSpaceApplicationHandler.NAME);
-    space.setManagers(new String[] {"root", "john"});
-    space.setVisibility(Space.PRIVATE);
-    spaceStorage.saveSpace(space, true);
-    space = spaceStorage.getAllSpaces().get(0);
-
-    indexingService.index(SpaceIndexingServiceConnector.TYPE, space.getId());
-    indexingProcessor.process();
-    refreshIndices();
-
-    ESSpaceFilter filter = new ESSpaceFilter();
-    filter.setIncludePrivate(true);
-    filter.addStatus("demo", Status.MANAGER);
-    assertEquals(1, searchConnector.search(filter, 0, -1).size()); 
-  }
+  }  
   
   private void deleteAllSpaceInES() {
     indexingService.unindexAll(SpaceIndexingServiceConnector.TYPE);

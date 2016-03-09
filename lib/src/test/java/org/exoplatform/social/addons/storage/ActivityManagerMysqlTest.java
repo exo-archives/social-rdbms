@@ -18,21 +18,17 @@ package org.exoplatform.social.addons.storage;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
-import org.mockito.Mockito;
-
 import org.exoplatform.commons.utils.ListAccess;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 import org.exoplatform.services.organization.OrganizationService;
 import org.exoplatform.services.organization.User;
-import org.exoplatform.social.addons.search.ESSpaceFilter;
 import org.exoplatform.social.addons.test.AbstractCoreTest;
 import org.exoplatform.social.common.RealtimeListAccess;
 import org.exoplatform.social.core.activity.model.ExoSocialActivity;
@@ -47,7 +43,6 @@ import org.exoplatform.social.core.space.impl.DefaultSpaceApplicationHandler;
 import org.exoplatform.social.core.space.model.Space;
 import org.exoplatform.social.core.space.spi.SpaceService;
 import org.exoplatform.social.core.storage.ActivityStorageException;
-import org.exoplatform.social.core.storage.api.SpaceStorage;
 import org.exoplatform.social.core.storage.impl.StorageUtils;
 
 /**
@@ -57,7 +52,6 @@ import org.exoplatform.social.core.storage.impl.StorageUtils;
 public class ActivityManagerMysqlTest extends AbstractCoreTest {
   private final Log LOG = ExoLogger.getLogger(ActivityManagerMysqlTest.class);
   private List<ExoSocialActivity> tearDownActivityList;
-  private List<Space> tearDownSpaceList;
   private Identity ghostIdentity;
   private Identity raulIdentity;
   private Identity jameIdentity;
@@ -67,9 +61,6 @@ public class ActivityManagerMysqlTest extends AbstractCoreTest {
   public void setUp() throws Exception {
     super.setUp();
     tearDownActivityList = new ArrayList<ExoSocialActivity>();
-    tearDownSpaceList = new ArrayList<Space>();
-    RDBMSSpaceStorageImpl spaceStorage = (RDBMSSpaceStorageImpl)getService(SpaceStorage.class);
-    spaceStorage.setSpaceSearchConnector(mockSpaceSearch);
     
     ghostIdentity = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, "ghost", true);
     raulIdentity = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, "raul", true);
@@ -95,7 +86,7 @@ public class ActivityManagerMysqlTest extends AbstractCoreTest {
     identityManager.deleteIdentity(raulIdentity);
     identityManager.deleteIdentity(paulIdentity);
     
-    for (Space space : tearDownSpaceList) {
+    for (Space space : spaceService.getAllSpaces()) {
       Identity spaceIdentity = identityManager.getOrCreateIdentity(SpaceIdentityProvider.NAME, space.getPrettyName(), false);
       if (spaceIdentity != null) {
         identityManager.deleteIdentity(spaceIdentity);
@@ -755,8 +746,6 @@ public class ActivityManagerMysqlTest extends AbstractCoreTest {
   
   public void testGetActivitiesOfUserSpacesWithListAccess() throws Exception {
     Space space = this.getSpaceInstance(spaceService, 0);
-    Mockito.when(mockSpaceSearch.search(Mockito.<ESSpaceFilter>any(), Mockito.anyInt(), Mockito.anyInt())).thenReturn(Arrays.asList(space));
-    tearDownSpaceList.add(space);
     Identity spaceIdentity = this.identityManager.getOrCreateIdentity(SpaceIdentityProvider.NAME, space.getPrettyName(), false);
     
     int totalNumber = 10;
@@ -780,8 +769,6 @@ public class ActivityManagerMysqlTest extends AbstractCoreTest {
     assertEquals("demoActivities.getSize() must return: 10", 10, demoActivities.getSize());
     
     Space space2 = this.getSpaceInstance(spaceService, 1);
-    Mockito.when(mockSpaceSearch.search(Mockito.<ESSpaceFilter>any(), Mockito.anyInt(), Mockito.anyInt())).thenReturn(Arrays.asList(space2));
-    tearDownSpaceList.add(space2);
     Identity spaceIdentity2 = this.identityManager.getOrCreateIdentity(SpaceIdentityProvider.NAME, space2.getPrettyName(), false);
     
     //demo posts activities to space2
@@ -798,12 +785,10 @@ public class ActivityManagerMysqlTest extends AbstractCoreTest {
     assertEquals("space2.getDisplayName() must return: my space 1", "my space 1", space2.getDisplayName());
     assertEquals("space2.getDescription() must return: add new space 1", "add new space 1", space2.getDescription());
     
-    Mockito.when(mockSpaceSearch.search(Mockito.<ESSpaceFilter>any(), Mockito.anyInt(), Mockito.anyInt())).thenReturn(Arrays.asList(space, space2));
     demoActivities = activityManager.getActivitiesOfUserSpacesWithListAccess(demoIdentity);
     assertNotNull("demoActivities must not be null", demoActivities);
     assertEquals("demoActivities.getSize() must return: 20", 20, demoActivities.getSize());
     
-    Mockito.when(mockSpaceSearch.search(Mockito.<ESSpaceFilter>any(), Mockito.anyInt(), Mockito.anyInt())).thenReturn(Collections.<Space>emptyList());
     demoActivities = activityManager.getActivitiesOfUserSpacesWithListAccess(maryIdentity);
     assertNotNull("demoActivities must not be null", demoActivities);
     assertEquals("demoActivities.getSize() must return: 0", 0, demoActivities.getSize());
@@ -816,7 +801,6 @@ public class ActivityManagerMysqlTest extends AbstractCoreTest {
     this.populateActivityMass(johnIdentity, 2);
     
     Space space = this.getSpaceInstance(spaceService, 0);
-    Mockito.when(mockSpaceSearch.search(Mockito.<ESSpaceFilter>any(), Mockito.anyInt(), Mockito.anyInt())).thenReturn(Arrays.asList(space));
     Identity spaceIdentity = identityManager.getOrCreateIdentity(SpaceIdentityProvider.NAME, space.getPrettyName(), false);
     populateActivityMass(spaceIdentity, 5);
 
@@ -833,7 +817,6 @@ public class ActivityManagerMysqlTest extends AbstractCoreTest {
     assertEquals(11, demoActivityFeed.load(0, 15).length);
     assertEquals(6, demoActivityFeed.load(5, 15).length);
     
-    Mockito.when(mockSpaceSearch.search(Mockito.<ESSpaceFilter>any(), Mockito.anyInt(), Mockito.anyInt())).thenReturn(Collections.<Space>emptyList());
     RealtimeListAccess<ExoSocialActivity> maryActivityFeed = activityManager.getActivityFeedWithListAccess(maryIdentity);
     assertEquals("maryActivityFeed.getSize() must return 6", 6, maryActivityFeed.getSize());
     assertEquals(6, maryActivityFeed.load(0, 10).length);
@@ -841,7 +824,6 @@ public class ActivityManagerMysqlTest extends AbstractCoreTest {
     // Create demo's activity on space
     createActivityToOtherIdentity(demoIdentity, spaceIdentity, 5);
 
-    Mockito.when(mockSpaceSearch.search(Mockito.<ESSpaceFilter>any(), Mockito.anyInt(), Mockito.anyInt())).thenReturn(Arrays.asList(space));
     // after that the feed of demo with have 16
     demoActivityFeed = activityManager.getActivityFeedWithListAccess(demoIdentity);
     assertEquals(16, demoActivityFeed.getSize());
@@ -852,12 +834,10 @@ public class ActivityManagerMysqlTest extends AbstractCoreTest {
     assertEquals(10, demoActivitiesSpaceFeed.load(0, 10).length);
 
     // the feed of mary must be the same because mary not the member of space
-    Mockito.when(mockSpaceSearch.search(Mockito.<ESSpaceFilter>any(), Mockito.anyInt(), Mockito.anyInt())).thenReturn(Collections.<Space>emptyList());
     maryActivityFeed = activityManager.getActivityFeedWithListAccess(maryIdentity);
     assertEquals(6, maryActivityFeed.getSize());
 
     // john not friend of demo but member of space
-    Mockito.when(mockSpaceSearch.search(Mockito.<ESSpaceFilter>any(), Mockito.anyInt(), Mockito.anyInt())).thenReturn(Arrays.asList(space));
     RealtimeListAccess<ExoSocialActivity> johnSpaceActivitiesFeed = activityManager.getActivitiesOfUserSpacesWithListAccess(johnIdentity);
     assertEquals("johnSpaceActivitiesFeed.getSize() must return 10", 10, johnSpaceActivitiesFeed.getSize());
 
@@ -1112,7 +1092,6 @@ public class ActivityManagerMysqlTest extends AbstractCoreTest {
   */
  public void testGetActivitiesOfUserSpaces() throws Exception {
    Space space = this.getSpaceInstance(spaceService, 0);
-   Mockito.when(mockSpaceSearch.search(Mockito.<ESSpaceFilter>any(), Mockito.anyInt(), Mockito.anyInt())).thenReturn(Arrays.asList(space));
    Identity spaceIdentity = this.identityManager.getOrCreateIdentity(SpaceIdentityProvider.NAME, space.getPrettyName(), false);
    
    int totalNumber = 10;
@@ -1124,17 +1103,14 @@ public class ActivityManagerMysqlTest extends AbstractCoreTest {
    assertEquals("demoActivities.size() must return: 10", 10, demoActivities.size());
    
    Space space2 = this.getSpaceInstance(spaceService, 1);
-   Mockito.when(mockSpaceSearch.search(Mockito.<ESSpaceFilter>any(), Mockito.anyInt(), Mockito.anyInt())).thenReturn(Arrays.asList(space2));
    Identity spaceIdentity2 = this.identityManager.getOrCreateIdentity(SpaceIdentityProvider.NAME, space2.getPrettyName(), false);
    
    this.populateActivityMass(spaceIdentity2, totalNumber);
    
-   Mockito.when(mockSpaceSearch.search(Mockito.<ESSpaceFilter>any(), Mockito.anyInt(), Mockito.anyInt())).thenReturn(Arrays.asList(space, space2));
    demoActivities = activityManager.getActivitiesOfUserSpaces(demoIdentity);
    assertNotNull("demoActivities must not be null", demoActivities);
    assertEquals("demoActivities.size() must return: 20", 20, demoActivities.size());
    
-   Mockito.when(mockSpaceSearch.search(Mockito.<ESSpaceFilter>any(), Mockito.anyInt(), Mockito.anyInt())).thenReturn(Collections.<Space>emptyList());
    demoActivities = activityManager.getActivitiesOfUserSpaces(maryIdentity);
    assertNotNull("demoActivities must not be null", demoActivities);
    assertEquals("demoActivities.size() must return: 0", 0, demoActivities.size());

@@ -20,6 +20,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.jboss.byteman.contrib.bmunit.BMUnit;
+import org.junit.FixMethodOrder;
+
 import org.exoplatform.commons.api.settings.SettingService;
 import org.exoplatform.commons.api.settings.SettingValue;
 import org.exoplatform.commons.api.settings.data.Context;
@@ -27,7 +30,6 @@ import org.exoplatform.commons.api.settings.data.Scope;
 import org.exoplatform.commons.persistence.impl.EntityManagerService;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
-import org.exoplatform.social.addons.search.SpaceSearchConnector;
 import org.exoplatform.social.addons.storage.RDBMSSpaceStorageImpl;
 import org.exoplatform.social.addons.storage.dao.ActivityDAO;
 import org.exoplatform.social.addons.storage.entity.Activity;
@@ -41,19 +43,18 @@ import org.exoplatform.social.addons.updater.RelationshipMigrationService;
 import org.exoplatform.social.core.activity.model.ExoSocialActivity;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvider;
+import org.exoplatform.social.core.identity.provider.SpaceIdentityProvider;
 import org.exoplatform.social.core.manager.ActivityManager;
 import org.exoplatform.social.core.manager.IdentityManager;
 import org.exoplatform.social.core.manager.RelationshipManager;
 import org.exoplatform.social.core.relationship.model.Relationship;
 import org.exoplatform.social.core.relationship.model.Relationship.Type;
+import org.exoplatform.social.core.space.model.Space;
 import org.exoplatform.social.core.space.spi.SpaceService;
 import org.exoplatform.social.core.storage.api.ActivityStorage;
 import org.exoplatform.social.core.storage.api.SpaceStorage;
 import org.exoplatform.social.core.storage.impl.ActivityStorageImpl;
 import org.exoplatform.social.core.storage.impl.RelationshipStorageImpl;
-import org.jboss.byteman.contrib.bmunit.BMUnit;
-import org.junit.FixMethodOrder;
-import org.mockito.Mockito;
 
 /**
  * Created by The eXo Platform SAS
@@ -88,8 +89,6 @@ public class AsynMigrationTest extends BaseCoreTest {
     activityStorage = getService(ActivityStorage.class);
     relationshipManager = getService(RelationshipManager.class);
     spaceService = getService(SpaceService.class);
-    RDBMSSpaceStorageImpl spaceStorage = (RDBMSSpaceStorageImpl)getService(SpaceStorage.class);
-    spaceStorage.setSpaceSearchConnector(mockSpaceSearch);
     entityManagerService = getService(EntityManagerService.class);
     //
     jcrStorage = getService(ActivityStorageImpl.class);
@@ -110,6 +109,15 @@ public class AsynMigrationTest extends BaseCoreTest {
     for (Activity item : items) {
       dao.delete(item);
     }
+    
+    for (Space space : spaceService.getAllSpaces()) {
+      Identity spaceIdentity = identityManager.getOrCreateIdentity(SpaceIdentityProvider.NAME, space.getPrettyName(), false);
+      if (spaceIdentity != null) {
+        identityManager.deleteIdentity(spaceIdentity);
+      }
+      spaceService.deleteSpace(space);
+    }
+    
     // Reset value of settings
     updateSettingValue(MigrationContext.SOC_RDBMS_CONNECTION_MIGRATION_KEY, Boolean.FALSE);
     updateSettingValue(MigrationContext.SOC_RDBMS_ACTIVITY_MIGRATION_KEY, Boolean.FALSE);

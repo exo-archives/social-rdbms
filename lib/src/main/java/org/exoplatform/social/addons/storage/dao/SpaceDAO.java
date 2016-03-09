@@ -27,5 +27,9 @@ public interface SpaceDAO extends GenericDAO<SpaceEntity, Long> {
 
   SpaceEntity getSpaceByGroupId(String groupId);
 
-  SpaceEntity getSpaceByURL(String url);    
+  SpaceEntity getSpaceByURL(String url);
+
+  SpaceEntity getSpaceByDisplayName(String spaceDisplayName);
+
+  SpaceEntity getSpaceByPrettyName(String spacePrettyName);    
 }

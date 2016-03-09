@@ -2,7 +2,6 @@ package org.exoplatform.social.addons.storage;
 
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -11,10 +10,11 @@ import java.util.Set;
 import org.exoplatform.commons.api.persistence.ExoTransactional;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
-import org.exoplatform.social.addons.search.ESSpaceFilter;
+import org.exoplatform.social.addons.search.XSpaceFilter;
 import org.exoplatform.social.addons.search.SpaceSearchConnector;
 import org.exoplatform.social.addons.storage.dao.SpaceDAO;
 import org.exoplatform.social.addons.storage.dao.SpaceMemberDAO;
+import org.exoplatform.social.addons.storage.dao.jpa.query.SpaceQueryBuilder;
 import org.exoplatform.social.addons.storage.entity.SpaceEntity;
 import org.exoplatform.social.addons.storage.entity.SpaceMember.Status;
 import org.exoplatform.social.core.chromattic.entity.IdentityEntity;
@@ -94,20 +94,7 @@ public class RDBMSSpaceStorageImpl extends AbstractStorage implements SpaceStora
 
   @Override
   public List<Space> getAllSpaces() throws SpaceStorageException {
-    List<Space> spaces = new LinkedList<>();
-
-    for (SpaceEntity entity : spaceDAO.findAll()) {
-      Space space = new Space();
-      fillSpaceFromEntity(entity, space);
-      spaces.add(space);
-    }
-    Collections.sort(spaces, new Comparator<Space>() {
-      @Override
-      public int compare(Space o1, Space o2) {
-        return o1.getPrettyName().compareTo(o2.getPrettyName());
-      }
-    });
-    return spaces;
+    return getSpaces(0, -1);
   }
 
   @Override
@@ -230,7 +217,7 @@ public class RDBMSSpaceStorageImpl extends AbstractStorage implements SpaceStora
 
   @Override
   public int getNumberOfMemberPublicSpaces(String userId) {
-    ESSpaceFilter filter = new ESSpaceFilter();
+    XSpaceFilter filter = new XSpaceFilter();
     filter.setNotHidden(true);
     return getSpacesCount(userId, Arrays.asList(Status.MEMBER), filter);
   }
@@ -272,12 +259,18 @@ public class RDBMSSpaceStorageImpl extends AbstractStorage implements SpaceStora
 
   @Override
   public List<Space> getPublicSpacesByFilter(String userId, SpaceFilter spaceFilter, long offset, long limit) {
-    return getSpaces(userId, Arrays.asList(Status.values()), spaceFilter, offset, limit);
+    XSpaceFilter filter = new XSpaceFilter();
+    filter.setSpaceFilter(spaceFilter);
+    filter.setPublic(userId);   
+    return getSpacesByFilter(filter, offset, limit);
   }
 
   @Override
   public int getPublicSpacesByFilterCount(String userId, SpaceFilter spaceFilter) {
-    return getSpacesCount(userId, Arrays.asList(Status.values()), spaceFilter);
+    XSpaceFilter filter = new XSpaceFilter();
+    filter.setSpaceFilter(spaceFilter);
+    filter.setPublic(userId);
+    return getSpacesCount(null, null, filter);
   }
 
   @Override
@@ -287,27 +280,14 @@ public class RDBMSSpaceStorageImpl extends AbstractStorage implements SpaceStora
 
   @Override
   public Space getSpaceByDisplayName(String spaceDisplayName) throws SpaceStorageException {
-    ESSpaceFilter filter = new ESSpaceFilter();
-    filter.setDisplayName(spaceDisplayName);
-
-    List<Space> spaces = getSpacesByFilter(filter, 0, 1);
-    if (spaces.isEmpty()) {
-      return null;
-    } else {
-      return spaces.iterator().next();
-    }
+    SpaceEntity entity = spaceDAO.getSpaceByDisplayName(spaceDisplayName);
+    return fillSpaceFromEntity(entity);
   }
 
   @Override
   public Space getSpaceByGroupId(String groupId) throws SpaceStorageException {
     SpaceEntity entity = spaceDAO.getSpaceByGroupId(groupId);
-    if (entity != null) {
-      Space space = new Space();
-      fillSpaceFromEntity(entity, space);
-      return space;
-    } else {
-      return null;
-    }
+    return fillSpaceFromEntity(entity);
   }
 
   @Override
@@ -319,39 +299,19 @@ public class RDBMSSpaceStorageImpl extends AbstractStorage implements SpaceStora
       return null;
     }
     SpaceEntity entity = spaceDAO.find(spaceId);
-    if (entity != null) {
-      Space space = new Space();
-      fillSpaceFromEntity(entity, space);
-      return space;
-    } else {
-      return null;
-    }
+    return fillSpaceFromEntity(entity);
   }
 
   @Override
   public Space getSpaceByPrettyName(String spacePrettyName) throws SpaceStorageException {
-    ESSpaceFilter filter = new ESSpaceFilter();
-    filter.setPrettyName(spacePrettyName);
-
-    List<Space> spaces = getSpacesByFilter(filter, 0, 1);
-
-    if (spaces.isEmpty()) {
-      return null;
-    } else {
-      return spaces.iterator().next();
-    }
+    SpaceEntity entity = spaceDAO.getSpaceByPrettyName(spacePrettyName);
+    return fillSpaceFromEntity(entity);
   }
 
   @Override
   public Space getSpaceByUrl(String url) throws SpaceStorageException {
     SpaceEntity entity = spaceDAO.getSpaceByURL(url);
-    if (entity != null) {
-      Space space = new Space();
-      fillSpaceFromEntity(entity, space);
-      return space;
-    } else {
-      return null;
-    }
+    return fillSpaceFromEntity(entity);
   }
 
   @Override
@@ -363,13 +323,8 @@ public class RDBMSSpaceStorageImpl extends AbstractStorage implements SpaceStora
       return null;
     }
     SpaceEntity entity = spaceDAO.find(spaceId);
-    if (entity != null) {
-      Space space = new Space();
-      fillSpaceSimpleFromEntity(entity, space);
-      return space;
-    } else {
-      return null;
-    }
+    Space space = new Space();
+    return fillSpaceSimpleFromEntity(entity, space);
   }
 
   @Override
@@ -387,16 +342,16 @@ public class RDBMSSpaceStorageImpl extends AbstractStorage implements SpaceStora
                                             SpaceFilter spaceFilter,
                                             long offset,
                                             long limit) throws SpaceStorageException {
-    ESSpaceFilter esFilter = new ESSpaceFilter();
-    esFilter.setSpaceFilter(spaceFilter).setUnifiedSearch(true);
-    return getSpacesByFilter(spaceFilter, offset, limit);
+    XSpaceFilter xFilter = new XSpaceFilter();
+    xFilter.setSpaceFilter(spaceFilter).setUnifiedSearch(true);
+    return getSpacesByFilter(xFilter, offset, limit);
   }
 
   @Override
   public int getUnifiedSearchSpacesCount(String userId, SpaceFilter spaceFilter) throws SpaceStorageException {
-    ESSpaceFilter esFilter = new ESSpaceFilter();
-    esFilter.setSpaceFilter(spaceFilter).setUnifiedSearch(true);
-    return getSpacesCount(null, null, spaceFilter);
+    XSpaceFilter xFilter = new XSpaceFilter();
+    xFilter.setSpaceFilter(spaceFilter).setUnifiedSearch(true);
+    return getSpacesCount(null, null, xFilter);
   }
 
   @Override
@@ -409,20 +364,20 @@ public class RDBMSSpaceStorageImpl extends AbstractStorage implements SpaceStora
                                       SpaceFilter spaceFilter,
                                       long offset,
                                       long limit) throws SpaceStorageException {
-    ESSpaceFilter esFilter = new ESSpaceFilter();
-    esFilter.setSpaceFilter(spaceFilter);
-    esFilter.addStatus(userId, Status.MEMBER).addStatus(userId, Status.MANAGER).addStatus(userId, Status.INVITED);
-    esFilter.setIncludePrivate(true);
-    return getSpacesByFilter(spaceFilter, offset, limit);
+    XSpaceFilter xFilter = new XSpaceFilter();
+    xFilter.setSpaceFilter(spaceFilter).setRemoteId(userId);
+    xFilter.addStatus(Status.MEMBER, Status.MANAGER, Status.INVITED);
+    xFilter.setIncludePrivate(true);
+    return getSpacesByFilter(xFilter, offset, limit);
   }
 
   @Override
   public int getVisibleSpacesCount(String userId, SpaceFilter spaceFilter) throws SpaceStorageException {
-    ESSpaceFilter esFilter = new ESSpaceFilter();
-    esFilter.setSpaceFilter(spaceFilter);
-    esFilter.addStatus(userId, Status.MEMBER).addStatus(userId, Status.MANAGER).addStatus(userId, Status.INVITED);
-    esFilter.setIncludePrivate(true);
-    return getSpacesCount(userId, null, spaceFilter);
+    XSpaceFilter xFilter = new XSpaceFilter();
+    xFilter.setSpaceFilter(spaceFilter).setRemoteId(userId);
+    xFilter.addStatus(Status.MEMBER, Status.MANAGER, Status.INVITED);
+    xFilter.setIncludePrivate(true);
+    return getSpacesCount(userId, null, xFilter);
   }
 
   @Override
@@ -483,7 +438,7 @@ public class RDBMSSpaceStorageImpl extends AbstractStorage implements SpaceStora
 
       //
       spaceDAO.create(entity);
-      fillSpaceFromEntity(entity, space);
+      space.setId(String.valueOf(entity.getId()));
     } else {
       Long id = Long.parseLong(space.getId());
       SpaceEntity entity = spaceDAO.find(id);
@@ -501,7 +456,7 @@ public class RDBMSSpaceStorageImpl extends AbstractStorage implements SpaceStora
   }
 
   @Override
-  public void updateSpaceAccessed(String arg0, Space arg1) throws SpaceStorageException {
+  public void updateSpaceAccessed(String remoteId, Space space) throws SpaceStorageException {
     // TODO delegate this method to IdentityDAO
   }
 
@@ -511,7 +466,11 @@ public class RDBMSSpaceStorageImpl extends AbstractStorage implements SpaceStora
    * @param entity the space entity
    * @param space the space pojo for services
    */
-  private void fillSpaceFromEntity(SpaceEntity entity, Space space) {
+  private Space fillSpaceFromEntity(SpaceEntity entity) {
+    if (entity == null) {
+      return null;
+    }
+    Space space = new Space();
     fillSpaceSimpleFromEntity(entity, space);
 
     space.setPendingUsers(entity.getPendingMembersId());
@@ -531,6 +490,7 @@ public class RDBMSSpaceStorageImpl extends AbstractStorage implements SpaceStora
     //
     space.setMembers(membersList.toArray(new String[] {}));
     space.setManagers(entity.getManagerMembersId());
+    return space;
   }
 
   /**
@@ -549,33 +509,43 @@ public class RDBMSSpaceStorageImpl extends AbstractStorage implements SpaceStora
   }
 
   private List<Space> getSpaces(String userId, List<Status> status, SpaceFilter spaceFilter, long offset, long limit) {
-    ESSpaceFilter filter = new ESSpaceFilter();
+    XSpaceFilter filter = new XSpaceFilter();
     filter.setSpaceFilter(spaceFilter);
-    if (status != null && userId != null) {
-      for (Status st : status) {
-        filter.addStatus(userId, st);
-      }
+    if (userId != null && status != null) {
+      filter.setRemoteId(userId);
+      filter.addStatus(status.toArray(new Status[status.size()]));
     }
-    return spaceSearchConnector.search(filter, offset, limit);
+    
+    if (filter.isUnifiedSearch()) {
+      return spaceSearchConnector.search(filter, offset, limit);
+    } else {
+      SpaceQueryBuilder query = SpaceQueryBuilder.builder().filter(filter).offset(offset).limit(limit);
+      List<SpaceEntity> entities = query.build().getResultList();
+      return buildList(entities);
+    }
   }
 
   private int getSpacesCount(String userId, List<Status> status, SpaceFilter spaceFilter) {
-    ESSpaceFilter filter = new ESSpaceFilter();
+    XSpaceFilter filter = new XSpaceFilter();
     filter.setSpaceFilter(spaceFilter);
     if (userId != null && status != null) {
-      for (Status st : status) {
-        filter.addStatus(userId, st);
-      }
+      filter.setRemoteId(userId);
+      filter.addStatus(status.toArray(new Status[status.size()]));
     }
-    return spaceSearchConnector.count(filter);
+    
+    if (filter.isUnifiedSearch()) {
+      return spaceSearchConnector.count(filter);      
+    } else {
+      SpaceQueryBuilder query = SpaceQueryBuilder.builder().filter(filter);
+      return query.buildCount().getSingleResult().intValue();
+    }   
   }
 
   private List<Space> buildList(List<SpaceEntity> spaceEntities) {
     List<Space> spaces = new LinkedList<>();
     if (spaceEntities != null) {
       for (SpaceEntity entity : spaceEntities) {
-        Space space = new Space();
-        fillSpaceFromEntity(entity, space);
+        Space space = fillSpaceFromEntity(entity);
         spaces.add(space);
       }
     }
@@ -588,7 +558,7 @@ public class RDBMSSpaceStorageImpl extends AbstractStorage implements SpaceStora
    * @param entity the space entity from chromattic
    * @param space the space pojo for services
    */
-  private void fillSpaceSimpleFromEntity(SpaceEntity entity, Space space) {
+  private Space fillSpaceSimpleFromEntity(SpaceEntity entity, Space space) {
     space.setApp(entity.getApp());
     space.setId(String.valueOf(entity.getId()));
     space.setDisplayName(entity.getDisplayName());
@@ -612,6 +582,7 @@ public class RDBMSSpaceStorageImpl extends AbstractStorage implements SpaceStora
       }
     }
     space.setAvatarLastUpdated(entity.getAvatarLastUpdated());
+    return space;
   }
 
   public void setSpaceSearchConnector(SpaceSearchConnector spaceSearchConnector) {

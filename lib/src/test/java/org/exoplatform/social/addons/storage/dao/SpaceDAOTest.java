@@ -16,127 +16,111 @@
  */
 package org.exoplatform.social.addons.storage.dao;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
-import org.exoplatform.services.log.ExoLogger;
-import org.exoplatform.services.log.Log;
-import org.exoplatform.services.security.ConversationState;
-import org.exoplatform.social.addons.storage.entity.Activity;
 import org.exoplatform.social.addons.storage.entity.SpaceEntity;
 import org.exoplatform.social.addons.storage.entity.SpaceMember;
 import org.exoplatform.social.addons.storage.entity.SpaceMember.Status;
 import org.exoplatform.social.addons.test.BaseCoreTest;
-import org.exoplatform.social.core.identity.model.Identity;
-import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvider;
-import org.exoplatform.social.core.identity.provider.SpaceIdentityProvider;
-import org.exoplatform.social.core.space.model.Space;
 
 public class SpaceDAOTest extends BaseCoreTest {
-  private final Log LOG = ExoLogger.getLogger(SpaceDAOTest.class);
-  private Set<Activity> tearDownActivityList;
-  private List<Space> tearDownSpaceList;
-  private Identity ghostIdentity;
-  private Identity raulIdentity;
-  private Identity jameIdentity;
-  private Identity paulIdentity;
-  
-  private ActivityDAO activityDao;
   private SpaceDAO spaceDAO;
 
   @Override
   public void setUp() throws Exception {
     super.setUp();
-    activityDao = getService(ActivityDAO.class);
     spaceDAO = getService(SpaceDAO.class);
-    //
-    tearDownActivityList = new HashSet<Activity>();
-    tearDownSpaceList = new ArrayList<Space>();
-    //
-    ghostIdentity = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, "ghost", true);
-    raulIdentity = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, "raul", true);
-    jameIdentity = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, "jame", true);
-    paulIdentity = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, "paul", true);
   }
 
   @Override
   public void tearDown() throws Exception {
-    for (Activity activity : tearDownActivityList) {
-      try {
-        activityDao.delete(activity);
-      } catch (Exception e) {
-        LOG.warn("Can not delete activity with id: " + activity.getId(), e);
-      }
-    }
-
-    identityManager.deleteIdentity(ghostIdentity);
-    identityManager.deleteIdentity(jameIdentity);
-    identityManager.deleteIdentity(raulIdentity);
-    identityManager.deleteIdentity(paulIdentity);
-
-    for (Space space : tearDownSpaceList) {
-      Identity spaceIdentity = identityManager.getOrCreateIdentity(SpaceIdentityProvider.NAME, space.getPrettyName(), false);
-      if (spaceIdentity != null) {
-        identityManager.deleteIdentity(spaceIdentity);
-      }
-      spaceService.deleteSpace(space);
-    }
-    //
-    // logout
-    ConversationState.setCurrent(null);
+    spaceDAO.deleteAll();
     super.tearDown();
   }
-  
+
   public void testSaveSpace() throws Exception {
+    SpaceEntity spaceEntity = createSpace();
+
+    spaceDAO.create(spaceEntity);
+
+    end();
+    begin();
+
+    SpaceEntity result = spaceDAO.find(spaceEntity.getId());
+    assertSpace(spaceEntity, result);
+  }
+
+  public void testGetSpace() throws Exception {
+    SpaceEntity spaceEntity = createSpace();
+
+    spaceDAO.create(spaceEntity);
+
+    end();
+    begin();
+
+    SpaceEntity result = spaceDAO.getSpaceByDisplayName(spaceEntity.getDisplayName());
+    assertSpace(spaceEntity, result);
+    
+    result = spaceDAO.getSpaceByGroupId(spaceEntity.getGroupId());
+    assertSpace(spaceEntity, result);
+    
+    result = spaceDAO.getSpaceByPrettyName(spaceEntity.getPrettyName());
+    assertSpace(spaceEntity, result);
+    
+    result = spaceDAO.getSpaceByURL(spaceEntity.getUrl());
+    assertSpace(spaceEntity, result);
+  }
+  
+  public void testGetLastSpace() throws Exception {
+    SpaceEntity space1 = createSpace();
+    spaceDAO.create(space1);
+    SpaceEntity space2 = createSpace();
+    spaceDAO.create(space2);
+
+    end();
+    begin();
+    
+    List<SpaceEntity> result = spaceDAO.getLastSpaces(1);
+    assertEquals(1, result.size());
+    assertSpace(space2, result.iterator().next());
+  }
+
+  private SpaceEntity createSpace() {
     SpaceEntity spaceEntity = new SpaceEntity();
     spaceEntity.setApp("testApp");
     spaceEntity.setAvatarLastUpdated(1L);
     spaceEntity.setDescription("testDesc");
     spaceEntity.setDisplayName("testDisplayName");
     spaceEntity.setGroupId("testGroupId");
-    SpaceMember mem = new SpaceMember();
-    mem.setSpace(spaceEntity);
-    mem.setStatus(Status.PENDING);
-    mem.setUserId("root");
-    spaceEntity.getMembers().add(mem);
     spaceEntity.setPrettyName("testPrettyName");
     spaceEntity.setPriority("hight");
     spaceEntity.setRegistration("testRegistration");
     spaceEntity.setUrl("testUrl");
     spaceEntity.setVisibility("testVisibility");
-    spaceDAO.create(spaceEntity);
+    spaceEntity.setAvatarLastUpdated(1L);
 
-    end();
-    begin();    
-    
-  }
-  
-  /**
-   * Unit Test for:
-   * <p>
-   * {@link activityDao#deleteActivity(org.exoplatform.social.core.activity.model.Activity)}
-   * 
-   * @throws Exception
-   */
-  public void testDeleteActivity() throws Exception {
-    String activityTitle = "activity title";
-    String userId = johnIdentity.getId();
-    Activity activity = new Activity();
-    activity.setTitle(activityTitle);
-    activity.setOwnerId(userId);
-    activity = activityDao.create(activity);
-    //
-    activity = activityDao.find(activity.getId());
-    
-    assertNotNull(activity);
-    assertEquals(activityTitle, activity.getTitle());
-    assertEquals(userId, activity.getOwnerId());
-    activityDao.delete(activity);
-    //
-    assertNull(activityDao.find(activity.getId()));
+    SpaceMember mem = new SpaceMember();
+    mem.setSpace(spaceEntity);
+    mem.setStatus(Status.PENDING);
+    mem.setUserId("root");
+    spaceEntity.getMembers().add(mem);
+    return spaceEntity;
   }
 
+  private void assertSpace(SpaceEntity spaceEntity, SpaceEntity result) {
+    assertNotNull(result);
+    assertEquals(spaceEntity.getPrettyName(), result.getPrettyName());
+    assertEquals(spaceEntity.getApp(), result.getApp());
+    assertEquals(spaceEntity.getDescription(), result.getDescription());
+    assertEquals(spaceEntity.getDisplayName(), result.getDisplayName());
+    assertEquals(spaceEntity.getGroupId(), result.getGroupId());
+    assertEquals(spaceEntity.getPriority(), result.getPriority());
+    assertEquals(spaceEntity.getRegistration(), result.getRegistration());
+    assertEquals(spaceEntity.getUrl(), result.getUrl());
+    assertEquals(spaceEntity.getUrl(), result.getUrl());
+    assertEquals(spaceEntity.getVisibility(), result.getVisibility());
+    assertEquals(spaceEntity.getAvatarLastUpdated(), result.getAvatarLastUpdated());
+    assertEquals(spaceEntity.getCreatedTime(), result.getCreatedTime());
+    assertEquals(1, result.getMembers().size());
+  }
 }

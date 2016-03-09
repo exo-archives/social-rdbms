@@ -120,7 +120,7 @@ public class RDBMSMigrationManager implements Startable {
             
             // cleanup spaces
             if (!MigrationContext.isDone() && MigrationContext.isSpaceDone() && !MigrationContext.isSpaceCleanupDone()) {
-              spaceMigration.doRemove();
+              CommonsUtils.getService(SpaceMigrationService.class).doRemove();
               updateSettingValue(MigrationContext.SOC_RDBMS_SPACE_CLEANUP_KEY, Boolean.TRUE);
               updateSettingValue(MigrationContext.SOC_RDBMS_MIGRATION_STATUS_KEY, Boolean.TRUE);
               MigrationContext.setDone(true);

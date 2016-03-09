@@ -13,14 +13,14 @@ public class SpaceDAOImpl extends GenericDAOJPAImpl<SpaceEntity, Long> implement
 
   @Override
   public List<SpaceEntity> getLastSpaces(int limit) {
-    TypedQuery<SpaceEntity> query = getEntityManager().createNamedQuery("Space.getLastSpaces", SpaceEntity.class);
+    TypedQuery<SpaceEntity> query = getEntityManager().createNamedQuery("SpaceEntity.getLastSpaces", SpaceEntity.class);
     query.setMaxResults(limit);
     return query.getResultList();
   }
 
   @Override
   public SpaceEntity getSpaceByGroupId(String groupId) {
-    TypedQuery<SpaceEntity> query = getEntityManager().createNamedQuery("Space.getSpaceByGroupId", SpaceEntity.class);
+    TypedQuery<SpaceEntity> query = getEntityManager().createNamedQuery("SpaceEntity.getSpaceByGroupId", SpaceEntity.class);
     query.setParameter("groupId", groupId);
     try {
       return query.getSingleResult();      
@@ -31,8 +31,30 @@ public class SpaceDAOImpl extends GenericDAOJPAImpl<SpaceEntity, Long> implement
 
   @Override
   public SpaceEntity getSpaceByURL(String url) {
-    TypedQuery<SpaceEntity> query = getEntityManager().createNamedQuery("Space.getSpaceByURL", SpaceEntity.class);
+    TypedQuery<SpaceEntity> query = getEntityManager().createNamedQuery("SpaceEntity.getSpaceByURL", SpaceEntity.class);
     query.setParameter("url", url);
+    try {
+      return query.getSingleResult();      
+    } catch (NoResultException ex) {
+      return null;
+    }
+  }
+
+  @Override
+  public SpaceEntity getSpaceByDisplayName(String spaceDisplayName) {
+    TypedQuery<SpaceEntity> query = getEntityManager().createNamedQuery("SpaceEntity.getSpaceByDisplayName", SpaceEntity.class);
+    query.setParameter("displayName", spaceDisplayName);
+    try {
+      return query.getSingleResult();      
+    } catch (NoResultException ex) {
+      return null;
+    }
+  }
+
+  @Override
+  public SpaceEntity getSpaceByPrettyName(String spacePrettyName) {
+    TypedQuery<SpaceEntity> query = getEntityManager().createNamedQuery("SpaceEntity.getSpaceByPrettyName", SpaceEntity.class);
+    query.setParameter("prettyName", spacePrettyName);
     try {
       return query.getSingleResult();      
     } catch (NoResultException ex) {

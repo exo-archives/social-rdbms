@@ -58,7 +58,6 @@ import org.exoplatform.social.core.manager.RelationshipManager;
 import org.exoplatform.social.core.space.spi.SpaceService;
 import org.exoplatform.social.core.storage.api.ActivityStorage;
 import org.jboss.byteman.contrib.bmunit.BMUnit;
-import org.mockito.Mockito;
 
 /**
  * @author <a href="mailto:thanhvc@exoplatform.com">Thanh Vu</a>
@@ -97,9 +96,7 @@ public abstract class BaseCoreTest extends BaseExoTestCase {
   public static boolean wantCount = false;
   protected static int count;
   protected int maxQuery;
-  protected boolean hasByteMan;
-  
-  protected SpaceSearchConnector mockSpaceSearch = Mockito.mock(SpaceSearchConnector.class);
+  protected boolean hasByteMan; 
 
   @Override
   protected void setUp() throws Exception {

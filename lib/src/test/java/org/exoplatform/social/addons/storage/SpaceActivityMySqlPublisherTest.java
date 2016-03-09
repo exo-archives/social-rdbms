@@ -18,16 +18,11 @@ package org.exoplatform.social.addons.storage;
 
 import java.io.ByteArrayInputStream;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
-
-import org.mockito.Mockito;
 
 import org.exoplatform.commons.utils.ListAccess;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
-import org.exoplatform.social.addons.search.ESSpaceFilter;
 import org.exoplatform.social.addons.test.AbstractCoreTest;
 import org.exoplatform.social.common.RealtimeListAccess;
 import org.exoplatform.social.core.activity.model.ActivityStream;
@@ -66,8 +61,6 @@ public class SpaceActivityMySqlPublisherTest extends AbstractCoreTest {
     spaceActivityPublisher = getService(SpaceActivityPublisher.class);
     identityStorage = getService(IdentityStorage.class);
     relationshipManager = getService(RelationshipManager.class);
-    RDBMSSpaceStorageImpl spaceStorage = (RDBMSSpaceStorageImpl)getService(SpaceStorage.class);
-    spaceStorage.setSpaceSearchConnector(mockSpaceSearch);
     assertNotNull(spaceStorage);
     assertNotNull(spaceActivityPublisher);
     assertNotNull(identityStorage);
@@ -81,6 +74,14 @@ public class SpaceActivityMySqlPublisherTest extends AbstractCoreTest {
       } catch (Exception e) {
         LOG.warn("can not delete activity with id: " + activity.getId());
       }
+    }
+    
+    for (Space space : spaceService.getAllSpaces()) {
+      Identity spaceIdentity = identityStorage.findIdentity(SpaceIdentityProvider.NAME, space.getPrettyName());
+      if (spaceIdentity != null) {
+        identityStorage.deleteIdentity(spaceIdentity);
+      }
+      spaceService.deleteSpace(space);
     }
     super.tearDown();
   }
@@ -101,7 +102,6 @@ public class SpaceActivityMySqlPublisherTest extends AbstractCoreTest {
     space.setManagers(managers);
     space.setMembers(members);
     spaceService.saveSpace(space, true);
-    Mockito.when(mockSpaceSearch.search(Mockito.<ESSpaceFilter>any(), Mockito.anyInt(), Mockito.anyInt())).thenReturn(Arrays.asList(space));
     assertNotNull("space.getId() must not be null", space.getId());
     SpaceLifeCycleEvent event  = new SpaceLifeCycleEvent(space, rootIdentity.getRemoteId(), SpaceLifeCycleEvent.Type.SPACE_CREATED);
     spaceActivityPublisher.spaceCreated(event);
@@ -121,7 +121,6 @@ public class SpaceActivityMySqlPublisherTest extends AbstractCoreTest {
     Relationship relationship = relationshipManager.inviteToConnect(rootIdentity, demoIdentity);
     relationshipManager.confirm(demoIdentity, rootIdentity);
     
-    Mockito.when(mockSpaceSearch.search(Mockito.<ESSpaceFilter>any(), Mockito.anyInt(), Mockito.anyInt())).thenReturn(Collections.<Space>emptyList());
     listAccess = activityManager.getActivityFeedWithListAccess(demoIdentity);
     assertEquals(0, listAccess.loadAsList(0, 10).size());
     assertEquals(0, listAccess.getSize());
@@ -158,7 +157,6 @@ public class SpaceActivityMySqlPublisherTest extends AbstractCoreTest {
    space.setMembers(members);
    spaceService.saveSpace(space, true);
    assertNotNull("space.getId() must not be null", space.getId());
-   Mockito.when(mockSpaceSearch.search(Mockito.<ESSpaceFilter>any(), Mockito.anyInt(), Mockito.anyInt())).thenReturn(Arrays.asList(space));
    SpaceLifeCycleEvent event  = new SpaceLifeCycleEvent(space, rootIdentity.getRemoteId(), SpaceLifeCycleEvent.Type.SPACE_CREATED);
    spaceActivityPublisher.spaceCreated(event);
 
@@ -276,7 +274,6 @@ public class SpaceActivityMySqlPublisherTest extends AbstractCoreTest {
    space.setManagers(managers);
    space.setMembers(members);
    spaceService.saveSpace(space, true);
-   Mockito.when(mockSpaceSearch.search(Mockito.<ESSpaceFilter>any(), Mockito.anyInt(), Mockito.anyInt())).thenReturn(Arrays.asList(space));
    //broadcast event
    SpaceLifeCycleEvent event  = new SpaceLifeCycleEvent(space, rootIdentity.getRemoteId(), SpaceLifeCycleEvent.Type.SPACE_CREATED);
    spaceActivityPublisher.spaceCreated(event);
