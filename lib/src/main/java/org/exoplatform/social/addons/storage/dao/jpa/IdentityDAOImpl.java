@@ -20,6 +20,8 @@
 package org.exoplatform.social.addons.storage.dao.jpa;
 
 import org.exoplatform.commons.persistence.impl.GenericDAOJPAImpl;
+import org.exoplatform.commons.utils.ListAccess;
+import org.exoplatform.social.addons.search.ExtendProfileFilter;
 import org.exoplatform.social.addons.storage.dao.IdentityDAO;
 import org.exoplatform.social.addons.storage.dao.jpa.query.ProfileQueryBuilder;
 import org.exoplatform.social.addons.storage.entity.IdentityEntity;
@@ -27,6 +29,7 @@ import org.exoplatform.social.core.profile.ProfileFilter;
 
 import javax.persistence.NoResultException;
 import javax.persistence.TypedQuery;
+import java.lang.reflect.Array;
 import java.util.List;
 
 /**
@@ -54,15 +57,6 @@ public class IdentityDAOImpl extends GenericDAOJPAImpl<IdentityEntity, Long> imp
   }
 
   @Override
-  public List<IdentityEntity> findIdentityByProfileFilter(List<Long> relations, ProfileFilter profileFilter, long offset, long limit) {
-    ProfileQueryBuilder qb = ProfileQueryBuilder.builder()
-            .withIdentityIds(relations)
-            .withFilter(profileFilter);
-
-    return qb.build(getEntityManager()).getResultList();
-  }
-
-  @Override
   public List<Long> getAllIds(int offset, int limit) {
     TypedQuery<Long> query = getEntityManager().createNamedQuery("SocIdentity.getAllIds", Long.class);
     if (limit > 0) {
@@ -70,5 +64,49 @@ public class IdentityDAOImpl extends GenericDAOJPAImpl<IdentityEntity, Long> imp
       query.setMaxResults(limit);
     }
     return query.getResultList();
+  }
+
+  @Override
+  public ListAccess<IdentityEntity> findIdentities(ExtendProfileFilter filter) {
+    ProfileQueryBuilder qb = ProfileQueryBuilder.builder()
+            .withFilter(filter);
+    TypedQuery[] queries = qb.build(getEntityManager());
+
+    return new JPAListAccess<>(IdentityEntity.class, queries[0], queries[1]);
+  }
+
+  public static class JPAListAccess<T> implements ListAccess<T> {
+    private final TypedQuery<T> selectQuery;
+    private final TypedQuery<Long> countQuery;
+    private final Class<T> clazz;
+
+    public JPAListAccess(Class<T> clazz, TypedQuery<T> selectQuery, TypedQuery<Long> countQuery) {
+      this.clazz = clazz;
+      this.selectQuery = selectQuery;
+      this.countQuery = countQuery;
+    }
+
+    @Override
+    public T[] load(int offset, int limit) throws Exception, IllegalArgumentException {
+      if (limit > 0 && offset >= 0) {
+        selectQuery.setFirstResult(offset);
+        selectQuery.setMaxResults(limit);
+      } else {
+        selectQuery.setMaxResults(Integer.MAX_VALUE);
+      }
+
+      List<T> list = selectQuery.getResultList();
+      if (list != null && list.size() > 0) {
+        T[] arr = (T[])Array.newInstance(clazz, list.size());
+        return list.toArray(arr);
+      } else {
+        return (T[])Array.newInstance(clazz, 0);
+      }
+    }
+
+    @Override
+    public int getSize() throws Exception {
+      return countQuery.getSingleResult().intValue();
+    }
   }
 }

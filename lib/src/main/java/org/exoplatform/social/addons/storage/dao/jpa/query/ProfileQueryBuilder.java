@@ -19,6 +19,7 @@
 
 package org.exoplatform.social.addons.storage.dao.jpa.query;
 
+import org.exoplatform.social.addons.search.ExtendProfileFilter;
 import org.exoplatform.social.addons.storage.entity.IdentityEntity;
 import org.exoplatform.social.addons.storage.entity.IdentityEntity_;
 import org.exoplatform.social.addons.storage.entity.ProfileEntity;
@@ -33,6 +34,7 @@ import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Fetch;
 import javax.persistence.criteria.Join;
 import javax.persistence.criteria.JoinType;
 import javax.persistence.criteria.ListJoin;
@@ -47,10 +49,7 @@ import java.util.List;
  */
 public class ProfileQueryBuilder {
 
-  private boolean excludedDeleted = true;
-
-  private List<Long> identityIds = new ArrayList<>();
-  ProfileFilter filter;
+  ExtendProfileFilter filter;
 
   private ProfileQueryBuilder() {
 
@@ -60,33 +59,42 @@ public class ProfileQueryBuilder {
     return new ProfileQueryBuilder();
   }
 
-  public ProfileQueryBuilder withFilter(ProfileFilter filter) {
+  public ProfileQueryBuilder withFilter(ExtendProfileFilter filter) {
     this.filter = filter;
     return this;
   }
-  public ProfileQueryBuilder withIdentityIds(List<Long> identityIds) {
-    this.identityIds = identityIds;
-    return this;
-  }
 
-  public TypedQuery<IdentityEntity> build(EntityManager em) {
+  /**
+   *
+   * @param em
+   * @return
+   */
+  public TypedQuery[] build(EntityManager em) {
     CriteriaBuilder cb = em.getCriteriaBuilder();
-    CriteriaQuery<IdentityEntity> query = cb.createQuery(IdentityEntity.class);
+    CriteriaQuery query = cb.createQuery(IdentityEntity.class);
 
     Root<IdentityEntity> identity = query.from(IdentityEntity.class);
-    Join<IdentityEntity, ProfileEntity> profile = identity.join(IdentityEntity_.profile, JoinType.INNER);
+    Join<IdentityEntity, ProfileEntity> profile = identity.join(IdentityEntity_.profile, JoinType.INNER);;
 
     List<Predicate> predicates = new ArrayList<>();
 
-    if (excludedDeleted) {
-      predicates.add(cb.isFalse(identity.get(IdentityEntity_.deleted)));
-    }
-
-    if (this.identityIds != null && !this.identityIds.isEmpty()) {
-      predicates.add(identity.get(IdentityEntity_.id).in(identityIds));
-    }
-
     if (filter != null) {
+      if (filter.isForceLoadProfile()) {
+        Fetch<IdentityEntity,ProfileEntity> fetch = identity.fetch(IdentityEntity_.profile, JoinType.INNER);
+      }
+
+      if (filter.isExcludeDeleted()) {
+        predicates.add(cb.isFalse(identity.get(IdentityEntity_.deleted)));
+      }
+
+      if (filter.getIdentityIds() != null && filter.getIdentityIds().size() > 0) {
+        predicates.add(identity.get(IdentityEntity_.id).in(filter.getIdentityIds()));
+      }
+
+      if (filter.getProviderId() != null && !filter.getProviderId().isEmpty()) {
+        predicates.add(cb.equal(identity.get(IdentityEntity_.providerId), filter.getProviderId()));
+      }
+
       MapJoin<ProfileEntity, String, String> properties = profile.join(ProfileEntity_.properties, JoinType.LEFT);
       ListJoin<ProfileEntity, ProfileExperience> experience = profile.join(ProfileEntity_.experiences, JoinType.LEFT);
 
@@ -150,9 +158,16 @@ public class ProfileQueryBuilder {
       }
     }
 
-    query.select(identity).where(predicates.toArray(new Predicate[predicates.size()]));
+    Predicate[] pds = predicates.toArray(new Predicate[predicates.size()]);
 
-    return em.createQuery(query);
+    query.select(cb.countDistinct(identity)).where(pds);
+    TypedQuery<Long> count = em.createQuery(query);
+
+    query.select(identity).where(pds);
+    TypedQuery<IdentityEntity> select = em.createQuery(query);
+
+
+    return new TypedQuery[]{select, count};
   }
 
   private String processLikeString(String s) {

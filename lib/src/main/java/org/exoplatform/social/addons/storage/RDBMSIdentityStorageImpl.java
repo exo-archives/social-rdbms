@@ -17,6 +17,7 @@
 package org.exoplatform.social.addons.storage;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -26,8 +27,10 @@ import java.util.Set;
 import org.exoplatform.commons.api.persistence.DataInitializer;
 import org.exoplatform.commons.api.persistence.ExoTransactional;
 import org.exoplatform.commons.utils.CommonsUtils;
+import org.exoplatform.commons.utils.ListAccess;
 import org.exoplatform.container.PortalContainer;
 import org.exoplatform.services.organization.MembershipTypeHandler;
+import org.exoplatform.social.addons.search.ExtendProfileFilter;
 import org.exoplatform.social.addons.search.ProfileSearchConnector;
 import org.exoplatform.social.addons.storage.dao.ActivityDAO;
 import org.exoplatform.social.addons.storage.dao.IdentityDAO;
@@ -652,37 +655,47 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
     getIdentityDAO().update(entity);
   }
 
-
-  //TODO: need implement this method with using JPA
   @Override
   public List<Identity> getIdentitiesByFirstCharacterOfName(String providerId,
                                                             ProfileFilter profileFilter,
                                                             long offset,
                                                             long limit,
                                                             boolean forceLoadOrReloadProfile) throws IdentityStorageException {
-    return getProfileSearchConnector().search(null, profileFilter, null, offset, limit);
+    return getIdentitiesByProfileFilter(providerId, profileFilter, offset, limit, forceLoadOrReloadProfile);
   }
 
-  //TODO: need implement this method with JPA query
   @Override
   public List<Identity> getIdentitiesForMentions(String providerId,
                                                  ProfileFilter profileFilter,
                                                  long offset,
                                                  long limit,
                                                  boolean forceLoadOrReloadProfile) throws IdentityStorageException {
-    return getProfileSearchConnector().search(null, profileFilter, null, offset, limit);
+    return getIdentitiesByProfileFilter(providerId, profileFilter, offset, limit, forceLoadOrReloadProfile);
   }
 
-  //TODO: need implement this method in JPA query
   @Override
   public int getIdentitiesByProfileFilterCount(String providerId, ProfileFilter profileFilter) throws IdentityStorageException {
-    return getProfileSearchConnector().count(null, profileFilter, null);
+    ExtendProfileFilter xFilter = new ExtendProfileFilter(profileFilter);
+    ListAccess<IdentityEntity> list = getIdentityDAO().findIdentities(xFilter);
+
+    try {
+      return list.getSize();
+    } catch (Exception e) {
+      return 0;
+    }
   }
 
-  //TODO: implement by JPA query
   @Override
   public int getIdentitiesByFirstCharacterOfNameCount(String providerId, ProfileFilter profileFilter) throws IdentityStorageException {
-    return getProfileSearchConnector().count(null, profileFilter, null);
+    ExtendProfileFilter xFilter = new ExtendProfileFilter(profileFilter);
+    xFilter.setProviderId(providerId);
+
+    ListAccess<IdentityEntity> list = getIdentityDAO().findIdentities(xFilter);
+    try {
+      return list.getSize();
+    } catch (Exception ex) {
+      return 0;
+    }
   }
 
   //TODO: maybe need improve the search method of ProfileSearchConnector
@@ -729,23 +742,44 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
       throw new IdentityStorageException(IdentityStorageException.Type.FAIL_TO_FIND_IDENTITY);
     }
 
-    List<Identity> result = new ArrayList<>();
-    List<IdentityEntity> entities = getIdentityDAO().findIdentityByProfileFilter(relations, profileFilter, offset, limit);
-    if (entities != null || !entities.isEmpty()) {
-      for (IdentityEntity entity : entities) {
-        Identity idt = convertToIdentity(entity);
-        if (idt != null) {
-          result.add(idt);
-        }
-      }
-    }
-    return result;
+    ExtendProfileFilter xFilter = new ExtendProfileFilter(profileFilter);
+    xFilter.setIdentityIds(relations);
+    ListAccess<IdentityEntity> list = getIdentityDAO().findIdentities(xFilter);
+    return convertToIdentities(list, offset, limit);
   }
 
-  // TODO: implement this method by JPA query
   public List<Identity> getIdentitiesByProfileFilter(final String providerId,
                                                      final ProfileFilter profileFilter, long offset, long limit,
                                                      boolean forceLoadOrReloadProfile)  throws IdentityStorageException {
-    return getProfileSearchConnector().search(null, profileFilter, null, offset, limit);
+    ExtendProfileFilter xFilter = new ExtendProfileFilter(profileFilter);
+    xFilter.setProviderId(providerId);
+    xFilter.setForceLoadProfile(forceLoadOrReloadProfile);
+
+    ListAccess<IdentityEntity> list = getIdentityDAO().findIdentities(xFilter);
+
+    return convertToIdentities(list, offset, limit);
+  }
+
+  private List<Identity> convertToIdentities(ListAccess<IdentityEntity> list, long offset, long limit) {
+    try {
+      return convertToIdentities(list.load((int)offset, (int)limit));
+    } catch (Exception ex) {
+      return Collections.emptyList();
+    }
+  }
+
+  private List<Identity> convertToIdentities(IdentityEntity[] entities) {
+    if (entities == null || entities.length == 0) {
+      return Collections.emptyList();
+    }
+
+    List<Identity> result = new ArrayList<>(entities.length);
+    for (IdentityEntity entity : entities) {
+      Identity idt = convertToIdentity(entity);
+      if (idt != null) {
+        result.add(idt);
+      }
+    }
+    return result;
   }
 }
