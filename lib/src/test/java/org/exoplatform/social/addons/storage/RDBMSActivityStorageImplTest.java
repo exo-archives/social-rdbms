@@ -183,7 +183,8 @@ public class RDBMSActivityStorageImplTest extends AbstractCoreTest {
   public void testGetActivity() {
     ExoSocialActivity activity = createActivity(1);
     //
-    activityStorage.saveActivity(demoIdentity, activity);
+    activity = activityStorage.saveActivity(demoIdentity, activity);
+    tearDownActivityList.add(activity);
   }
   
   /**

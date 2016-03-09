@@ -21,6 +21,7 @@ package org.exoplatform.social.addons.storage.entity;
 
 import org.exoplatform.commons.api.persistence.ExoEntity;
 
+import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
@@ -47,6 +48,10 @@ import javax.persistence.Table;
         @NamedQuery(
                 name = "SocIdentity.countIdentityByProvider",
                 query = "SELECT count(id) FROM IdentityEntity id WHERE id.providerId = :providerId"
+        ),
+        @NamedQuery(
+                name = "SocIdentity.getAllIds",
+                query = "SELECT i.id FROM IdentityEntity i"
         )
 })
 public class IdentityEntity {
@@ -69,8 +74,8 @@ public class IdentityEntity {
   @Column(name = "DELETED")
   private boolean deleted = false;
 
-  @OneToOne(mappedBy = "identity", orphanRemoval = true, fetch = FetchType.LAZY)
-  ProfileEntity profile;
+  @OneToOne(mappedBy = "identity", fetch = FetchType.LAZY, orphanRemoval = true)
+  private ProfileEntity profile;
 
   public long getId() {
     return id;

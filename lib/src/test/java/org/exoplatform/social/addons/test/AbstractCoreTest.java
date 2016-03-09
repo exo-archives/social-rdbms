@@ -42,6 +42,8 @@ import org.exoplatform.services.organization.OrganizationService;
 import org.exoplatform.services.organization.User;
 import org.exoplatform.services.security.ConversationState;
 import org.exoplatform.services.security.MembershipEntry;
+import org.exoplatform.social.addons.search.ProfileSearchConnector;
+import org.exoplatform.social.addons.search.SpaceSearchConnector;
 import org.exoplatform.social.addons.storage.dao.ConnectionDAO;
 import org.exoplatform.social.addons.storage.entity.Connection;
 import org.exoplatform.social.core.identity.model.Identity;
@@ -56,6 +58,8 @@ import org.exoplatform.social.core.space.spi.SpaceService;
 import org.exoplatform.social.core.storage.api.ActivityStorage;
 
 import junit.framework.AssertionFailedError;
+import org.mockito.Mockito;
+
 /**
  * @author <a href="mailto:thanhvc@exoplatform.com">Thanh Vu</a>
  * @version $Revision$
@@ -75,7 +79,10 @@ public abstract class AbstractCoreTest extends BaseExoTestCase {
   protected IdentityManager identityManager;
   protected RelationshipManager relationshipManager;
   protected ActivityManager activityManager;
-  protected ActivityStorage activityStorage;  
+  protected ActivityStorage activityStorage;
+  
+  protected SpaceSearchConnector mockSpaceSearch = Mockito.mock(SpaceSearchConnector.class);
+  protected ProfileSearchConnector mockProfileSearch = Mockito.mock(ProfileSearchConnector.class);
 
   protected Identity rootIdentity;
   protected Identity johnIdentity;

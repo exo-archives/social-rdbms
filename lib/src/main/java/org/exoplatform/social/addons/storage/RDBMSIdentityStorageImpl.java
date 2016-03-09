@@ -69,6 +69,8 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
 
   private final DataInitializer dataInitializer;
 
+  private ProfileSearchConnector profileSearchConnector;
+
   public RDBMSIdentityStorageImpl(DataInitializer dataInitializer) {
     System.out.println("Initial here");
     this.dataInitializer = dataInitializer;
@@ -105,7 +107,24 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
     return spaceStorage;
   }
 
+  public ProfileSearchConnector getProfileSearchConnector() {
+    if (profileSearchConnector == null) {
+      profileSearchConnector = CommonsUtils.getService(ProfileSearchConnector.class);
+    }
+    return profileSearchConnector;
+  }
+  public void setProfileSearchConnector(ProfileSearchConnector connector) {
+    this.profileSearchConnector = connector;
+  }
+
   private Identity convertToIdentity(IdentityEntity entity) {
+    return convertToIdentity(entity, false);
+  }
+  private Identity convertToIdentity(IdentityEntity entity, boolean mapDeleted) {
+    if (entity.isDeleted() && !mapDeleted) {
+      return null;
+    }
+
     Identity identity = new Identity(String.valueOf(entity.getId()));
     mapToIdentity(entity, identity);
     return identity;
@@ -306,6 +325,8 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
     IdentityEntity entity = null;
     if (id > 0) {
       entity = getIdentityDAO().find(id);
+    } else {
+      entity = getIdentityDAO().findByProviderAndRemoteId(identity.getProviderId(), identity.getRemoteId());
     }
 
     if (entity == null) {
@@ -317,8 +338,8 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
       getIdentityDAO().update(entity);
     } else {
       entity = getIdentityDAO().create(entity);
-      identity.setId(String.valueOf(entity.getId()));
     }
+    identity.setId(String.valueOf(entity.getId()));
   }
 
   /**
@@ -343,7 +364,7 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
 
     entity = getIdentityDAO().update(entity);
 
-    return convertToIdentity(entity);
+    return convertToIdentity(entity, true);
   }
 
   /**
@@ -398,9 +419,14 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
    * @param identity
    * @throws IdentityStorageException
    */
+  @ExoTransactional
   public void hardDeleteIdentity(final Identity identity) throws IdentityStorageException {
     long id = parseId(identity.getId());
     IdentityEntity entity = getIdentityDAO().find(id);
+    ProfileEntity profileEntity = getProfileDAO().findByIdentityId(id);
+    if (profileEntity != null) {
+      getProfileDAO().delete(profileEntity);
+    }
     if (entity != null) {
       getIdentityDAO().delete(entity);
     }
@@ -462,7 +488,7 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
    */
   public void saveProfile(final Profile profile) throws IdentityStorageException {
     long id = parseId(profile.getId());
-    ProfileEntity entity = getProfileDAO().find(id);
+    ProfileEntity entity = (id == 0 ? null : getProfileDAO().find(id));
     if (entity == null) {
       createProfile(profile);
     } else {
@@ -483,11 +509,22 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
       throw new IdentityStorageException(IdentityStorageException.Type.FAIL_TO_FIND_IDENTITY);
     }
 
-    ProfileEntity entity = new ProfileEntity();
-    entity.setIdentity(identityEntity);
+    // Find by identity to avoid create 2 profile map to 1 identity (exception will be throw because the unique constraint)
+    ProfileEntity entity = getProfileDAO().findByIdentityId(identityId);
+    if (entity == null) {
+      entity = new ProfileEntity();
+      entity.setIdentity(identityEntity);
+    }
+
+    mapToProfileEntity(profile, entity);
+
     entity.setCreatedTime(System.currentTimeMillis());
 
-    entity = getProfileDAO().create(entity);
+    if (entity.getId() > 0) {
+      entity = getProfileDAO().create(entity);
+    } else {
+      getProfileDAO().update(entity);
+    }
     profile.setId(String.valueOf(entity.getId()));
   }
 
@@ -499,13 +536,17 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
    * @since 1.2.0-GA
    */
   public void updateProfile(final Profile profile) throws IdentityStorageException {
-    long id = parseId(profile.getId());
-    ProfileEntity entity = getProfileDAO().find(id);
-    if (entity == null) {
-      throw new IdentityStorageException(IdentityStorageException.Type.FAIL_TO_UPDATE_PROFILE, "Profile does not exist on RDBMS");
+    if (profile.getId() == null) {
+      createProfile(profile);
     } else {
-      mapToProfileEntity(profile, entity);
-      getProfileDAO().update(entity);
+      long id = parseId(profile.getId());
+      ProfileEntity entity = getProfileDAO().find(id);
+      if (entity == null) {
+        throw new IdentityStorageException(IdentityStorageException.Type.FAIL_TO_UPDATE_PROFILE, "Profile does not exist on RDBMS");
+      } else {
+        mapToProfileEntity(profile, entity);
+        getProfileDAO().update(entity);
+      }
     }
   }
 
@@ -566,7 +607,13 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
    * @since 4.0.0.Alpha1
    */
   public String getProfileActivityId(Profile profile, Profile.AttachedActivityType type) {
-    List<Activity> activities = getActivityDAO().getActivitiesByPoster(profile.getIdentity(), 0, 1, "USER_PROFILE_ACTIVITY");
+    String t = "SPACE_ACTIVITY";
+    if (type == Profile.AttachedActivityType.USER) {
+      t = "USER_PROFILE_ACTIVITY";
+    } else if (type == Profile.AttachedActivityType.RELATIONSHIP) {
+      t = "USER_ACTIVITIES_FOR_RELATIONSHIP";
+    }
+    List<Activity> activities = getActivityDAO().getActivitiesByPoster(profile.getIdentity(), 0, 1, t);
     if (activities != null && activities.size() > 0) {
       return String.valueOf(activities.get(0).getId());
     } else {
@@ -606,44 +653,43 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
   }
 
 
+  //TODO: need implement this method with using JPA
   @Override
   public List<Identity> getIdentitiesByFirstCharacterOfName(String providerId,
                                                             ProfileFilter profileFilter,
                                                             long offset,
                                                             long limit,
                                                             boolean forceLoadOrReloadProfile) throws IdentityStorageException {
-    ProfileSearchConnector connector = CommonsUtils.getService(ProfileSearchConnector.class);
-    return connector.search(null, profileFilter, null, offset, limit);
+    return getProfileSearchConnector().search(null, profileFilter, null, offset, limit);
   }
-  
+
+  //TODO: need implement this method with JPA query
   @Override
   public List<Identity> getIdentitiesForMentions(String providerId,
                                                  ProfileFilter profileFilter,
                                                  long offset,
                                                  long limit,
                                                  boolean forceLoadOrReloadProfile) throws IdentityStorageException {
-    ProfileSearchConnector connector = CommonsUtils.getService(ProfileSearchConnector.class);
-    return connector.search(null, profileFilter, null, offset, limit);
+    return getProfileSearchConnector().search(null, profileFilter, null, offset, limit);
   }
-  
+
+  //TODO: need implement this method in JPA query
   @Override
   public int getIdentitiesByProfileFilterCount(String providerId, ProfileFilter profileFilter) throws IdentityStorageException {
-    ProfileSearchConnector connector = CommonsUtils.getService(ProfileSearchConnector.class);
-    return connector.count(null, profileFilter, null);
+    return getProfileSearchConnector().count(null, profileFilter, null);
   }
-  
+
+  //TODO: implement by JPA query
   @Override
   public int getIdentitiesByFirstCharacterOfNameCount(String providerId, ProfileFilter profileFilter) throws IdentityStorageException {
-    ProfileSearchConnector connector = CommonsUtils.getService(ProfileSearchConnector.class);
-    return connector.count(null, profileFilter, null);
+    return getProfileSearchConnector().count(null, profileFilter, null);
   }
 
   //TODO: maybe need improve the search method of ProfileSearchConnector
   public List<Identity> getIdentitiesForUnifiedSearch(final String providerId,
                                                       final ProfileFilter profileFilter,
                                                       long offset, long limit) throws IdentityStorageException {
-    ProfileSearchConnector connector = CommonsUtils.getService(ProfileSearchConnector.class);
-    return connector.search(null, profileFilter, null, offset, limit);
+    return getProfileSearchConnector().search(null, profileFilter, null, offset, limit);
   }
 
   public List<Identity> getSpaceMemberIdentitiesByProfileFilter(final Space space,
@@ -687,16 +733,19 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
     List<IdentityEntity> entities = getIdentityDAO().findIdentityByProfileFilter(relations, profileFilter, offset, limit);
     if (entities != null || !entities.isEmpty()) {
       for (IdentityEntity entity : entities) {
-        result.add(convertToIdentity(entity));
+        Identity idt = convertToIdentity(entity);
+        if (idt != null) {
+          result.add(idt);
+        }
       }
     }
     return result;
   }
 
+  // TODO: implement this method by JPA query
   public List<Identity> getIdentitiesByProfileFilter(final String providerId,
                                                      final ProfileFilter profileFilter, long offset, long limit,
                                                      boolean forceLoadOrReloadProfile)  throws IdentityStorageException {
-    ProfileSearchConnector connector = CommonsUtils.getService(ProfileSearchConnector.class);
-    return connector.search(null, profileFilter, null, offset, limit);
+    return getProfileSearchConnector().search(null, profileFilter, null, offset, limit);
   }
 }

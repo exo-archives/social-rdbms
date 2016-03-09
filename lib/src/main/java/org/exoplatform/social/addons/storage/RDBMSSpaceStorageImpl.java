@@ -500,12 +500,13 @@ public class RDBMSSpaceStorageImpl extends AbstractStorage implements SpaceStora
    * @throws NodeNotFoundException
    */
   private void renameIdentity(Identity identity) throws NodeNotFoundException {
-    ProviderEntity providerEntity = getProviderRoot().getProvider(identity.getProviderId());
+    identityStorage.saveIdentity(identity);
+    /*ProviderEntity providerEntity = getProviderRoot().getProvider(identity.getProviderId());
     // Move identity
     IdentityEntity identityEntity = _findById(IdentityEntity.class, identity.getId());
     providerEntity.getIdentities().put(identity.getRemoteId(), identityEntity);
 
-    identityEntity.setRemoteId(identity.getRemoteId());
+    identityEntity.setRemoteId(identity.getRemoteId());*/
   }
 
   private List<Space> getSpaces(String userId, List<Status> status, SpaceFilter spaceFilter, long offset, long limit) {
@@ -587,6 +588,10 @@ public class RDBMSSpaceStorageImpl extends AbstractStorage implements SpaceStora
 
   public void setSpaceSearchConnector(SpaceSearchConnector spaceSearchConnector) {
     this.spaceSearchConnector = spaceSearchConnector;
+  }
+
+  public void setIdentityStorage(IdentityStorage identityStorage) {
+    this.identityStorage = identityStorage;
   }
 
 }

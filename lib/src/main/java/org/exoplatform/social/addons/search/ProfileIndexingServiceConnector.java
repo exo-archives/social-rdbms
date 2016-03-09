@@ -19,6 +19,7 @@ package org.exoplatform.social.addons.search;
 import java.util.*;
 
 import org.apache.commons.lang.StringUtils;
+import org.exoplatform.social.addons.storage.dao.IdentityDAO;
 import org.json.simple.JSONObject;
 
 import org.exoplatform.addons.es.domain.Document;
@@ -44,11 +45,15 @@ public class ProfileIndexingServiceConnector extends ElasticIndexingServiceConne
   /** */
   private final ConnectionDAO connectionDAO;
 
+  private final IdentityDAO identityDAO;
+
   public ProfileIndexingServiceConnector(InitParams initParams,
                                          IdentityManager identityManager,
+                                         IdentityDAO identityDAO,
                                          ConnectionDAO connectionDAO) {
     super(initParams);
     this.identityManager = identityManager;
+    this.identityDAO = identityDAO;
     this.connectionDAO = connectionDAO;
   }
 
@@ -156,8 +161,17 @@ public class ProfileIndexingServiceConnector extends ElasticIndexingServiceConne
 
   @Override
   public List<String> getAllIds(int offset, int limit) {
-    RelationshipMigrationService  relationshipMigration = CommonsUtils.getService(RelationshipMigrationService.class);
-    return relationshipMigration.getIdentityIds(offset, limit);
+    List<Long> ids = identityDAO.getAllIds(offset, limit);
+
+    if (ids == null || ids.isEmpty()) {
+      return new ArrayList<>();
+    } else {
+      List<String> result = new ArrayList<>(ids.size());
+      for (Long id : ids) {
+        result.add(String.valueOf(id));
+      }
+      return result;
+    }
   }
   
   @Override

@@ -31,6 +31,8 @@ public class RDBMSMigrationManager implements Startable {
   private ActivityMigrationService activityMigration;
   
   private SpaceMigrationService spaceMigration;
+
+  private IdentityMigrationService identityMigration;
   
   private SettingService settingService;
 
@@ -58,6 +60,20 @@ public class RDBMSMigrationManager implements Startable {
    */
   public RelationshipMigrationService getRelationshipMigration() {
     return relationshipMigration == null ? CommonsUtils.getService(RelationshipMigrationService.class) : relationshipMigration;
+  }
+
+  public IdentityMigrationService getIdentityMigrationService() {
+    if (identityMigration == null) {
+      identityMigration = CommonsUtils.getService(IdentityMigrationService.class);
+    }
+    return identityMigration;
+  }
+
+  public SpaceMigrationService getSpaceMigrationService() {
+    if (spaceMigration == null) {
+      spaceMigration = CommonsUtils.getService(SpaceMigrationService.class);
+    }
+    return spaceMigration;
   }
 
   @Override
@@ -91,9 +107,16 @@ public class RDBMSMigrationManager implements Startable {
               }
               if (!MigrationContext.isDone() && MigrationContext.isConnectionDone() && MigrationContext.isActivityDone() 
                   && !MigrationContext.isSpaceDone()) {
-                spaceMigration = CommonsUtils.getService(SpaceMigrationService.class);
-                spaceMigration.start();
+                getSpaceMigrationService().start();
                 updateSettingValue(MigrationContext.SOC_RDBMS_SPACE_MIGRATION_KEY, Boolean.TRUE);
+              }
+
+              // Migrate identities
+              if (!MigrationContext.isDone() && MigrationContext.isConnectionDone()
+                      && MigrationContext.isActivityDone() && MigrationContext.isSpaceDone()
+                      && !MigrationContext.isIdentityDone()) {
+                getIdentityMigrationService().start();
+                updateSettingValue(MigrationContext.SOC_RDBMS_IDENTITY_MIGRATION_KEY, Boolean.TRUE);
               }
             }
 
@@ -121,7 +144,14 @@ public class RDBMSMigrationManager implements Startable {
             // cleanup spaces
             if (!MigrationContext.isDone() && MigrationContext.isSpaceDone() && !MigrationContext.isSpaceCleanupDone()) {
               CommonsUtils.getService(SpaceMigrationService.class).doRemove();
+              getSpaceMigrationService().doRemove();
               updateSettingValue(MigrationContext.SOC_RDBMS_SPACE_CLEANUP_KEY, Boolean.TRUE);
+            }
+
+            // Cleanup identity
+            if (!MigrationContext.isDone() && MigrationContext.isIdentityDone() && !MigrationContext.isIdentityCleanupDone()) {
+              getIdentityMigrationService().doRemove();
+              updateSettingValue(MigrationContext.SOC_RDBMS_IDENTITY_CLEANUP_KEY, Boolean.TRUE);
               updateSettingValue(MigrationContext.SOC_RDBMS_MIGRATION_STATUS_KEY, Boolean.TRUE);
               MigrationContext.setDone(true);
             }
@@ -161,6 +191,12 @@ public class RDBMSMigrationManager implements Startable {
     //
     MigrationContext.setActivityDone(getOrCreateSettingValue(MigrationContext.SOC_RDBMS_ACTIVITY_MIGRATION_KEY));
     MigrationContext.setActivityCleanupDone(getOrCreateSettingValue(MigrationContext.SOC_RDBMS_ACTIVITY_CLEANUP_KEY));
+
+    MigrationContext.setSpaceDone(getOrCreateSettingValue(MigrationContext.SOC_RDBMS_SPACE_MIGRATION_KEY));
+    MigrationContext.setSpaceCleanupDone(getOrCreateSettingValue(MigrationContext.SOC_RDBMS_SPACE_CLEANUP_KEY));
+
+    MigrationContext.setIdentityDone(getOrCreateSettingValue(MigrationContext.SOC_RDBMS_IDENTITY_MIGRATION_KEY));
+    MigrationContext.setIdentityCleanupDone(getOrCreateSettingValue(MigrationContext.SOC_RDBMS_IDENTITY_CLEANUP_KEY));
   }
 
   private boolean getOrCreateSettingValue(String key) {

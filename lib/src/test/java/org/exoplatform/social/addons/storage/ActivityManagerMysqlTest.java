@@ -23,7 +23,10 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
-
+import org.exoplatform.social.core.profile.ProfileFilter;
+import org.exoplatform.social.core.storage.api.IdentityStorage;
+import org.exoplatform.social.core.storage.api.SpaceStorage;
+import org.mockito.Mockito;
 import org.exoplatform.commons.utils.ListAccess;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
@@ -52,6 +55,7 @@ import org.exoplatform.social.core.storage.impl.StorageUtils;
 public class ActivityManagerMysqlTest extends AbstractCoreTest {
   private final Log LOG = ExoLogger.getLogger(ActivityManagerMysqlTest.class);
   private List<ExoSocialActivity> tearDownActivityList;
+  private List<Space> tearDownSpaceList;
   private Identity ghostIdentity;
   private Identity raulIdentity;
   private Identity jameIdentity;
@@ -61,7 +65,13 @@ public class ActivityManagerMysqlTest extends AbstractCoreTest {
   public void setUp() throws Exception {
     super.setUp();
     tearDownActivityList = new ArrayList<ExoSocialActivity>();
-    
+    tearDownSpaceList = new ArrayList<Space>();
+    RDBMSSpaceStorageImpl spaceStorage = (RDBMSSpaceStorageImpl)getService(SpaceStorage.class);
+    spaceStorage.setSpaceSearchConnector(mockSpaceSearch);
+
+    RDBMSIdentityStorageImpl identityStorage = (RDBMSIdentityStorageImpl) getService(IdentityStorage.class);
+    identityStorage.setProfileSearchConnector(mockProfileSearch);
+
     ghostIdentity = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, "ghost", true);
     raulIdentity = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, "raul", true);
     jameIdentity = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, "jame", true);
@@ -1210,6 +1220,11 @@ public class ActivityManagerMysqlTest extends AbstractCoreTest {
   }
   
   public void testGetLastIdenties() throws Exception {
+    Mockito.when(mockProfileSearch.search(Mockito.any(Identity.class), Mockito.any(ProfileFilter.class),
+            Mockito.any(Relationship.Type.class), Mockito.anyLong(), Mockito.anyLong()))
+            .thenReturn(Arrays.asList(paulIdentity))
+            .thenReturn(Arrays.asList(paulIdentity))
+            .thenReturn(Arrays.asList(paulIdentity, jameIdentity, raulIdentity, ghostIdentity, demoIdentity));
     List<Identity> lastIds = identityManager.getLastIdentities(1);
     assertEquals(1, lastIds.size());
     Identity id1 = lastIds.get(0);
@@ -1223,6 +1238,12 @@ public class ActivityManagerMysqlTest extends AbstractCoreTest {
     User user1 = os.getUserHandler().createUserInstance("newId1");
     os.getUserHandler().createUser(user1, false);
     Identity newId1 = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, "newId1", false);
+
+    Mockito.when(mockProfileSearch.search(Mockito.any(Identity.class), Mockito.any(ProfileFilter.class),
+            Mockito.any(Relationship.Type.class), Mockito.anyLong(), Mockito.anyLong()))
+            .thenReturn(Arrays.asList(newId1))
+            .thenReturn(Arrays.asList(paulIdentity));
+
     lastIds = identityManager.getLastIdentities(1);
     assertEquals(1, lastIds.size());
     assertEquals(newId1, lastIds.get(0));
@@ -1234,6 +1255,12 @@ public class ActivityManagerMysqlTest extends AbstractCoreTest {
     User user2 = os.getUserHandler().createUserInstance("newId2");
     os.getUserHandler().createUser(user2, false);
     Identity newId2 = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, "newId2", true);
+
+    Mockito.when(mockProfileSearch.search(Mockito.any(Identity.class), Mockito.any(ProfileFilter.class),
+            Mockito.any(Relationship.Type.class), Mockito.anyLong(), Mockito.anyLong()))
+            .thenReturn(Arrays.asList(newId2, paulIdentity, jameIdentity, raulIdentity, ghostIdentity))
+            .thenReturn(Arrays.asList(paulIdentity, jameIdentity, raulIdentity, ghostIdentity, demoIdentity));
+
     lastIds = identityManager.getLastIdentities(5);
     assertEquals(5, lastIds.size());
     assertEquals(newId2, lastIds.get(0));
@@ -1242,8 +1269,19 @@ public class ActivityManagerMysqlTest extends AbstractCoreTest {
     lastIds = identityManager.getLastIdentities(5);
     assertEquals(5, lastIds.size());
     assertEquals(id1, lastIds.get(0));
+
+
     newId1 = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, "newId1", false);
     newId2 = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, "newId2", true);
+
+    Mockito.when(mockProfileSearch.search(Mockito.any(Identity.class), Mockito.any(ProfileFilter.class),
+            Mockito.any(Relationship.Type.class), Mockito.anyLong(), Mockito.anyLong()))
+            .thenReturn(Arrays.asList(newId2))
+            .thenReturn(Arrays.asList(newId2, newId1))
+            .thenReturn(Arrays.asList(newId2))
+            .thenReturn(Arrays.asList(newId2, paulIdentity))
+            .thenReturn(Arrays.asList(paulIdentity));
+
     lastIds = identityManager.getLastIdentities(1);
     assertEquals(1, lastIds.size());
     assertEquals(newId2, lastIds.get(0));

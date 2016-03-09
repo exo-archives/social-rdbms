@@ -61,4 +61,14 @@ public class IdentityDAOImpl extends GenericDAOJPAImpl<IdentityEntity, Long> imp
 
     return qb.build(getEntityManager()).getResultList();
   }
+
+  @Override
+  public List<Long> getAllIds(int offset, int limit) {
+    TypedQuery<Long> query = getEntityManager().createNamedQuery("SocIdentity.getAllIds", Long.class);
+    if (limit > 0) {
+      query.setFirstResult(offset);
+      query.setMaxResults(limit);
+    }
+    return query.getResultList();
+  }
 }

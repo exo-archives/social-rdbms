@@ -127,12 +127,13 @@ public class RelationshipMigrationService extends AbstractMigrationService<Relat
         RequestLifeCycle.end();
         RequestLifeCycle.begin(PortalContainer.getInstance());
         LOG.info(String.format("| / END::Relationships migration for (%s) user(s) with %s relationship(s) consumed %s(ms)", offset, total, System.currentTimeMillis() - t));
-        
-        LOG.info("| \\ START::Re-indexing profile(s) ---------------------------------");
+
+        // I move this job into the IdentityMigrationService
+        //LOG.info("| \\ START::Re-indexing profile(s) ---------------------------------");
         //To be sure all of the profile will be indexed in ES after migrated
-        IndexingService indexingService = CommonsUtils.getService(IndexingService.class);
-        indexingService.reindexAll(ProfileIndexingServiceConnector.TYPE);
-        LOG.info("| / END::Re-indexing profile(s) ---------------------------------");
+        //IndexingService indexingService = CommonsUtils.getService(IndexingService.class);
+        //indexingService.reindexAll(ProfileIndexingServiceConnector.TYPE);
+        //LOG.info("| / END::Re-indexing profile(s) ---------------------------------");
       }
   }
   
