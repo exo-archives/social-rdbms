@@ -276,6 +276,7 @@
             <configuration>
               <includes>
                 <include>**/InitContainerTestSuite.java</include>
+                <include>**/AsynMigrationTest.java</include>
               </includes>
               <excludes>
                 <exclude>**/*TestIT.java</exclude>

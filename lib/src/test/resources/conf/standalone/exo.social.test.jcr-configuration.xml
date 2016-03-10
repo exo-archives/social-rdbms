@@ -37,8 +37,8 @@
   </component>
 
   <component>
-    <key>org.jboss.cache.transaction.TransactionManagerLookup</key>
-    <type>org.jboss.cache.transaction.JBossStandaloneJTAManagerLookup</type>
+    <key>org.infinispan.transaction.lookup.TransactionManagerLookup</key>
+    <type>org.infinispan.transaction.lookup.JBossStandaloneJTAManagerLookup</type>
   </component>
 
   <component>

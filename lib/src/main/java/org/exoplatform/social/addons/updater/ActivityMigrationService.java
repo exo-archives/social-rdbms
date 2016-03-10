@@ -91,17 +91,26 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
   @Managed
   @ManagedDescription("Manual to start run miguration data of activities from JCR to RDBMS.")
   public void doMigration() throws Exception {
-    migrateUserActivities();
+    try {
+      RequestLifeCycle.begin(PortalContainer.getInstance());
+      migrateUserActivities();
+    } finally {
+      RequestLifeCycle.end();
+    }
+
     // migrate activities from space
-    migrateSpaceActivities();
+    try {
+      RequestLifeCycle.begin(PortalContainer.getInstance());
+      migrateSpaceActivities();
+    } finally {
+      RequestLifeCycle.end();
+    }
     
     MigrationContext.setActivityDone(true);
     LOG.info("Done to migration activities from JCR to RDBMS");
   }
 
   private void migrateUserActivities() throws Exception {
-    RequestLifeCycle.begin(PortalContainer.getInstance());
-    boolean begunTx = startTx();
     MigrationCounter counter = MigrationCounter.builder().threshold(LIMIT_THRESHOLD).build();
     counter.newTotalAndWatch();
     // doing with normal users
@@ -109,6 +118,7 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
     if(it == null || it.getSize() == 0) {
       return;
     }
+    boolean begunTx = startTx();
     Identity owner = null; 
     Node node = null;
     try {
@@ -145,7 +155,6 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
   }
 
   private void migrateSpaceActivities() throws Exception {
-    RequestLifeCycle.begin(PortalContainer.getInstance());
     long t = System.currentTimeMillis();
     NodeIterator it = getSpaceIdentityNodes();
     if(it == null || it.getSize() == 0) {
@@ -362,12 +371,16 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
 
   public void doRemove() throws Exception {
     LOG.info("Start remove activities from JCR to RDBMS");
-    removeActivity();
+    try {
+      RequestLifeCycle.begin(PortalContainer.getInstance());
+      removeActivity();
+    } finally {
+      RequestLifeCycle.end();
+    }
     LOG.info("Done to removed activities from JCR");
   }
 
   private void removeActivity() {
-    RequestLifeCycle.begin(PortalContainer.getInstance());
     long t = System.currentTimeMillis();
     long offset = 0;
     NodeIterator it = getIdentityNodes(offset, LIMIT_REMOVED_THRESHOLD);

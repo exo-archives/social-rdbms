@@ -33,6 +33,7 @@ public class ExtendProfileFilter extends ProfileFilter {
   private ProfileFilter delegate = null;
 
   private boolean excludeDeleted = true;
+  private boolean excludeDisabled = true;
   private List<Long> identityIds = null;
   private String providerId = null;
   private boolean forceLoadProfile = false;
@@ -71,6 +72,14 @@ public class ExtendProfileFilter extends ProfileFilter {
 
   public void setExcludeDeleted(boolean excludeDeleted) {
     this.excludeDeleted = excludeDeleted;
+  }
+
+  public boolean isExcludeDisabled() {
+    return excludeDisabled;
+  }
+
+  public void setExcludeDisabled(boolean excludeDisabled) {
+    this.excludeDisabled = excludeDisabled;
   }
 
   public ProfileFilter getDelegate() {

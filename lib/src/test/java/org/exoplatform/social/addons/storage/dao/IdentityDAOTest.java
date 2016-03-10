@@ -24,7 +24,9 @@ import org.exoplatform.services.log.Log;
 import org.exoplatform.social.addons.storage.entity.IdentityEntity;
 import org.exoplatform.social.addons.test.BaseCoreTest;
 import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvider;
+import org.junit.Test;
 
+import javax.persistence.EntityExistsException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -36,19 +38,19 @@ public class IdentityDAOTest extends BaseCoreTest {
 
   private IdentityDAO identityDAO;
 
-  private List<IdentityEntity> needTobeDelete = new ArrayList<IdentityEntity>();
+  private List<IdentityEntity> deleteIdentities = new ArrayList<IdentityEntity>();
 
   public void setUp() throws Exception {
     super.setUp();
     identityDAO = getService(IdentityDAO.class);
 
     assertNotNull("IdentityDAO must not be null", identityDAO);
-    needTobeDelete = new ArrayList<IdentityEntity>();
+    deleteIdentities = new ArrayList<IdentityEntity>();
   }
 
   @Override
   public void tearDown() throws Exception {
-    for (IdentityEntity e : needTobeDelete) {
+    for (IdentityEntity e : deleteIdentities) {
       identityDAO.delete(e);
     }
 
@@ -56,19 +58,73 @@ public class IdentityDAOTest extends BaseCoreTest {
   }
 
   public void testSaveNewIdentity() {
-    IdentityEntity entity = new IdentityEntity();
-    entity.setProviderId(OrganizationIdentityProvider.NAME);
-    entity.setRemoteId("root");
-    entity.setEnable(true);
+    IdentityEntity entity = createIdentity();
 
     identityDAO.create(entity);
 
     IdentityEntity e = identityDAO.find(entity.getId());
 
     assertNotNull(e);
-    assertEquals("root", e.getRemoteId());
+    assertEquals("usera", e.getRemoteId());
     assertEquals(OrganizationIdentityProvider.NAME, e.getProviderId());
 
-    needTobeDelete.add(e);
+    deleteIdentities.add(e);
+  }
+
+  public void testDeleteIdentity() {
+    IdentityEntity identity = createIdentity();
+    identity = identityDAO.create(identity);
+
+    long id = identity.getId();
+    assertTrue(id > 0);
+
+    identity = identityDAO.find(id);
+    assertNotNull(identity);
+    assertEquals(OrganizationIdentityProvider.NAME, identity.getProviderId());
+    assertEquals("usera", identity.getRemoteId());
+
+    identityDAO.delete(identity);
+
+    assertNull(identityDAO.find(id));
+  }
+
+  public void testUpdateIdentity() {
+    IdentityEntity identity = createIdentity();
+    identityDAO.create(identity);
+
+    identity = identityDAO.find(identity.getId());
+    assertFalse(identity.isDeleted());
+    assertTrue(identity.isEnable());
+
+    identity.setEnable(false);
+    identityDAO.update(identity);
+
+    identity = identityDAO.find(identity.getId());
+    assertFalse(identity.isDeleted());
+    assertFalse(identity.isEnable());
+
+    deleteIdentities.add(identity);
+  }
+
+  public void testCreateDuplicateIdentity() {
+    IdentityEntity identity1 = createIdentity();
+    IdentityEntity identity2 = createIdentity();
+
+    deleteIdentities.add(identityDAO.create(identity1));
+
+    try {
+      identityDAO.create(identity2);
+      fail("EntityExistsException should be thrown");
+    } catch (EntityExistsException ex) {
+    }
+  }
+
+  private IdentityEntity createIdentity() {
+    IdentityEntity entity = new IdentityEntity();
+    entity.setProviderId(OrganizationIdentityProvider.NAME);
+    entity.setRemoteId("usera");
+    entity.setEnable(true);
+    entity.setDeleted(false);
+    return entity;
   }
 }

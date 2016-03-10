@@ -88,8 +88,6 @@ public abstract class AbstractCoreTest extends BaseExoTestCase {
   protected Identity johnIdentity;
   protected Identity maryIdentity;
   protected Identity demoIdentity;
-
-  protected Session session;
   
   public static boolean wantCount = false;
   private static int count;

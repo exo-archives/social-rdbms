@@ -119,9 +119,8 @@ public class IdentityMigrationService extends AbstractMigrationService<Identity>
       LOG.info(String.format("| / END::Identity migration for (%s) identity(s) consumed %s(ms)", offset, System.currentTimeMillis() - t));
 
       LOG.info("| \\ START::Re-indexing identity(s) ---------------------------------");
-      //To be sure all of the identity/profile will be indexed in ES after migrated
-      //IndexingService indexingService = CommonsUtils.getService(IndexingService.class);
-      //indexingService.reindexAll(ProfileIndexingServiceConnector.TYPE);
+      IndexingService indexingService = CommonsUtils.getService(IndexingService.class);
+      indexingService.reindexAll(ProfileIndexingServiceConnector.TYPE);
       LOG.info("| / END::Re-indexing identity(s) ---------------------------------");
     }
   }

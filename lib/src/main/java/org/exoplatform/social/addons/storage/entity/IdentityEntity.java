@@ -47,7 +47,7 @@ import javax.persistence.Table;
         ),
         @NamedQuery(
                 name = "SocIdentity.countIdentityByProvider",
-                query = "SELECT count(id) FROM IdentityEntity id WHERE id.providerId = :providerId"
+                query = "SELECT count(id) FROM IdentityEntity id WHERE id.deleted = FALSE AND id.enable = TRUE AND id.providerId = :providerId"
         ),
         @NamedQuery(
                 name = "SocIdentity.getAllIds",

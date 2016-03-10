@@ -42,6 +42,7 @@ import javax.persistence.criteria.MapJoin;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -87,6 +88,10 @@ public class ProfileQueryBuilder {
         predicates.add(cb.isFalse(identity.get(IdentityEntity_.deleted)));
       }
 
+      if (filter.isExcludeDisabled()) {
+        predicates.add(cb.isTrue(identity.get(IdentityEntity_.enable)));
+      }
+
       if (filter.getIdentityIds() != null && filter.getIdentityIds().size() > 0) {
         predicates.add(identity.get(IdentityEntity_.id).in(filter.getIdentityIds()));
       }
@@ -95,7 +100,6 @@ public class ProfileQueryBuilder {
         predicates.add(cb.equal(identity.get(IdentityEntity_.providerId), filter.getProviderId()));
       }
 
-      MapJoin<ProfileEntity, String, String> properties = profile.join(ProfileEntity_.properties, JoinType.LEFT);
       ListJoin<ProfileEntity, ProfileExperience> experience = profile.join(ProfileEntity_.experiences, JoinType.LEFT);
 
       List<Identity> excludes = filter.getExcludedIdentityList();
@@ -110,17 +114,19 @@ public class ProfileQueryBuilder {
       String name = filter.getName();
       if (name != null && !name.isEmpty()) {
         name = processLikeString(name);
-        Predicate[] pred = new Predicate[3];
-        pred[0] = cb.and(cb.equal(properties.key(), Profile.FIRST_NAME), cb.like(properties.value(), name));
-        pred[1] = cb.and(cb.equal(properties.key(), Profile.LAST_NAME), cb.like(properties.value(), name));
-        pred[2] = cb.and(cb.equal(properties.key(), Profile.FULL_NAME), cb.like(properties.value(), name));
-        predicates.add(cb.or(pred));
+        MapJoin<ProfileEntity, String, String> properties = profile.join(ProfileEntity_.properties, JoinType.LEFT);
+        predicates.add(cb.and(cb.like(properties.value(), name), properties.key().in(Arrays.asList(Profile.FIRST_NAME, Profile.LAST_NAME, Profile.FULL_NAME))));
       }
 
       String val = filter.getPosition();
       if (val != null && !val.isEmpty()) {
         val = processLikeString(val);
-        predicates.add(cb.like(experience.get(ProfileExperience_.position), val));
+        Predicate[] p = new Predicate[2];
+        MapJoin<ProfileEntity, String, String> properties = profile.join(ProfileEntity_.properties, JoinType.LEFT);
+        p[1] = cb.and(cb.like(properties.value(), val), cb.equal(properties.key(), Profile.POSITION));
+        p[0] = cb.like(experience.get(ProfileExperience_.position), val);
+
+        predicates.add(cb.or(p));
       }
 
       val = filter.getSkills();
@@ -138,21 +144,21 @@ public class ProfileQueryBuilder {
       char c = filter.getFirstCharacterOfName();
       if (c != '\u0000') {
         val = c + "%";
+        MapJoin<ProfileEntity, String, String> properties = profile.join(ProfileEntity_.properties, JoinType.LEFT);
         predicates.add(cb.and(cb.equal(properties.key(), Profile.LAST_NAME), cb.like(properties.value(), val)));
       }
 
       String all = filter.getAll();
       if (all != null && !all.trim().isEmpty()) {
         all = processLikeString(all).toLowerCase();
-        Predicate[] p = new Predicate[7];
-        p[0] = cb.and(cb.equal(properties.key(), Profile.FIRST_NAME), cb.like(cb.lower(properties.value()), all));
-        p[1] = cb.and(cb.equal(properties.key(), Profile.LAST_NAME), cb.like(cb.lower(properties.value()), all));
-        p[2] = cb.and(cb.equal(properties.key(), Profile.FULL_NAME), cb.like(cb.lower(properties.value()), all));
+        Predicate[] p = new Predicate[5];
+        MapJoin<ProfileEntity, String, String> properties = profile.join(ProfileEntity_.properties, JoinType.LEFT);
+        p[0] = cb.and(cb.like(properties.value(), name), properties.key().in(Arrays.asList(Profile.FIRST_NAME, Profile.LAST_NAME, Profile.FULL_NAME)));
 
-        p[3] = cb.like(cb.lower(experience.get(ProfileExperience_.position)), all);
-        p[4] = cb.like(cb.lower(experience.get(ProfileExperience_.skills)), all);
-        p[5] = cb.like(cb.lower(experience.get(ProfileExperience_.company)), all);
-        p[6] = cb.like(cb.lower(experience.get(ProfileExperience_.description)), all);
+        p[1] = cb.like(cb.lower(experience.get(ProfileExperience_.position)), all);
+        p[2] = cb.like(cb.lower(experience.get(ProfileExperience_.skills)), all);
+        p[3] = cb.like(cb.lower(experience.get(ProfileExperience_.company)), all);
+        p[4] = cb.like(cb.lower(experience.get(ProfileExperience_.description)), all);
 
         predicates.add(cb.or(p));
       }
@@ -163,7 +169,7 @@ public class ProfileQueryBuilder {
     query.select(cb.countDistinct(identity)).where(pds);
     TypedQuery<Long> count = em.createQuery(query);
 
-    query.select(identity).where(pds);
+    query.select(identity).distinct(true).where(pds);
     TypedQuery<IdentityEntity> select = em.createQuery(query);
 
 

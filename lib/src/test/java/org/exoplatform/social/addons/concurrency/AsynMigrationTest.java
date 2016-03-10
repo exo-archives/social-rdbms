@@ -16,7 +16,6 @@
  */
 package org.exoplatform.social.addons.concurrency;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -58,13 +57,9 @@ import org.exoplatform.social.core.relationship.model.Relationship.Type;
 import org.exoplatform.social.core.space.model.Space;
 import org.exoplatform.social.core.space.spi.SpaceService;
 import org.exoplatform.social.core.storage.api.ActivityStorage;
-import org.exoplatform.social.core.storage.api.IdentityStorage;
 import org.exoplatform.social.core.storage.api.SpaceStorage;
-import org.exoplatform.social.core.storage.cache.SocialStorageCacheService;
 import org.exoplatform.social.core.storage.impl.ActivityStorageImpl;
-import org.exoplatform.social.core.storage.impl.IdentityStorageImpl;
 import org.exoplatform.social.core.storage.impl.RelationshipStorageImpl;
-import org.mockito.Mockito;
 
 /**
  * Created by The eXo Platform SAS
@@ -181,7 +176,7 @@ public class AsynMigrationTest extends BaseCoreTest {
   }
 
   @MaxQueryNumber(36990)
-  public void _testMigrationActivities() throws Exception {
+  public void testMigrationActivities() throws Exception {
     end();
     begin();
     // create jcr data

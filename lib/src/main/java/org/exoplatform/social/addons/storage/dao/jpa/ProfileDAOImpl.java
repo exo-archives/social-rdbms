@@ -23,6 +23,7 @@ import org.exoplatform.commons.persistence.impl.GenericDAOJPAImpl;
 import org.exoplatform.social.addons.storage.dao.ProfileDAO;
 import org.exoplatform.social.addons.storage.entity.ProfileEntity;
 
+import javax.persistence.EntityExistsException;
 import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
 import javax.persistence.TypedQuery;
@@ -31,6 +32,16 @@ import javax.persistence.TypedQuery;
  * @author <a href="mailto:tuyennt@exoplatform.com">Tuyen Nguyen The</a>.
  */
 public class ProfileDAOImpl extends GenericDAOJPAImpl<ProfileEntity, Long> implements ProfileDAO {
+
+  @Override
+  public ProfileEntity create(ProfileEntity entity) {
+    ProfileEntity exist = findByIdentityId(entity.getIdentity().getId());
+    if (exist != null) {
+      throw new EntityExistsException("Profile is existed for identity with id=" + entity.getIdentity().getId());
+    }
+    return super.create(entity);
+  }
+
   @Override
   public ProfileEntity findByIdentityId(long identityId) {
     EntityManager em = getEntityManager();

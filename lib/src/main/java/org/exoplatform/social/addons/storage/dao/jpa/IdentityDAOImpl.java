@@ -27,6 +27,7 @@ import org.exoplatform.social.addons.storage.dao.jpa.query.ProfileQueryBuilder;
 import org.exoplatform.social.addons.storage.entity.IdentityEntity;
 import org.exoplatform.social.core.profile.ProfileFilter;
 
+import javax.persistence.EntityExistsException;
 import javax.persistence.NoResultException;
 import javax.persistence.TypedQuery;
 import java.lang.reflect.Array;
@@ -36,6 +37,16 @@ import java.util.List;
  * @author <a href="mailto:tuyennt@exoplatform.com">Tuyen Nguyen The</a>.
  */
 public class IdentityDAOImpl extends GenericDAOJPAImpl<IdentityEntity, Long> implements IdentityDAO {
+
+  @Override
+  public IdentityEntity create(IdentityEntity entity) {
+    IdentityEntity exists = findByProviderAndRemoteId(entity.getProviderId(), entity.getRemoteId());
+    if (exists != null) {
+      throw new EntityExistsException("Identity is existed with ProviderID=" + entity.getProviderId() + " and RemoteId=" + entity.getRemoteId());
+    }
+    return super.create(entity);
+  }
+
   @Override
   public IdentityEntity findByProviderAndRemoteId(String providerId, String remoteId) {
     TypedQuery<IdentityEntity> query = getEntityManager().createNamedQuery("SocIdentity.findByProviderAndRemoteId", IdentityEntity.class);

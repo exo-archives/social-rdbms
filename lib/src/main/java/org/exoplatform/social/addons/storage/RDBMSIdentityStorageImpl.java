@@ -121,7 +121,7 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
   }
 
   private Identity convertToIdentity(IdentityEntity entity) {
-    return convertToIdentity(entity, false);
+    return convertToIdentity(entity, true);
   }
   private Identity convertToIdentity(IdentityEntity entity, boolean mapDeleted) {
     if (entity.isDeleted() && !mapDeleted) {
@@ -147,9 +147,13 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
     Profile p = new Profile(identity);
     p.setId(String.valueOf(entity.getId()));
     mapToProfile(entity, p);
+    if (OrganizationIdentityProvider.NAME.equals(identity.getProviderId()) && p.getProperty(Profile.USERNAME) == null) {
+      p.getProperties().put(Profile.USERNAME, identity.getRemoteId());
+    }
     return p;
   }
   private void mapToProfile(ProfileEntity entity, Profile p) {
+    Map<String, Object> props = p.getProperties();
     String providerId = entity.getIdentity().getProviderId();
     if (!OrganizationIdentityProvider.NAME.equals(providerId) && !SpaceIdentityProvider.NAME.equals(providerId)) {
       p.setUrl(entity.getUrl());
@@ -186,7 +190,7 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
         xpMap.put(Profile.EXPERIENCES_IS_CURRENT, exp.isCurrent());
         xpData.add(xpMap);
       }
-      p.setProperty(Profile.EXPERIENCES, xpData);
+      props.put(Profile.EXPERIENCES, xpData);
     }
 
     Map<String, String> properties = entity.getProperties();
@@ -213,10 +217,10 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
             // Ignore this exception
           }
 
-          p.setProperty(key, list);
+          props.put(key, list);
 
         } else {
-          p.setProperty(key, value);
+          props.put(key, value);
         }
       }
     }
@@ -365,6 +369,7 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
       throw new IdentityStorageException(IdentityStorageException.Type.FAIL_TO_UPDATE_IDENTITY, "The identity does not exist on DB");
     }
 
+    mapToEntity(identity, entity);
     entity = getIdentityDAO().update(entity);
 
     return convertToIdentity(entity, true);
@@ -408,12 +413,13 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
    * @throws IdentityStorageException
    */
   public void deleteIdentity(final Identity identity) throws IdentityStorageException {
-    long id = parseId(identity.getId());
+    hardDeleteIdentity(identity);
+    /*long id = parseId(identity.getId());
     IdentityEntity entity = getIdentityDAO().find(id);
     if (entity != null) {
       entity.setDeleted(true);
       getIdentityDAO().update(entity);
-    }
+    }*/
   }
 
   /**
@@ -498,6 +504,7 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
       mapToProfileEntity(profile, entity);
       getProfileDAO().update(entity);
     }
+    profile.clearHasChanged();
   }
 
   private void createProfile(final Profile profile) {
@@ -524,9 +531,9 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
     entity.setCreatedTime(System.currentTimeMillis());
 
     if (entity.getId() > 0) {
-      entity = getProfileDAO().create(entity);
-    } else {
       getProfileDAO().update(entity);
+    } else {
+      entity = getProfileDAO().create(entity);
     }
     profile.setId(String.valueOf(entity.getId()));
   }
@@ -711,35 +718,40 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
                                                                 long offset, long limit) throws IdentityStorageException {
 
     List<Long> relations = new ArrayList<>();
-    try {
-      Space gotSpace = getSpaceStorage().getSpaceById(space.getId());
-      String[] members = null;
-      switch (type) {
-        case MEMBER:
-          members = gotSpace.getMembers();
-          break;
-        case MANAGER:
-          members = gotSpace.getManagers();
-          List<String> wildcardUsers = SpaceUtils.findMembershipUsersByGroupAndTypes(space
-                  .getGroupId(), MembershipTypeHandler.ANY_MEMBERSHIP_TYPE);
+    if (space != null) {
+      try {
+        Space gotSpace = getSpaceStorage().getSpaceById(space.getId());
+        String[] members = null;
+        switch (type) {
+          case MEMBER:
+            members = gotSpace.getMembers();
+            break;
+          case MANAGER:
+            members = gotSpace.getManagers();
+            List<String> wildcardUsers = SpaceUtils.findMembershipUsersByGroupAndTypes(space
+                    .getGroupId(), MembershipTypeHandler.ANY_MEMBERSHIP_TYPE);
 
-          for (String remoteId : wildcardUsers) {
-            Identity id = findIdentity(OrganizationIdentityProvider.NAME, remoteId);
-            if (id != null) {
-              relations.add(parseId(id.getId()));
+            for (String remoteId : wildcardUsers) {
+              Identity id = findIdentity(OrganizationIdentityProvider.NAME, remoteId);
+              if (id != null) {
+                relations.add(parseId(id.getId()));
+              }
             }
-          }
-          break;
-      }
-
-      for (int i = 0; i <  members.length; i++){
-        Identity identity = findIdentity(OrganizationIdentityProvider.NAME, members[i]);
-        if (identity != null) {
-          relations.add(parseId(identity.getId()));
+            break;
         }
+
+        for (int i = 0; i < members.length; i++) {
+          Identity identity = findIdentity(OrganizationIdentityProvider.NAME, members[i]);
+          if (identity != null) {
+            relations.add(parseId(identity.getId()));
+          }
+        }
+      } catch (IdentityStorageException e) {
+        throw new IdentityStorageException(IdentityStorageException.Type.FAIL_TO_FIND_IDENTITY);
       }
-    } catch (IdentityStorageException e){
-      throw new IdentityStorageException(IdentityStorageException.Type.FAIL_TO_FIND_IDENTITY);
+      if (relations.isEmpty()) {
+        relations.add(-1L);
+      }
     }
 
     ExtendProfileFilter xFilter = new ExtendProfileFilter(profileFilter);
