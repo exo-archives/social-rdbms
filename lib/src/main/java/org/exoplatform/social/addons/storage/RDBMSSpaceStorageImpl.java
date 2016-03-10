@@ -1,7 +1,6 @@
 package org.exoplatform.social.addons.storage;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -10,15 +9,14 @@ import java.util.Set;
 import org.exoplatform.commons.api.persistence.ExoTransactional;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
-import org.exoplatform.social.addons.search.XSpaceFilter;
 import org.exoplatform.social.addons.search.SpaceSearchConnector;
+import org.exoplatform.social.addons.search.XSpaceFilter;
 import org.exoplatform.social.addons.storage.dao.SpaceDAO;
 import org.exoplatform.social.addons.storage.dao.SpaceMemberDAO;
 import org.exoplatform.social.addons.storage.dao.jpa.query.SpaceQueryBuilder;
 import org.exoplatform.social.addons.storage.entity.SpaceEntity;
+import org.exoplatform.social.addons.storage.entity.SpaceMember;
 import org.exoplatform.social.addons.storage.entity.SpaceMember.Status;
-import org.exoplatform.social.core.chromattic.entity.IdentityEntity;
-import org.exoplatform.social.core.chromattic.entity.ProviderEntity;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.identity.model.Profile;
 import org.exoplatform.social.core.identity.provider.SpaceIdentityProvider;
@@ -159,14 +157,12 @@ public class RDBMSSpaceStorageImpl extends AbstractStorage implements SpaceStora
 
   @Override
   public List<Space> getLastAccessedSpace(SpaceFilter spaceFilter, int offset, int limit) throws SpaceStorageException {
-    // TODO delegate this method to IdentityDAO
-    return getMemberSpacesByFilter(spaceFilter.getRemoteId(), spaceFilter, offset, limit);
+    return buildList(spaceDAO.getLastAccessedSpace(spaceFilter, offset, limit));
   }
 
   @Override
   public int getLastAccessedSpaceCount(SpaceFilter spaceFilter) throws SpaceStorageException {
-    // TODO delegate this method to IdentityDAO
-    return getMemberSpacesCount(spaceFilter.getRemoteId());
+    return getMemberSpacesByFilterCount(spaceFilter.getRemoteId(), spaceFilter);
   }
 
   @Override
@@ -382,8 +378,7 @@ public class RDBMSSpaceStorageImpl extends AbstractStorage implements SpaceStora
 
   @Override
   public List<Space> getVisitedSpaces(SpaceFilter spaceFilter, int offset, int limit) throws SpaceStorageException {
-    // TODO delegate this to IdentityDAO
-    return Collections.emptyList();
+    return buildList(spaceDAO.getVisitedSpaces(spaceFilter, offset, limit));
   }
 
   @Override
@@ -457,7 +452,15 @@ public class RDBMSSpaceStorageImpl extends AbstractStorage implements SpaceStora
 
   @Override
   public void updateSpaceAccessed(String remoteId, Space space) throws SpaceStorageException {
-    // TODO delegate this method to IdentityDAO
+    SpaceMember member = spaceMemberDAO.getMember(remoteId, Long.parseLong(space.getId()));
+    if (member != null) {
+      member.setLastAccess(System.currentTimeMillis());
+      //consider visited if access after create time more than 2s
+      if (!member.isVisited()) {
+        member.setVisited((member.getLastAccess() - member.getSpace().getCreatedTime()) >= 2000);        
+      }
+    }
+    spaceMemberDAO.update(member);
   }
 
   /**

@@ -261,6 +261,8 @@
       </column>
       <column name="USER_ID" type="NVARCHAR(36)" />
       <column name="STATUS" type="NVARCHAR(36)" />
+      <column name="LAST_ACCESS" type="BIGINT"/>
+      <column name="VISITED" type="BIT"/>
     </createTable>
     <modifySql dbms="mysql">
       <append value=" ENGINE=INNODB CHARSET=UTF8 COLLATE utf8_general_ci"/>

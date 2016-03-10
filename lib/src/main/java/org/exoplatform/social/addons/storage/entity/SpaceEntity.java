@@ -48,6 +48,8 @@ import org.exoplatform.social.core.space.model.Space;
 @Table(name = "SOC_SPACES")
 @NamedQueries({
     @NamedQuery(name = "SpaceEntity.getLastSpaces", query = "SELECT sp FROM SpaceEntity sp ORDER BY sp.createdTime DESC"),
+    @NamedQuery(name = "SpaceEntity.getVisitedSpaces", query = "SELECT sp FROM SpaceEntity sp INNER JOIN sp.members as mem WHERE mem.userId = :userId AND mem.status = :status AND sp.app like :app ORDER BY mem.visited DESC, sp.prettyName ASC"),
+    @NamedQuery(name = "SpaceEntity.getLastAccessedSpace", query = "SELECT sp FROM SpaceEntity sp INNER JOIN sp.members as mem WHERE mem.userId = :userId AND mem.status = :status AND sp.app like :app ORDER BY mem.lastAccess DESC"),
     @NamedQuery(name = "SpaceEntity.getSpaceByGroupId", query = "SELECT sp FROM SpaceEntity sp WHERE sp.groupId = :groupId"),
     @NamedQuery(name = "SpaceEntity.getSpaceByPrettyName", query = "SELECT sp FROM SpaceEntity sp WHERE sp.prettyName = :prettyName"),
     @NamedQuery(name = "SpaceEntity.getSpaceByDisplayName", query = "SELECT sp FROM SpaceEntity sp WHERE sp.displayName = :displayName"),
@@ -100,7 +102,7 @@ public class SpaceEntity implements Serializable {
   public String             url;
 
   @Column(name = "CREATED_TIME")
-  private Long              createdTime;
+  private Long              createdTime = System.currentTimeMillis();
 
   public Long getId() {
     return id;

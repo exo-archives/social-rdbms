@@ -20,7 +20,8 @@ import org.exoplatform.commons.api.persistence.ExoEntity;
 @ExoEntity
 @Table(name = "SOC_SPACES_MEMBERS")
 @NamedQueries({
-    @NamedQuery(name = "SpaceMember.deleteBySpace", query = "DELETE FROM SpaceMember mem WHERE mem.space.id = :spaceId") })
+    @NamedQuery(name = "SpaceMember.deleteBySpace", query = "DELETE FROM SpaceMember mem WHERE mem.space.id = :spaceId"),
+    @NamedQuery(name = "SpaceMember.getMember", query = "SELECT mem FROM SpaceMember mem WHERE mem.userId = :userId AND mem.space.id = :spaceId")})
 public class SpaceMember implements Serializable {
 
   private static final long serialVersionUID = 1015703779692801839L;
@@ -39,9 +40,16 @@ public class SpaceMember implements Serializable {
   private String            userId;
 
   @Column(name = "STATUS", length = 36)
-  private Status            status;
+  private Status            status;  
+
+  @Column(name = "LAST_ACCESS")
+  private Long              lastAccess = 0L;
+
+  @Column(name = "VISITED")
+  private boolean           visited;
 
   public SpaceMember() {
+    this(null, null, null);
   }
 
   public SpaceMember(SpaceEntity space, String userId, Status status) {
@@ -80,6 +88,22 @@ public class SpaceMember implements Serializable {
 
   public void setStatus(Status status) {
     this.status = status;
+  }
+
+  public Long getLastAccess() {
+    return lastAccess;
+  }
+
+  public void setLastAccess(Long lastAccess) {
+    this.lastAccess = lastAccess;
+  }
+
+  public boolean isVisited() {
+    return visited;
+  }
+
+  public void setVisited(boolean visited) {
+    this.visited = visited;
   }
 
   public static enum Status {

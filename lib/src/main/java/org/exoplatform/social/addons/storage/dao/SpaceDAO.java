@@ -20,6 +20,7 @@ import java.util.List;
 
 import org.exoplatform.commons.api.persistence.GenericDAO;
 import org.exoplatform.social.addons.storage.entity.SpaceEntity;
+import org.exoplatform.social.core.space.SpaceFilter;
 
 public interface SpaceDAO extends GenericDAO<SpaceEntity, Long> {
 
@@ -31,5 +32,9 @@ public interface SpaceDAO extends GenericDAO<SpaceEntity, Long> {
 
   SpaceEntity getSpaceByDisplayName(String spaceDisplayName);
 
-  SpaceEntity getSpaceByPrettyName(String spacePrettyName);    
+  SpaceEntity getSpaceByPrettyName(String spacePrettyName);
+
+  List<SpaceEntity> getVisitedSpaces(SpaceFilter spaceFilter, int offset, int limit);
+
+  List<SpaceEntity> getLastAccessedSpace(SpaceFilter spaceFilter, int offset, int limit);    
 }

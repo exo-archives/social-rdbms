@@ -16,20 +16,20 @@
  */
 package org.exoplatform.social.addons.test;
 
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.runners.Suite.SuiteClasses;
+
 import org.exoplatform.commons.testing.BaseExoContainerTestSuite;
 import org.exoplatform.commons.testing.ConfigTestCase;
-import org.exoplatform.social.addons.concurrency.AsynMigrationTest;
 import org.exoplatform.social.addons.storage.ActivityManagerMysqlTest;
 import org.exoplatform.social.addons.storage.IdentityStorageTest;
 import org.exoplatform.social.addons.storage.RDBMSActivityStorageImplTest;
 import org.exoplatform.social.addons.storage.RDBMSRelationshipManagerTest;
+import org.exoplatform.social.addons.storage.RDBMSSpaceStorageTest;
 import org.exoplatform.social.addons.storage.SpaceActivityMySqlPublisherTest;
-import org.exoplatform.social.addons.storage.SpaceStorageTest;
 import org.exoplatform.social.addons.storage.dao.ActivityDAOTest;
 import org.exoplatform.social.addons.storage.dao.StreamItemDAOTest;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.runners.Suite.SuiteClasses;
 
 @SuiteClasses({
   ActivityDAOTest.class,
@@ -38,7 +38,8 @@ import org.junit.runners.Suite.SuiteClasses;
   ActivityManagerMysqlTest.class,
   SpaceActivityMySqlPublisherTest.class,
   RDBMSRelationshipManagerTest.class,
-  IdentityStorageTest.class
+  IdentityStorageTest.class,
+  RDBMSSpaceStorageTest.class
   })
 @ConfigTestCase(AbstractCoreTest.class)
 public class InitContainerTestSuite extends BaseExoContainerTestSuite {
