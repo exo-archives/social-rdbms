@@ -23,6 +23,7 @@ public class SpaceMemberDAOImpl extends GenericDAOJPAImpl<SpaceMember, Long> imp
     TypedQuery<SpaceMember> query = getEntityManager().createNamedQuery("SpaceMember.getMember", SpaceMember.class);
     query.setParameter("userId", remoteId);
     query.setParameter("spaceId", spaceId);
+    query.setParameter("status", SpaceMember.Status.MEMBER);
     try {
       return query.getSingleResult();      
     } catch (NoResultException ex) {

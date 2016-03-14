@@ -300,6 +300,7 @@ public class RDBMSSpaceStorageImpl extends AbstractStorage implements SpaceStora
   }
 
   @Override
+  @ExoTransactional
   public Space getSpaceByPrettyName(String spacePrettyName) throws SpaceStorageException {
     SpaceEntity entity = spaceDAO.getSpaceByPrettyName(spacePrettyName);
     return fillSpaceFromEntity(entity);

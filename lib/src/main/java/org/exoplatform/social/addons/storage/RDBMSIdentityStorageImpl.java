@@ -26,6 +26,7 @@ import java.util.Set;
 
 import org.exoplatform.commons.api.persistence.DataInitializer;
 import org.exoplatform.commons.api.persistence.ExoTransactional;
+import org.exoplatform.commons.persistence.impl.EntityManagerService;
 import org.exoplatform.commons.utils.CommonsUtils;
 import org.exoplatform.commons.utils.ListAccess;
 import org.exoplatform.container.PortalContainer;
@@ -57,6 +58,9 @@ import org.exoplatform.social.core.storage.impl.IdentityStorageImpl;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+
+import javax.persistence.EntityManager;
+import javax.persistence.Query;
 
 /**
  * Created by The eXo Platform SAS
@@ -414,14 +418,17 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
    * @param identity
    * @throws IdentityStorageException
    */
+  @ExoTransactional
   public void deleteIdentity(final Identity identity) throws IdentityStorageException {
-    hardDeleteIdentity(identity);
-    /*long id = parseId(identity.getId());
+    long id = parseId(identity.getId());
     IdentityEntity entity = getIdentityDAO().find(id);
+    ProfileEntity profileEntity = getProfileDAO().findByIdentityId(id);
+    if (profileEntity != null) {
+      getProfileDAO().delete(profileEntity);
+    }
     if (entity != null) {
-      entity.setDeleted(true);
-      getIdentityDAO().update(entity);
-    }*/
+      getIdentityDAO().delete(entity);
+    }
   }
 
   /**
@@ -433,13 +440,33 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
   @ExoTransactional
   public void hardDeleteIdentity(final Identity identity) throws IdentityStorageException {
     long id = parseId(identity.getId());
+    String username = identity.getRemoteId();
+    String provider = identity.getProviderId();
+
     IdentityEntity entity = getIdentityDAO().find(id);
     ProfileEntity profileEntity = getProfileDAO().findByIdentityId(id);
     if (profileEntity != null) {
-      getProfileDAO().delete(profileEntity);
+      profileEntity.getProperties().put(Profile.DELETED, "true");
+      getProfileDAO().update(profileEntity);
     }
     if (entity != null) {
-      getIdentityDAO().delete(entity);
+      entity.setDeleted(true);
+      getIdentityDAO().update(entity);
+    }
+
+    EntityManager em = CommonsUtils.getService(EntityManagerService.class).getEntityManager();
+    Query query;
+
+    // Delete all connection
+    query = em.createQuery("DELETE FROM Connection c WHERE c.senderId = :identityId OR c.receiverId = :identityId");
+    query.setParameter("identityId", String.valueOf(id));
+    query.executeUpdate();
+
+    if(OrganizationIdentityProvider.NAME.equals(provider)) {
+      // Delete space-member
+      query = em.createQuery("DELETE FROM SpaceMember sm WHERE sm.userId = :username");
+      query.setParameter("username", username);
+      query.executeUpdate();
     }
   }
 

@@ -20,6 +20,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.exoplatform.services.jcr.RepositoryService;
+import org.exoplatform.social.core.chromattic.entity.ProviderEntity;
+import org.exoplatform.social.core.chromattic.entity.ProviderRootEntity;
+import org.exoplatform.social.core.storage.impl.IdentityStorageImpl;
 import org.jboss.byteman.contrib.bmunit.BMUnit;
 import org.junit.FixMethodOrder;
 import org.exoplatform.commons.api.settings.SettingService;
@@ -82,6 +86,7 @@ import org.exoplatform.social.core.storage.impl.RelationshipStorageImpl;
 public class AsynMigrationTest extends BaseCoreTest {
   protected final Log LOG = ExoLogger.getLogger(AsynMigrationTest.class);
   private ActivityStorageImpl jcrStorage;
+  private IdentityStorageImpl identityJCRStorage;
   private RelationshipStorageImpl relationshipStorageImpl;
   private ActivityMigrationService activityMigration;
   private RelationshipMigrationService relationshipMigration;
@@ -89,6 +94,8 @@ public class AsynMigrationTest extends BaseCoreTest {
   private RDBMSMigrationManager rdbmsMigrationManager;
   private RDBMSIdentityStorageImpl identityJPAStorage;
   private SpaceStorage spaceStorage;
+
+  private RepositoryService repoService;
   
   @Override
   public void setUp() throws Exception {
@@ -101,7 +108,10 @@ public class AsynMigrationTest extends BaseCoreTest {
       BMUnit.loadScriptFile(getClass(), "queryBaseCount", "src/test/resources");
     }
 
+    repoService = getService(RepositoryService.class);
+
     spaceStorage = getService(SpaceStorage.class);
+    identityJCRStorage = getService(IdentityStorageImpl.class);
     identityJPAStorage = getService(RDBMSIdentityStorageImpl.class);
     identityManager = getService(IdentityManager.class);
     activityManager =  getService(ActivityManager.class);
@@ -244,6 +254,10 @@ public class AsynMigrationTest extends BaseCoreTest {
     LOG.info("Done created the activities storage on JCR.");
     end();
 
+    ProviderRootEntity providerEntity = identityJCRStorage.getProviderRoot();
+    ProviderEntity organization = providerEntity.getProvider(OrganizationIdentityProvider.NAME);
+    assertTrue(0 < organization.getIdentities().size());
+
     // Swith to use RDBMSIdentityStorage
     ((IdentityManagerImpl)identityManager).setIdentityStorage(identityJPAStorage);
     if (spaceStorage instanceof RDBMSSpaceStorageImpl) {
@@ -280,6 +294,20 @@ public class AsynMigrationTest extends BaseCoreTest {
     assertEquals(20, activityStorage.getActivityFeed(maryIdentity, 0, 100).size());
     assertEquals(20, activityStorage.getActivityFeed(johnIdentity, 0, 100).size());
     assertEquals(20, activityStorage.getActivityFeed(demoIdentity, 0, 100).size());
+
+    /*Session session = repoService.getCurrentRepository().getSystemSession("social");
+    assertNotNull(session);
+    Node root = session.getRootNode().getNode("production");
+    assertNotNull(root);
+    Node providers = root.getNode("soc:providers");
+    Node orgProvider = providers.getNode("soc:organization");
+    assertFalse(orgProvider.hasNode("soc:root"));*/
+
+
+    // Besure JCR data does not exist
+    providerEntity = identityJCRStorage.getProviderRoot();
+    organization = providerEntity.getProvider(OrganizationIdentityProvider.NAME);
+    assertEquals(0, organization.getIdentities().size());
   }
   
   private boolean getOrCreateSettingValue(String key) {

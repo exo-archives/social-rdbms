@@ -157,6 +157,7 @@ public class IdentityMigrationService extends AbstractMigrationService<Identity>
 
         timePerIdentity = System.currentTimeMillis();
         if(offset % LIMIT_THRESHOLD == 0) {
+          getSession().save();
           RequestLifeCycle.end();
           RequestLifeCycle.begin(PortalContainer.getInstance());
           nodeIter = getIdentityNodes(offset, LIMIT_THRESHOLD);
@@ -164,6 +165,7 @@ public class IdentityMigrationService extends AbstractMigrationService<Identity>
       }
       LOG.info(String.format("| / END::cleanup Identities migration for (%s) identity consumed %s(ms)", offset, System.currentTimeMillis() - t));
     } finally {
+      getSession().save();
       RequestLifeCycle.end();
     }
   }
