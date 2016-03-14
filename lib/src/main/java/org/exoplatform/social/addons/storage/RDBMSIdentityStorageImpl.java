@@ -30,6 +30,7 @@ import org.exoplatform.commons.utils.CommonsUtils;
 import org.exoplatform.commons.utils.ListAccess;
 import org.exoplatform.container.PortalContainer;
 import org.exoplatform.services.organization.MembershipTypeHandler;
+import org.exoplatform.social.addons.rest.IdentityAvatarRestService;
 import org.exoplatform.social.addons.search.ExtendProfileFilter;
 import org.exoplatform.social.addons.search.ProfileSearchConnector;
 import org.exoplatform.social.addons.storage.dao.ActivityDAO;
@@ -170,9 +171,9 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
         }
       }
 
-      if (entity.getAvatarMimeType() != null && entity.getAvatarMimeType().isEmpty() && entity.getAvatarImage().length > 0) {
-        //TODO: calculate the avatar URL
-        p.setAvatarUrl("/identity/avatar");
+      if (entity.getAvatarMimeType() != null && !entity.getAvatarMimeType().isEmpty() && entity.getAvatarImage() != null && entity.getAvatarImage().length > 0) {
+        Identity identity = p.getIdentity();
+        p.setAvatarUrl(IdentityAvatarRestService.buildAvatarURL(identity.getProviderId(), identity.getRemoteId()));
       }
     }
 
@@ -395,6 +396,7 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
    * @return the identity
    * @throws IdentityStorageException
    */
+  @ExoTransactional
   public Identity findIdentityById(final String nodeId) throws IdentityStorageException {
     long id = parseId(nodeId);
     IdentityEntity entity = getIdentityDAO().find(id);
@@ -460,7 +462,10 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
     if (entity == null) {
       return null;
     } else {
-      return convertToProfile(entity, profile.getIdentity());
+      profile.setId(String.valueOf(entity.getId()));
+      mapToProfile(entity, profile);
+      profile.clearHasChanged();
+      return profile;
     }
   }
 

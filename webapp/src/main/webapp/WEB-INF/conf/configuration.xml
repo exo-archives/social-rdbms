@@ -143,6 +143,10 @@
     </init-params>
   </component>
 
+  <component>
+    <type>org.exoplatform.social.addons.rest.IdentityAvatarRestService</type>
+  </component>
+
   <external-component-plugins>
     <target-component>org.exoplatform.services.jcr.RepositoryService</target-component>
     <component-plugin>

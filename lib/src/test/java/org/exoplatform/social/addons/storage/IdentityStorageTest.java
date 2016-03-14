@@ -8,6 +8,7 @@ import org.exoplatform.services.organization.MembershipType;
 import org.exoplatform.services.organization.MembershipTypeHandler;
 import org.exoplatform.services.organization.OrganizationService;
 import org.exoplatform.services.organization.User;
+import org.exoplatform.social.addons.rest.IdentityAvatarRestService;
 import org.exoplatform.social.addons.test.AbstractCoreTest;
 import org.exoplatform.social.addons.test.MaxQueryNumber;
 import org.exoplatform.social.addons.test.QueryNumberTest;
@@ -257,33 +258,26 @@ public class IdentityStorageTest extends AbstractCoreTest {
     assertEquals(username, tobeSavedProfile.getProperty(Profile.USERNAME));
     
     // Test in case loading an user has dot characters in name.
-    //TODO: re-enable this compare when implement Rest api for avatar viewing
-    if (false) {
-      InputStream inputStream = getClass().getResourceAsStream("/eXo-Social.png");
-      AvatarAttachment avatarAttachment = new AvatarAttachment(null, "avatar", "png", inputStream, null, System.currentTimeMillis());
-      String userDotName = "user.name";
-      Identity identity = new Identity(OrganizationIdentityProvider.NAME, userDotName);
-      Profile profile = new Profile(identity);
-      identity.setProfile(profile);
-      profile.setProperty(Profile.AVATAR, avatarAttachment);
-      
-      identityStorage.saveIdentity(identity);
-      identityStorage.saveProfile(profile);
-      
-      identityStorage.loadProfile(profile);
+    InputStream inputStream = getClass().getResourceAsStream("/eXo-Social.png");
+    AvatarAttachment avatarAttachment = new AvatarAttachment(null, "avatar", "png", inputStream, null, System.currentTimeMillis());
+    String userDotName = "user.name";
+    Identity identity = new Identity(OrganizationIdentityProvider.NAME, userDotName);
+    Profile profile = new Profile(identity);
+    identity.setProfile(profile);
+    profile.setProperty(Profile.AVATAR, avatarAttachment);
 
-      String gotAvatarURL = profile.getAvatarUrl();
-      int indexOfLastupdatedParam = gotAvatarURL.indexOf("/?upd=");
-      String avatarURL = null;
-      if(indexOfLastupdatedParam != -1){
-        avatarURL = gotAvatarURL.substring(0,indexOfLastupdatedParam);
-      } else {
-        avatarURL = gotAvatarURL;
-      }
-      assertEquals(LinkProvider.escapeJCRSpecialCharacters(
-                   StorageUtils.encodeUrl("/production/soc:providers/soc:organization/soc:user%02name/soc:profile/soc:avatar")), avatarURL);
-      tearDownIdentityList.add(identityStorage.findIdentity(OrganizationIdentityProvider.NAME, userDotName));
-    }
+    identityStorage.saveIdentity(identity);
+    identityStorage.saveProfile(profile);
+
+    identityStorage.loadProfile(profile);
+
+    String gotAvatarURL = profile.getAvatarUrl();
+
+    assertNotNull(gotAvatarURL);
+    assertEquals(IdentityAvatarRestService.buildAvatarURL(OrganizationIdentityProvider.NAME, userDotName), gotAvatarURL);
+
+    tearDownIdentityList.add(identityStorage.findIdentity(OrganizationIdentityProvider.NAME, userDotName));
+
     tearDownIdentityList.add(identityStorage.findIdentity(OrganizationIdentityProvider.NAME, username));
   }
 

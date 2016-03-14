@@ -9,8 +9,9 @@ import java.util.Set;
 import org.exoplatform.commons.api.persistence.ExoTransactional;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
-import org.exoplatform.social.addons.search.SpaceSearchConnector;
+import org.exoplatform.social.addons.rest.IdentityAvatarRestService;
 import org.exoplatform.social.addons.search.XSpaceFilter;
+import org.exoplatform.social.addons.search.SpaceSearchConnector;
 import org.exoplatform.social.addons.storage.dao.SpaceDAO;
 import org.exoplatform.social.addons.storage.dao.SpaceMemberDAO;
 import org.exoplatform.social.addons.storage.dao.jpa.query.SpaceQueryBuilder;
@@ -578,9 +579,7 @@ public class RDBMSSpaceStorageImpl extends AbstractStorage implements SpaceStora
 
     if (entity.getAvatarLastUpdated() != null) {
       try {
-        // TODO url for space avatar
-        String url = "";
-        space.setAvatarUrl(url);
+        space.setAvatarUrl(IdentityAvatarRestService.buildAvatarURL(SpaceIdentityProvider.NAME, space.getPrettyName()));
       } catch (Exception e) {
         LOG.warn("Failed to build avatar url: " + e.getMessage());
       }
