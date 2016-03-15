@@ -384,11 +384,13 @@ public class RDBMSSpaceStorageImpl extends AbstractStorage implements SpaceStora
   }
 
   @Override
+  @ExoTransactional
   public void renameSpace(Space space, String newDisplayName) throws SpaceStorageException {
     renameSpace(null, space, newDisplayName);
   }
 
   @Override
+  @ExoTransactional
   public void renameSpace(String remoteId, Space space, String newDisplayName) throws SpaceStorageException {
     SpaceEntity entity;
 
@@ -428,6 +430,7 @@ public class RDBMSSpaceStorageImpl extends AbstractStorage implements SpaceStora
   }
 
   @Override
+  @ExoTransactional
   public void saveSpace(Space space, boolean isNew) throws SpaceStorageException {
     if (isNew) {
       SpaceEntity entity = new SpaceEntity();
@@ -453,6 +456,7 @@ public class RDBMSSpaceStorageImpl extends AbstractStorage implements SpaceStora
   }
 
   @Override
+  @ExoTransactional
   public void updateSpaceAccessed(String remoteId, Space space) throws SpaceStorageException {
     SpaceMember member = spaceMemberDAO.getMember(remoteId, Long.parseLong(space.getId()));
     if (member != null) {

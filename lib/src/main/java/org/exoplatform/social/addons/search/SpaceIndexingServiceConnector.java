@@ -100,9 +100,6 @@ public class SpaceIndexingServiceConnector extends ElasticIndexingServiceConnect
     JSONObject properties = new JSONObject();
     properties.put("permissions", notAnalyzedField);
     properties.put("sites", notAnalyzedField);
-    properties.put("prettyName", notAnalyzedField);
-    properties.put("displayName", notAnalyzedField);
-    properties.put("description", notAnalyzedField);
 
     JSONObject mappingProperties = new JSONObject();
     mappingProperties.put("properties", properties);
