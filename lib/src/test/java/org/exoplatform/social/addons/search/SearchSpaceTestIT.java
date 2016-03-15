@@ -19,7 +19,6 @@ import org.exoplatform.services.log.Log;
 import org.exoplatform.services.security.ConversationState;
 import org.exoplatform.services.security.IdentityRegistry;
 import org.exoplatform.social.addons.test.AbstractCoreTest;
-import org.exoplatform.social.core.space.impl.DefaultSpaceApplicationHandler;
 import org.exoplatform.social.core.space.model.Space;
 import org.exoplatform.social.core.storage.api.SpaceStorage;
 
@@ -64,19 +63,10 @@ public class SearchSpaceTestIT extends AbstractCoreTest {
   }
 
   public void testSpaceName() throws Exception {
-    Space space = new Space();
-    space.setPrettyName("testSpaceName abcd efgh");
-    space.setType(DefaultSpaceApplicationHandler.NAME);
-    space.setManagers(new String[] {"root"});
-    spaceStorage.saveSpace(space, true);
-    space = spaceStorage.getAllSpaces().get(0);
-
-    indexingService.index(SpaceIndexingServiceConnector.TYPE, space.getId());
-    indexingProcessor.process();
-    refreshIndices();
+    createSpace("testSpaceName abcd efgh", null, null);    
 
     XSpaceFilter filter = new XSpaceFilter();
-    filter.setSpaceNameSearchCondition("test");
+    filter.setSpaceNameSearchCondition("space");
     assertEquals(1, searchConnector.search(filter, 0, -1).size());
     
     filter.setSpaceNameSearchCondition("name");
@@ -84,7 +74,50 @@ public class SearchSpaceTestIT extends AbstractCoreTest {
     
     filter.setSpaceNameSearchCondition("abcd");
     assertEquals(1, searchConnector.search(filter, 0, -1).size());
-  }  
+  }
+
+  public void testSpaceDisplayName() throws Exception {
+    createSpace("pretty", "displayName abc def", null);
+
+    XSpaceFilter filter = new XSpaceFilter();
+    filter.setSpaceNameSearchCondition("naMe");
+    assertEquals(1, searchConnector.search(filter, 0, -1).size());
+    
+    filter.setSpaceNameSearchCondition("aBc");
+    assertEquals(1, searchConnector.search(filter, 0, -1).size());
+    
+    filter.setSpaceNameSearchCondition("ef");
+    assertEquals(1, searchConnector.search(filter, 0, -1).size());
+  }
+  
+  public void testSpaceDescription() throws Exception {
+    createSpace("pretty", null, "spaceDescription 123 456");
+
+    XSpaceFilter filter = new XSpaceFilter();
+    filter.setSpaceNameSearchCondition("sCriPtion 23");
+    assertEquals(1, searchConnector.search(filter, 0, -1).size());
+    
+    filter.setSpaceNameSearchCondition("123");
+    assertEquals(1, searchConnector.search(filter, 0, -1).size());
+    
+    filter.setSpaceNameSearchCondition("56");
+    assertEquals(1, searchConnector.search(filter, 0, -1).size());
+  }
+  
+  private Space createSpace(String prettyName, String displayName, String description) throws Exception {
+    Space space = new Space();
+    space.setPrettyName(prettyName);
+    space.setDisplayName(displayName);
+    space.setDescription(description);
+    space.setManagers(new String[] {"root"});
+    spaceStorage.saveSpace(space, true);
+    space = spaceStorage.getAllSpaces().get(0);
+
+    indexingService.index(SpaceIndexingServiceConnector.TYPE, space.getId());
+    indexingProcessor.process();
+    refreshIndices();
+    return space;
+  }
   
   private void deleteAllSpaceInES() {
     indexingService.unindexAll(SpaceIndexingServiceConnector.TYPE);
