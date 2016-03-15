@@ -185,11 +185,11 @@ public class ProfileIndexingServiceConnector extends ElasticIndexingServiceConne
     properties.put("permissions", notAnalyzedField);
     properties.put("sites", notAnalyzedField);
     properties.put("userName", notAnalyzedField);
-    properties.put("name", notAnalyzedField);
+//    properties.put("name", notAnalyzedField);
     properties.put("firstName", notAnalyzedField);
-    properties.put("lastName", notAnalyzedField);
-    properties.put("position", notAnalyzedField);
-    properties.put("skills", notAnalyzedField);
+//    properties.put("lastName", notAnalyzedField);
+//    properties.put("position", notAnalyzedField);
+//    properties.put("skills", notAnalyzedField);
     properties.put("email", notAnalyzedField);
 
     JSONObject mappingProperties = new JSONObject();
