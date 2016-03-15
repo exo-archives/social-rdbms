@@ -177,6 +177,7 @@ public class SpaceMigrationService extends AbstractMigrationService<Space> {
         
         timePerSpace = System.currentTimeMillis();
         if(offset % LIMIT_THRESHOLD == 0) {
+          getSession().save();
           RequestLifeCycle.end();
           RequestLifeCycle.begin(PortalContainer.getInstance());
           nodeIter = getSpaceNodes(offset, LIMIT_THRESHOLD);
@@ -184,6 +185,7 @@ public class SpaceMigrationService extends AbstractMigrationService<Space> {
       }
       LOG.info(String.format("| / END::cleanup Spaces migration for (%s) space consumed %s(ms)", offset, System.currentTimeMillis() - t));
     } finally {
+      getSession().save();
       RequestLifeCycle.end();
     }
   }
