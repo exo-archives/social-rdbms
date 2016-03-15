@@ -190,8 +190,8 @@
         <value>${exo.social.addons.IdentityMigrationService.limitThreshold:200}</value>
       </value-param>
     </init-params>
-  </component>
-
+  </component>  
+  
    <!--
     Activity storage components.
   -->
@@ -791,7 +791,14 @@
   </external-component-plugins>
   
    
-  
+  <external-component-plugins>
+    <target-component>org.exoplatform.commons.api.event.EventManager</target-component>
+    <component-plugin>
+      <name>SOC_IDENTITY_MIGRATION</name>
+      <set-method>addEventListener</set-method>
+      <type>org.exoplatform.social.addons.updater.listener.IdentityReferenceUpdaterListener</type>
+    </component-plugin>
+  </external-component-plugins>
   
    <external-component-plugins>
     <target-component>org.exoplatform.commons.chromattic.ChromatticManager</target-component>

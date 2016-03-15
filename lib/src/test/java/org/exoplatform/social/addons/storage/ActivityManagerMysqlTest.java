@@ -32,6 +32,8 @@ import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 import org.exoplatform.services.organization.OrganizationService;
 import org.exoplatform.services.organization.User;
+import org.exoplatform.social.addons.search.ProfileSearchConnector;
+import org.exoplatform.social.addons.search.SpaceSearchConnector;
 import org.exoplatform.social.addons.test.AbstractCoreTest;
 import org.exoplatform.social.common.RealtimeListAccess;
 import org.exoplatform.social.core.activity.model.ExoSocialActivity;
@@ -104,6 +106,11 @@ public class ActivityManagerMysqlTest extends AbstractCoreTest {
       spaceService.deleteSpace(space);
     }
     
+    RDBMSSpaceStorageImpl spaceStorage = (RDBMSSpaceStorageImpl)getService(SpaceStorage.class);
+    spaceStorage.setSpaceSearchConnector(getService(SpaceSearchConnector.class));
+    
+    RDBMSIdentityStorageImpl identityStorage = (RDBMSIdentityStorageImpl) getService(IdentityStorage.class);
+    identityStorage.setProfileSearchConnector(getService(ProfileSearchConnector.class));
     super.tearDown();
   }
 
