@@ -236,15 +236,15 @@
           <constraints nullable="false" primaryKey="true" primaryKeyName="PK_SOC_SPACES"/>
         </column>
         <column name="APP" type="LONGTEXT"/>
-        <column name="PRETTY_NAME" type="NVARCHAR(36)"/>
-        <column name="DISPLAY_NAME" type="NVARCHAR(36)"/>
-        <column name="REGISTRATION" type="NVARCHAR(36)"/>
+        <column name="PRETTY_NAME" type="NVARCHAR(200)"/>
+        <column name="DISPLAY_NAME" type="NVARCHAR(200)"/>
+        <column name="REGISTRATION" type="TINYINT"/>
         <column name="DESCRIPTION" type="LONGTEXT"/>
         <column name="AVATAR_LAST_UPDATED" type="BIGINT"/>
-        <column name="VISIBILITY" type="NVARCHAR(36)"/>
-        <column name="PRIORITY" type="NVARCHAR(36)"/>
-        <column name="GROUP_ID" type="NVARCHAR(255)"/>
-        <column name="URL" type="NVARCHAR(255)"/>
+        <column name="VISIBILITY" type="TINYINT"/>
+        <column name="PRIORITY" type="TINYINT"/>
+        <column name="GROUP_ID" type="NVARCHAR(200)"/>
+        <column name="URL" type="NVARCHAR(500)"/>
         <column name="CREATED_TIME" type="BIGINT"/>
     </createTable>
     <modifySql dbms="mysql">
@@ -252,6 +252,20 @@
     </modifySql>
   </changeSet>
   <changeSet author="social" id="1.0.0-24">
+    <createTable tableName="SOC_APPS">
+        <column name="SPACE_ID" type="BIGINT">
+          <constraints foreignKeyName="FK_SOC_APP_SPACE_01" references="SOC_SPACES(SPACE_ID)" nullable="false"/>
+        </column>
+        <column name="APP_ID" type="NVARCHAR(200)"/>
+        <column name="APP_NAME" type="NVARCHAR(200)"/>
+        <column name="REMOVABLE" type="BIT"/>
+        <column name="STATUS" type="TINYINT"/>
+    </createTable>
+    <modifySql dbms="mysql">
+        <append value=" ENGINE=INNODB CHARSET=UTF8 COLLATE utf8_general_ci"/>
+    </modifySql>
+  </changeSet>
+  <changeSet author="social" id="1.0.0-25">
     <createTable tableName="SOC_SPACES_MEMBERS">
       <column name="SPACE_MEMBER_ID" type="BIGINT" autoIncrement="${autoIncrement}" startWith="1">
         <constraints nullable="false" primaryKey="true" primaryKeyName="PK_SOC_SPACES_MEMBERS"/>
@@ -269,7 +283,7 @@
     </modifySql>    
   </changeSet>
 
-  <changeSet author="social" id="1.0.0-25">
+  <changeSet author="social" id="1.0.0-26">
     <createTable tableName="SOC_IDENTITY">
       <column name="IDENTITY_ID" type="BIGINT" autoIncrement="${autoIncrement}" startWith="1">
         <constraints nullable="false" primaryKey="true" primaryKeyName="PK_SOC_IDENTITIES"/>
@@ -283,16 +297,16 @@
       <append value=" ENGINE=INNODB CHARSET=UTF8 COLLATE utf8_general_ci"/>
     </modifySql>
   </changeSet>
-  <changeSet author="social" id="1.0.0-26">
+  <changeSet author="social" id="1.0.0-27">
     <addUniqueConstraint columnNames="PROVIDER_ID, REMOTE_ID"
                          constraintName="UK_PROVIDER_ID_REMOTE_ID_01"
                          tableName="SOC_IDENTITY"/>
   </changeSet>
-  <changeSet author="social" id="1.0.0-27" dbms="oracle,postgresql">
+  <changeSet author="social" id="1.0.0-28" dbms="oracle,postgresql">
     <createSequence sequenceName="SEQ_SOC_IDENTITY_ID" startValue="1"/>
   </changeSet>
 
-  <changeSet author="social" id="1.0.0-28">
+  <changeSet author="social" id="1.0.0-29">
     <createTable tableName="SOC_IDENTITY_PROFILE">
       <column name="PROFILE_ID" type="BIGINT" autoIncrement="${autoIncrement}" startWith="1">
         <constraints nullable="false" primaryKey="true" primaryKeyName="PK_SOC_IDENTITY_PROFILE"/>
@@ -304,13 +318,13 @@
       <column name="AVATAR_URL" type="NVARCHAR(250)"/>
       <column name="AVATAR_MIMTYPE" type="NVARCHAR(250)"/>
       <column name="AVATAR_IMAGE" type="BLOB"/>
-      <column name="CREATED_TIME" type="BIGINT"/>
+      <column name="CREATED_TIME" type="TIMESTAMP"/>
     </createTable>
     <modifySql dbms="mysql">
       <append value=" ENGINE=INNODB CHARSET=UTF8 COLLATE utf8_general_ci"/>
     </modifySql>
   </changeSet>
-  <changeSet author="social" id="1.0.0-29">
+  <changeSet author="social" id="1.0.0-30">
     <addUniqueConstraint columnNames="IDENTITY_ID"
                          constraintName="UK_IDENTITY_PROFILE_IDENTITY_ID_01"
                          tableName="SOC_IDENTITY_PROFILE"/>

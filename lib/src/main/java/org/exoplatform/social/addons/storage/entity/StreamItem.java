@@ -10,7 +10,10 @@ import javax.persistence.*;
 @Entity
 @ExoEntity
 @Table(name = "SOC_STREAM_ITEMS")
-@NamedQuery(name = "getStreamByActivityId", query = "select s from StreamItem s join s.activity A where A.id = :activityId")
+@NamedQueries({
+        @NamedQuery(name = "SocStreamItem.migrateOwner", query = "UPDATE StreamItem s SET s.ownerId = :newId WHERE s.ownerId = :oldId"),
+        @NamedQuery(name = "getStreamByActivityId", query = "select s from StreamItem s join s.activity A where A.id = :activityId")
+})
 public class StreamItem {
 
   @Id

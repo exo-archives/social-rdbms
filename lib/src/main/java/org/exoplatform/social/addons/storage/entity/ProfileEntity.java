@@ -34,11 +34,13 @@ import javax.persistence.Lob;
 import javax.persistence.MapKeyColumn;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
-import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
 import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
+import javax.persistence.Temporal;
+import javax.persistence.TemporalType;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -86,10 +88,11 @@ public class ProfileEntity {
 
   @ElementCollection(fetch = FetchType.LAZY)
   @CollectionTable(name = "SOC_IDENTITY_PROFILE_EXPERIENCE", joinColumns = {@JoinColumn(name = "PROFILE_ID")})
-  private List<ProfileExperience> experiences = new ArrayList<>();
+  private List<ProfileExperienceEntity> experiences = new ArrayList<>();
 
+  @Temporal(TemporalType.TIMESTAMP)
   @Column(name = "CREATED_TIME")
-  private long                      createdTime;
+  private Date createdTime;
 
   public long getId() {
     return id;
@@ -147,19 +150,19 @@ public class ProfileEntity {
     this.properties = properties;
   }
 
-  public List<ProfileExperience> getExperiences() {
+  public List<ProfileExperienceEntity> getExperiences() {
     return experiences;
   }
 
-  public void setExperiences(List<ProfileExperience> experiences) {
+  public void setExperiences(List<ProfileExperienceEntity> experiences) {
     this.experiences = experiences;
   }
 
-  public long getCreatedTime() {
+  public Date getCreatedTime() {
     return createdTime;
   }
 
-  public void setCreatedTime(long createdTime) {
+  public void setCreatedTime(Date createdTime) {
     this.createdTime = createdTime;
   }
 }

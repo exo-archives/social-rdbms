@@ -21,12 +21,13 @@ package org.exoplatform.social.addons.storage.dao;
 
 import org.exoplatform.social.addons.storage.entity.IdentityEntity;
 import org.exoplatform.social.addons.storage.entity.ProfileEntity;
-import org.exoplatform.social.addons.storage.entity.ProfileExperience;
+import org.exoplatform.social.addons.storage.entity.ProfileExperienceEntity;
 import org.exoplatform.social.addons.test.BaseCoreTest;
 import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvider;
 
 import javax.persistence.EntityExistsException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -87,7 +88,7 @@ public class ProfileDAOTest extends BaseCoreTest {
     assertEquals("/profile/root", profile.getUrl());
 
     profile.setUrl("/profile/root_updated");
-    profile.setExperiences(new ArrayList<ProfileExperience>());
+    profile.setExperiences(new ArrayList<ProfileExperienceEntity>());
 
     profileDAO.update(profile);
 
@@ -117,18 +118,18 @@ public class ProfileDAOTest extends BaseCoreTest {
   private ProfileEntity createProfile() {
     ProfileEntity profile = new ProfileEntity();
     profile.setIdentity(identity);
-    profile.setCreatedTime(System.currentTimeMillis());
+    profile.setCreatedTime(new Date());
     profile.setUrl("/profile/root");
     profile.setAvatarURL("/profile/root/avatar.png");
 
     profile.setAvatarImage(new byte[]{0x01, 0x02});
 
-    ProfileExperience exp = new ProfileExperience();
+    ProfileExperienceEntity exp = new ProfileExperienceEntity();
     exp.setCompany("eXo Platform");
     exp.setPosition("Developer");
     exp.setSkills("Java, Unit test");
     exp.setStartDate("2015-01-01");
-    List<ProfileExperience> exps = new ArrayList<>();
+    List<ProfileExperienceEntity> exps = new ArrayList<>();
     exps.add(exp);
     profile.setExperiences(exps);
 

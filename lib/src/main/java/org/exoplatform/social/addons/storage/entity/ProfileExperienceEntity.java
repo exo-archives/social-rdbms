@@ -27,7 +27,7 @@ import java.io.Serializable;
  * @author <a href="mailto:tuyennt@exoplatform.com">Tuyen Nguyen The</a>.
  */
 @Embeddable
-public class ProfileExperience implements Serializable {
+public class ProfileExperienceEntity implements Serializable {
 
   @Column(name = "COMPANY")
   private String company;

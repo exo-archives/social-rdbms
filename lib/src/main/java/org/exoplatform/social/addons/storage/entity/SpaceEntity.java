@@ -27,12 +27,15 @@ import java.util.List;
 import java.util.Set;
 
 import javax.persistence.CascadeType;
+import javax.persistence.CollectionTable;
 import javax.persistence.Column;
+import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
@@ -48,8 +51,6 @@ import org.exoplatform.social.core.space.model.Space;
 @Table(name = "SOC_SPACES")
 @NamedQueries({
     @NamedQuery(name = "SpaceEntity.getLastSpaces", query = "SELECT sp FROM SpaceEntity sp ORDER BY sp.createdTime DESC"),
-    @NamedQuery(name = "SpaceEntity.getVisitedSpaces", query = "SELECT sp FROM SpaceEntity sp INNER JOIN sp.members as mem WHERE mem.userId = :userId AND mem.status = :status AND sp.app like :app ORDER BY mem.visited DESC, sp.prettyName ASC"),
-    @NamedQuery(name = "SpaceEntity.getLastAccessedSpace", query = "SELECT sp FROM SpaceEntity sp INNER JOIN sp.members as mem WHERE mem.userId = :userId AND mem.status = :status AND sp.app like :app ORDER BY mem.lastAccess DESC"),
     @NamedQuery(name = "SpaceEntity.getSpaceByGroupId", query = "SELECT sp FROM SpaceEntity sp WHERE sp.groupId = :groupId"),
     @NamedQuery(name = "SpaceEntity.getSpaceByPrettyName", query = "SELECT sp FROM SpaceEntity sp WHERE sp.prettyName = :prettyName"),
     @NamedQuery(name = "SpaceEntity.getSpaceByDisplayName", query = "SELECT sp FROM SpaceEntity sp WHERE sp.displayName = :displayName"),
@@ -65,23 +66,24 @@ public class SpaceEntity implements Serializable {
   private Long              id;
 
   @OneToMany(fetch = FetchType.LAZY, mappedBy = "space", cascade = CascadeType.ALL, orphanRemoval = true)
-  private Set<SpaceMember> members          = new HashSet<>();
+  private Set<SpaceMember>  members          = new HashSet<>();
 
   /**
    * The list of applications with portlet Id, application name, and its state
    * (installed, activated, deactivated).
    */
-  @Column(name = "APP", length = 2000)
-  private String            app;
+  @ElementCollection
+  @CollectionTable(name = "SOC_APPS", joinColumns = @JoinColumn(name = "SPACE_ID") )
+  private Set<AppEntity>    app              = new HashSet<>();
 
-  @Column(name = "PRETTY_NAME", length = 36)
+  @Column(name = "PRETTY_NAME", length = 200)
   private String            prettyName;
 
-  @Column(name = "DISPLAY_NAME", length = 36)
+  @Column(name = "DISPLAY_NAME", length = 200)
   private String            displayName;
 
-  @Column(name = "REGISTRATION", length = 36)
-  private String            registration;
+  @Column(name = "REGISTRATION")
+  private REGISTRATION            registration;
 
   @Column(name = "DESCRIPTION", length = 2000)
   private String            description;
@@ -89,20 +91,20 @@ public class SpaceEntity implements Serializable {
   @Column(name = "AVATAR_LAST_UPDATED")
   private Long              avatarLastUpdated;
 
-  @Column(name = "VISIBILITY", length = 36)
-  public String             visibility;
+  @Column(name = "VISIBILITY")
+  public VISIBILITY         visibility;
 
-  @Column(name = "PRIORITY", length = 36)
-  public String             priority;
+  @Column(name = "PRIORITY")
+  public PRIORITY           priority;
 
-  @Column(name = "GROUP_ID", length = 36)
+  @Column(name = "GROUP_ID", length = 200)
   public String             groupId;
 
-  @Column(name = "URL", length = 255)
+  @Column(name = "URL", length = 500)
   public String             url;
 
   @Column(name = "CREATED_TIME")
-  private Long              createdTime = System.currentTimeMillis();
+  private Long              createdTime      = System.currentTimeMillis();
 
   public Long getId() {
     return id;
@@ -112,11 +114,11 @@ public class SpaceEntity implements Serializable {
     this.id = id;
   }
 
-  public String getApp() {
+  public Set<AppEntity> getApp() {
     return app;
   }
 
-  public void setApp(String app) {
+  public void setApp(Set<AppEntity> app) {
     this.app = app;
   }
 
@@ -136,11 +138,11 @@ public class SpaceEntity implements Serializable {
     this.displayName = displayName;
   }
 
-  public String getRegistration() {
+  public REGISTRATION getRegistration() {
     return registration;
   }
 
-  public void setRegistration(String registration) {
+  public void setRegistration(REGISTRATION registration) {
     this.registration = registration;
   }
 
@@ -160,19 +162,19 @@ public class SpaceEntity implements Serializable {
     this.avatarLastUpdated = avatarLastUpdated;
   }
 
-  public String getVisibility() {
+  public VISIBILITY getVisibility() {
     return visibility;
   }
 
-  public void setVisibility(String visibility) {
+  public void setVisibility(VISIBILITY visibility) {
     this.visibility = visibility;
   }
 
-  public String getPriority() {
+  public PRIORITY getPriority() {
     return priority;
   }
 
-  public void setPriority(String priority) {
+  public void setPriority(PRIORITY priority) {
     this.priority = priority;
   }
 
@@ -205,17 +207,31 @@ public class SpaceEntity implements Serializable {
   }
 
   public SpaceEntity buildFrom(Space space) {
-    this.setApp(space.getApp());
+    this.setApp(AppEntity.parse(space.getApp()));
     this.setAvatarLastUpdated(space.getAvatarLastUpdated());
     this.setCreatedTime(space.getCreatedTime());
     this.setDescription(space.getDescription());
     this.setDisplayName(space.getDisplayName());
     this.setGroupId(space.getGroupId());
     this.setPrettyName(space.getPrettyName());
-    this.setPriority(space.getPriority());
-    this.setRegistration(space.getRegistration());
+    PRIORITY priority = null;
+    if (Space.HIGH_PRIORITY.equals(space.getPriority())) {
+      priority = PRIORITY.HIGH;
+    } else if (Space.INTERMEDIATE_PRIORITY.equals(space.getPriority())) {
+      priority = PRIORITY.INTERMEDIATE;
+    } else if (Space.LOW_PRIORITY.equals(space.getPriority())) {
+      priority = PRIORITY.LOW;
+    }
+    this.setPriority(priority);
+    if (space.getRegistration() != null) {
+      this.setRegistration(REGISTRATION.valueOf(space.getRegistration().toUpperCase()));      
+    }
     this.setUrl(space.getUrl());
-    this.setVisibility(space.getVisibility());
+    VISIBILITY visibility = null;
+    if (space.getVisibility() != null) {
+      visibility = VISIBILITY.valueOf(space.getVisibility().toUpperCase());
+    }
+    this.setVisibility(visibility);
     buildMembers(space);
     return this;
   }
@@ -236,6 +252,18 @@ public class SpaceEntity implements Serializable {
     return getUserIds(Status.MANAGER);
   }
 
+  public static enum VISIBILITY {
+    PUBLIC, PRIVATE, HIDDEN
+  }
+
+  public static enum PRIORITY {
+    HIGH, INTERMEDIATE, LOW
+  }
+  
+  public static enum REGISTRATION {
+    OPEN, VALIDATION, CLOSE
+  }
+
   private void buildMembers(Space space) {
     List<SpaceMember> invited = this.getMembers(Status.INVITED);
     merge(invited, space.getInvitedUsers(), Status.INVITED);
@@ -251,7 +279,7 @@ public class SpaceEntity implements Serializable {
   }
 
   private void merge(List<SpaceMember> spaceMembers, String[] userIds, Status status) {
-    Set<String> ids = new HashSet<>(userIds != null ? Arrays.asList(userIds) : Collections.<String>emptyList());
+    Set<String> ids = new HashSet<>(userIds != null ? Arrays.asList(userIds) : Collections.<String> emptyList());
 
     Iterator<SpaceMember> mems = spaceMembers.iterator();
     while (mems.hasNext()) {

@@ -11,20 +11,24 @@ public class XSpaceFilter extends SpaceFilter {
 
   private Set<Status> status = new HashSet<>();
 
-  private boolean                  includePrivate;
+  private boolean     includePrivate;
 
-  private boolean                  unifiedSearch;
+  private boolean     unifiedSearch;
 
-  private boolean                  notHidden;
+  private boolean     notHidden;
 
-  private boolean isPublic;
+  private boolean     isPublic;
+
+  private boolean     lastAccess;
+
+  private boolean     visited;
 
   public XSpaceFilter setSpaceFilter(SpaceFilter spaceFilter) {
     if (spaceFilter != null) {
       this.setAppId(spaceFilter.getAppId());
       this.setFirstCharacterOfSpaceName(spaceFilter.getFirstCharacterOfSpaceName());
       this.setIncludeSpaces(spaceFilter.getIncludeSpaces());
-      this.setRemoteId(spaceFilter.getRemoteId());      
+      this.setRemoteId(spaceFilter.getRemoteId());
       this.setSorting(spaceFilter.getSorting());
       if (spaceFilter.getSpaceNameSearchCondition() != null) {
         this.setSpaceNameSearchCondition(spaceFilter.getSpaceNameSearchCondition());
@@ -36,6 +40,8 @@ public class XSpaceFilter extends SpaceFilter {
         this.setIncludePrivate(filter.isIncludePrivate());
         this.setUnifiedSearch(filter.isUnifiedSearch());
         this.setNotHidden(filter.isNotHidden());
+        this.setLastAccess(filter.isLastAccess());
+        this.setVisited(filter.isVisited());
         this.addStatus(filter.getStatus().toArray(new Status[filter.getStatus().size()]));
         if (filter.isPublic()) {
           this.setPublic(filter.getRemoteId());
@@ -45,7 +51,7 @@ public class XSpaceFilter extends SpaceFilter {
     return this;
   }
 
-  public XSpaceFilter addStatus(Status ...st) {
+  public XSpaceFilter addStatus(Status... st) {
     status.addAll(Arrays.asList(st));
     return this;
   }
@@ -83,11 +89,27 @@ public class XSpaceFilter extends SpaceFilter {
 
   public void setPublic(String userId) {
     setRemoteId(userId);
-    this.isPublic = (userId != null);      
+    this.isPublic = (userId != null);
   }
 
   public boolean isPublic() {
     return isPublic;
+  }
+  
+  public void setVisited(boolean visited) {
+    this.visited = visited;
+  }
+
+  public void setLastAccess(boolean lastAccess) {
+    this.lastAccess = lastAccess;
+  }
+
+  public boolean isLastAccess() {
+    return lastAccess;
+  }
+
+  public boolean isVisited() {
+    return visited;
   }
 
 }

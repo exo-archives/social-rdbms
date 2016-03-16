@@ -24,11 +24,10 @@ import org.exoplatform.social.addons.storage.entity.IdentityEntity;
 import org.exoplatform.social.addons.storage.entity.IdentityEntity_;
 import org.exoplatform.social.addons.storage.entity.ProfileEntity;
 import org.exoplatform.social.addons.storage.entity.ProfileEntity_;
-import org.exoplatform.social.addons.storage.entity.ProfileExperience;
-import org.exoplatform.social.addons.storage.entity.ProfileExperience_;
+import org.exoplatform.social.addons.storage.entity.ProfileExperienceEntity;
+import org.exoplatform.social.addons.storage.entity.ProfileExperienceEntity_;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.identity.model.Profile;
-import org.exoplatform.social.core.profile.ProfileFilter;
 
 import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
@@ -100,7 +99,7 @@ public class ProfileQueryBuilder {
         predicates.add(cb.equal(identity.get(IdentityEntity_.providerId), filter.getProviderId()));
       }
 
-      ListJoin<ProfileEntity, ProfileExperience> experience = profile.join(ProfileEntity_.experiences, JoinType.LEFT);
+      ListJoin<ProfileEntity, ProfileExperienceEntity> experience = profile.join(ProfileEntity_.experiences, JoinType.LEFT);
 
       List<Identity> excludes = filter.getExcludedIdentityList();
       if (excludes != null && excludes.size() > 0) {
@@ -124,7 +123,7 @@ public class ProfileQueryBuilder {
         Predicate[] p = new Predicate[2];
         MapJoin<ProfileEntity, String, String> properties = profile.join(ProfileEntity_.properties, JoinType.LEFT);
         p[1] = cb.and(cb.like(properties.value(), val), cb.equal(properties.key(), Profile.POSITION));
-        p[0] = cb.like(experience.get(ProfileExperience_.position), val);
+        p[0] = cb.like(experience.get(ProfileExperienceEntity_.position), val);
 
         predicates.add(cb.or(p));
       }
@@ -132,13 +131,13 @@ public class ProfileQueryBuilder {
       val = filter.getSkills();
       if (val != null && !val.isEmpty()) {
         val = processLikeString(val);
-        predicates.add(cb.like(experience.get(ProfileExperience_.skills), val));
+        predicates.add(cb.like(experience.get(ProfileExperienceEntity_.skills), val));
       }
 
       val = filter.getCompany();
       if (val != null && !val.isEmpty()) {
         val = processLikeString(val);
-        predicates.add(cb.like(experience.get(ProfileExperience_.company), val));
+        predicates.add(cb.like(experience.get(ProfileExperienceEntity_.company), val));
       }
 
       char c = filter.getFirstCharacterOfName();
@@ -155,10 +154,10 @@ public class ProfileQueryBuilder {
         MapJoin<ProfileEntity, String, String> properties = profile.join(ProfileEntity_.properties, JoinType.LEFT);
         p[0] = cb.and(cb.like(properties.value(), name), properties.key().in(Arrays.asList(Profile.FIRST_NAME, Profile.LAST_NAME, Profile.FULL_NAME)));
 
-        p[1] = cb.like(cb.lower(experience.get(ProfileExperience_.position)), all);
-        p[2] = cb.like(cb.lower(experience.get(ProfileExperience_.skills)), all);
-        p[3] = cb.like(cb.lower(experience.get(ProfileExperience_.company)), all);
-        p[4] = cb.like(cb.lower(experience.get(ProfileExperience_.description)), all);
+        p[1] = cb.like(cb.lower(experience.get(ProfileExperienceEntity_.position)), all);
+        p[2] = cb.like(cb.lower(experience.get(ProfileExperienceEntity_.skills)), all);
+        p[3] = cb.like(cb.lower(experience.get(ProfileExperienceEntity_.company)), all);
+        p[4] = cb.like(cb.lower(experience.get(ProfileExperienceEntity_.description)), all);
 
         predicates.add(cb.or(p));
       }

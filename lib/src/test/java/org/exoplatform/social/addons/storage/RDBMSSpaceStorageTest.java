@@ -47,6 +47,7 @@ public class RDBMSSpaceStorageTest extends SpaceStorageTest {
     
     SpaceFilter filter = new SpaceFilter();
     filter.setRemoteId("ghost");
+    filter.setAppId("app1, app2, app3");
     
     List<Space> result = spaceStorage.getVisitedSpaces(filter, 0, -1); 
     assertEquals(2, result.size());
@@ -71,6 +72,7 @@ public class RDBMSSpaceStorageTest extends SpaceStorageTest {
     
     SpaceFilter filter = new SpaceFilter();
     filter.setRemoteId("ghost");
+    filter.setAppId("app1, app2, app3");
     
     List<Space> result = spaceStorage.getLastAccessedSpace(filter, 0, -1);
     assertEquals(2, result.size());
