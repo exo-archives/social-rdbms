@@ -34,7 +34,6 @@ import javax.persistence.Lob;
 import javax.persistence.MapKeyColumn;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
-import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
 import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
@@ -86,7 +85,7 @@ public class ProfileEntity {
 
   @ElementCollection(fetch = FetchType.LAZY)
   @CollectionTable(name = "SOC_IDENTITY_PROFILE_EXPERIENCE", joinColumns = {@JoinColumn(name = "PROFILE_ID")})
-  private List<ProfileExperience> experiences = new ArrayList<>();
+  private List<ProfileExperienceEntity> experiences = new ArrayList<>();
 
   @Column(name = "CREATED_TIME")
   private long                      createdTime;
@@ -147,11 +146,11 @@ public class ProfileEntity {
     this.properties = properties;
   }
 
-  public List<ProfileExperience> getExperiences() {
+  public List<ProfileExperienceEntity> getExperiences() {
     return experiences;
   }
 
-  public void setExperiences(List<ProfileExperience> experiences) {
+  public void setExperiences(List<ProfileExperienceEntity> experiences) {
     this.experiences = experiences;
   }
 

@@ -48,36 +48,36 @@ public class IdentityReferenceUpdaterListener extends Listener<Identity, String>
     Query query;
 
     // Update Connection
-    query = em.createQuery("UPDATE Connection c SET c.senderId = :newId WHERE c.senderId = :oldId");
+    query = em.createNamedQuery("SocConnection.migrateSenderId");
     query.setParameter("newId", newId);
     query.setParameter("oldId", oldId);
     query.executeUpdate();
 
-    query = em.createQuery("UPDATE Connection c SET c.receiverId = :newId WHERE c.receiverId = :oldId");
+    query = em.createNamedQuery("SocConnection.migrateReceiverId");
     query.setParameter("newId", newId);
     query.setParameter("oldId", oldId);
     query.executeUpdate();
 
     // Update activity poster
-    query = em.createQuery("UPDATE Activity a SET a.posterId = :newId WHERE a.posterId = :oldId");
+    query = em.createNamedQuery("SocActivity.migratePosterId");
     query.setParameter("newId", newId);
     query.setParameter("oldId", oldId);
     query.executeUpdate();
 
     // Activity owner
-    query = em.createQuery("UPDATE Activity a SET a.ownerId = :newId WHERE a.ownerId = :oldId");
+    query = em.createNamedQuery("SocActivity.migrateOwnerId");
     query.setParameter("newId", newId);
     query.setParameter("oldId", oldId);
     query.executeUpdate();
 
     // Comment poster
-    query = em.createQuery("UPDATE Comment c SET c.posterId = :newId WHERE c.posterId = :oldId");
+    query = em.createNamedQuery("SocComment.migratePosterId");
     query.setParameter("newId", newId);
     query.setParameter("oldId", oldId);
     query.executeUpdate();
 
     // Comment owner
-    query = em.createQuery("UPDATE Comment c SET c.ownerId = :newId WHERE c.ownerId = :oldId");
+    query = em.createNamedQuery("SocComment.migrateOwnerId");
     query.setParameter("newId", newId);
     query.setParameter("oldId", oldId);
     query.executeUpdate();

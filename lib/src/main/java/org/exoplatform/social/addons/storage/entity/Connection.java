@@ -9,8 +9,14 @@ import javax.persistence.*;
 @ExoEntity
 @Table(name = "SOC_CONNECTIONS",
        uniqueConstraints=@UniqueConstraint(columnNames = {"SENDER_ID", "RECEIVER_ID"}))
-@NamedQuery(name = "getRelationships",
-            query = "select r from Connection r")
+@NamedQueries({
+        @NamedQuery(name = "getRelationships",
+                query = "select r from Connection r"),
+        @NamedQuery(name = "SocConnection.deleteConnectionByIdentity",
+                query = "DELETE FROM Connection c WHERE c.senderId = :identityId OR c.receiverId = :identityId"),
+        @NamedQuery(name = "SocConnection.migrateSenderId", query = "UPDATE Connection c SET c.senderId = :newId WHERE c.senderId = :oldId"),
+        @NamedQuery(name = "SocConnection.migrateReceiverId", query = "UPDATE Connection c SET c.receiverId = :newId WHERE c.receiverId = :oldId")
+})
 public class Connection {
 
   @Id

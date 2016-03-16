@@ -14,6 +14,10 @@ import org.exoplatform.commons.api.persistence.ExoEntity;
 @Entity
 @ExoEntity
 @Table(name = "SOC_ACTIVITIES")
+@NamedQueries({
+        @NamedQuery(name = "SocActivity.migratePosterId", query = "UPDATE Activity a SET a.posterId = :newId WHERE a.posterId = :oldId"),
+        @NamedQuery(name = "SocActivity.migrateOwnerId", query = "UPDATE Activity a SET a.ownerId = :newId WHERE a.ownerId = :oldId")
+})
 public class Activity extends BaseActivity {
 
   @Id

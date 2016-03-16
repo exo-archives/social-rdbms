@@ -19,28 +19,37 @@ package org.exoplatform.social.addons.storage;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.StringTokenizer;
 
 import org.exoplatform.commons.api.persistence.DataInitializer;
 import org.exoplatform.commons.api.persistence.ExoTransactional;
 import org.exoplatform.commons.persistence.impl.EntityManagerService;
 import org.exoplatform.commons.utils.CommonsUtils;
 import org.exoplatform.commons.utils.ListAccess;
-import org.exoplatform.container.PortalContainer;
+import org.exoplatform.services.log.ExoLogger;
+import org.exoplatform.services.log.Log;
 import org.exoplatform.services.organization.MembershipTypeHandler;
+import org.exoplatform.services.organization.OrganizationService;
+import org.exoplatform.services.organization.User;
+import org.exoplatform.services.user.UserStateModel;
+import org.exoplatform.services.user.UserStateService;
 import org.exoplatform.social.addons.rest.IdentityAvatarRestService;
 import org.exoplatform.social.addons.search.ExtendProfileFilter;
 import org.exoplatform.social.addons.search.ProfileSearchConnector;
 import org.exoplatform.social.addons.storage.dao.ActivityDAO;
 import org.exoplatform.social.addons.storage.dao.IdentityDAO;
 import org.exoplatform.social.addons.storage.dao.ProfileDAO;
+import org.exoplatform.social.addons.storage.dao.SpaceDAO;
 import org.exoplatform.social.addons.storage.entity.Activity;
 import org.exoplatform.social.addons.storage.entity.IdentityEntity;
 import org.exoplatform.social.addons.storage.entity.ProfileEntity;
-import org.exoplatform.social.addons.storage.entity.ProfileExperience;
+import org.exoplatform.social.addons.storage.entity.ProfileExperienceEntity;
+import org.exoplatform.social.addons.storage.entity.SpaceEntity;
 import org.exoplatform.social.core.identity.SpaceMemberFilterListAccess;
 import org.exoplatform.social.core.identity.model.ActiveIdentityFilter;
 import org.exoplatform.social.core.identity.model.Identity;
@@ -53,8 +62,8 @@ import org.exoplatform.social.core.service.LinkProvider;
 import org.exoplatform.social.core.space.SpaceUtils;
 import org.exoplatform.social.core.space.model.Space;
 import org.exoplatform.social.core.storage.IdentityStorageException;
-import org.exoplatform.social.core.storage.api.SpaceStorage;
 import org.exoplatform.social.core.storage.impl.IdentityStorageImpl;
+import org.exoplatform.social.core.storage.impl.StorageUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -70,59 +79,46 @@ import javax.persistence.Query;
  */
 public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
 
-  private ActivityDAO activityDAO = null;
-  private IdentityDAO identityDAO = null;
-  private ProfileDAO profileDAO = null;
-  private SpaceStorage spaceStorage = null;
+  private static final Log LOG = ExoLogger.getLogger(RDBMSIdentityStorageImpl.class);
 
-  private final DataInitializer dataInitializer;
+  private final ActivityDAO activityDAO;
+  private final IdentityDAO identityDAO;
+  private final ProfileDAO profileDAO;
+  private final SpaceDAO spaceDAO;
+
+  private final OrganizationService orgService;
 
   private ProfileSearchConnector profileSearchConnector;
 
-  public RDBMSIdentityStorageImpl(DataInitializer dataInitializer) {
-    System.out.println("Initial here");
+  // TODO: This service is injected to be used to workaround issue COMMONS-478
+  // We should remove this when the issue is fixed
+  private final DataInitializer dataInitializer;
+  private boolean isDataInitialized = false;
+
+  public RDBMSIdentityStorageImpl(DataInitializer dataInitializer,
+                                  IdentityDAO identityDAO, ProfileDAO profileDAO,
+                                  SpaceDAO spaceDAO, ActivityDAO activityDAO,
+                                  ProfileSearchConnector profileSearchConnector, OrganizationService orgService) {
     this.dataInitializer = dataInitializer;
+    this.identityDAO = identityDAO;
+    this.profileDAO = profileDAO;
+    this.spaceDAO = spaceDAO;
+    this.activityDAO = activityDAO;
+    this.profileSearchConnector = profileSearchConnector;
+    this.orgService = orgService;
   }
 
-  private ActivityDAO getActivityDAO() {
-    if (activityDAO == null) {
-      activityDAO = CommonsUtils.getService(ActivityDAO.class);
-    }
-    return activityDAO;
-  }
-
+  // TODO: This method is introduced to workaround for issue COMMONS-478
+  // We should remove it when this issue is fixed
   private IdentityDAO getIdentityDAO() {
-    if (identityDAO == null) {
-      identityDAO = CommonsUtils.getService(IdentityDAO.class);
-
-      //TODO: This is temporary to workaround, please consider
+    if (isDataInitialized) {
       this.dataInitializer.initData();
     }
     return identityDAO;
   }
 
-  private ProfileDAO getProfileDAO() {
-    if (profileDAO == null) {
-      profileDAO = CommonsUtils.getService(ProfileDAO.class);
-    }
-    return profileDAO;
-  }
-
-  private SpaceStorage getSpaceStorage() {
-    if (spaceStorage == null) {
-      spaceStorage = PortalContainer.getInstance().getComponentInstanceOfType(SpaceStorage.class);
-    }
-    return spaceStorage;
-  }
-
-  public ProfileSearchConnector getProfileSearchConnector() {
-    if (profileSearchConnector == null) {
-      profileSearchConnector = CommonsUtils.getService(ProfileSearchConnector.class);
-    }
-    return profileSearchConnector;
-  }
-  public void setProfileSearchConnector(ProfileSearchConnector connector) {
-    this.profileSearchConnector = connector;
+  public void setProfileSearchConnector(ProfileSearchConnector profileSearchConnector) {
+    this.profileSearchConnector = profileSearchConnector;
   }
 
   private Identity convertToIdentity(IdentityEntity entity) {
@@ -169,8 +165,7 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
         p.setUrl(LinkProvider.getUserProfileUri(remoteId));
 
       } else if (SpaceIdentityProvider.NAME.equals(providerId)) {
-        spaceStorage = getSpaceStorage();
-        if (spaceStorage.getSpaceByPrettyName(remoteId) != null) {
+        if (spaceDAO.getSpaceByPrettyName(remoteId) != null) {
           p.setUrl(LinkProvider.getSpaceUri(remoteId));
         }
       }
@@ -181,10 +176,10 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
       }
     }
 
-    List<ProfileExperience> experiences = entity.getExperiences();
+    List<ProfileExperienceEntity> experiences = entity.getExperiences();
     if (experiences != null && experiences.size() > 0) {
       List<Map<String, Object>> xpData = new ArrayList<>();
-      for (ProfileExperience exp : experiences){
+      for (ProfileExperienceEntity exp : experiences){
         Map<String, Object> xpMap = new HashMap<String, Object>();
         xpMap.put(Profile.EXPERIENCES_SKILLS, exp.getSkills());
         xpMap.put(Profile.EXPERIENCES_POSITION, exp.getPosition());
@@ -275,10 +270,10 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
       } else if (Profile.EXPERIENCES.equalsIgnoreCase(e.getKey())){
 
         List<Map<String, String>> exps = (List<Map<String, String>>)e.getValue();
-        List<ProfileExperience> list = new ArrayList<>();
+        List<ProfileExperienceEntity> list = new ArrayList<>();
 
         for (Map<String, String> exp : exps) {
-          ProfileExperience ex = new ProfileExperience();
+          ProfileExperienceEntity ex = new ProfileExperienceEntity();
           ex.setCompany(exp.get(Profile.EXPERIENCES_COMPANY));
           ex.setPosition(exp.get(Profile.EXPERIENCES_POSITION));
           ex.setStartDate(exp.get(Profile.EXPERIENCES_START_DATE));
@@ -422,9 +417,9 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
   public void deleteIdentity(final Identity identity) throws IdentityStorageException {
     long id = parseId(identity.getId());
     IdentityEntity entity = getIdentityDAO().find(id);
-    ProfileEntity profileEntity = getProfileDAO().findByIdentityId(id);
+    ProfileEntity profileEntity = profileDAO.findByIdentityId(id);
     if (profileEntity != null) {
-      getProfileDAO().delete(profileEntity);
+      profileDAO.delete(profileEntity);
     }
     if (entity != null) {
       getIdentityDAO().delete(entity);
@@ -444,10 +439,10 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
     String provider = identity.getProviderId();
 
     IdentityEntity entity = getIdentityDAO().find(id);
-    ProfileEntity profileEntity = getProfileDAO().findByIdentityId(id);
+    ProfileEntity profileEntity = profileDAO.findByIdentityId(id);
     if (profileEntity != null) {
       profileEntity.getProperties().put(Profile.DELETED, "true");
-      getProfileDAO().update(profileEntity);
+      profileDAO.update(profileEntity);
     }
     if (entity != null) {
       entity.setDeleted(true);
@@ -458,13 +453,13 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
     Query query;
 
     // Delete all connection
-    query = em.createQuery("DELETE FROM Connection c WHERE c.senderId = :identityId OR c.receiverId = :identityId");
+    query = em.createNamedQuery("SocConnection.deleteConnectionByIdentity");
     query.setParameter("identityId", String.valueOf(id));
     query.executeUpdate();
 
     if(OrganizationIdentityProvider.NAME.equals(provider)) {
       // Delete space-member
-      query = em.createQuery("DELETE FROM SpaceMember sm WHERE sm.userId = :username");
+      query = em.createNamedQuery("SpaceMember.deleteByUsername");
       query.setParameter("username", username);
       query.executeUpdate();
     }
@@ -479,11 +474,11 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
   @ExoTransactional
   public Profile loadProfile(Profile profile) throws IdentityStorageException {
     long identityId = parseId(profile.getIdentity().getId());
-    ProfileEntity entity = getProfileDAO().findByIdentityId(identityId);
+    ProfileEntity entity = profileDAO.findByIdentityId(identityId);
 
     if (entity == null) {
       createProfile(profile);
-      entity = getProfileDAO().findByIdentityId(identityId);
+      entity = profileDAO.findByIdentityId(identityId);
     }
 
     if (entity == null) {
@@ -529,12 +524,12 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
    */
   public void saveProfile(final Profile profile) throws IdentityStorageException {
     long id = parseId(profile.getId());
-    ProfileEntity entity = (id == 0 ? null : getProfileDAO().find(id));
+    ProfileEntity entity = (id == 0 ? null : profileDAO.find(id));
     if (entity == null) {
       createProfile(profile);
     } else {
       mapToProfileEntity(profile, entity);
-      getProfileDAO().update(entity);
+      profileDAO.update(entity);
     }
     profile.clearHasChanged();
   }
@@ -552,7 +547,7 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
     }
 
     // Find by identity to avoid create 2 profile map to 1 identity (exception will be throw because the unique constraint)
-    ProfileEntity entity = getProfileDAO().findByIdentityId(identityId);
+    ProfileEntity entity = profileDAO.findByIdentityId(identityId);
     if (entity == null) {
       entity = new ProfileEntity();
       entity.setIdentity(identityEntity);
@@ -563,9 +558,9 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
     entity.setCreatedTime(System.currentTimeMillis());
 
     if (entity.getId() > 0) {
-      getProfileDAO().update(entity);
+      profileDAO.update(entity);
     } else {
-      entity = getProfileDAO().create(entity);
+      entity = profileDAO.create(entity);
     }
     profile.setId(String.valueOf(entity.getId()));
   }
@@ -582,12 +577,12 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
       createProfile(profile);
     } else {
       long id = parseId(profile.getId());
-      ProfileEntity entity = getProfileDAO().find(id);
+      ProfileEntity entity = profileDAO.find(id);
       if (entity == null) {
         throw new IdentityStorageException(IdentityStorageException.Type.FAIL_TO_UPDATE_PROFILE, "Profile does not exist on RDBMS");
       } else {
         mapToProfileEntity(profile, entity);
-        getProfileDAO().update(entity);
+        profileDAO.update(entity);
       }
     }
   }
@@ -637,7 +632,6 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
    */
   public void updateProfileActivityId(Identity identity, String activityId, Profile.AttachedActivityType type) {
     // Do not need to update in this case
-    //super.updateProfileActivityId(identity, activityId, type);
   }
 
   /**
@@ -655,7 +649,7 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
     } else if (type == Profile.AttachedActivityType.RELATIONSHIP) {
       t = "USER_ACTIVITIES_FOR_RELATIONSHIP";
     }
-    List<Activity> activities = getActivityDAO().getActivitiesByPoster(profile.getIdentity(), 0, 1, t);
+    List<Activity> activities = activityDAO.getActivitiesByPoster(profile.getIdentity(), 0, 1, t);
     if (activities != null && activities.size() > 0) {
       return String.valueOf(activities.get(0).getId());
     } else {
@@ -673,8 +667,43 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
    * @since 4.1.0
    */
   public Set<String> getActiveUsers(ActiveIdentityFilter filter) {
-    //TODO: just copy code form Old implement to here
-    return super.getActiveUsers(filter);
+    Set<String> activeUsers = new HashSet<String>();
+    //by userGroups
+    if (filter.getUserGroups() != null) {
+      StringTokenizer stringToken = new StringTokenizer(filter.getUserGroups(), ActiveIdentityFilter.COMMA_SEPARATOR);
+      try {
+        while(stringToken.hasMoreTokens()) {
+          try {
+            ListAccess<User> listAccess = orgService.getUserHandler().findUsersByGroupId(stringToken.nextToken().trim());
+            User[] users = listAccess.load(0, listAccess.getSize());
+            //
+            for(User u : users) {
+              activeUsers.add(u.getUserName());
+            }
+          } catch (Exception e) {
+            LOG.error(e.getMessage(), e);
+          }
+        }
+      } catch (Exception e) {
+        LOG.error(e.getMessage());
+      }
+    }
+
+    //by N days
+    if (filter.getDays() > 0) {
+      activeUsers = StorageUtils.getLastLogin(filter.getDays());
+    }
+
+    //Gets online users and push to activate users
+    if (CommonsUtils.getService(UserStateService.class) != null) {
+      List<UserStateModel> onlines = CommonsUtils.getService(UserStateService.class).online();
+      for (UserStateModel user : onlines) {
+        activeUsers.add(user.getUserId());
+      }
+    }
+
+
+    return activeUsers;
   }
 
   /**
@@ -737,11 +766,10 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
     }
   }
 
-  //TODO: maybe need improve the search method of ProfileSearchConnector
   public List<Identity> getIdentitiesForUnifiedSearch(final String providerId,
                                                       final ProfileFilter profileFilter,
                                                       long offset, long limit) throws IdentityStorageException {
-    return getProfileSearchConnector().search(null, profileFilter, null, offset, limit);
+    return profileSearchConnector.search(null, profileFilter, null, offset, limit);
   }
 
   public List<Identity> getSpaceMemberIdentitiesByProfileFilter(final Space space,
@@ -752,14 +780,14 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
     List<Long> relations = new ArrayList<>();
     if (space != null) {
       try {
-        Space gotSpace = getSpaceStorage().getSpaceById(space.getId());
+        SpaceEntity gotSpace = spaceDAO.find(Long.parseLong(space.getId()));
         String[] members = null;
         switch (type) {
           case MEMBER:
-            members = gotSpace.getMembers();
+            members = gotSpace.getMembersId();
             break;
           case MANAGER:
-            members = gotSpace.getManagers();
+            members = gotSpace.getManagerMembersId();
             List<String> wildcardUsers = SpaceUtils.findMembershipUsersByGroupAndTypes(space
                     .getGroupId(), MembershipTypeHandler.ANY_MEMBERSHIP_TYPE);
 
