@@ -79,7 +79,7 @@ public abstract class SpaceStorageTest extends AbstractCoreTest {
    */
   protected Space getSpaceInstance(int number) {
     Space space = new Space();
-    space.setApp("app1,app2");
+    space.setApp("app1:appName1:true:active,app2:appName2:false:deactive");
     space.setDisplayName("my space " + number);
     space.setPrettyName(space.getDisplayName());
     space.setRegistration(Space.OPEN);
@@ -108,7 +108,7 @@ public abstract class SpaceStorageTest extends AbstractCoreTest {
    */
   private Space getSpaceInstance(int number, String visible, String registration, String manager, String... members) {
     Space space = new Space();
-    space.setApp("app");
+    space.setApp("app:appName:true:active");
     space.setDisplayName("my space " + number);
     space.setPrettyName(space.getDisplayName());
     space.setRegistration(registration);
@@ -141,7 +141,7 @@ public abstract class SpaceStorageTest extends AbstractCoreTest {
                                               String manager,
                                               String... members) {
     Space space = new Space();
-    space.setApp("app");
+    space.setApp("app:appName:true:active");
     space.setDisplayName("my space " + number);
     space.setPrettyName(space.getDisplayName());
     space.setRegistration(registration);

@@ -1445,7 +1445,7 @@ public class ActivityManagerMysqlTest extends AbstractCoreTest {
       space.setRegistration(Space.OPEN);
       space.setDescription("add new space " + number);
       space.setType(DefaultSpaceApplicationHandler.NAME);
-      space.setVisibility(Space.OPEN);
+      space.setVisibility(Space.PUBLIC);
       space.setRegistration(Space.VALIDATION);
       space.setPriority(Space.INTERMEDIATE_PRIORITY);
       space.setGroupId(SpaceUtils.SPACE_GROUP + "/" + space.getPrettyName());

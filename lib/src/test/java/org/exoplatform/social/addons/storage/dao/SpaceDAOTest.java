@@ -16,8 +16,11 @@
  */
 package org.exoplatform.social.addons.storage.dao;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
+import org.exoplatform.social.addons.storage.entity.AppEntity;
 import org.exoplatform.social.addons.storage.entity.SpaceEntity;
 import org.exoplatform.social.addons.storage.entity.SpaceMember;
 import org.exoplatform.social.addons.storage.entity.SpaceMember.Status;
@@ -86,17 +89,17 @@ public class SpaceDAOTest extends BaseCoreTest {
   }
 
   private SpaceEntity createSpace() {
-    SpaceEntity spaceEntity = new SpaceEntity();
-    spaceEntity.setApp("testApp");
+    SpaceEntity spaceEntity = new SpaceEntity();    
+    spaceEntity.setApp(createApp());
     spaceEntity.setAvatarLastUpdated(1L);
     spaceEntity.setDescription("testDesc");
     spaceEntity.setDisplayName("testDisplayName");
     spaceEntity.setGroupId("testGroupId");
     spaceEntity.setPrettyName("testPrettyName");
-    spaceEntity.setPriority("hight");
-    spaceEntity.setRegistration("testRegistration");
+    spaceEntity.setPriority(SpaceEntity.PRIORITY.HIGH);
+    spaceEntity.setRegistration(SpaceEntity.REGISTRATION.OPEN);
     spaceEntity.setUrl("testUrl");
-    spaceEntity.setVisibility("testVisibility");
+    spaceEntity.setVisibility(SpaceEntity.VISIBILITY.PRIVATE);
     spaceEntity.setAvatarLastUpdated(1L);
 
     SpaceMember mem = new SpaceMember();
@@ -107,10 +110,26 @@ public class SpaceDAOTest extends BaseCoreTest {
     return spaceEntity;
   }
 
+  private Set<AppEntity> createApp() {
+    Set<AppEntity> apps = new HashSet<>();
+    AppEntity app = new AppEntity();
+    app.setAppId("appId");
+    app.setAppName("appName");
+    app.setRemovable(true);
+    app.setStatus(AppEntity.Status.ACTIVE);
+    apps.add(app);
+    return apps;
+  }
+
   private void assertSpace(SpaceEntity spaceEntity, SpaceEntity result) {
     assertNotNull(result);
     assertEquals(spaceEntity.getPrettyName(), result.getPrettyName());
-    assertEquals(spaceEntity.getApp(), result.getApp());
+    assertEquals(1, result.getApp().size());
+    AppEntity appEx = spaceEntity.getApp().iterator().next();
+    AppEntity app = result.getApp().iterator().next();
+    assertEquals(appEx, app);
+    assertEquals(appEx.isRemovable(), app.isRemovable());
+    assertEquals(appEx.getStatus(), app.getStatus());
     assertEquals(spaceEntity.getDescription(), result.getDescription());
     assertEquals(spaceEntity.getDisplayName(), result.getDisplayName());
     assertEquals(spaceEntity.getGroupId(), result.getGroupId());

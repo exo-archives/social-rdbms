@@ -32,6 +32,7 @@ import javax.persistence.criteria.Subquery;
 
 import org.exoplatform.commons.persistence.impl.EntityManagerHolder;
 import org.exoplatform.social.addons.search.XSpaceFilter;
+import org.exoplatform.social.addons.storage.entity.AppEntity_;
 import org.exoplatform.social.addons.storage.entity.SpaceEntity;
 import org.exoplatform.social.addons.storage.entity.SpaceEntity_;
 import org.exoplatform.social.addons.storage.entity.SpaceMember;
@@ -71,7 +72,11 @@ public final class SpaceQueryBuilder {
     CriteriaQuery<SpaceEntity> criteria = cb.createQuery(SpaceEntity.class);
     Root<SpaceEntity> spaceEntity = criteria.from(SpaceEntity.class);
     //
-    CriteriaQuery<SpaceEntity> select = criteria.select(spaceEntity).distinct(true);
+    CriteriaQuery<SpaceEntity> select = criteria.select(spaceEntity);
+    if (!spaceFilter.isLastAccess() && !spaceFilter.isVisited()) {
+      select.distinct(true);
+    }
+    spaceEntity.join(SpaceEntity_.members).alias("mem");
     select.where(buildPredicateFilter(spaceEntity, criteria, cb, spaceEntity));    
     select.orderBy(buildOrder(spaceEntity, cb));
     
@@ -90,6 +95,7 @@ public final class SpaceQueryBuilder {
     CriteriaBuilder cb = em.getCriteriaBuilder();
     CriteriaQuery<Long> criteria = cb.createQuery(Long.class);
     Root<SpaceEntity> spaceEntity = criteria.from(SpaceEntity.class);
+    spaceEntity.join(SpaceEntity_.members).alias("mem");
     CriteriaQuery<Long> select = criteria.select(cb.countDistinct(spaceEntity));
     //
     select.where(buildPredicateFilter(spaceEntity, criteria, cb, spaceEntity));
@@ -102,7 +108,7 @@ public final class SpaceQueryBuilder {
     
     //status
     if (!spaceFilter.getStatus().isEmpty()) {
-      Path<SpaceMember> join = root.join(SpaceEntity_.members);
+      Path<SpaceMember> join = (Path<SpaceMember>)root.getJoins().iterator().next();
             
       List<Predicate> pStatusList = new LinkedList<>();      
       for(Status status : spaceFilter.getStatus()) {
@@ -113,7 +119,7 @@ public final class SpaceQueryBuilder {
                              cb.equal(join.get(SpaceMember_.userId), spaceFilter.getRemoteId()));
       boolean includePrivate = spaceFilter.isIncludePrivate();
       if (includePrivate) {
-        predicates.add(cb.or(cb.equal(root.get(SpaceEntity_.visibility), Space.PRIVATE), tmp));
+        predicates.add(cb.or(cb.equal(root.get(SpaceEntity_.visibility), SpaceEntity.VISIBILITY.PRIVATE), tmp));
       } else {
         predicates.add(tmp);
       }      
@@ -129,13 +135,24 @@ public final class SpaceQueryBuilder {
       
       predicates.add(cb.not(cb.in(root.get(SpaceEntity_.id)).value(sub)));
     }
-    
+
     //appid
-    String app = spaceFilter.getAppId();
+    String app = spaceFilter.getAppId();    
     if (app != null && !(app = app.trim()).isEmpty()) {
-      predicates.add(cb.like(cb.lower(root.get(SpaceEntity_.app)), buildSearchCondition(app, true)));
+      Subquery<Long> sub = criteria.subquery(Long.class);
+      Root<SpaceEntity> spaceSub = sub.from(SpaceEntity.class);      
+      sub.select(spaceSub.get(SpaceEntity_.id));
+      
+      Path<String> appPath = spaceSub.join(SpaceEntity_.app).get(AppEntity_.appId);
+      
+      List<Predicate> appCond = new LinkedList<>();
+      for (String appId : app.split(",")) {
+        appCond.add(cb.like(appPath, buildSearchCondition(appId, true)));
+      }
+      sub.where(cb.or(appCond.toArray(new Predicate[appCond.size()])));
+      predicates.add(cb.in(root.get(SpaceEntity_.id)).value(sub));
     }
-    
+
     //searchCondition
     String search = spaceFilter.getSpaceNameSearchCondition();
     if (search != null && !(search = search.trim()).isEmpty()) {
@@ -155,7 +172,7 @@ public final class SpaceQueryBuilder {
     //not hidden
     boolean notHidden = spaceFilter.isNotHidden();
     if (notHidden) {
-      predicates.add(cb.notEqual(root.get(SpaceEntity_.visibility), Space.HIDDEN));
+      predicates.add(cb.notEqual(root.get(SpaceEntity_.visibility), SpaceEntity.VISIBILITY.HIDDEN));
     }
     
     //
@@ -182,14 +199,26 @@ public final class SpaceQueryBuilder {
       builder.deleteCharAt(i);
     }
   }
-  
-  private Order buildOrder(Root<SpaceEntity> spaceEntity, CriteriaBuilder cb) {
-    Sorting sorting = spaceFilter.getSorting();
-    if (sorting.orderBy.equals(Sorting.OrderBy.DESC)) {
-      return cb.desc(getShortField(spaceEntity, sorting.sortBy));
+
+  private Order[] buildOrder(Root<SpaceEntity> spaceEntity, CriteriaBuilder cb) {
+    List<Order> orders = new LinkedList<>();
+    Path<SpaceMember> join = (Path<SpaceMember>)spaceEntity.getJoins().iterator().next();
+    
+    if (spaceFilter.isLastAccess()) {
+      orders.add(cb.desc(join.get(SpaceMember_.lastAccess)));
+    } else if (spaceFilter.isVisited()) {
+      orders.add(cb.desc(join.get(SpaceMember_.visited)));
+      orders.add(cb.asc(spaceEntity.get(SpaceEntity_.prettyName)));
     } else {
-      return cb.asc(getShortField(spaceEntity, sorting.sortBy));
-    }    
+      Sorting sorting = spaceFilter.getSorting();
+      if (sorting.orderBy.equals(Sorting.OrderBy.DESC)) {
+        orders.add(cb.desc(getShortField(spaceEntity, sorting.sortBy)));
+      } else {
+        orders.add(cb.asc(getShortField(spaceEntity, sorting.sortBy)));
+      }
+    }
+
+    return orders.toArray(new Order[orders.size()]);
   }
 
   private Expression<?> getShortField(Root<SpaceEntity> spaceEntity, SortBy sortBy) {

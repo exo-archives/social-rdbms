@@ -33,8 +33,4 @@ public interface SpaceDAO extends GenericDAO<SpaceEntity, Long> {
   SpaceEntity getSpaceByDisplayName(String spaceDisplayName);
 
   SpaceEntity getSpaceByPrettyName(String spacePrettyName);
-
-  List<SpaceEntity> getVisitedSpaces(SpaceFilter spaceFilter, int offset, int limit);
-
-  List<SpaceEntity> getLastAccessedSpace(SpaceFilter spaceFilter, int offset, int limit);    
 }

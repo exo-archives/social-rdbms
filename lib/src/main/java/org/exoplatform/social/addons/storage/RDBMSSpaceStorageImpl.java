@@ -6,12 +6,14 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
+import org.apache.commons.lang.StringUtils;
+
 import org.exoplatform.commons.api.persistence.ExoTransactional;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 import org.exoplatform.social.addons.rest.IdentityAvatarRestService;
-import org.exoplatform.social.addons.search.XSpaceFilter;
 import org.exoplatform.social.addons.search.SpaceSearchConnector;
+import org.exoplatform.social.addons.search.XSpaceFilter;
 import org.exoplatform.social.addons.storage.dao.SpaceDAO;
 import org.exoplatform.social.addons.storage.dao.SpaceMemberDAO;
 import org.exoplatform.social.addons.storage.dao.jpa.query.SpaceQueryBuilder;
@@ -59,7 +61,7 @@ public class RDBMSSpaceStorageImpl extends AbstractStorage implements SpaceStora
   public void deleteSpace(String id) throws SpaceStorageException {
     SpaceEntity entity = spaceDAO.find(Long.parseLong(id));
     if (entity != null) {
-//      spaceMemberDAO.deleteBySpace(entity);
+      // spaceMemberDAO.deleteBySpace(entity);
       spaceDAO.delete(entity);
 
       LOG.debug("Space {} removed", entity.getPrettyName());
@@ -158,7 +160,10 @@ public class RDBMSSpaceStorageImpl extends AbstractStorage implements SpaceStora
 
   @Override
   public List<Space> getLastAccessedSpace(SpaceFilter spaceFilter, int offset, int limit) throws SpaceStorageException {
-    return buildList(spaceDAO.getLastAccessedSpace(spaceFilter, offset, limit));
+    XSpaceFilter xFilter = new XSpaceFilter();
+    xFilter.setSpaceFilter(spaceFilter);
+    xFilter.setLastAccess(true);
+    return getMemberSpacesByFilter(spaceFilter.getRemoteId(), xFilter, offset, limit);
   }
 
   @Override
@@ -258,7 +263,7 @@ public class RDBMSSpaceStorageImpl extends AbstractStorage implements SpaceStora
   public List<Space> getPublicSpacesByFilter(String userId, SpaceFilter spaceFilter, long offset, long limit) {
     XSpaceFilter filter = new XSpaceFilter();
     filter.setSpaceFilter(spaceFilter);
-    filter.setPublic(userId);   
+    filter.setPublic(userId);
     return getSpacesByFilter(filter, offset, limit);
   }
 
@@ -380,7 +385,10 @@ public class RDBMSSpaceStorageImpl extends AbstractStorage implements SpaceStora
 
   @Override
   public List<Space> getVisitedSpaces(SpaceFilter spaceFilter, int offset, int limit) throws SpaceStorageException {
-    return buildList(spaceDAO.getVisitedSpaces(spaceFilter, offset, limit));
+    XSpaceFilter xFilter = new XSpaceFilter();
+    xFilter.setSpaceFilter(spaceFilter);
+    xFilter.setVisited(true);
+    return getMemberSpacesByFilter(spaceFilter.getRemoteId(), xFilter, offset, limit);
   }
 
   @Override
@@ -461,9 +469,9 @@ public class RDBMSSpaceStorageImpl extends AbstractStorage implements SpaceStora
     SpaceMember member = spaceMemberDAO.getMember(remoteId, Long.parseLong(space.getId()));
     if (member != null) {
       member.setLastAccess(System.currentTimeMillis());
-      //consider visited if access after create time more than 2s
+      // consider visited if access after create time more than 2s
       if (!member.isVisited()) {
-        member.setVisited((member.getLastAccess() - member.getSpace().getCreatedTime()) >= 2000);        
+        member.setVisited((member.getLastAccess() - member.getSpace().getCreatedTime()) >= 2000);
       }
     }
     spaceMemberDAO.update(member);
@@ -510,12 +518,14 @@ public class RDBMSSpaceStorageImpl extends AbstractStorage implements SpaceStora
    */
   private void renameIdentity(Identity identity) throws NodeNotFoundException {
     identityStorage.saveIdentity(identity);
-    /*ProviderEntity providerEntity = getProviderRoot().getProvider(identity.getProviderId());
-    // Move identity
-    IdentityEntity identityEntity = _findById(IdentityEntity.class, identity.getId());
-    providerEntity.getIdentities().put(identity.getRemoteId(), identityEntity);
-
-    identityEntity.setRemoteId(identity.getRemoteId());*/
+    /*
+     * ProviderEntity providerEntity =
+     * getProviderRoot().getProvider(identity.getProviderId()); // Move identity
+     * IdentityEntity identityEntity = _findById(IdentityEntity.class,
+     * identity.getId());
+     * providerEntity.getIdentities().put(identity.getRemoteId(),
+     * identityEntity); identityEntity.setRemoteId(identity.getRemoteId());
+     */
   }
 
   private List<Space> getSpaces(String userId, List<Status> status, SpaceFilter spaceFilter, long offset, long limit) {
@@ -525,7 +535,7 @@ public class RDBMSSpaceStorageImpl extends AbstractStorage implements SpaceStora
       filter.setRemoteId(userId);
       filter.addStatus(status.toArray(new Status[status.size()]));
     }
-    
+
     if (filter.isUnifiedSearch()) {
       return spaceSearchConnector.search(filter, offset, limit);
     } else {
@@ -542,13 +552,13 @@ public class RDBMSSpaceStorageImpl extends AbstractStorage implements SpaceStora
       filter.setRemoteId(userId);
       filter.addStatus(status.toArray(new Status[status.size()]));
     }
-    
+
     if (filter.isUnifiedSearch()) {
-      return spaceSearchConnector.count(filter);      
+      return spaceSearchConnector.count(filter);
     } else {
       SpaceQueryBuilder query = SpaceQueryBuilder.builder().filter(filter);
       return query.buildCount().getSingleResult().intValue();
-    }   
+    }
   }
 
   private List<Space> buildList(List<SpaceEntity> spaceEntities) {
@@ -569,15 +579,33 @@ public class RDBMSSpaceStorageImpl extends AbstractStorage implements SpaceStora
    * @param space the space pojo for services
    */
   private Space fillSpaceSimpleFromEntity(SpaceEntity entity, Space space) {
-    space.setApp(entity.getApp());
+    space.setApp(StringUtils.join(entity.getApp(), ","));
     space.setId(String.valueOf(entity.getId()));
     space.setDisplayName(entity.getDisplayName());
     space.setPrettyName(entity.getPrettyName());
-    space.setRegistration(entity.getRegistration());
+    if (entity.getRegistration() != null) {
+      space.setRegistration(entity.getRegistration().name().toLowerCase());      
+    }
     space.setDescription(entity.getDescription());
     space.setType(DefaultSpaceApplicationHandler.NAME);
-    space.setVisibility(entity.getVisibility());
-    space.setPriority(entity.getPriority());
+    if (entity.getVisibility() != null) {
+      space.setVisibility(entity.getVisibility().name().toLowerCase());
+    }
+    if (entity.getPriority() != null) {
+      switch (entity.getPriority()) {
+      case HIGH:
+        space.setPriority(Space.HIGH_PRIORITY);
+        break;
+      case INTERMEDIATE:
+        space.setPriority(Space.INTERMEDIATE_PRIORITY);
+        break;
+      case LOW:
+        space.setPriority(Space.LOW_PRIORITY);
+        break;
+      default:
+        space.setPriority(null);
+      }
+    }
     space.setGroupId(entity.getGroupId());
     space.setUrl(entity.getUrl());
     space.setCreatedTime(entity.getCreatedTime());
