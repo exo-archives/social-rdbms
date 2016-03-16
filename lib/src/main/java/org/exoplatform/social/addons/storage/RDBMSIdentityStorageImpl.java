@@ -111,8 +111,9 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
   // TODO: This method is introduced to workaround for issue COMMONS-478
   // We should remove it when this issue is fixed
   private IdentityDAO getIdentityDAO() {
-    if (isDataInitialized) {
+    if (!isDataInitialized) {
       this.dataInitializer.initData();
+      this.isDataInitialized = true;
     }
     return identityDAO;
   }
