@@ -25,9 +25,8 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
-import javax.jcr.Session;
-
 import org.apache.commons.lang.ArrayUtils;
+import org.exoplatform.social.addons.storage.RDBMSIdentityStorageImpl;
 import org.jboss.byteman.contrib.bmunit.BMUnit;
 
 import org.exoplatform.commons.testing.BaseExoTestCase;
@@ -80,6 +79,8 @@ public abstract class AbstractCoreTest extends BaseExoTestCase {
   protected RelationshipManager relationshipManager;
   protected ActivityManager activityManager;
   protected ActivityStorage activityStorage;
+
+  protected RDBMSIdentityStorageImpl identityStorage;
   
   protected SpaceSearchConnector mockSpaceSearch = Mockito.mock(SpaceSearchConnector.class);
   protected ProfileSearchConnector mockProfileSearch = Mockito.mock(ProfileSearchConnector.class);
@@ -110,6 +111,7 @@ public abstract class AbstractCoreTest extends BaseExoTestCase {
     activityStorage = getService(ActivityStorage.class);
     relationshipManager = getService(RelationshipManager.class);
     spaceService = getService(SpaceService.class);
+    identityStorage = getService(RDBMSIdentityStorageImpl.class);
     //
     rootIdentity = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, "root", false);
     johnIdentity = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, "john", false);
@@ -125,10 +127,10 @@ public abstract class AbstractCoreTest extends BaseExoTestCase {
       reDao.delete(item);
     }
 
-    identityManager.deleteIdentity(rootIdentity);
-    identityManager.deleteIdentity(johnIdentity);
-    identityManager.deleteIdentity(maryIdentity);
-    identityManager.deleteIdentity(demoIdentity);
+    identityStorage.removeIdentity(rootIdentity);
+    identityStorage.removeIdentity(johnIdentity);
+    identityStorage.removeIdentity(maryIdentity);
+    identityStorage.removeIdentity(demoIdentity);
     //
     end();
   }  

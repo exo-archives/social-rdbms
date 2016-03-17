@@ -12,6 +12,12 @@ import org.exoplatform.social.addons.storage.entity.SpaceEntity;
 public class SpaceDAOImpl extends GenericDAOJPAImpl<SpaceEntity, Long> implements SpaceDAO {
 
   @Override
+  public void delete(SpaceEntity entity) {
+    getEntityManager().refresh(entity);
+    super.delete(entity);
+  }
+
+  @Override
   public List<SpaceEntity> getLastSpaces(int limit) {
     TypedQuery<SpaceEntity> query = getEntityManager().createNamedQuery("SpaceEntity.getLastSpaces", SpaceEntity.class);
     query.setMaxResults(limit);

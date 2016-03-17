@@ -54,11 +54,11 @@ public class IdentityStorageTest extends AbstractCoreTest {
   }
 
   public void tearDown() throws Exception {
-    for (Identity identity : tearDownIdentityList) {
-      identityStorage.deleteIdentity(identity);
-    }
     for (Space space : tearDownSpaceList) {
       spaceStorage.deleteSpace(space.getId());
+    }
+    for (Identity identity : tearDownIdentityList) {
+      identityStorage.deleteIdentity(identity);
     }
     //super.tearDown();
     end();
@@ -131,7 +131,7 @@ public class IdentityStorageTest extends AbstractCoreTest {
     identityStorage.deleteIdentity(tobeSavedIdentity);
 
     tobeSavedIdentity = identityStorage.findIdentity(OrganizationIdentityProvider.NAME, username);
-    assertNull("tobeSavedIdentity must be null", tobeSavedIdentity);
+    assertTrue("tobeSavedIdentity must be mark as deleted", tobeSavedIdentity.isDeleted());
 
     // Delete identity with loaded profile
     {
