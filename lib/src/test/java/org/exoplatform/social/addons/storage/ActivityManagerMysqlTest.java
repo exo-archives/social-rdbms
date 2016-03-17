@@ -1255,7 +1255,7 @@ public class ActivityManagerMysqlTest extends AbstractCoreTest {
     assertEquals(1, lastIds.size());
     assertEquals(newId1, lastIds.get(0));
     identityManager.deleteIdentity(newId1);
-    assertNull(identityManager.getIdentity(newId1.getId(), false));
+    assertTrue(identityManager.getIdentity(newId1.getId(), false).isDeleted());
     lastIds = identityManager.getLastIdentities(1);
     assertEquals(1, lastIds.size());
     assertEquals(id1, lastIds.get(0));
@@ -1272,7 +1272,7 @@ public class ActivityManagerMysqlTest extends AbstractCoreTest {
     assertEquals(5, lastIds.size());
     assertEquals(newId2, lastIds.get(0));
     identityManager.deleteIdentity(newId2);
-    assertNull(identityManager.getIdentity(newId2.getId(), true));
+    assertTrue(identityManager.getIdentity(newId2.getId(), true).isDeleted());
     lastIds = identityManager.getLastIdentities(5);
     assertEquals(5, lastIds.size());
     assertEquals(id1, lastIds.get(0));
@@ -1298,7 +1298,7 @@ public class ActivityManagerMysqlTest extends AbstractCoreTest {
     assertEquals(newId1, lastIds.get(1));
     identityManager.deleteIdentity(newId1);
     os.getUserHandler().removeUser("newId1", false);
-    assertNull(identityManager.getIdentity(newId1.getId(), true));
+    assertTrue(identityManager.getIdentity(newId1.getId(), true).isDeleted());
     lastIds = identityManager.getLastIdentities(1);
     assertEquals(1, lastIds.size());
     assertEquals(newId2, lastIds.get(0));
@@ -1308,7 +1308,7 @@ public class ActivityManagerMysqlTest extends AbstractCoreTest {
     assertFalse(newId1.equals(lastIds.get(1)));
     identityManager.deleteIdentity(newId2);
     os.getUserHandler().removeUser("newId2", false);
-    assertNull(identityManager.getIdentity(newId2.getId(), false));
+    assertTrue(identityManager.getIdentity(newId2.getId(), false).isDeleted());
     lastIds = identityManager.getLastIdentities(1);
     assertEquals(1, lastIds.size());
     assertEquals(id1, lastIds.get(0));

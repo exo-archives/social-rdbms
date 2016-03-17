@@ -416,17 +416,8 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
    * @param identity
    * @throws IdentityStorageException
    */
-  @ExoTransactional
   public void deleteIdentity(final Identity identity) throws IdentityStorageException {
-    long id = parseId(identity.getId());
-    IdentityEntity entity = getIdentityDAO().find(id);
-    ProfileEntity profileEntity = profileDAO.findByIdentityId(id);
-    if (profileEntity != null) {
-      profileDAO.delete(profileEntity);
-    }
-    if (entity != null) {
-      getIdentityDAO().delete(entity);
-    }
+    this.hardDeleteIdentity(identity);
   }
 
   /**
@@ -833,6 +824,43 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
     ListAccess<IdentityEntity> list = getIdentityDAO().findIdentities(xFilter);
 
     return convertToIdentities(list, offset, limit);
+  }
+
+  /**
+   * This method is introduced to clean totally identity from database
+   * It's used in unit test
+   * @param identity
+   */
+  @ExoTransactional
+  public void removeIdentity(Identity identity) {
+    long id = parseId(identity.getId());
+    String username = identity.getRemoteId();
+    String provider = identity.getProviderId();
+
+    IdentityEntity entity = getIdentityDAO().find(id);
+    ProfileEntity profileEntity = profileDAO.findByIdentityId(id);
+
+    EntityManager em = CommonsUtils.getService(EntityManagerService.class).getEntityManager();
+    Query query;
+
+    // Delete all connection
+    query = em.createNamedQuery("SocConnection.deleteConnectionByIdentity");
+    query.setParameter("identityId", String.valueOf(id));
+    query.executeUpdate();
+
+    if(OrganizationIdentityProvider.NAME.equals(provider)) {
+      // Delete space-member
+      query = em.createNamedQuery("SpaceMember.deleteByUsername");
+      query.setParameter("username", username);
+      query.executeUpdate();
+    }
+
+    if (profileEntity != null) {
+      profileDAO.delete(profileEntity);
+    }
+    if (entity != null) {
+      getIdentityDAO().delete(entity);
+    }
   }
 
   private List<Identity> convertToIdentities(ListAccess<IdentityEntity> list, long offset, long limit) {

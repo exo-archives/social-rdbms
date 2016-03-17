@@ -76,8 +76,8 @@ public class RDBMSRelationshipManagerTest extends AbstractCoreTest {
       connectionDAO.delete(item);
     }
     
-    identityManager.deleteIdentity(ghostIdentity);
-    identityManager.deleteIdentity(paulIdentity);
+    identityStorage.removeIdentity(ghostIdentity);
+    identityStorage.removeIdentity(paulIdentity);
 
     super.tearDown();
   }
