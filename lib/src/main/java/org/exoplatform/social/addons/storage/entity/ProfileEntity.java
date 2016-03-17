@@ -37,7 +37,10 @@ import javax.persistence.NamedQuery;
 import javax.persistence.OneToOne;
 import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
+import javax.persistence.Temporal;
+import javax.persistence.TemporalType;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -87,8 +90,9 @@ public class ProfileEntity {
   @CollectionTable(name = "SOC_IDENTITY_PROFILE_EXPERIENCE", joinColumns = {@JoinColumn(name = "PROFILE_ID")})
   private List<ProfileExperienceEntity> experiences = new ArrayList<>();
 
+  @Temporal(TemporalType.TIMESTAMP)
   @Column(name = "CREATED_TIME")
-  private long                      createdTime;
+  private Date createdTime;
 
   public long getId() {
     return id;
@@ -154,11 +158,11 @@ public class ProfileEntity {
     this.experiences = experiences;
   }
 
-  public long getCreatedTime() {
+  public Date getCreatedTime() {
     return createdTime;
   }
 
-  public void setCreatedTime(long createdTime) {
+  public void setCreatedTime(Date createdTime) {
     this.createdTime = createdTime;
   }
 }

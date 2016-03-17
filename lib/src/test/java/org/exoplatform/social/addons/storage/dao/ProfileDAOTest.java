@@ -27,6 +27,7 @@ import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvide
 
 import javax.persistence.EntityExistsException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -117,7 +118,7 @@ public class ProfileDAOTest extends BaseCoreTest {
   private ProfileEntity createProfile() {
     ProfileEntity profile = new ProfileEntity();
     profile.setIdentity(identity);
-    profile.setCreatedTime(System.currentTimeMillis());
+    profile.setCreatedTime(new Date());
     profile.setUrl("/profile/root");
     profile.setAvatarURL("/profile/root/avatar.png");
 

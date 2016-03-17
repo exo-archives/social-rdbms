@@ -18,6 +18,7 @@ package org.exoplatform.social.addons.storage;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -226,7 +227,7 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
       }
     }
 
-    p.setCreatedTime(entity.getCreatedTime());
+    p.setCreatedTime(entity.getCreatedTime().getTime());
     p.setLastLoaded(System.currentTimeMillis());
   }
 
@@ -310,7 +311,8 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
 
     entity.setProperties(entityProperties);
 
-    entity.setCreatedTime(profile.getCreatedTime());
+    Date created = profile.getCreatedTime() <= 0 ? new Date() : new Date(profile.getCreatedTime());
+    entity.setCreatedTime(created);
   }
 
   private long parseId(String id) {
@@ -556,7 +558,7 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
 
     mapToProfileEntity(profile, entity);
 
-    entity.setCreatedTime(System.currentTimeMillis());
+    entity.setCreatedTime(new Date());
 
     if (entity.getId() > 0) {
       profileDAO.update(entity);
