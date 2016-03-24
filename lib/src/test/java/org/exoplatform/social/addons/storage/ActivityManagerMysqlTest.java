@@ -25,7 +25,6 @@ import java.util.Map;
 import java.util.Random;
 import org.exoplatform.social.core.profile.ProfileFilter;
 import org.exoplatform.social.core.storage.api.IdentityStorage;
-import org.exoplatform.social.core.storage.api.SpaceStorage;
 import org.mockito.Mockito;
 import org.exoplatform.commons.utils.ListAccess;
 import org.exoplatform.services.log.ExoLogger;
@@ -33,7 +32,6 @@ import org.exoplatform.services.log.Log;
 import org.exoplatform.services.organization.OrganizationService;
 import org.exoplatform.services.organization.User;
 import org.exoplatform.social.addons.search.ProfileSearchConnector;
-import org.exoplatform.social.addons.search.SpaceSearchConnector;
 import org.exoplatform.social.addons.test.AbstractCoreTest;
 import org.exoplatform.social.common.RealtimeListAccess;
 import org.exoplatform.social.core.activity.model.ExoSocialActivity;
@@ -68,8 +66,6 @@ public class ActivityManagerMysqlTest extends AbstractCoreTest {
     super.setUp();
     tearDownActivityList = new ArrayList<ExoSocialActivity>();
     tearDownSpaceList = new ArrayList<Space>();
-    RDBMSSpaceStorageImpl spaceStorage = (RDBMSSpaceStorageImpl)getService(SpaceStorage.class);
-    spaceStorage.setSpaceSearchConnector(mockSpaceSearch);
 
     RDBMSIdentityStorageImpl identityStorage = (RDBMSIdentityStorageImpl) getService(IdentityStorage.class);
     identityStorage.setProfileSearchConnector(mockProfileSearch);
@@ -104,10 +100,7 @@ public class ActivityManagerMysqlTest extends AbstractCoreTest {
         identityManager.deleteIdentity(spaceIdentity);
       }
       spaceService.deleteSpace(space);
-    }
-    
-    RDBMSSpaceStorageImpl spaceStorage = (RDBMSSpaceStorageImpl)getService(SpaceStorage.class);
-    spaceStorage.setSpaceSearchConnector(getService(SpaceSearchConnector.class));
+    }    
     
     RDBMSIdentityStorageImpl identityStorage = (RDBMSIdentityStorageImpl) getService(IdentityStorage.class);
     identityStorage.setProfileSearchConnector(getService(ProfileSearchConnector.class));

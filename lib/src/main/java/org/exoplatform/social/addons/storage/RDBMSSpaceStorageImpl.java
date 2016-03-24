@@ -12,7 +12,6 @@ import org.exoplatform.commons.api.persistence.ExoTransactional;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 import org.exoplatform.social.addons.rest.IdentityAvatarRestService;
-import org.exoplatform.social.addons.search.SpaceSearchConnector;
 import org.exoplatform.social.addons.search.XSpaceFilter;
 import org.exoplatform.social.addons.storage.dao.SpaceDAO;
 import org.exoplatform.social.addons.storage.dao.SpaceMemberDAO;
@@ -44,15 +43,11 @@ public class RDBMSSpaceStorageImpl extends AbstractStorage implements SpaceStora
 
   private IdentityStorage      identityStorage;
 
-  private SpaceSearchConnector spaceSearchConnector;
-
   public RDBMSSpaceStorageImpl(SpaceDAO spaceDAO,
                                SpaceMemberDAO spaceMemberDAO,
-                               IdentityStorage identityStorage,
-                               SpaceSearchConnector spaceSearchConnector) {
+                               IdentityStorage identityStorage) {
     this.spaceDAO = spaceDAO;
     this.identityStorage = identityStorage;
-    this.spaceSearchConnector = spaceSearchConnector;
     this.spaceMemberDAO = spaceMemberDAO;
   }
 
@@ -345,9 +340,10 @@ public class RDBMSSpaceStorageImpl extends AbstractStorage implements SpaceStora
                                             SpaceFilter spaceFilter,
                                             long offset,
                                             long limit) throws SpaceStorageException {
-    XSpaceFilter xFilter = new XSpaceFilter();
-    xFilter.setSpaceFilter(spaceFilter).setUnifiedSearch(true);
-    return getSpacesByFilter(xFilter, offset, limit);
+//    XSpaceFilter xFilter = new XSpaceFilter();
+//    xFilter.setSpaceFilter(spaceFilter).setUnifiedSearch(true);
+//    return getSpacesByFilter(xFilter, offset, limit);
+    throw new UnsupportedOperationException();
   }
 
   @Override
@@ -537,7 +533,8 @@ public class RDBMSSpaceStorageImpl extends AbstractStorage implements SpaceStora
     }
 
     if (filter.isUnifiedSearch()) {
-      return spaceSearchConnector.search(filter, offset, limit);
+      //return spaceSearchConnector.search(filter, offset, limit);
+      throw new UnsupportedOperationException();
     } else {
       SpaceQueryBuilder query = SpaceQueryBuilder.builder().filter(filter).offset(offset).limit(limit);
       List<SpaceEntity> entities = query.build().getResultList();
@@ -554,7 +551,8 @@ public class RDBMSSpaceStorageImpl extends AbstractStorage implements SpaceStora
     }
 
     if (filter.isUnifiedSearch()) {
-      return spaceSearchConnector.count(filter);
+//      return spaceSearchConnector.count(filter);
+      throw new UnsupportedOperationException();
     } else {
       SpaceQueryBuilder query = SpaceQueryBuilder.builder().filter(filter);
       return query.buildCount().getSingleResult().intValue();
@@ -619,10 +617,6 @@ public class RDBMSSpaceStorageImpl extends AbstractStorage implements SpaceStora
     }
     space.setAvatarLastUpdated(entity.getAvatarLastUpdated());
     return space;
-  }
-
-  public void setSpaceSearchConnector(SpaceSearchConnector spaceSearchConnector) {
-    this.spaceSearchConnector = spaceSearchConnector;
   }
 
   public void setIdentityStorage(IdentityStorage identityStorage) {

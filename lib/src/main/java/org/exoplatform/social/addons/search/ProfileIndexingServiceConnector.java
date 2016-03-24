@@ -16,19 +16,22 @@
  */
 package org.exoplatform.social.addons.search;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import org.apache.commons.lang.StringUtils;
-import org.exoplatform.social.addons.storage.dao.IdentityDAO;
 import org.json.simple.JSONObject;
 
 import org.exoplatform.addons.es.domain.Document;
 import org.exoplatform.addons.es.index.impl.ElasticIndexingServiceConnector;
-import org.exoplatform.commons.utils.CommonsUtils;
 import org.exoplatform.container.xml.InitParams;
 import org.exoplatform.social.addons.storage.dao.ConnectionDAO;
+import org.exoplatform.social.addons.storage.dao.IdentityDAO;
 import org.exoplatform.social.addons.storage.entity.Connection;
-import org.exoplatform.social.addons.updater.RelationshipMigrationService;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.identity.model.Profile;
 import org.exoplatform.social.core.manager.IdentityManager;
@@ -176,6 +179,9 @@ public class ProfileIndexingServiceConnector extends ElasticIndexingServiceConne
   
   @Override
   public String getMapping() {
+    JSONObject postingHighlighterField = new JSONObject();
+    postingHighlighterField.put("type", "string");
+    postingHighlighterField.put("index_options", "offsets");
 
     JSONObject notAnalyzedField = new JSONObject();
     notAnalyzedField.put("type", "string");
@@ -184,13 +190,14 @@ public class ProfileIndexingServiceConnector extends ElasticIndexingServiceConne
     JSONObject properties = new JSONObject();
     properties.put("permissions", notAnalyzedField);
     properties.put("sites", notAnalyzedField);
-    properties.put("userName", notAnalyzedField);
-//    properties.put("name", notAnalyzedField);
-    properties.put("firstName", notAnalyzedField);
-//    properties.put("lastName", notAnalyzedField);
-//    properties.put("position", notAnalyzedField);
-//    properties.put("skills", notAnalyzedField);
+    properties.put("userName", notAnalyzedField);    
     properties.put("email", notAnalyzedField);
+    
+    properties.put("name", postingHighlighterField);
+    properties.put("firstName", postingHighlighterField);
+    properties.put("lastName", postingHighlighterField);
+    properties.put("position", postingHighlighterField);
+    properties.put("skills", postingHighlighterField);
 
     JSONObject mappingProperties = new JSONObject();
     mappingProperties.put("properties", properties);

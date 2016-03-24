@@ -20,33 +20,37 @@ import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.List;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.DefaultHttpClient;
+import org.mockito.Mockito;
 
 import org.exoplatform.addons.es.index.IndexingOperationProcessor;
 import org.exoplatform.addons.es.index.IndexingService;
+import org.exoplatform.commons.api.search.data.SearchContext;
 import org.exoplatform.commons.utils.CommonsUtils;
 import org.exoplatform.commons.utils.PropertyManager;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 import org.exoplatform.services.organization.User;
 import org.exoplatform.services.security.ConversationState;
-import org.exoplatform.services.security.IdentityRegistry;
 import org.exoplatform.social.addons.test.AbstractCoreTest;
 import org.exoplatform.social.addons.updater.IdentityMigrationService;
 import org.exoplatform.social.addons.updater.RelationshipMigrationService;
 import org.exoplatform.social.core.identity.IdentityProvider;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.identity.model.Profile;
+import org.exoplatform.social.core.identity.model.Profile.UpdateType;
 import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvider;
 import org.exoplatform.social.core.manager.IdentityManager;
 import org.exoplatform.social.core.profile.ProfileFilter;
 import org.exoplatform.social.core.relationship.model.Relationship;
 import org.exoplatform.social.core.relationship.model.Relationship.Type;
+import org.exoplatform.social.core.search.PeopleSearchConnector;
 import org.exoplatform.social.core.space.model.Space;
 import org.exoplatform.social.core.storage.api.RelationshipStorage;
 import org.exoplatform.social.core.storage.api.SpaceStorage;
@@ -59,29 +63,33 @@ import org.exoplatform.social.core.storage.impl.RelationshipStorageImpl;
  */
 public class SearchTestIT extends AbstractCoreTest {
 
-  protected final Log                  LOG    = ExoLogger.getLogger(SearchTestIT.class);
+  protected final Log                               LOG    = ExoLogger.getLogger(SearchTestIT.class);
 
-  private IndexingService              indexingService;
+  private IndexingService                           indexingService;
 
-  private IndexingOperationProcessor   indexingProcessor;
+  private IndexingOperationProcessor                indexingProcessor;
 
-  private ProfileSearchConnector       searchConnector;
+  private ProfileSearchConnector                    searchConnector;
+  
+  private PeopleElasticUnifiedSearchServiceConnector peopleSearchConnector;
 
-  private SpaceSearchConnector         spaceSearchConnector;
+  private SpaceElasticUnifiedSearchServiceConnector spaceSearchConnector;
 
-  private String                       urlClient;
+  private String                                    urlClient;
 
-  private HttpClient                   client = new DefaultHttpClient();
+  private HttpClient                                client = new DefaultHttpClient();
 
-  private SpaceStorage                 spaceStorage;
+  private SpaceStorage                              spaceStorage;
 
-  private IdentityStorageImpl          identityStorageImpl;
+  private IdentityStorageImpl                       identityStorageImpl;
 
-  private RelationshipStorageImpl      relationshipStorageImpl;
+  private RelationshipStorageImpl                   relationshipStorageImpl;
 
-  private RelationshipMigrationService relationshipMigration;
+  private RelationshipMigrationService              relationshipMigration;
 
-  private IdentityProvider<User>       identityProvider;
+  private IdentityProvider<User>                    identityProvider;
+  
+  private SearchContext searchContext = Mockito.mock(SearchContext.class);
 
   @Override
   protected void setUp() throws Exception {
@@ -90,15 +98,23 @@ public class SearchTestIT extends AbstractCoreTest {
     indexingProcessor = getService(IndexingOperationProcessor.class);
     identityManager = getService(IdentityManager.class);
     searchConnector = getService(ProfileSearchConnector.class);
-    spaceSearchConnector = getService(SpaceSearchConnector.class);
+    peopleSearchConnector = getService(PeopleElasticUnifiedSearchServiceConnector.class);
+    spaceSearchConnector = getService(SpaceElasticUnifiedSearchServiceConnector.class);
     deleteAllProfilesInES();
     deleteAllSpaceInES();
 
     assertNotNull("identityManager must not be null", identityManager);
     urlClient = PropertyManager.getProperty("exo.es.search.server.url");
 
-    org.exoplatform.services.security.Identity identity = getService(IdentityRegistry.class).getIdentity("root");
+    org.exoplatform.services.security.Identity identity = new org.exoplatform.services.security.Identity("root");
     ConversationState.setCurrent(new ConversationState(identity));
+    
+    Mockito.when(searchContext.handler(Mockito.anyString())).thenReturn(searchContext);
+    Mockito.when(searchContext.lang(Mockito.anyString())).thenReturn(searchContext);
+    Mockito.when(searchContext.siteName(Mockito.anyString())).thenReturn(searchContext);
+    Mockito.when(searchContext.siteType(Mockito.anyString())).thenReturn(searchContext);
+    Mockito.when(searchContext.path(Mockito.anyString())).thenReturn(searchContext);
+    Mockito.doReturn("spaceLink").when(searchContext).renderLink();
 
     identityManager = getService(IdentityManager.class);
     spaceStorage = getService(SpaceStorage.class);
@@ -276,55 +292,57 @@ public class SearchTestIT extends AbstractCoreTest {
     results = relationshipStorage.getIncomingByFilter(rootIdentity, profileFilter, 0, 10);
     assertEquals(1, results.size());
   }
+  
+  public void testPeopleName() throws Exception {    
+    rootIdentity = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, "root", true);
+
+    // ROOT
+    Profile profile = rootIdentity.getProfile();
+    profile.setListUpdateTypes(Arrays.asList(UpdateType.ABOUT_ME));
+    profile.setProperty(Profile.FULL_NAME, "Root Root");
+    identityManager.updateProfile(profile);
+    indexingService.index(ProfileIndexingServiceConnector.TYPE, rootIdentity.getId());
+    
+    indexingProcessor.process();
+    refreshIndices();
+    
+    assertEquals(1, peopleSearchConnector.search(searchContext, "Root Root", null, 0, 10, null, null).size());
+  }
 
   public void testSpaceName() throws Exception {
     createSpace("testSpaceName abcd efgh", null, null);
 
-    XSpaceFilter filter = new XSpaceFilter();
-    filter.setSpaceNameSearchCondition("space");
-    assertEquals(1, spaceSearchConnector.search(filter, 0, -1).size());
+    assertEquals(1, spaceSearchConnector.search(searchContext, "*space*", null, 0, 10, null, null).size());
 
-    filter.setSpaceNameSearchCondition("name");
-    assertEquals(1, spaceSearchConnector.search(filter, 0, -1).size());
+    assertEquals(1, spaceSearchConnector.search(searchContext, "*name*", null, 0, 10, null, null).size());
 
-    filter.setSpaceNameSearchCondition("abcd");
-    assertEquals(1, spaceSearchConnector.search(filter, 0, -1).size());
+    assertEquals(1, spaceSearchConnector.search(searchContext, "*abcd*", null, 0, 10, null, null).size());
   }
 
   public void testSpaceDisplayName() throws Exception {
     createSpace("pretty", "displayName abc def", null);
 
-    XSpaceFilter filter = new XSpaceFilter();
-    filter.setSpaceNameSearchCondition("naMe");
-    assertEquals(1, spaceSearchConnector.search(filter, 0, -1).size());
-
-    filter.setSpaceNameSearchCondition("aBc");
-    assertEquals(1, spaceSearchConnector.search(filter, 0, -1).size());
-
-    filter.setSpaceNameSearchCondition("ef");
-    assertEquals(1, spaceSearchConnector.search(filter, 0, -1).size());
+    assertEquals(1, spaceSearchConnector.search(searchContext, "diSplayName*", null, 0, 10, null, null).size());
+    assertEquals(1, spaceSearchConnector.search(searchContext, "*abc*", null, 0, 10, null, null).size());
+    assertEquals(1, spaceSearchConnector.search(searchContext, "*ef*", null, 0, 10, null, null).size());
   }
 
   public void testSpaceDescription() throws Exception {
     createSpace("pretty", null, "spaceDescription 123 456");
 
-    XSpaceFilter filter = new XSpaceFilter();
-    filter.setSpaceNameSearchCondition("sCriPtion 23");
-    assertEquals(1, spaceSearchConnector.search(filter, 0, -1).size());
-
-    filter.setSpaceNameSearchCondition("123");
-    assertEquals(1, spaceSearchConnector.search(filter, 0, -1).size());
-
-    filter.setSpaceNameSearchCondition("56");
-    assertEquals(1, spaceSearchConnector.search(filter, 0, -1).size());
+    assertEquals(1, spaceSearchConnector.search(searchContext, "*scription* *23*", null, 0, 10, null, null).size());
+    assertEquals(1, spaceSearchConnector.search(searchContext, "*123*", null, 0, 10, null, null).size());
+    assertEquals(1, spaceSearchConnector.search(searchContext, "*56*", null, 0, 10, null, null).size());
   }
 
   private Space createSpace(String prettyName, String displayName, String description) throws Exception {
     Space space = new Space();
     space.setPrettyName(prettyName);
+    displayName = displayName == null ? prettyName : displayName; 
     space.setDisplayName(displayName);
     space.setDescription(description);
     space.setManagers(new String[] { "root" });
+    space.setGroupId("/platform/users");
     spaceStorage.saveSpace(space, true);
     space = spaceStorage.getAllSpaces().get(0);
 
