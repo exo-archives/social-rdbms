@@ -45,8 +45,6 @@ public class SpaceESListenerImpl extends SpaceListenerPlugin {
 
   @Override
   public void spaceAccessEdited(SpaceLifeCycleEvent event) {
-    // TODO Auto-generated method stub
-
   }
 
   @Override
@@ -81,14 +79,12 @@ public class SpaceESListenerImpl extends SpaceListenerPlugin {
 
   @Override
   public void joined(SpaceLifeCycleEvent event) {
-    // TODO Auto-generated method stub
-
+    reindex(event);
   }
 
   @Override
   public void left(SpaceLifeCycleEvent event) {
-    // TODO Auto-generated method stub
-
+    reindex(event);
   }
 
   @Override

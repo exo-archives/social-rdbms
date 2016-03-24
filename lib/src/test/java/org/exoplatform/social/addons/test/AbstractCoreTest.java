@@ -42,7 +42,6 @@ import org.exoplatform.services.organization.User;
 import org.exoplatform.services.security.ConversationState;
 import org.exoplatform.services.security.MembershipEntry;
 import org.exoplatform.social.addons.search.ProfileSearchConnector;
-import org.exoplatform.social.addons.search.SpaceSearchConnector;
 import org.exoplatform.social.addons.storage.dao.ConnectionDAO;
 import org.exoplatform.social.addons.storage.entity.Connection;
 import org.exoplatform.social.core.identity.model.Identity;
@@ -82,7 +81,6 @@ public abstract class AbstractCoreTest extends BaseExoTestCase {
 
   protected RDBMSIdentityStorageImpl identityStorage;
   
-  protected SpaceSearchConnector mockSpaceSearch = Mockito.mock(SpaceSearchConnector.class);
   protected ProfileSearchConnector mockProfileSearch = Mockito.mock(ProfileSearchConnector.class);
 
   protected Identity rootIdentity;

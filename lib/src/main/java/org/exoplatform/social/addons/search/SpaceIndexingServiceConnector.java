@@ -16,12 +16,13 @@
  */
 package org.exoplatform.social.addons.search;
 
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import org.apache.commons.lang.StringUtils;
 import org.json.simple.JSONObject;
@@ -66,7 +67,7 @@ public class SpaceIndexingServiceConnector extends ElasticIndexingServiceConnect
     fields.put("description", space.getDescription());
     
     Date createdDate = new Date(space.getCreatedTime());
-    return new Document(TYPE, id, null, createdDate, (Set<String>)null, fields);
+    return new Document(TYPE, id, null, createdDate, new HashSet<String>(Arrays.asList(space.getMembers())), fields);
   }
   
   @Override
@@ -93,6 +94,10 @@ public class SpaceIndexingServiceConnector extends ElasticIndexingServiceConnect
   
   @Override
   public String getMapping() {
+    JSONObject postingHighlighterField = new JSONObject();
+    postingHighlighterField.put("type", "string");
+    postingHighlighterField.put("index_options", "offsets");
+
     JSONObject notAnalyzedField = new JSONObject();
     notAnalyzedField.put("type", "string");
     notAnalyzedField.put("index", "not_analyzed");
@@ -100,6 +105,10 @@ public class SpaceIndexingServiceConnector extends ElasticIndexingServiceConnect
     JSONObject properties = new JSONObject();
     properties.put("permissions", notAnalyzedField);
     properties.put("sites", notAnalyzedField);
+    
+    properties.put("prettyName", postingHighlighterField);
+    properties.put("displayName", postingHighlighterField);
+    properties.put("description", postingHighlighterField);
 
     JSONObject mappingProperties = new JSONObject();
     mappingProperties.put("properties", properties);
