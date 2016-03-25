@@ -78,6 +78,12 @@ public class RDBMSMigrationManager implements Startable {
 
   @Override
   public void start() {
+    try {
+      relationshipMigration.getProviderRoot();
+    } catch (Exception ex) {
+      LOG.debug("no JCR data, stopping JCR to RDBMS migration");
+      return;
+    }
     initMigrationSetting();
     Runnable migrateTask = new Runnable() {
       @Override
