@@ -78,12 +78,6 @@ public class RDBMSMigrationManager implements Startable {
 
   @Override
   public void start() {
-    try {
-      relationshipMigration.getProviderRoot();
-    } catch (Exception ex) {
-      LOG.debug("no JCR data, stopping JCR to RDBMS migration");
-      return;
-    }
     initMigrationSetting();
     Runnable migrateTask = new Runnable() {
       @Override
@@ -92,6 +86,30 @@ public class RDBMSMigrationManager implements Startable {
         Field field =  null;
         try {
           if (!MigrationContext.isDone()) {
+
+            try {
+              getRelationshipMigration().getProviderRoot();
+            } catch (Exception ex) {
+              LOG.debug("no JCR data, stopping JCR to RDBMS migration");
+
+              // Update and mark that migrate was done
+              updateSettingValue(MigrationContext.SOC_RDBMS_CONNECTION_MIGRATION_KEY, Boolean.TRUE);
+              updateSettingValue(MigrationContext.SOC_RDBMS_ACTIVITY_MIGRATION_KEY, Boolean.TRUE);
+              updateSettingValue(MigrationContext.SOC_RDBMS_SPACE_MIGRATION_KEY, Boolean.TRUE);
+              updateSettingValue(MigrationContext.SOC_RDBMS_IDENTITY_MIGRATION_KEY, Boolean.TRUE);
+
+              updateSettingValue(MigrationContext.SOC_RDBMS_CONNECTION_CLEANUP_KEY, Boolean.TRUE);
+              updateSettingValue(MigrationContext.SOC_RDBMS_ACTIVITY_CLEANUP_KEY, Boolean.TRUE);
+              updateSettingValue(MigrationContext.SOC_RDBMS_SPACE_CLEANUP_KEY, Boolean.TRUE);
+              updateSettingValue(MigrationContext.SOC_RDBMS_IDENTITY_CLEANUP_KEY, Boolean.TRUE);
+
+              updateSettingValue(MigrationContext.SOC_RDBMS_MIGRATION_STATUS_KEY, Boolean.TRUE);
+              MigrationContext.setDone(true);
+
+              return;
+            }
+
+
             field =  SessionImpl.class.getDeclaredField("FORCE_USE_GET_NODES_LAZILY");
             if (field != null) {
               field.setAccessible(true);

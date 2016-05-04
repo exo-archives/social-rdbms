@@ -99,215 +99,215 @@ public class AsynMigrationTest extends BaseCoreTest {
   
   @Override
   public void setUp() throws Exception {
-//    begin();
-//    // If is query number test, init byteman
-//    hasByteMan = getClass().isAnnotationPresent(QueryNumberTest.class);
-//    if (hasByteMan) {
-//      count = 0;
-//      maxQuery = 0;
-//      BMUnit.loadScriptFile(getClass(), "queryBaseCount", "src/test/resources");
-//    }
-//
-//    repoService = getService(RepositoryService.class);
-//
-//    spaceStorage = getService(SpaceStorage.class);
-//    identityJCRStorage = getService(IdentityStorageImpl.class);
-//    identityJPAStorage = getService(RDBMSIdentityStorageImpl.class);
-//    identityManager = getService(IdentityManager.class);
-//    activityManager =  getService(ActivityManager.class);
-//    activityStorage = getService(ActivityStorage.class);
-//    relationshipManager = getService(RelationshipManager.class);
-//    spaceService = getService(SpaceService.class);
-//    entityManagerService = getService(EntityManagerService.class);
-//    //
-//    jcrStorage = getService(ActivityStorageImpl.class);
-//    relationshipStorageImpl = getService(RelationshipStorageImpl.class);
-//    activityMigration = getService(ActivityMigrationService.class);
-//    relationshipMigration = getService(RelationshipMigrationService.class);
-//    settingService = getService(SettingService.class);
-//    rdbmsMigrationManager = new RDBMSMigrationManager();
+    begin();
+    // If is query number test, init byteman
+    hasByteMan = getClass().isAnnotationPresent(QueryNumberTest.class);
+    if (hasByteMan) {
+      count = 0;
+      maxQuery = 0;
+      BMUnit.loadScriptFile(getClass(), "queryBaseCount", "src/test/resources");
+    }
+
+    repoService = getService(RepositoryService.class);
+
+    spaceStorage = getService(SpaceStorage.class);
+    identityJCRStorage = getService(IdentityStorageImpl.class);
+    identityJPAStorage = getService(RDBMSIdentityStorageImpl.class);
+    identityManager = getService(IdentityManager.class);
+    activityManager =  getService(ActivityManager.class);
+    activityStorage = getService(ActivityStorage.class);
+    relationshipManager = getService(RelationshipManager.class);
+    spaceService = getService(SpaceService.class);
+    entityManagerService = getService(EntityManagerService.class);
+    //
+    jcrStorage = getService(ActivityStorageImpl.class);
+    relationshipStorageImpl = getService(RelationshipStorageImpl.class);
+    activityMigration = getService(ActivityMigrationService.class);
+    relationshipMigration = getService(RelationshipMigrationService.class);
+    settingService = getService(SettingService.class);
+    rdbmsMigrationManager = new RDBMSMigrationManager();
   }
 
   @Override
   public void tearDown() throws Exception {
-//    end();
-//    begin();
-//    ActivityDAO dao = getService(ActivityDAO.class);
-//    //
-//    List<Activity> items = dao.findAll();
-//    for (Activity item : items) {
-//      dao.delete(item);
-//    }
-//    
-//    for (Space space : spaceService.getAllSpaces()) {
-//      Identity spaceIdentity = identityManager.getOrCreateIdentity(SpaceIdentityProvider.NAME, space.getPrettyName(), false);
-//      if (spaceIdentity != null) {
-//        identityManager.deleteIdentity(spaceIdentity);
-//      }
-//      spaceService.deleteSpace(space);
-//    }
-//    
-//    // Reset value of settings
-//    updateSettingValue(MigrationContext.SOC_RDBMS_CONNECTION_MIGRATION_KEY, Boolean.FALSE);
-//    updateSettingValue(MigrationContext.SOC_RDBMS_ACTIVITY_MIGRATION_KEY, Boolean.FALSE);
-//
-//    updateSettingValue(MigrationContext.SOC_RDBMS_ACTIVITY_CLEANUP_KEY, Boolean.FALSE);
-//    updateSettingValue(MigrationContext.SOC_RDBMS_CONNECTION_CLEANUP_KEY, Boolean.FALSE);
-//    updateSettingValue(MigrationContext.SOC_RDBMS_MIGRATION_STATUS_KEY, Boolean.FALSE);
-//
-//    updateSettingValue(MigrationContext.SOC_RDBMS_SPACE_MIGRATION_KEY, Boolean.FALSE);
-//    updateSettingValue(MigrationContext.SOC_RDBMS_SPACE_CLEANUP_KEY, Boolean.FALSE);
-//
-//    updateSettingValue(MigrationContext.SOC_RDBMS_IDENTITY_MIGRATION_KEY, Boolean.FALSE);
-//    updateSettingValue(MigrationContext.SOC_RDBMS_IDENTITY_CLEANUP_KEY, Boolean.FALSE);
-//
-//    Scope.GLOBAL.id(null);
-//    //
-//    //super.tearDown();
-//    end();
+    end();
+    begin();
+    ActivityDAO dao = getService(ActivityDAO.class);
+    //
+    List<Activity> items = dao.findAll();
+    for (Activity item : items) {
+      dao.delete(item);
+    }
+
+    for (Space space : spaceService.getAllSpaces()) {
+      Identity spaceIdentity = identityManager.getOrCreateIdentity(SpaceIdentityProvider.NAME, space.getPrettyName(), false);
+      if (spaceIdentity != null) {
+        identityManager.deleteIdentity(spaceIdentity);
+      }
+      spaceService.deleteSpace(space);
+    }
+
+    // Reset value of settings
+    updateSettingValue(MigrationContext.SOC_RDBMS_CONNECTION_MIGRATION_KEY, Boolean.FALSE);
+    updateSettingValue(MigrationContext.SOC_RDBMS_ACTIVITY_MIGRATION_KEY, Boolean.FALSE);
+
+    updateSettingValue(MigrationContext.SOC_RDBMS_ACTIVITY_CLEANUP_KEY, Boolean.FALSE);
+    updateSettingValue(MigrationContext.SOC_RDBMS_CONNECTION_CLEANUP_KEY, Boolean.FALSE);
+    updateSettingValue(MigrationContext.SOC_RDBMS_MIGRATION_STATUS_KEY, Boolean.FALSE);
+
+    updateSettingValue(MigrationContext.SOC_RDBMS_SPACE_MIGRATION_KEY, Boolean.FALSE);
+    updateSettingValue(MigrationContext.SOC_RDBMS_SPACE_CLEANUP_KEY, Boolean.FALSE);
+
+    updateSettingValue(MigrationContext.SOC_RDBMS_IDENTITY_MIGRATION_KEY, Boolean.FALSE);
+    updateSettingValue(MigrationContext.SOC_RDBMS_IDENTITY_CLEANUP_KEY, Boolean.FALSE);
+
+    Scope.GLOBAL.id(null);
+    //
+    //super.tearDown();
+    end();
   }
 
   public void testMigrationEmptyData() throws Exception {
-//    end();
-//    begin();
-//    //
-//    rdbmsMigrationManager.start();
-//    //
-//    rdbmsMigrationManager.getMigrater().await();
-//    assertTrue(getOrCreateSettingValue(MigrationContext.SOC_RDBMS_CONNECTION_MIGRATION_KEY));
-//    assertTrue(getOrCreateSettingValue(MigrationContext.SOC_RDBMS_ACTIVITY_MIGRATION_KEY));
-//
-//    assertTrue(getOrCreateSettingValue(MigrationContext.SOC_RDBMS_ACTIVITY_CLEANUP_KEY));
-//    assertTrue(getOrCreateSettingValue(MigrationContext.SOC_RDBMS_CONNECTION_CLEANUP_KEY));
-//    assertTrue(getOrCreateSettingValue(MigrationContext.SOC_RDBMS_MIGRATION_STATUS_KEY));
-//
-//    assertTrue(getOrCreateSettingValue(MigrationContext.SOC_RDBMS_IDENTITY_MIGRATION_KEY));
-//    assertTrue(getOrCreateSettingValue(MigrationContext.SOC_RDBMS_IDENTITY_CLEANUP_KEY));
+    end();
+    begin();
+    //
+    rdbmsMigrationManager.start();
+    //
+    rdbmsMigrationManager.getMigrater().await();
+    assertTrue(getOrCreateSettingValue(MigrationContext.SOC_RDBMS_CONNECTION_MIGRATION_KEY));
+    assertTrue(getOrCreateSettingValue(MigrationContext.SOC_RDBMS_ACTIVITY_MIGRATION_KEY));
+
+    assertTrue(getOrCreateSettingValue(MigrationContext.SOC_RDBMS_ACTIVITY_CLEANUP_KEY));
+    assertTrue(getOrCreateSettingValue(MigrationContext.SOC_RDBMS_CONNECTION_CLEANUP_KEY));
+    assertTrue(getOrCreateSettingValue(MigrationContext.SOC_RDBMS_MIGRATION_STATUS_KEY));
+
+    assertTrue(getOrCreateSettingValue(MigrationContext.SOC_RDBMS_IDENTITY_MIGRATION_KEY));
+    assertTrue(getOrCreateSettingValue(MigrationContext.SOC_RDBMS_IDENTITY_CLEANUP_KEY));
   }
 
   @MaxQueryNumber(36990)
   public void testMigrationActivities() throws Exception {
-//    end();
-//    begin();
-//    // create jcr data
-//    LOG.info("Create connection for root,john,mary and demo");
-//    rootIdentity = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, "root", false);
-//    johnIdentity = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, "john", false);
-//    maryIdentity = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, "mary", false);
-//    demoIdentity = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, "demo", false);
-//
-//    //John invites Demo
-//    Relationship johnToDemo = new Relationship(johnIdentity, demoIdentity, Type.PENDING);
-//    relationshipStorageImpl.saveRelationship(johnToDemo);
-//    
-//    //John invites Mary
-//    Relationship johnToMary = new Relationship(johnIdentity, maryIdentity, Type.PENDING);
-//    relationshipStorageImpl.saveRelationship(johnToMary);
-//    
-//    //John invites Root
-//    Relationship johnToRoot = new Relationship(johnIdentity, rootIdentity, Type.PENDING);
-//    relationshipStorageImpl.saveRelationship(johnToRoot);
-//    
-//    //Root invites Mary
-//    Relationship rootToMary = new Relationship(rootIdentity, maryIdentity, Type.PENDING);
-//    relationshipStorageImpl.saveRelationship(rootToMary);
-//    
-//    //Demo invites Mary
-//    Relationship demoToMary = new Relationship(demoIdentity, maryIdentity, Type.PENDING);
-//    relationshipStorageImpl.saveRelationship(demoToMary);
-//    
-//    //Demo invites Root
-//    Relationship demoToRoot = new Relationship(demoIdentity, rootIdentity, Type.PENDING);
-//    relationshipStorageImpl.saveRelationship(demoToRoot);
-//    
-//    
-//    //confirmed john and demo
-//    johnToDemo.setStatus(Type.CONFIRMED);
-//    relationshipStorageImpl.saveRelationship(johnToDemo);
-//    
-//    //confirmed john and demo
-//    johnToMary.setStatus(Type.CONFIRMED);
-//    relationshipStorageImpl.saveRelationship(johnToMary);
-//    
-//    //confirmed john and root
-//    johnToRoot.setStatus(Type.CONFIRMED);
-//    relationshipStorageImpl.saveRelationship(johnToRoot);
-//    
-//    //confirmed root and mary
-//    rootToMary.setStatus(Type.CONFIRMED);
-//    relationshipStorageImpl.saveRelationship(rootToMary);
-//    
-//    //confirmed demo and mary
-//    demoToMary.setStatus(Type.CONFIRMED);
-//    relationshipStorageImpl.saveRelationship(demoToMary);
-//    
-//    //confirmed demo and root
-//    demoToRoot.setStatus(Type.CONFIRMED);
-//    relationshipStorageImpl.saveRelationship(demoToRoot);
-//    
-//    //
-//    LOG.info("Create the activities storage on JCR ....");
-//    createActivityToOtherIdentity(rootIdentity, johnIdentity, 5);
-//    createActivityToOtherIdentity(demoIdentity, maryIdentity, 5);
-//    createActivityToOtherIdentity(johnIdentity, demoIdentity, 5);
-//    createActivityToOtherIdentity(maryIdentity, rootIdentity, 5);
-//    LOG.info("Done created the activities storage on JCR.");
-//    end();
-//
-//    ProviderRootEntity providerEntity = identityJCRStorage.getProviderRoot();
-//    ProviderEntity organization = providerEntity.getProvider(OrganizationIdentityProvider.NAME);
-//    assertTrue(0 < organization.getIdentities().size());
-//
-//    // Swith to use RDBMSIdentityStorage
-//    ((IdentityManagerImpl)identityManager).setIdentityStorage(identityJPAStorage);
-//    if (spaceStorage instanceof RDBMSSpaceStorageImpl) {
-//      ((RDBMSSpaceStorageImpl)spaceStorage).setIdentityStorage(identityJPAStorage);
-//    }
-//    if (activityStorage instanceof RDBMSActivityStorageImpl) {
-//      ((RDBMSActivityStorageImpl)activityStorage).setIdentityStorage(identityJPAStorage);
-//    }
-//
-//    //
-//    rdbmsMigrationManager.start();
-//    //
-//    rdbmsMigrationManager.getMigrater().await();
-//
-//    begin();
-//
-//    rootIdentity = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, "root", false);
-//    johnIdentity = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, "john", false);
-//    maryIdentity = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, "mary", false);
-//    demoIdentity = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, "demo", false);
-//
-//    //
-//    assertTrue(getOrCreateSettingValue(MigrationContext.SOC_RDBMS_CONNECTION_MIGRATION_KEY));
-//    assertTrue(getOrCreateSettingValue(MigrationContext.SOC_RDBMS_ACTIVITY_MIGRATION_KEY));
-//    assertTrue(getOrCreateSettingValue(MigrationContext.SOC_RDBMS_MIGRATION_STATUS_KEY));
-//    
-//    assertTrue(getOrCreateSettingValue(MigrationContext.SOC_RDBMS_ACTIVITY_CLEANUP_KEY));
-//    assertTrue(getOrCreateSettingValue(MigrationContext.SOC_RDBMS_CONNECTION_CLEANUP_KEY));
-//
-//    assertTrue(getOrCreateSettingValue(MigrationContext.SOC_RDBMS_IDENTITY_MIGRATION_KEY));
-//    assertTrue(getOrCreateSettingValue(MigrationContext.SOC_RDBMS_IDENTITY_CLEANUP_KEY));
-//    //
-//    assertEquals(20, activityStorage.getActivityFeed(rootIdentity, 0, 100).size());
-//    assertEquals(20, activityStorage.getActivityFeed(maryIdentity, 0, 100).size());
-//    assertEquals(20, activityStorage.getActivityFeed(johnIdentity, 0, 100).size());
-//    assertEquals(20, activityStorage.getActivityFeed(demoIdentity, 0, 100).size());
-//
-//    /*Session session = repoService.getCurrentRepository().getSystemSession("social");
-//    assertNotNull(session);
-//    Node root = session.getRootNode().getNode("production");
-//    assertNotNull(root);
-//    Node providers = root.getNode("soc:providers");
-//    Node orgProvider = providers.getNode("soc:organization");
-//    assertFalse(orgProvider.hasNode("soc:root"));*/
-//
-//
-//    // Besure JCR data does not exist
-//    providerEntity = identityJCRStorage.getProviderRoot();
-//    organization = providerEntity.getProvider(OrganizationIdentityProvider.NAME);
-//    assertEquals(0, organization.getIdentities().size());
+    end();
+    begin();
+    // create jcr data
+    LOG.info("Create connection for root,john,mary and demo");
+    rootIdentity = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, "root", false);
+    johnIdentity = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, "john", false);
+    maryIdentity = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, "mary", false);
+    demoIdentity = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, "demo", false);
+
+    //John invites Demo
+    Relationship johnToDemo = new Relationship(johnIdentity, demoIdentity, Type.PENDING);
+    relationshipStorageImpl.saveRelationship(johnToDemo);
+
+    //John invites Mary
+    Relationship johnToMary = new Relationship(johnIdentity, maryIdentity, Type.PENDING);
+    relationshipStorageImpl.saveRelationship(johnToMary);
+
+    //John invites Root
+    Relationship johnToRoot = new Relationship(johnIdentity, rootIdentity, Type.PENDING);
+    relationshipStorageImpl.saveRelationship(johnToRoot);
+
+    //Root invites Mary
+    Relationship rootToMary = new Relationship(rootIdentity, maryIdentity, Type.PENDING);
+    relationshipStorageImpl.saveRelationship(rootToMary);
+
+    //Demo invites Mary
+    Relationship demoToMary = new Relationship(demoIdentity, maryIdentity, Type.PENDING);
+    relationshipStorageImpl.saveRelationship(demoToMary);
+
+    //Demo invites Root
+    Relationship demoToRoot = new Relationship(demoIdentity, rootIdentity, Type.PENDING);
+    relationshipStorageImpl.saveRelationship(demoToRoot);
+
+
+    //confirmed john and demo
+    johnToDemo.setStatus(Type.CONFIRMED);
+    relationshipStorageImpl.saveRelationship(johnToDemo);
+
+    //confirmed john and demo
+    johnToMary.setStatus(Type.CONFIRMED);
+    relationshipStorageImpl.saveRelationship(johnToMary);
+
+    //confirmed john and root
+    johnToRoot.setStatus(Type.CONFIRMED);
+    relationshipStorageImpl.saveRelationship(johnToRoot);
+
+    //confirmed root and mary
+    rootToMary.setStatus(Type.CONFIRMED);
+    relationshipStorageImpl.saveRelationship(rootToMary);
+
+    //confirmed demo and mary
+    demoToMary.setStatus(Type.CONFIRMED);
+    relationshipStorageImpl.saveRelationship(demoToMary);
+
+    //confirmed demo and root
+    demoToRoot.setStatus(Type.CONFIRMED);
+    relationshipStorageImpl.saveRelationship(demoToRoot);
+
+    //
+    LOG.info("Create the activities storage on JCR ....");
+    createActivityToOtherIdentity(rootIdentity, johnIdentity, 5);
+    createActivityToOtherIdentity(demoIdentity, maryIdentity, 5);
+    createActivityToOtherIdentity(johnIdentity, demoIdentity, 5);
+    createActivityToOtherIdentity(maryIdentity, rootIdentity, 5);
+    LOG.info("Done created the activities storage on JCR.");
+    end();
+
+    ProviderRootEntity providerEntity = identityJCRStorage.getProviderRoot();
+    ProviderEntity organization = providerEntity.getProvider(OrganizationIdentityProvider.NAME);
+    assertTrue(0 < organization.getIdentities().size());
+
+    // Swith to use RDBMSIdentityStorage
+    ((IdentityManagerImpl)identityManager).setIdentityStorage(identityJPAStorage);
+    if (spaceStorage instanceof RDBMSSpaceStorageImpl) {
+      ((RDBMSSpaceStorageImpl)spaceStorage).setIdentityStorage(identityJPAStorage);
+    }
+    if (activityStorage instanceof RDBMSActivityStorageImpl) {
+      ((RDBMSActivityStorageImpl)activityStorage).setIdentityStorage(identityJPAStorage);
+    }
+
+    //
+    rdbmsMigrationManager.start();
+    //
+    rdbmsMigrationManager.getMigrater().await();
+
+    begin();
+
+    rootIdentity = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, "root", false);
+    johnIdentity = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, "john", false);
+    maryIdentity = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, "mary", false);
+    demoIdentity = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, "demo", false);
+
+    //
+    assertTrue(getOrCreateSettingValue(MigrationContext.SOC_RDBMS_CONNECTION_MIGRATION_KEY));
+    assertTrue(getOrCreateSettingValue(MigrationContext.SOC_RDBMS_ACTIVITY_MIGRATION_KEY));
+    assertTrue(getOrCreateSettingValue(MigrationContext.SOC_RDBMS_MIGRATION_STATUS_KEY));
+
+    assertTrue(getOrCreateSettingValue(MigrationContext.SOC_RDBMS_ACTIVITY_CLEANUP_KEY));
+    assertTrue(getOrCreateSettingValue(MigrationContext.SOC_RDBMS_CONNECTION_CLEANUP_KEY));
+
+    assertTrue(getOrCreateSettingValue(MigrationContext.SOC_RDBMS_IDENTITY_MIGRATION_KEY));
+    assertTrue(getOrCreateSettingValue(MigrationContext.SOC_RDBMS_IDENTITY_CLEANUP_KEY));
+    //
+    assertEquals(20, activityStorage.getActivityFeed(rootIdentity, 0, 100).size());
+    assertEquals(20, activityStorage.getActivityFeed(maryIdentity, 0, 100).size());
+    assertEquals(20, activityStorage.getActivityFeed(johnIdentity, 0, 100).size());
+    assertEquals(20, activityStorage.getActivityFeed(demoIdentity, 0, 100).size());
+
+    /*Session session = repoService.getCurrentRepository().getSystemSession("social");
+    assertNotNull(session);
+    Node root = session.getRootNode().getNode("production");
+    assertNotNull(root);
+    Node providers = root.getNode("soc:providers");
+    Node orgProvider = providers.getNode("soc:organization");
+    assertFalse(orgProvider.hasNode("soc:root"));*/
+
+
+    // Besure JCR data does not exist
+    providerEntity = identityJCRStorage.getProviderRoot();
+    organization = providerEntity.getProvider(OrganizationIdentityProvider.NAME);
+    assertEquals(0, organization.getIdentities().size());
   }
   
   private boolean getOrCreateSettingValue(String key) {
