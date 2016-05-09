@@ -37,7 +37,7 @@ public class SpaceMember implements Serializable {
   @JoinColumn(name = "SPACE_ID")
   private SpaceEntity       space;
 
-  @Column(name = "USER_ID", length = 36)
+  @Column(name = "USER_ID", length = 100)
   private String            userId;
 
   @Column(name = "STATUS", length = 36)
