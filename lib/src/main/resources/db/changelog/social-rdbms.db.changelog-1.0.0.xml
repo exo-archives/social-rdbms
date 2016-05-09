@@ -362,4 +362,11 @@
       <append value=" ENGINE=INNODB CHARSET=UTF8 COLLATE utf8_general_ci"/>
     </modifySql>
   </changeSet>
+
+  <changeSet author="social" id="1.0.0-33">
+    <modifyDataType tableName="SOC_SPACES_MEMBERS"
+                    columnName="USER_ID"
+                    newDataType="NVARCHAR(100)"/>
+  </changeSet>
+
 </databaseChangeLog>
