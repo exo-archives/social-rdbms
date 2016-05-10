@@ -304,7 +304,7 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
       } else if (!Profile.EXPERIENCES_SKILLS.equals(e.getKey())) {
         Object val = e.getValue();
         if (val != null) {
-          entityProperties.put(e.getKey(), (String)val);
+          entityProperties.put(e.getKey(), String.valueOf(val));
         }
       }
     }
