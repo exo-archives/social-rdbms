@@ -369,4 +369,10 @@
                     newDataType="NVARCHAR(100)"/>
   </changeSet>
 
+  <changeSet author="social" id="1.0.0-34">
+    <modifyDataType tableName="SOC_IDENTITY_PROFILE_EXPERIENCE"
+                    columnName="DESCRIPTION"
+                    newDataType="LONGTEXT"/>
+  </changeSet>
+
 </databaseChangeLog>
