@@ -54,6 +54,8 @@ public class IdentityMigrationService extends AbstractMigrationService<Identity>
 
   private String identityQuery;
 
+  private long numberFailed = 0;
+
   public IdentityMigrationService(InitParams initParams,
                                   RDBMSIdentityStorageImpl identityStorage,
                                   IdentityStorageImpl jcrIdentityStorage,
@@ -67,67 +69,90 @@ public class IdentityMigrationService extends AbstractMigrationService<Identity>
   @Override
   protected void beforeMigration() throws Exception {
     MigrationContext.setIdentityDone(false);
+    numberFailed = 0;
   }
 
   @Override
   @Managed
   @ManagedDescription("Manual to start run migration data of identities from JCR to RDBMS.")
   public void doMigration() throws Exception {
-    boolean begunTx = startTx();
-    long offset = 0;
-
     long t = System.currentTimeMillis();
-    try {
-      LOG.info("| \\ START::Identity migration ---------------------------------");
-      NodeIterator nodeIter  = getIdentityNodes(offset, LIMIT_THRESHOLD);
-      if(nodeIter == null || nodeIter.getSize() == 0) {
-        return;
-      }
 
-      Node identityNode = null;
-      while (nodeIter.hasNext()) {
-        if(forkStop) {
-          break;
-        }
-        identityNode = nodeIter.nextNode();
-        LOG.info(String.format("|  \\ START::identity number: %s (%s identity)", offset, identityNode.getName()));
-        long t1 = System.currentTimeMillis();
+    //endTx(begunTx);
 
-        String jcrid = identityNode.getUUID();
-        Identity identity = migrateIdentity(identityNode, jcrid);
+    LOG.info("|\\ START::Identity migration ---------------------------------");
 
-        //
-        offset++;
-        if (offset % LIMIT_THRESHOLD == 0) {
-          endTx(begunTx);
-          RequestLifeCycle.end();
+    RequestLifeCycle.end();
+
+    long offset = 0;
+    boolean cont = true;
+    boolean begunTx = false;
+
+    long numberSuccessful = 0;
+    long batchSize = 0;
+
+    while(cont && !forkStop) {
+      try {
+
+        try {
+
           RequestLifeCycle.begin(PortalContainer.getInstance());
           begunTx = startTx();
-          nodeIter  = getIdentityNodes(offset, LIMIT_THRESHOLD);
+          NodeIterator nodeIter = getIdentityNodes(offset, LIMIT_THRESHOLD);
+          batchSize = nodeIter.getSize();
+
+          if (nodeIter == null || batchSize == 0) {
+            cont = false;
+
+          } else {
+
+            while (nodeIter.hasNext() && !forkStop) {
+              offset++;
+              Node identityNode = nodeIter.nextNode();
+
+              LOG.info(String.format("|  \\ START::identity number: %s (%s identity)", offset, identityNode.getName()));
+              long t1 = System.currentTimeMillis();
+
+              String jcrid = identityNode.getUUID();
+              Identity identity = migrateIdentity(identityNode, jcrid);
+
+              if (identity != null) {
+                String newId = identity.getId();
+                identity.setId(jcrid);
+                broadcastListener(identity, newId);
+              }
+              numberSuccessful++;
+              LOG.info(String.format("|  / END::identity number %s (%s identity) consumed %s(ms)", offset, identityNode.getName(), System.currentTimeMillis() - t1));
+            }
+          }
+
+        } finally {
+          try {
+            endTx(begunTx);
+          } catch (Exception ex) {
+            // If commit was failed, all identities are failed also
+            numberFailed += batchSize;
+            numberSuccessful -= batchSize;
+          }
+          RequestLifeCycle.end();
         }
-
-        String newId = identity.getId();
-        identity.setId(jcrid);
-        broadcastListener(identity, newId);
-        LOG.info(String.format("|  / END::identity number %s (%s identity) consumed %s(ms)", offset - 1, identityNode.getName(), System.currentTimeMillis() - t1));
+      } catch (Throwable ex) {
+        numberFailed ++;
+        LOG.error(ex);
       }
-
-    } finally {
-      endTx(begunTx);
-      RequestLifeCycle.end();
-      RequestLifeCycle.begin(PortalContainer.getInstance());
-      LOG.info(String.format("| / END::Identity migration for (%s) identity(s) consumed %s(ms)", offset, System.currentTimeMillis() - t));
-
-      LOG.info("| \\ START::Re-indexing identity(s) ---------------------------------");
-      IndexingService indexingService = CommonsUtils.getService(IndexingService.class);
-      indexingService.reindexAll(ProfileIndexingServiceConnector.TYPE);
-      LOG.info("| / END::Re-indexing identity(s) ---------------------------------");
     }
+
+    if (numberFailed > 0) {
+      LOG.info(String.format("| / END::Identity migration failed for (%s) identity(s)", numberFailed));
+    }
+    LOG.info(String.format("|// END::Identity migration for (%s) identity(s) consumed %s(ms)", numberSuccessful, System.currentTimeMillis() - t));
+
+    RequestLifeCycle.begin(PortalContainer.getInstance());
   }
 
   @Override
   protected void afterMigration() throws Exception {
-    if (forkStop) {
+    if (forkStop || numberFailed > 0) {
       return;
     }
     MigrationContext.setIdentityDone(true);
@@ -163,9 +188,9 @@ public class IdentityMigrationService extends AbstractMigrationService<Identity>
           nodeIter = getIdentityNodes(offset, LIMIT_THRESHOLD);
         }
       }
-      LOG.info(String.format("| / END::cleanup Identities migration for (%s) identity consumed %s(ms)", offset, System.currentTimeMillis() - t));
     } finally {
       getSession().save();
+      LOG.info(String.format("| / END::cleanup Identities migration for (%s) identity consumed %s(ms)", offset, System.currentTimeMillis() - t));
       RequestLifeCycle.end();
     }
   }
@@ -174,7 +199,13 @@ public class IdentityMigrationService extends AbstractMigrationService<Identity>
     String providerId = node.getProperty("soc:providerId").getString();
     String remoteId = node.getProperty("soc:remoteId").getString();
 
-    Identity identity = new Identity(providerId, remoteId);
+    Identity identity = identityStorage.findIdentity(providerId, remoteId);
+    if (identity != null) {
+      LOG.info("Identity with providerId = " + identity.getProviderId() + " and remoteId=" + identity.getRemoteId() + " has already been migrated.");
+      return null;
+    }
+
+    identity = new Identity(providerId, remoteId);
     identity.setDeleted(node.getProperty("soc:isDeleted").getBoolean());
 
     if (node.isNodeType("soc:isDisabled")) {

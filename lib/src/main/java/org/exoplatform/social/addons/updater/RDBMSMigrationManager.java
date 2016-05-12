@@ -139,7 +139,7 @@ public class RDBMSMigrationManager implements Startable {
                       && MigrationContext.isActivityDone() && MigrationContext.isSpaceDone()
                       && !MigrationContext.isIdentityDone()) {
                 getIdentityMigrationService().start();
-                updateSettingValue(MigrationContext.SOC_RDBMS_IDENTITY_MIGRATION_KEY, Boolean.TRUE);
+                updateSettingValue(MigrationContext.SOC_RDBMS_IDENTITY_MIGRATION_KEY, MigrationContext.isIdentityDone());
               }
             }
 
@@ -166,7 +166,6 @@ public class RDBMSMigrationManager implements Startable {
             
             // cleanup spaces
             if (!MigrationContext.isDone() && MigrationContext.isSpaceDone() && !MigrationContext.isSpaceCleanupDone()) {
-              CommonsUtils.getService(SpaceMigrationService.class).doRemove();
               getSpaceMigrationService().doRemove();
               updateSettingValue(MigrationContext.SOC_RDBMS_SPACE_CLEANUP_KEY, Boolean.TRUE);
             }
