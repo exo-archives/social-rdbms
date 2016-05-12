@@ -374,7 +374,7 @@
                     columnName="DESCRIPTION"
                     newDataType="LONGTEXT"/>
   </changeSet>
-  <changeSet author="social" id="1.0.0-34">
+  <changeSet author="social" id="1.0.0-35">
     <modifyDataType tableName="SOC_IDENTITY_PROFILE_PROPERTY"
                     columnName="VALUE"
                     newDataType="NVARCHAR(2000)"/>
