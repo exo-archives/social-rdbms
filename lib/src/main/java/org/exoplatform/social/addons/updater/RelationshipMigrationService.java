@@ -49,92 +49,103 @@ public class RelationshipMigrationService extends AbstractMigrationService<Relat
   @Override
   protected void beforeMigration() throws Exception {
     MigrationContext.setConnectionDone(false);
+    numberFailed = 0;
   }
 
   @Override
   @Managed
   @ManagedDescription("Manual to start run migration data of relationships from JCR to RDBMS.")
   public void doMigration() throws Exception {
-      boolean begunTx = startTx();
-      long offset = 0;
-      int total = 0;
+    RequestLifeCycle.end();
 
-      long t = System.currentTimeMillis();
+    boolean cont = true;
+    long offset = 0;
+    int total = 0;
+    long t = System.currentTimeMillis();
+
+    while(cont && !forkStop) {
+      RequestLifeCycle.begin(PortalContainer.getInstance());
+      boolean begunTx = startTx();
+
       try {
         LOG.info("| \\ START::Relationships migration ---------------------------------");
-        NodeIterator nodeIter  = getIdentityNodes(offset, LIMIT_THRESHOLD);
-        if(nodeIter == null || nodeIter.getSize() == 0) {
-          return;
-        }
-        
-        int relationshipNo = 0;
-        Node identityNode = null;
-        while (nodeIter.hasNext()) {
-          if(forkStop) {
-            break;
-          }
-          relationshipNo = 0;
-          identityNode = nodeIter.nextNode();
-          LOG.info(String.format("|  \\ START::user number: %s (%s user)", offset, identityNode.getName()));
-          long t1 = System.currentTimeMillis();
-          
-          Node relationshipNode = identityNode.getNode("soc:relationship");
-          if (relationshipNode != null) {
-            NodeIterator rIt = relationshipNode.getNodes();
-            long size = rIt.getSize();
-            LOG.info("|     - CONFIRMED:: size = " + size);
-            if (size > 0) {
-              relationshipNo += migrateRelationshipEntity(rIt, identityNode.getName(), false, Relationship.Type.CONFIRMED);
-            }
-          }
-          
-          relationshipNode = identityNode.getNode("soc:sender");
-          if (relationshipNode != null) {
-            NodeIterator rIt = relationshipNode.getNodes();
-            long size = rIt.getSize();
-            LOG.info("|     - SENDER:: size = " + size);
-            if (size > 0) {
-              relationshipNo += migrateRelationshipEntity(rIt, identityNode.getName(), false, Relationship.Type.OUTGOING);
-            }
-          }
-          
-          relationshipNode = identityNode.getNode("soc:receiver");
-          if (relationshipNode != null) {
-            NodeIterator rIt = relationshipNode.getNodes();
-            long size = rIt.getSize();
-            LOG.info("|     - RECEIVER:: size = " + size);
-            if (size > 0) {
-              relationshipNo += migrateRelationshipEntity(rIt, identityNode.getName(), true, Relationship.Type.INCOMING);
-            }
-            
-          }
-          //
-          offset++;
-          total += relationshipNo;
-          if (offset % LIMIT_THRESHOLD == 0) {
-            endTx(begunTx);
-            RequestLifeCycle.end();
-            RequestLifeCycle.begin(PortalContainer.getInstance());
-            begunTx = startTx();
-            nodeIter  = getIdentityNodes(offset, LIMIT_THRESHOLD);
-          }
-          
-          LOG.info(String.format("|  / END::user number %s (%s user) with %s relationship(s) user consumed %s(ms)", relationshipNo, identityNode.getName(), relationshipNo, System.currentTimeMillis() - t1));
-        }
-        
-      } finally {
-        endTx(begunTx);
-        RequestLifeCycle.end();
-        RequestLifeCycle.begin(PortalContainer.getInstance());
-        LOG.info(String.format("| / END::Relationships migration for (%s) user(s) with %s relationship(s) consumed %s(ms)", offset, total, System.currentTimeMillis() - t));
+        NodeIterator nodeIter = getIdentityNodes(offset, LIMIT_THRESHOLD);
+        if (nodeIter == null || nodeIter.getSize() == 0) {
+          cont = false;
+        } else {
 
-        // I move this job into the IdentityMigrationService
-        //LOG.info("| \\ START::Re-indexing profile(s) ---------------------------------");
-        //To be sure all of the profile will be indexed in ES after migrated
-        //IndexingService indexingService = CommonsUtils.getService(IndexingService.class);
-        //indexingService.reindexAll(ProfileIndexingServiceConnector.TYPE);
-        //LOG.info("| / END::Re-indexing profile(s) ---------------------------------");
+          int relationshipNo;
+          Node identityNode;
+          while (nodeIter.hasNext()) {
+            if (forkStop) {
+              break;
+            }
+            relationshipNo = 0;
+            offset++;
+            identityNode = nodeIter.nextNode();
+            LOG.info(String.format("|  \\ START::user number: %s (%s user)", offset, identityNode.getName()));
+            long t1 = System.currentTimeMillis();
+
+            Node relationshipNode = identityNode.getNode("soc:relationship");
+            if (relationshipNode != null) {
+              NodeIterator rIt = relationshipNode.getNodes();
+              long size = rIt.getSize();
+              LOG.info("|     - CONFIRMED:: size = " + size);
+              if (size > 0) {
+                relationshipNo += migrateRelationshipEntity(rIt, identityNode.getName(), false, Relationship.Type.CONFIRMED);
+              }
+            }
+
+            relationshipNode = identityNode.getNode("soc:sender");
+            if (relationshipNode != null) {
+              NodeIterator rIt = relationshipNode.getNodes();
+              long size = rIt.getSize();
+              LOG.info("|     - SENDER:: size = " + size);
+              if (size > 0) {
+                relationshipNo += migrateRelationshipEntity(rIt, identityNode.getName(), false, Relationship.Type.OUTGOING);
+              }
+            }
+
+            relationshipNode = identityNode.getNode("soc:receiver");
+            if (relationshipNode != null) {
+              NodeIterator rIt = relationshipNode.getNodes();
+              long size = rIt.getSize();
+              LOG.info("|     - RECEIVER:: size = " + size);
+              if (size > 0) {
+                relationshipNo += migrateRelationshipEntity(rIt, identityNode.getName(), true, Relationship.Type.INCOMING);
+              }
+            }
+            //
+            total += relationshipNo;
+            if (offset % LIMIT_THRESHOLD == 0) {
+              try {
+                endTx(begunTx);
+              } catch (Exception ex) {
+                numberFailed += LIMIT_THRESHOLD;
+              }
+              RequestLifeCycle.end();
+              RequestLifeCycle.begin(PortalContainer.getInstance());
+              begunTx = startTx();
+              nodeIter = getIdentityNodes(offset, LIMIT_THRESHOLD);
+            }
+
+            LOG.info(String.format("|  / END::user number %s (%s user) with %s relationship(s) user consumed %s(ms)", relationshipNo, identityNode.getName(), relationshipNo, System.currentTimeMillis() - t1));
+          }
+        }
+
+      } finally {
+        try {
+          endTx(begunTx);
+        } catch (Exception ex) {
+          numberFailed += LIMIT_THRESHOLD;
+        }
+
+        RequestLifeCycle.end();
       }
+    }
+
+    LOG.info(String.format("| / END::Relationships migration for (%s) user(s) with %s relationship(s) consumed %s(ms)", offset, total, System.currentTimeMillis() - t));
+    RequestLifeCycle.begin(PortalContainer.getInstance());
   }
   
   private int migrateRelationshipEntity(NodeIterator it, String userName, boolean isIncoming, Relationship.Type status) throws RepositoryException {
@@ -157,6 +168,9 @@ public class RelationshipMigrationService extends AbstractMigrationService<Relat
         Identity sender = new Identity(isIncoming ? senderId : receiverId);
         Identity receiver = new Identity(isIncoming ? receiverId : senderId);
         Connection exist = connectionDAO.getConnection(sender, receiver);
+        if (exist == null) {
+          exist = connectionDAO.getConnection(receiver, sender);
+        }
         if (exist == null) {
           Connection entity = new Connection();       
           entity.setSenderId(sender.getId());
@@ -185,7 +199,7 @@ public class RelationshipMigrationService extends AbstractMigrationService<Relat
 
   @Override
   protected void afterMigration() throws Exception {
-    if(forkStop) {
+    if(forkStop || numberFailed > 0) {
       return;
     }
     MigrationContext.setConnectionDone(true);
