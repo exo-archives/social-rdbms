@@ -273,7 +273,7 @@
       <column name="SPACE_ID" type="BIGINT">
         <constraints foreignKeyName="FK_SOC_MEM_SPACE_01" references="SOC_SPACES(SPACE_ID)" nullable="false"/>
       </column>
-      <column name="USER_ID" type="NVARCHAR(36)" />
+      <column name="USER_ID" type="NVARCHAR(100)" />
       <column name="STATUS" type="NVARCHAR(36)" />
       <column name="LAST_ACCESS" type="BIGINT"/>
       <column name="VISITED" type="BIT"/>
@@ -339,7 +339,7 @@
         <constraints foreignKeyName="FK_SOC_IDENTITY_PROFILE_PROPERTY" references="SOC_IDENTITY_PROFILE(PROFILE_ID)" nullable="false"/>
       </column>
       <column name="NAME" type="NVARCHAR(250)"/>
-      <column name="VALUE" type="NVARCHAR(500)"/>
+      <column name="VALUE" type="NVARCHAR(2000)"/>
     </createTable>
     <modifySql dbms="mysql">
       <append value=" ENGINE=INNODB CHARSET=UTF8 COLLATE utf8_general_ci"/>
@@ -356,28 +356,11 @@
       <column name="START_DATE" type="NCHAR(10)"/>
       <column name="END_DATE" type="NCHAR(10)"/>
       <column name="SKILLS" type="NVARCHAR(500)"/>
-      <column name="DESCRIPTION" type="NVARCHAR(500)"/>
+      <column name="DESCRIPTION" type="LONGTEXT"/>
     </createTable>
     <modifySql dbms="mysql">
       <append value=" ENGINE=INNODB CHARSET=UTF8 COLLATE utf8_general_ci"/>
     </modifySql>
-  </changeSet>
-
-  <changeSet author="social" id="1.0.0-33">
-    <modifyDataType tableName="SOC_SPACES_MEMBERS"
-                    columnName="USER_ID"
-                    newDataType="NVARCHAR(100)"/>
-  </changeSet>
-
-  <changeSet author="social" id="1.0.0-34">
-    <modifyDataType tableName="SOC_IDENTITY_PROFILE_EXPERIENCE"
-                    columnName="DESCRIPTION"
-                    newDataType="LONGTEXT"/>
-  </changeSet>
-  <changeSet author="social" id="1.0.0-35">
-    <modifyDataType tableName="SOC_IDENTITY_PROFILE_PROPERTY"
-                    columnName="VALUE"
-                    newDataType="NVARCHAR(2000)"/>
   </changeSet>
 
 </databaseChangeLog>
