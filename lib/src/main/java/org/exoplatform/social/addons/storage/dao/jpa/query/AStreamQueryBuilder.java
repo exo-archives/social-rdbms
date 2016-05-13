@@ -223,8 +223,15 @@ public final class AStreamQueryBuilder {
     
     if (this.myIdentity != null) {
       Root<Connection> subRoot1 = subQuery1.from(Connection.class);
-      subQuery1.select(subRoot1.<String>get(Connection_.receiverId));
-      subQuery1.where(cb.and(cb.equal(subRoot1.<String>get(Connection_.senderId), this.myIdentity.getId()),
+
+      Path receiver = subRoot1.get(Connection_.receiverId);
+      Path sender = subRoot1.get(Connection_.senderId);
+
+      CriteriaBuilder.Case select = cb.selectCase();
+      select.when(cb.equal(receiver, myIdentity.getId()), sender).otherwise(receiver);
+
+      subQuery1.select(select);
+      subQuery1.where(cb.and(cb.or(cb.equal(sender, this.myIdentity.getId()), cb.equal(receiver, this.myIdentity.getId())),
               cb.equal(subRoot1.<Relationship.Type>get(Connection_.status), Relationship.Type.CONFIRMED)));
 
       Predicate posterConnection = cb.and(cb.in(stream.get(StreamItem_.ownerId)).value(subQuery1), cb.equal(stream.get(StreamItem_.streamType), StreamType.POSTER));
@@ -287,8 +294,15 @@ public final class AStreamQueryBuilder {
     if (this.myIdentity != null) {
       
       Root<Connection> subRoot1 = subQuery1.from(Connection.class);
-      subQuery1.select(subRoot1.<String> get(Connection_.receiverId));
-      subQuery1.where(cb.and(cb.equal(subRoot1.<String> get(Connection_.senderId), this.myIdentity.getId()),
+
+      Path receiver = subRoot1.get(Connection_.receiverId);
+      Path sender = subRoot1.get(Connection_.senderId);
+
+      CriteriaBuilder.Case select = cb.selectCase();
+      select.when(cb.equal(sender, myIdentity.getId()), receiver).otherwise(sender);
+
+      subQuery1.select(select);
+      subQuery1.where(cb.and(cb.or(cb.equal(sender, this.myIdentity.getId()), cb.equal(receiver, this.myIdentity.getId())),
                              cb.equal(subRoot1.<Relationship.Type> get(Connection_.status), Relationship.Type.CONFIRMED)));
       
       predicates.add(cb.and(cb.in(stream.get(StreamItem_.ownerId)).value(subQuery1), cb.equal(stream.get(StreamItem_.streamType), StreamType.POSTER)));

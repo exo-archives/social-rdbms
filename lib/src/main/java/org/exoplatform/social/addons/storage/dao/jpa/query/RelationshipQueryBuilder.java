@@ -125,15 +125,18 @@ public final class RelationshipQueryBuilder {
     Predicate predicate = null;
     //owner
     if (this.owner != null) {
-      predicate = cb.equal(connection.get(Connection_.senderId), owner.getId()) ;
+      if (this.status == Type.OUTGOING) {
+        predicate = cb.equal(connection.get(Connection_.senderId), owner.getId());
+      } else if (this.status == Type.INCOMING) {
+        predicate = cb.equal(connection.get(Connection_.receiverId), owner.getId());
+      } else {
+        predicate = cb.or(cb.equal(connection.get(Connection_.senderId), owner.getId()),
+                cb.equal(connection.get(Connection_.receiverId), owner.getId()));
+      }
     }
     //status
-    if (this.status != null) {
-      if (Relationship.Type.PENDING.equals(this.status)) {
-        predicate = cb.and(predicate, addInClause(cb, connection.get(Connection_.status), types));
-      } else {
-        predicate = cb.and(predicate, cb.equal(connection.get(Connection_.status), this.status));
-      }
+    if (this.status != null && status != Type.OUTGOING && status != Type.INCOMING) {
+      predicate = cb.and(predicate, cb.equal(connection.get(Connection_.status), this.status));
     }
     
     CriteriaQuery<Connection> select = criteria.select(connection).distinct(true);
@@ -161,15 +164,18 @@ public final class RelationshipQueryBuilder {
     Predicate predicate = null;
     //owner
     if (this.owner != null) {
-      predicate = cb.equal(connection.get(Connection_.senderId), owner.getId()) ;
+      if (this.status == Type.OUTGOING) {
+        predicate = cb.equal(connection.get(Connection_.senderId), owner.getId());
+      } else if (this.status == Type.INCOMING) {
+        predicate = cb.equal(connection.get(Connection_.receiverId), owner.getId());
+      } else {
+        predicate = cb.or(cb.equal(connection.get(Connection_.senderId), owner.getId()),
+                cb.equal(connection.get(Connection_.receiverId), owner.getId()));
+      }
     }
     //status
-    if (this.status != null) {
-      if (Relationship.Type.PENDING.equals(this.status)) {
-        predicate = cb.and(predicate, addInClause(cb, connection.get(Connection_.status), types));
-      } else {
-        predicate = cb.and(predicate, cb.equal(connection.get(Connection_.status), this.status));
-      }
+    if (this.status != null && status != Type.OUTGOING && status != Type.INCOMING) {
+      predicate = cb.and(predicate, cb.equal(connection.get(Connection_.status), status));
     }
     
     CriteriaQuery<Long> select = criteria.select(cb.countDistinct(connection));
@@ -187,10 +193,17 @@ public final class RelationshipQueryBuilder {
     Predicate predicate = null;
     //owner
     if (this.owner != null) {
-      predicate = cb.equal(connection.get(Connection_.senderId), owner.getId()) ;
+      if (this.status == Type.OUTGOING) {
+        predicate = cb.equal(connection.get(Connection_.senderId), owner.getId());
+      } else if (this.status == Type.INCOMING) {
+        predicate = cb.equal(connection.get(Connection_.receiverId), owner.getId());
+      } else {
+        predicate = cb.or(cb.equal(connection.get(Connection_.senderId), owner.getId()),
+                cb.equal(connection.get(Connection_.receiverId), owner.getId()));
+      }
     }
     //status
-    if (this.status != null) {
+    if (this.status != null && status != Type.OUTGOING && status != Type.INCOMING) {
       predicate = cb.and(predicate, cb.equal(connection.get(Connection_.status), this.status));
     }
     
