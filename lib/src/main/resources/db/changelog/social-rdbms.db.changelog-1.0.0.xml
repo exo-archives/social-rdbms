@@ -317,7 +317,7 @@
       <column name="URL" type="NVARCHAR(250)"/>
       <column name="AVATAR_URL" type="NVARCHAR(250)"/>
       <column name="AVATAR_MIMTYPE" type="NVARCHAR(250)"/>
-      <column name="AVATAR_IMAGE" type="BLOB"/>
+      <column name="AVATAR_IMAGE" type="MEDIUMBLOB"/>
       <column name="CREATED_TIME" type="TIMESTAMP"/>
     </createTable>
     <modifySql dbms="mysql">
