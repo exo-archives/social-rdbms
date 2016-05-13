@@ -352,7 +352,7 @@
         <constraints foreignKeyName="FK_SOC_IDENTITY_PROFILE_EXPERIENCE" references="SOC_IDENTITY_PROFILE(PROFILE_ID)" nullable="false"/>
       </column>
       <column name="COMPANY" type="NVARCHAR(250)"/>
-      <column name="POSITION" type="NVARCHAR(250)"/>
+      <column name="POSITION" type="NVARCHAR(500)"/>
       <column name="START_DATE" type="NCHAR(10)"/>
       <column name="END_DATE" type="NCHAR(10)"/>
       <column name="SKILLS" type="NVARCHAR(500)"/>
