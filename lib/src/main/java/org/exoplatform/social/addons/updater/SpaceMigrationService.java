@@ -53,60 +53,78 @@ public class SpaceMigrationService extends AbstractMigrationService<Space> {
   @Override
   protected void beforeMigration() throws Exception {
     MigrationContext.setSpaceDone(false);
+    numberFailed = 0;
   }
 
   @Override
   @Managed
   @ManagedDescription("Manual to start run migration data of spaces from JCR to RDBMS.")
   public void doMigration() throws Exception {
-      boolean begunTx = startTx();
-      long offset = 0;
+    RequestLifeCycle.end();
 
-      long t = System.currentTimeMillis();
+    LOG.info("| \\ START::Spaces migration ---------------------------------");
+
+    long t = System.currentTimeMillis();
+    long offset = 0;
+    long numberSuccessful = 0;
+    boolean cont = true;
+
+    while (cont && !forkStop) {
+      long batchSize = 0;
+      RequestLifeCycle.begin(PortalContainer.getInstance());
+      boolean begunTx = startTx();
       try {
-        LOG.info("| \\ START::Spaces migration ---------------------------------");
         NodeIterator nodeIter  = getSpaceNodes(offset, LIMIT_THRESHOLD);
-        if(nodeIter == null || nodeIter.getSize() == 0) {
-          return;
-        }
-        
-        Node spaceNode = null;
-        while (nodeIter.hasNext()) {
-          if(forkStop) {
-            break;
+        batchSize = nodeIter == null ? 0 : nodeIter.getSize();
+        if(batchSize == 0) {
+          cont = false;
+
+        } else {
+          Node spaceNode = null;
+          while (nodeIter.hasNext()) {
+            if(forkStop) {
+              break;
+            }
+
+            offset++;
+            spaceNode = nodeIter.nextNode();
+            LOG.info(String.format("|  \\ START::space number: %s (%s space)", offset, spaceNode.getName()));
+            long t1 = System.currentTimeMillis();
+
+            Space space = migrateSpace(spaceNode);
+            broadcastListener(space, space.getId());
+            numberSuccessful++;
+            LOG.info(String.format("|  / END::space number %s (%s space) consumed %s(ms)", offset, spaceNode.getName(), System.currentTimeMillis() - t1));
           }
-          spaceNode = nodeIter.nextNode();
-          LOG.info(String.format("|  \\ START::space number: %s (%s space)", offset, spaceNode.getName()));
-          long t1 = System.currentTimeMillis();
-          
-          Space space = migrateSpace(spaceNode);
-          
-          //
-          offset++;
-          if (offset % LIMIT_THRESHOLD == 0) {
-            endTx(begunTx);
-            RequestLifeCycle.end();
-            RequestLifeCycle.begin(PortalContainer.getInstance());
-            begunTx = startTx();
-            nodeIter  = getSpaceNodes(offset, LIMIT_THRESHOLD);
-          }
-          
-          broadcastListener(space, space.getId());
-          LOG.info(String.format("|  / END::space number %s (%s space) consumed %s(ms)", offset - 1, spaceNode.getName(), System.currentTimeMillis() - t1));
         }
-        
+
+      } catch (Exception ex) {
+        LOG.error("Error while migrate the space", ex);
+        numberFailed++;
+
       } finally {
-        endTx(begunTx);
+        try {
+          endTx(begunTx);
+        } catch (Exception ex) {
+          // Commit transaction failed
+          numberFailed += batchSize;
+        }
         RequestLifeCycle.end();
-        RequestLifeCycle.begin(PortalContainer.getInstance());
-        LOG.info(String.format("| / END::Space migration for (%s) space(s) consumed %s(ms)", offset, System.currentTimeMillis() - t));
-        
-        LOG.info("| \\ START::Re-indexing space(s) ---------------------------------");
-        //To be sure all of the space will be indexed in ES after migrated
-        IndexingService indexingService = CommonsUtils.getService(IndexingService.class);
-        indexingService.reindexAll(SpaceIndexingServiceConnector.TYPE);
-        LOG.info("| / END::Re-indexing space(s) ---------------------------------");
       }
+    }
+
+    RequestLifeCycle.begin(PortalContainer.getInstance());
+
+    if (numberFailed > 0) {
+      LOG.info(String.format("|   Space migration failed for (%s) space(s)", numberFailed));
+    }
+    LOG.info(String.format("| / END::Space migration for (%s) space(s) consumed %s(ms)", numberSuccessful, System.currentTimeMillis() - t));
+
+    LOG.info("| \\ START::Re-indexing space(s) ---------------------------------");
+    //To be sure all of the space will be indexed in ES after migrated
+    IndexingService indexingService = CommonsUtils.getService(IndexingService.class);
+    indexingService.reindexAll(SpaceIndexingServiceConnector.TYPE);
+    LOG.info("| / END::Re-indexing space(s) ---------------------------------");
   }
   
   private Space migrateSpace(Node spaceNode) throws Exception {
@@ -148,7 +166,7 @@ public class SpaceMigrationService extends AbstractMigrationService<Space> {
 
   @Override
   protected void afterMigration() throws Exception {
-    if(forkStop) {
+    if(forkStop || numberFailed > 0) {
       return;
     }
     MigrationContext.setSpaceDone(true);

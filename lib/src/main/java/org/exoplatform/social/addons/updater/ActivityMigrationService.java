@@ -93,121 +93,155 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
   @Managed
   @ManagedDescription("Manual to start run miguration data of activities from JCR to RDBMS.")
   public void doMigration() throws Exception {
-    try {
-      RequestLifeCycle.begin(PortalContainer.getInstance());
-      migrateUserActivities();
-    } finally {
-      RequestLifeCycle.end();
-    }
+    RequestLifeCycle.end();
 
+    migrateUserActivities();
     // migrate activities from space
-    try {
-      RequestLifeCycle.begin(PortalContainer.getInstance());
-      migrateSpaceActivities();
-    } finally {
-      RequestLifeCycle.end();
-    }
-    
-    MigrationContext.setActivityDone(true);
-    LOG.info("Done to migration activities from JCR to RDBMS");
+    migrateSpaceActivities();
+
+    RequestLifeCycle.begin(PortalContainer.getInstance());
   }
 
   private void migrateUserActivities() throws Exception {
     MigrationCounter counter = MigrationCounter.builder().threshold(LIMIT_THRESHOLD).build();
     counter.newTotalAndWatch();
-    // doing with normal users
-    NodeIterator it = getIdentityNodes(counter.getTotal(), LIMIT_THRESHOLD);
-    if(it == null || it.getSize() == 0) {
-      return;
-    }
-    boolean begunTx = startTx();
-    Identity owner = null; 
-    Node node = null;
-    try {
-      while (it.hasNext()) {
-        if(forceStop) {
-          return;
-        }
-        node = (Node) it.next();
-        owner = identityStorage.findIdentityById(node.getUUID());
-        counter.newBatchAndWatch();
-        counter.getAndIncrementTotal();
-        LOG.info(String.format("|  \\ START::user number: %s (%s user)", counter.getTotal(), owner.getRemoteId()));
-        IdentityEntity identityEntity = _findById(IdentityEntity.class, owner.getId());
-        migrationByIdentity(null, identityEntity);
-        
-        LOG.info(String.format("| / END:: user's activity consumed %s(ms) -------------", counter.endBatchWatch()));
-        //
-        if (counter.isPersistPoint()) {
-          endTx(begunTx);
-          RequestLifeCycle.end();
+
+    boolean cont = true;
+    while(cont && !forkStop) {
+      // doing with normal users
+      NodeIterator it = getIdentityNodes(counter.getTotal(), LIMIT_THRESHOLD);
+      long batchSize = it == null ? 0 : it.getSize();
+
+      if (batchSize == 0) {
+        cont = false;
+
+      } else {
+        Identity owner = null;
+        Node node = null;
+
+        boolean begunTx = false;
+        try {
           RequestLifeCycle.begin(PortalContainer.getInstance());
           begunTx = startTx();
-          it = getIdentityNodes(counter.getTotal(), LIMIT_THRESHOLD);
+
+          while (it.hasNext()) {
+            if (forceStop) {
+              return;
+            }
+            node = (Node) it.next();
+            owner = identityStorage.findIdentityById(node.getUUID());
+            counter.newBatchAndWatch();
+            counter.getAndIncrementTotal();
+            LOG.info(String.format("|  \\ START::user number: %s (%s user)", counter.getTotal(), owner.getRemoteId()));
+            IdentityEntity identityEntity = _findById(IdentityEntity.class, owner.getId());
+            migrationByIdentity(null, identityEntity);
+
+            LOG.info(String.format("| / END:: user's activity consumed %s(ms) -------------", counter.endBatchWatch()));
+            //
+            if (counter.isPersistPoint()) {
+              try {
+                endTx(begunTx);
+              } catch (Exception ex) {
+                numberFailed += batchSize;
+              }
+
+              RequestLifeCycle.end();
+              RequestLifeCycle.begin(PortalContainer.getInstance());
+              begunTx = startTx();
+              it = getIdentityNodes(counter.getTotal(), LIMIT_THRESHOLD);
+              batchSize = it == null ? 0 : it.getSize();
+            }
+          }
+        } catch (Exception e) {
+          numberFailed ++;
+          LOG.error("Failed to migration for user Activity.", e);
+        } finally {
+          try {
+            endTx(begunTx);
+          } catch (Exception ex) {
+            numberFailed += batchSize;
+          }
+          RequestLifeCycle.end();
         }
       }
-      LOG.info(String.format("| / END::%s user(s) consumed %s(ms) -------------", counter.getTotal(), counter.endTotalWatch()));
-    } catch (Exception e) {
-      LOG.error("Failed to migration for user Activity.", e);
-    } finally {
-      endTx(begunTx);
-      RequestLifeCycle.end();
-      RequestLifeCycle.begin(PortalContainer.getInstance());
     }
+    LOG.info(String.format("| / END::%s user(s) consumed %s(ms) -------------", counter.getTotal(), counter.endTotalWatch()));
   }
 
   private void migrateSpaceActivities() throws Exception {
     long t = System.currentTimeMillis();
-    NodeIterator it = getSpaceIdentityNodes();
-    if(it == null || it.getSize() == 0) {
-      return;
-    }
-    int size = (int) it.getSize(), count = 0;
-    boolean begunTx = startTx();
-    Node node = null;
+
+    boolean cont = true;
     long offset = 0;
-    boolean isSkip = (lastUserProcess != null);
-    Identity owner = null; 
-    try {
-      while (it.hasNext()) {
-        if (forceStop) {
-          return;
-        }
-        node = (Node) it.next();
-        offset++;
-        owner = identityStorage.findIdentityById(node.getUUID());
-        if (isSkip) {
-          if (lastUserProcess.equals(owner.getRemoteId())) {
-            lastUserProcess = null;
-            isSkip = false;
-          } else {
-            continue;
+
+    while(cont && !forkStop) {
+      NodeIterator it = getSpaceIdentityNodes();
+      int count = 0;
+
+      if (it == null || it.getSize() == 0) {
+        cont = false;
+      } else {
+
+        RequestLifeCycle.begin(PortalContainer.getInstance());
+        boolean begunTx = startTx();
+        int size = (int) it.getSize();
+
+        Node node = null;
+        boolean isSkip = (lastUserProcess != null);
+        Identity owner = null;
+        try {
+          while (it.hasNext()) {
+            if (forceStop) {
+              return;
+            }
+            node = (Node) it.next();
+            offset++;
+            owner = identityStorage.findIdentityById(node.getUUID());
+            if (isSkip) {
+              if (lastUserProcess.equals(owner.getRemoteId())) {
+                lastUserProcess = null;
+                isSkip = false;
+              } else {
+                continue;
+              }
+            }
+            //
+            IdentityEntity spaceEntity = _findById(IdentityEntity.class, node.getUUID());
+            migrationByIdentity(null, spaceEntity);
+            ++count;
+            processLog("Activities migration spaces", size, count);
+            //
+            if (count % LIMIT_THRESHOLD == 0) {
+              LOG.info(String.format("Commit database into RDBMS and reCreate JCR-Session at offset: " + offset));
+              try {
+                endTx(begunTx);
+              } catch (Exception ex) {
+                // commit transaction failed
+                numberFailed += count;
+              }
+              RequestLifeCycle.end();
+              RequestLifeCycle.begin(PortalContainer.getInstance());
+              begunTx = startTx();
+              it = getSpaceIdentityNodes();
+              it.skip(offset);
+              count = 0;
+            }
           }
-        }
-        //
-        IdentityEntity spaceEntity = _findById(IdentityEntity.class, node.getUUID());
-        migrationByIdentity(null, spaceEntity);
-        ++count;
-        processLog("Activities migration spaces", size, count);
-        //
-        if (count % LIMIT_THRESHOLD == 0) {
-          LOG.info(String.format("Commit database into RDBMS and reCreate JCR-Session at offset: " + offset));
-          endTx(begunTx);
+        } catch (Exception e) {
+          LOG.error("Failed to migration for Space Activity.", e);
+        } finally {
+          try {
+            endTx(begunTx);
+          } catch (Exception ex) {
+            // commit transaction failed
+            numberFailed += count;
+          }
           RequestLifeCycle.end();
-          RequestLifeCycle.begin(PortalContainer.getInstance());
-          begunTx = startTx();
-          it = getSpaceIdentityNodes();
-          it.skip(offset);
         }
       }
-      LOG.info(String.format("Done to migration %s space activities from JCR to RDBMS on %s(ms)", offset, (System.currentTimeMillis() - t)));
-    } catch (Exception e) {
-      LOG.error("Failed to migration for Space Activity.", e);
-    } finally {
-      endTx(begunTx);
-      RequestLifeCycle.end();
-      RequestLifeCycle.begin(PortalContainer.getInstance());
     }
+
+    LOG.info(String.format("Done to migration %s space activities from JCR to RDBMS on %s(ms)", offset, (System.currentTimeMillis() - t)));
   }
 
   @Override
@@ -219,6 +253,8 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
   
   protected void beforeMigration() throws Exception {
     MigrationContext.setActivityDone(false);
+    numberFailed = 0;
+
     LOG.info("Stating to migration activities from JCR to RDBMS........");
     NodeIterator iterator = nodes("SELECT * FROM soc:activityUpdater");
     if (iterator.hasNext()) {
@@ -369,9 +405,13 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
   }
 
   protected void afterMigration() throws Exception {
-    if (forceStop) {
+    if (forceStop || numberFailed > 0) {
       return;
     }
+
+    MigrationContext.setActivityDone(true);
+    LOG.info("Done to migration activities from JCR to RDBMS");
+
     if (previousActivityId != null) {
       try {
         ActivityEntity previousActivity = getSession().findById(ActivityEntity.class, previousActivityId);
