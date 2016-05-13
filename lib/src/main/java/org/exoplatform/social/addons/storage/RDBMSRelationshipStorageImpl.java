@@ -64,33 +64,25 @@ public class RDBMSRelationshipStorageImpl extends RelationshipStorageImpl {
   @ExoTransactional
   public Relationship saveRelationship(Relationship relationship) throws RelationshipStorageException {
     if (relationship.getId() == null) {//create new relationship
-      Connection entity = new Connection();
+
+      Connection entity = connectionDAO.getConnection(relationship.getSender(), relationship.getReceiver());
+      if (entity == null) {
+        entity = new Connection();
+      }
+
       entity.setReceiverId(relationship.getReceiver().getId());
       entity.setSenderId(relationship.getSender().getId());
-      entity.setStatus((Relationship.Type.PENDING == relationship.getStatus()) ? Relationship.Type.OUTGOING : relationship.getStatus());
+      entity.setStatus(relationship.getStatus());
       entity.setLastUpdated(System.currentTimeMillis());
       //
       connectionDAO.create(entity);
       relationship.setId(Long.toString(entity.getId()));
 
-      //
-      Connection symmetricalEntity = new Connection();
-      symmetricalEntity.setSenderId(relationship.getReceiver().getId());
-      symmetricalEntity.setReceiverId(relationship.getSender().getId());
-      symmetricalEntity.setStatus((Relationship.Type.PENDING == relationship.getStatus()) ? Relationship.Type.INCOMING : relationship.getStatus());
-      symmetricalEntity.setLastUpdated(System.currentTimeMillis());
-      //
-      connectionDAO.create(symmetricalEntity);
     } else {//update an relationship
       Connection entity = connectionDAO.getConnection(relationship.getSender(), relationship.getReceiver());
       entity.setStatus(relationship.getStatus());
       entity.setLastUpdated(System.currentTimeMillis());
       connectionDAO.update(entity);
-      //
-      Connection symmetricalEntity = connectionDAO.getConnection(relationship.getReceiver(), relationship.getSender());
-      symmetricalEntity.setStatus(relationship.getStatus());
-      symmetricalEntity.setLastUpdated(System.currentTimeMillis());
-      connectionDAO.update(symmetricalEntity);
     }
     //
     return relationship;
@@ -100,9 +92,9 @@ public class RDBMSRelationshipStorageImpl extends RelationshipStorageImpl {
   @ExoTransactional
   public void removeRelationship(Relationship relationship) throws RelationshipStorageException {
     Connection connection = connectionDAO.getConnection(relationship.getSender(), relationship.getReceiver());
-    connectionDAO.delete(connection);
-    Connection symmetricalEntity = connectionDAO.getConnection(relationship.getReceiver(), relationship.getSender());
-    connectionDAO.delete(symmetricalEntity);
+    if (connection != null) {
+      connectionDAO.delete(connection);
+    }
   }
   
   @Override
@@ -226,14 +218,10 @@ public class RDBMSRelationshipStorageImpl extends RelationshipStorageImpl {
     if (item == null) return null;
     //
     Relationship relationship = new Relationship(Long.toString(item.getId()));
-    if (Relationship.Type.INCOMING.equals(item.getStatus())) {
-      relationship.setSender(identityStorage.findIdentityById(item.getReceiverId()));
-      relationship.setReceiver(identityStorage.findIdentityById(item.getSenderId()));
-    } else {
-      relationship.setSender(identityStorage.findIdentityById(item.getSenderId()));
-      relationship.setReceiver(identityStorage.findIdentityById(item.getReceiverId()));
-    }
-    relationship.setStatus(Relationship.Type.CONFIRMED.equals(item.getStatus()) ? item.getStatus() : Relationship.Type.PENDING);
+    relationship.setId(String.valueOf(item.getId()));
+    relationship.setSender(identityStorage.findIdentityById(item.getSenderId()));
+    relationship.setReceiver(identityStorage.findIdentityById(item.getReceiverId()));
+    relationship.setStatus(item.getStatus());
     return relationship;
   }
 
