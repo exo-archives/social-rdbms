@@ -20,6 +20,8 @@
 package org.exoplatform.social.addons.storage.dao.jpa.query;
 
 import org.exoplatform.social.addons.search.ExtendProfileFilter;
+import org.exoplatform.social.addons.storage.entity.Connection;
+import org.exoplatform.social.addons.storage.entity.Connection_;
 import org.exoplatform.social.addons.storage.entity.IdentityEntity;
 import org.exoplatform.social.addons.storage.entity.IdentityEntity_;
 import org.exoplatform.social.addons.storage.entity.ProfileEntity;
@@ -28,6 +30,7 @@ import org.exoplatform.social.addons.storage.entity.ProfileExperienceEntity;
 import org.exoplatform.social.addons.storage.entity.ProfileExperienceEntity_;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.identity.model.Profile;
+import org.exoplatform.social.core.relationship.model.Relationship;
 
 import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
@@ -38,8 +41,10 @@ import javax.persistence.criteria.Join;
 import javax.persistence.criteria.JoinType;
 import javax.persistence.criteria.ListJoin;
 import javax.persistence.criteria.MapJoin;
+import javax.persistence.criteria.Path;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
+import javax.persistence.criteria.Subquery;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -97,6 +102,33 @@ public class ProfileQueryBuilder {
 
       if (filter.getProviderId() != null && !filter.getProviderId().isEmpty()) {
         predicates.add(cb.equal(identity.get(IdentityEntity_.providerId), filter.getProviderId()));
+      }
+
+      if (filter.getConnection() != null) {
+        Identity owner = filter.getConnection();
+        Relationship.Type status = filter.getConnectionStatus();
+
+        Subquery sub = query.subquery(Connection.class);
+        Root connection = sub.from(Connection.class);
+        Path sender = connection.get(Connection_.senderId);
+        Path receiver = connection.get(Connection_.receiverId);
+
+        CriteriaBuilder.Case select = cb.selectCase();
+        select.when(cb.equal(sender, owner.getId()), receiver).otherwise(sender);
+        Predicate predicate;
+
+        if (status == Relationship.Type.OUTGOING) {
+          predicate = cb.equal(connection.get(Connection_.senderId), owner.getId());
+        } else if (status == Relationship.Type.INCOMING) {
+          predicate = cb.equal(connection.get(Connection_.receiverId), owner.getId());
+        } else {
+          predicate = cb.or(cb.equal(connection.get(Connection_.senderId), owner.getId()),
+                  cb.equal(connection.get(Connection_.receiverId), owner.getId()));
+        }
+
+        sub.select(select).where(predicate);
+
+        predicates.add(identity.get(IdentityEntity_.id).in(sub));
       }
 
       ListJoin<ProfileEntity, ProfileExperienceEntity> experience = profile.join(ProfileEntity_.experiences, JoinType.LEFT);
