@@ -826,6 +826,31 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
     return convertToIdentities(list, offset, limit);
   }
 
+  public ListAccess<Identity> findByFilter(ExtendProfileFilter filter) {
+    final ListAccess<IdentityEntity> list = getIdentityDAO().findIdentities(filter);
+
+    return new ListAccess<Identity>() {
+      @Override
+      public Identity[] load(int offset, int size) throws Exception, IllegalArgumentException {
+        IdentityEntity[] entities = list.load(offset, size);
+        if (entities == null || entities.length == 0) {
+          return new Identity[0];
+        } else {
+          Identity[] identities = new Identity[entities.length];
+          for (int i = 0; i < entities.length; i++) {
+            identities[i] = convertToIdentity(entities[i]);
+          }
+          return identities;
+        }
+      }
+
+      @Override
+      public int getSize() throws Exception {
+        return list.getSize();
+      }
+    };
+  }
+
   /**
    * This method is introduced to clean totally identity from database
    * It's used in unit test
