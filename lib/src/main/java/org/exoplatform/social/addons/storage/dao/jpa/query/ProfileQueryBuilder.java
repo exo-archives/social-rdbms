@@ -126,7 +126,15 @@ public class ProfileQueryBuilder {
                   cb.equal(connection.get(Connection_.receiverId), owner.getId()));
         }
 
-        sub.select(select).where(predicate);
+        if (status != null) {
+          if (status == Relationship.Type.OUTGOING || status == Relationship.Type.INCOMING) {
+            predicate = cb.and(predicate, cb.equal(connection.get(Connection_.status), Relationship.Type.PENDING));
+          } else {
+            predicate = cb.and(predicate, cb.equal(connection.get(Connection_.status), status));
+          }
+        }
+
+        sub.select(select.as(Long.class)).where(predicate);
 
         predicates.add(identity.get(IdentityEntity_.id).in(sub));
       }

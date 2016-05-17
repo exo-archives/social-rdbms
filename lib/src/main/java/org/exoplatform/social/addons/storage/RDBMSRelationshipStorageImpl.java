@@ -32,6 +32,8 @@ import java.util.TreeMap;
 
 import org.exoplatform.commons.api.persistence.ExoTransactional;
 import org.exoplatform.commons.utils.ListAccess;
+import org.exoplatform.services.log.ExoLogger;
+import org.exoplatform.services.log.Log;
 import org.exoplatform.social.addons.search.ExtendProfileFilter;
 import org.exoplatform.social.addons.search.ProfileSearchConnector;
 import org.exoplatform.social.addons.storage.dao.ConnectionDAO;
@@ -42,6 +44,7 @@ import org.exoplatform.social.core.profile.ProfileFilter;
 import org.exoplatform.social.core.relationship.model.Relationship;
 import org.exoplatform.social.core.relationship.model.Relationship.Type;
 import org.exoplatform.social.core.storage.RelationshipStorageException;
+import org.exoplatform.social.core.storage.api.RelationshipStorage;
 import org.exoplatform.social.core.storage.impl.RelationshipStorageImpl;
 
 /**
@@ -51,6 +54,8 @@ import org.exoplatform.social.core.storage.impl.RelationshipStorageImpl;
  * Jun 3, 2015  
  */
 public class RDBMSRelationshipStorageImpl extends RelationshipStorageImpl {
+
+  private static final Log LOG = ExoLogger.getLogger(RDBMSRelationshipStorageImpl.class);
   
   private final ConnectionDAO connectionDAO;
   private final RDBMSIdentityStorageImpl identityStorage;
@@ -148,16 +153,20 @@ public class RDBMSRelationshipStorageImpl extends RelationshipStorageImpl {
   
   @Override
   public List<Relationship> getReceiverRelationships(Identity receiver, Relationship.Type type, List<Identity> listCheckIdentity) throws RelationshipStorageException {
-    return getRelationships(receiver, Relationship.Type.INCOMING);
+    return getRelationships(null, receiver, type);
   }
   
   @Override
   public List<Relationship> getSenderRelationships(Identity sender, Relationship.Type type, List<Identity> listCheckIdentity) throws RelationshipStorageException {
-    return getRelationships(sender, Relationship.Type.OUTGOING);
+    return getRelationships(sender, null, type);
   }
   
   public List<Relationship> getRelationships(Identity identity, Relationship.Type type) {
     return convertRelationshipEntitiesToRelationships(connectionDAO.getConnections(identity, type, 0, -1));
+  }
+
+  public List<Relationship> getRelationships(Identity sender, Identity receiver, Type type) {
+    return convertRelationshipEntitiesToRelationships(connectionDAO.getConnections(sender, receiver, type));
   }
   
   @Override
@@ -231,7 +240,7 @@ public class RDBMSRelationshipStorageImpl extends RelationshipStorageImpl {
   @Override
   public List<Relationship> getSenderRelationships(String senderId, Type type, List<Identity> listCheckIdentity) throws RelationshipStorageException {
     Identity sender = identityStorage.findIdentityById(senderId);
-    return getSenderRelationships(sender, Relationship.Type.OUTGOING, listCheckIdentity);
+    return getSenderRelationships(sender, type, listCheckIdentity);
   }
 
   @Override
@@ -253,12 +262,12 @@ public class RDBMSRelationshipStorageImpl extends RelationshipStorageImpl {
 
   @Override
   public List<Identity> getIncomingByFilter(Identity existingIdentity, ProfileFilter profileFilter, long offset, long limit) throws RelationshipStorageException {
-    return searchConnectionByFilter(existingIdentity, Type.OUTGOING, profileFilter, offset, limit);
+    return searchConnectionByFilter(existingIdentity, Type.INCOMING, profileFilter, offset, limit);
   }
 
   @Override
   public List<Identity> getOutgoingByFilter(Identity existingIdentity, ProfileFilter profileFilter, long offset, long limit) throws RelationshipStorageException {
-    return searchConnectionByFilter(existingIdentity, Type.INCOMING, profileFilter, offset, limit);
+    return searchConnectionByFilter(existingIdentity, Type.OUTGOING, profileFilter, offset, limit);
   }
 
   @Override
@@ -268,7 +277,7 @@ public class RDBMSRelationshipStorageImpl extends RelationshipStorageImpl {
 
   @Override
   public int getIncomingCountByFilter(Identity existingIdentity, ProfileFilter profileFilter) throws RelationshipStorageException {
-    return countConnectionByFilter(existingIdentity, Type.OUTGOING, profileFilter);
+    return countConnectionByFilter(existingIdentity, Type.INCOMING, profileFilter);
   }
 
   @Override
@@ -379,6 +388,7 @@ public class RDBMSRelationshipStorageImpl extends RelationshipStorageImpl {
     try {
       return Arrays.asList(list.load((int)offset, (int)limit));
     } catch (Exception ex) {
+      LOG.error(ex.getMessage(), ex);
       return Collections.emptyList();
     }
   }
@@ -392,6 +402,7 @@ public class RDBMSRelationshipStorageImpl extends RelationshipStorageImpl {
     try {
       return list.getSize();
     } catch (Exception ex) {
+      LOG.error(ex.getMessage(), ex);
       return 0;
     }
   }

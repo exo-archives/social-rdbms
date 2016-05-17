@@ -59,6 +59,7 @@ import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvide
 import org.exoplatform.social.core.identity.provider.SpaceIdentityProvider;
 import org.exoplatform.social.core.model.AvatarAttachment;
 import org.exoplatform.social.core.profile.ProfileFilter;
+import org.exoplatform.social.core.profile.ProfileLoader;
 import org.exoplatform.social.core.service.LinkProvider;
 import org.exoplatform.social.core.space.SpaceUtils;
 import org.exoplatform.social.core.space.model.Space;
@@ -141,7 +142,8 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
     if (entity.getProfile() != null) {
       identity.setProfile(convertToProfile(entity.getProfile(), identity));
     } else {
-      identity.setProfile(new Profile(identity));
+      identity.setProfile(null);
+      identity.setProfileLoader(new RDBMSProfileLoader(this, identity));
     }
     identity.setEnable(entity.isEnable());
     identity.setDeleted(entity.isDeleted());
@@ -909,5 +911,21 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
       }
     }
     return result;
+  }
+
+  public static class RDBMSProfileLoader implements ProfileLoader {
+    final RDBMSIdentityStorageImpl storage;
+    final Identity identity;
+
+    public RDBMSProfileLoader(RDBMSIdentityStorageImpl storage, Identity identity) {
+      this.storage = storage;
+      this.identity = identity;
+    }
+
+    @Override
+    public Profile load() throws IdentityStorageException {
+      Profile p = new Profile(identity);
+      return storage.loadProfile(p);
+    }
   }
 }

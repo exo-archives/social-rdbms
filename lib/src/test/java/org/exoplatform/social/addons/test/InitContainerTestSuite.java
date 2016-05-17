@@ -16,6 +16,7 @@
  */
 package org.exoplatform.social.addons.test;
 
+import org.exoplatform.social.addons.storage.RelationshipStorageTest;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.runners.Suite.SuiteClasses;
@@ -37,6 +38,7 @@ import org.exoplatform.social.addons.storage.dao.StreamItemDAOTest;
   RDBMSActivityStorageImplTest.class,
   ActivityManagerMysqlTest.class,
   SpaceActivityMySqlPublisherTest.class,
+  RelationshipStorageTest.class,
   RDBMSRelationshipManagerTest.class,
   IdentityStorageTest.class,
   RDBMSSpaceStorageTest.class
