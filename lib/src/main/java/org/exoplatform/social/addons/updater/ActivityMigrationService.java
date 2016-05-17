@@ -305,7 +305,7 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
               String value = entry.getValue();
 
               if (value.length() >= 1024) {
-                LOG.info("===================== activity id " + activity.getId() + " new value length = " +  value.length() + " - " + value);
+                LOG.info("===================== activity id " + activity.getId() + " new value length = " +  value.length());
                 params.put(entry.getKey(), "");
               }
 
