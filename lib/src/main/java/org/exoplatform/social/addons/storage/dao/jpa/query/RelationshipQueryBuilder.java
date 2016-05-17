@@ -16,6 +16,7 @@
  */
 package org.exoplatform.social.addons.storage.dao.jpa.query;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
@@ -121,26 +122,42 @@ public final class RelationshipQueryBuilder {
     CriteriaBuilder cb = em.getCriteriaBuilder();
     CriteriaQuery<Connection> criteria = cb.createQuery(Connection.class);
     Root<Connection> connection = criteria.from(Connection.class);
-    
-    Predicate predicate = null;
+
+    List<Predicate> predicates = new ArrayList<>();
+    Path sender = connection.get(Connection_.senderId);
+    Path receiver = connection.get(Connection_.receiverId);
+
     //owner
     if (this.owner != null) {
+      Predicate predicate = null;
       if (this.status == Type.OUTGOING) {
-        predicate = cb.equal(connection.get(Connection_.senderId), owner.getId());
+        predicate = cb.equal(sender, owner.getId());
       } else if (this.status == Type.INCOMING) {
-        predicate = cb.equal(connection.get(Connection_.receiverId), owner.getId());
+        predicate = cb.equal(receiver, owner.getId());
       } else {
-        predicate = cb.or(cb.equal(connection.get(Connection_.senderId), owner.getId()),
-                cb.equal(connection.get(Connection_.receiverId), owner.getId()));
+        predicate = cb.or(cb.equal(sender, owner.getId()),
+                cb.equal(receiver, owner.getId()));
       }
+      predicates.add(predicate);
     }
     //status
-    if (this.status != null && status != Type.OUTGOING && status != Type.INCOMING) {
-      predicate = cb.and(predicate, cb.equal(connection.get(Connection_.status), this.status));
+    if (this.status != null) {
+      if (status == Type.OUTGOING || status == Type.INCOMING) {
+        predicates.add(cb.equal(connection.get(Connection_.status), Type.PENDING));
+      } else {
+        predicates.add(cb.equal(connection.get(Connection_.status), this.status));
+      }
+    }
+
+    if (this.sender != null) {
+      predicates.add(cb.equal(sender, this.sender.getId()));
+    }
+    if (this.receiver != null) {
+      predicates.add(cb.equal(receiver, this.receiver.getId()));
     }
     
     CriteriaQuery<Connection> select = criteria.select(connection).distinct(true);
-    select.where(predicate);
+    select.where(predicates.toArray(new Predicate[predicates.size()]));
 
     TypedQuery<Connection> typedQuery = em.createQuery(select);
     if (this.limit > 0) {
@@ -174,8 +191,12 @@ public final class RelationshipQueryBuilder {
       }
     }
     //status
-    if (this.status != null && status != Type.OUTGOING && status != Type.INCOMING) {
-      predicate = cb.and(predicate, cb.equal(connection.get(Connection_.status), status));
+    if (this.status != null) {
+      if (status == Type.OUTGOING || status == Type.INCOMING) {
+        predicate = cb.and(predicate, cb.equal(connection.get(Connection_.status), Type.PENDING));
+      } else {
+        predicate = cb.and(predicate, cb.equal(connection.get(Connection_.status), this.status));
+      }
     }
     
     CriteriaQuery<Long> select = criteria.select(cb.countDistinct(connection));
@@ -203,8 +224,12 @@ public final class RelationshipQueryBuilder {
       }
     }
     //status
-    if (this.status != null && status != Type.OUTGOING && status != Type.INCOMING) {
-      predicate = cb.and(predicate, cb.equal(connection.get(Connection_.status), this.status));
+    if (this.status != null) {
+      if (status == Type.OUTGOING || status == Type.INCOMING) {
+        predicate = cb.and(predicate, cb.equal(connection.get(Connection_.status), Type.PENDING));
+      } else {
+        predicate = cb.and(predicate, cb.equal(connection.get(Connection_.status), this.status));
+      }
     }
     
     CriteriaQuery<Connection> select = criteria.select(connection).distinct(true);
