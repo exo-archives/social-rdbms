@@ -134,9 +134,9 @@ public class ProfileQueryBuilder {
           }
         }
 
-        sub.select(select.as(Long.class)).where(predicate);
+        sub.select(select).where(predicate);
 
-        predicates.add(identity.get(IdentityEntity_.id).in(sub));
+        predicates.add(identity.get(IdentityEntity_.id).as(String.class).in(sub));
       }
 
       ListJoin<ProfileEntity, ProfileExperienceEntity> experience = profile.join(ProfileEntity_.experiences, JoinType.LEFT);
