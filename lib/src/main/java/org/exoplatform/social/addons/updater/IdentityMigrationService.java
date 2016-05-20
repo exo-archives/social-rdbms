@@ -19,6 +19,8 @@
 
 package org.exoplatform.social.addons.updater;
 
+import org.chromattic.ext.ntdef.NTFile;
+import org.chromattic.ext.ntdef.Resource;
 import org.exoplatform.addons.es.index.IndexingService;
 import org.exoplatform.commons.api.event.EventManager;
 import org.exoplatform.commons.persistence.impl.EntityManagerService;
@@ -32,12 +34,16 @@ import org.exoplatform.management.jmx.annotations.NameTemplate;
 import org.exoplatform.management.jmx.annotations.Property;
 import org.exoplatform.social.addons.search.ProfileIndexingServiceConnector;
 import org.exoplatform.social.addons.storage.RDBMSIdentityStorageImpl;
+import org.exoplatform.social.core.chromattic.entity.IdentityEntity;
+import org.exoplatform.social.core.chromattic.entity.ProfileEntity;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.identity.model.Profile;
+import org.exoplatform.social.core.model.AvatarAttachment;
 import org.exoplatform.social.core.storage.impl.IdentityStorageImpl;
 
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
+import java.io.ByteArrayInputStream;
 
 /**
  * @author <a href="mailto:tuyennt@exoplatform.com">Tuyen Nguyen The</a>.
@@ -222,8 +228,22 @@ public class IdentityMigrationService extends AbstractMigrationService<Identity>
     //TODO: please check the way to load profile data from JCR
     Profile profile = new Profile(identity);
     jcrIdentityStorage.loadProfile(profile);
+    String oldProfileId = profile.getId();
     profile.setId("0");
     identity.setId(id);
+
+    // Process profile
+    ProfileEntity entity = _findById(ProfileEntity.class, oldProfileId);
+    NTFile avatar = entity.getAvatar();
+    if (avatar != null) {
+      Resource resource = avatar.getContentResource();
+      AvatarAttachment attachment = new AvatarAttachment();
+      attachment.setMimeType(resource.getMimeType());
+      attachment.setInputStream(new ByteArrayInputStream(resource.getData()));
+
+      profile.setProperty(Profile.AVATAR, attachment);
+    }
+
 
     identityStorage.saveProfile(profile);
 
