@@ -273,8 +273,12 @@
       <column name="SPACE_ID" type="BIGINT">
         <constraints foreignKeyName="FK_SOC_MEM_SPACE_01" references="SOC_SPACES(SPACE_ID)" nullable="false"/>
       </column>
-      <column name="USER_ID" type="NVARCHAR(100)" />
-      <column name="STATUS" type="NVARCHAR(36)" />
+      <column name="USER_ID" type="NVARCHAR(100)">
+      	<constraints nullable="false"/>
+      </column>
+      <column name="STATUS" type="NVARCHAR(36)">
+      	<constraints nullable="false"/>
+      </column>
       <column name="LAST_ACCESS" type="BIGINT"/>
       <column name="VISITED" type="BIT"/>
     </createTable>
