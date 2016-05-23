@@ -23,6 +23,8 @@ import org.exoplatform.commons.persistence.impl.EntityManagerService;
 import org.exoplatform.component.test.ConfigurationUnit;
 import org.exoplatform.component.test.ConfiguredBy;
 import org.exoplatform.component.test.ContainerScope;
+import org.exoplatform.services.listener.Event;
+import org.exoplatform.services.listener.Listener;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 import org.exoplatform.social.addons.rest.IdentityAvatarRestService;
@@ -35,6 +37,7 @@ import org.exoplatform.social.addons.updater.ActivityMigrationService;
 import org.exoplatform.social.addons.updater.IdentityMigrationService;
 import org.exoplatform.social.addons.updater.RDBMSMigrationManager;
 import org.exoplatform.social.addons.updater.RelationshipMigrationService;
+import org.exoplatform.social.core.activity.model.ExoSocialActivity;
 import org.exoplatform.social.core.identity.model.Profile;
 import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvider;
 import org.exoplatform.social.core.manager.ActivityManager;
@@ -51,6 +54,10 @@ import org.exoplatform.social.core.storage.impl.RelationshipStorageImpl;
 import org.jboss.byteman.contrib.bmunit.BMUnit;
 
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:tuyennt@exoplatform.com">Tuyen Nguyen The</a>.
@@ -80,6 +87,8 @@ public class MigrationTest extends BaseCoreTest {
   private ActivityMigrationService activityMigration;
   private RelationshipMigrationService relationshipMigration;
   private RDBMSMigrationManager rdbmsMigrationManager;
+
+  private List<ExoSocialActivity> activitiesToDelete = new ArrayList<>();
 
   @Override
   public void setUp() throws Exception {
@@ -116,17 +125,23 @@ public class MigrationTest extends BaseCoreTest {
     identityMigrationService = getService(IdentityMigrationService.class);
     activityMigration = getService(ActivityMigrationService.class);
     relationshipMigration = getService(RelationshipMigrationService.class);
+
+    activitiesToDelete = new ArrayList<>();
   }
 
   @Override
   public void tearDown() throws Exception {
     //super.tearDown();
+
+    for (ExoSocialActivity activity : activitiesToDelete) {
+      activityStorage.deleteActivity(activity.getId());
+    }
+
     end();
   }
 
   public void testMigrateIdentityWithAvatar() throws Exception {
     // create jcr data
-    LOG.info("Create connection for root,john,mary and demo");
     rootIdentity = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, "root", false);
     Profile rootProfile = rootIdentity.getProfile();
 
@@ -147,6 +162,52 @@ public class MigrationTest extends BaseCoreTest {
 
     assertNotNull(rootProfile.getAvatarUrl());
     assertEquals(IdentityAvatarRestService.buildAvatarURL(OrganizationIdentityProvider.NAME, "root"), rootProfile.getAvatarUrl());
+  }
+
+  public void testMigrateActivityWithMention() throws Exception {
+    rootIdentity = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, "root", false);
+    johnIdentity = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, "john", false);
+    johnIdentity = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, "demo", false);
+    johnIdentity = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, "mary", false);
+
+    Map<String, String> params = new HashMap<String, String>();
+    params.put("MESSAGE", "activity message for here");
+    final ExoSocialActivity activity = ActivityBuilder.getInstance()
+            .posterId(rootIdentity.getId())
+            .title("activity title @root @mary")
+            .body("activity body")
+            .titleId("titleId")
+            .isComment(false)
+            .take();
+
+    activityJCRStorage.saveActivity(johnIdentity, activity);
+
+    end();
+
+
+
+    activityMigration.addMigrationListener(new Listener<ExoSocialActivity, String>() {
+      @Override
+      public void onEvent(Event<ExoSocialActivity, String> event) throws Exception {
+        String newId = event.getData();
+        if (event.getSource().getId().equals(activity.getId())) {
+          activity.setId(newId);
+        }
+      }
+    });
+
+    activityMigration.start();
+
+    switchToUseJPAStorage();
+
+    identityMigrationService.start();
+
+    begin();
+
+    ExoSocialActivity migrated = activityStorage.getActivity(activity.getId());
+    activitiesToDelete.add(migrated);
+    assertNotNull(migrated);
+    assertEquals(2, migrated.getMentionedIds().length);
   }
 
   protected void switchToUseJPAStorage() {
