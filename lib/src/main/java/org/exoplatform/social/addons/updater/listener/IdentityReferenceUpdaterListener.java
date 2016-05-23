@@ -23,11 +23,13 @@ import org.exoplatform.commons.persistence.impl.EntityManagerService;
 import org.exoplatform.commons.utils.CommonsUtils;
 import org.exoplatform.services.listener.Event;
 import org.exoplatform.services.listener.Listener;
+import org.exoplatform.social.addons.storage.entity.Mention;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvider;
 
 import javax.persistence.EntityManager;
 import javax.persistence.Query;
+import java.util.List;
 
 /**
  * @author <a href="mailto:tuyennt@exoplatform.com">Tuyen Nguyen The</a>.
@@ -81,6 +83,25 @@ public class IdentityReferenceUpdaterListener extends Listener<Identity, String>
     query.setParameter("newId", newId);
     query.setParameter("oldId", oldId);
     query.executeUpdate();
+
+    //activity mention
+    query = em.createNamedQuery("SocMention.migrateMentionId");
+    query.setParameter("newId", newId);
+    query.setParameter("oldId", oldId);
+    query.executeUpdate();
+
+    query = em.createNamedQuery("SocMention.selectMentionByOldId", Mention.class);
+    query.setParameter("oldId", oldId + "@%");
+    List<Mention> list = query.getResultList();
+    if (list != null && list.size() > 0) {
+      for (Mention m : list) {
+        String mentionId = m.getMentionId();
+        mentionId = mentionId.replace(oldId, newId);
+        m.setMentionId(mentionId);
+        em.merge(m);
+      }
+    }
+
 
     //TODO: Can not use the JPQL for this?
     // Activity Liker

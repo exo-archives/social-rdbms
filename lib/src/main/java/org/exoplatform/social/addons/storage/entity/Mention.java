@@ -10,6 +10,12 @@ import javax.persistence.*;
 @Entity
 @ExoEntity
 @Table(name="SOC_MENTIONS")
+@NamedQueries({
+        @NamedQuery(name = "SocMention.migrateMentionId",
+                query = "UPDATE Mention m SET m.mentionId = :newId WHERE m.mentionId = :oldId"),
+        @NamedQuery(name = "SocMention.selectMentionByOldId",
+                query = "SELECT m FROM Mention m WHERE m.mentionId LIKE :oldId"),
+})
 public class Mention {
 
   @Id
