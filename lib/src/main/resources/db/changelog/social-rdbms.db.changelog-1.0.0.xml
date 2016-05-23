@@ -362,5 +362,11 @@
       <append value=" ENGINE=INNODB CHARSET=UTF8 COLLATE utf8_general_ci"/>
     </modifySql>
   </changeSet>
+  
+  <changeSet author="social" id="1.0.0-33">
+    <addUniqueConstraint columnNames="SPACE_ID, USER_ID, STATUS"
+                         constraintName="UK_SPACE_USER_STATUS_01"
+                         tableName="SOC_SPACES_MEMBERS"/>
+  </changeSet>
 
 </databaseChangeLog>
