@@ -34,17 +34,17 @@ public class SpaceMember implements Serializable {
   private Long              id;
 
   @ManyToOne
-  @JoinColumn(name = "SPACE_ID")
+  @JoinColumn(name = "SPACE_ID", nullable = false)
   private SpaceEntity       space;
 
-  @Column(name = "USER_ID", length = 100)
+  @Column(name = "USER_ID", length = 100, nullable = false)
   private String            userId;
 
-  @Column(name = "STATUS", length = 36)
-  private Status            status;  
+  @Column(name = "STATUS", length = 36, nullable = false)
+  private Status            status;
 
   @Column(name = "LAST_ACCESS")
-  private Long              lastAccess = 0L;
+  private long              lastAccess;
 
   @Column(name = "VISITED")
   private boolean           visited;
@@ -91,11 +91,11 @@ public class SpaceMember implements Serializable {
     this.status = status;
   }
 
-  public Long getLastAccess() {
+  public long getLastAccess() {
     return lastAccess;
   }
 
-  public void setLastAccess(Long lastAccess) {
+  public void setLastAccess(long lastAccess) {
     this.lastAccess = lastAccess;
   }
 
