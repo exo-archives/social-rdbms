@@ -98,13 +98,12 @@ public class AppEntity implements Serializable {
     builder.append(":").append(getStatus().name());
     return builder.toString();
   }
-
+  
   @Override
   public int hashCode() {
     final int prime = 31;
     int result = 1;
     result = prime * result + ((appId == null) ? 0 : appId.hashCode());
-    result = prime * result + ((appName == null) ? 0 : appName.hashCode());
     return result;
   }
 
@@ -122,14 +121,9 @@ public class AppEntity implements Serializable {
         return false;
     } else if (!appId.equals(other.appId))
       return false;
-    if (appName == null) {
-      if (other.appName != null)
-        return false;
-    } else if (!appName.equals(other.appName))
-      return false;
     return true;
   }
-  
+
   public static enum Status {
     ACTIVE, DEACTIVE, INSTALLED
   }

@@ -256,10 +256,18 @@
         <column name="SPACE_ID" type="BIGINT">
           <constraints foreignKeyName="FK_SOC_APP_SPACE_01" references="SOC_SPACES(SPACE_ID)" nullable="false"/>
         </column>
-        <column name="APP_ID" type="NVARCHAR(200)"/>
-        <column name="APP_NAME" type="NVARCHAR(200)"/>
-        <column name="REMOVABLE" type="BIT"/>
-        <column name="STATUS" type="TINYINT"/>
+        <column name="APP_ID" type="NVARCHAR(200)">
+ 	      <constraints nullable="false"/>        	
+        </column>
+        <column name="APP_NAME" type="NVARCHAR(200)">
+          <constraints nullable="false"/>
+        </column>
+        <column name="REMOVABLE" type="BIT">
+          <constraints nullable="false"/>
+        </column>
+        <column name="STATUS" type="TINYINT">
+          <constraints nullable="false"/>
+        </column>
     </createTable>
     <modifySql dbms="mysql">
         <append value=" ENGINE=INNODB CHARSET=UTF8 COLLATE utf8_general_ci"/>
@@ -371,6 +379,9 @@
     <addUniqueConstraint columnNames="SPACE_ID, USER_ID, STATUS"
                          constraintName="UK_SPACE_USER_STATUS_01"
                          tableName="SOC_SPACES_MEMBERS"/>
+    <addUniqueConstraint columnNames="SPACE_ID, APP_ID"
+                         constraintName="UK_SPACE_APP_01"
+                         tableName="SOC_APPS"/>                                                
   </changeSet>
 
 </databaseChangeLog>
