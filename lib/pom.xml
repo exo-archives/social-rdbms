@@ -337,7 +337,7 @@
                 <configuration>
                   <artifactItems>
                     <artifactItem>
-                      <groupId>org.elasticsearch</groupId>
+                      <groupId>org.elasticsearch.distribution.zip</groupId>
                       <artifactId>elasticsearch</artifactId>
                       <version>${elasticsearch.version}</version>
                       <type>zip</type>
@@ -376,6 +376,22 @@
             <artifactId>process-exec-maven-plugin</artifactId>
             <version>0.4</version>
             <executions>
+              <execution>
+                <id>ES_Delete_by_query</id>
+                <phase>pre-integration-test</phase>
+                <goals>
+                  <goal>start</goal>
+                </goals>
+                <configuration>
+                  <name>ES</name>
+                  <workingDir>elasticsearch-${elasticsearch.version}/</workingDir>
+                  <arguments>
+                    <argument>./bin/plugin</argument>
+                    <argument>install</argument>
+                    <argument>delete-by-query</argument>
+                  </arguments>
+                </configuration>
+              </execution>
               <execution>
                 <id>Start_ES</id>
                 <phase>pre-integration-test</phase>
