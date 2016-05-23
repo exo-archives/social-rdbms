@@ -153,6 +153,11 @@ public class IdentityMigrationService extends AbstractMigrationService<Identity>
     }
     LOG.info(String.format("|// END::Identity migration for (%s) identity(s) consumed %s(ms)", numberSuccessful, System.currentTimeMillis() - t));
 
+    LOG.info("| \\ START::Re-indexing identity(s) ---------------------------------");
+    IndexingService indexingService = CommonsUtils.getService(IndexingService.class);
+    indexingService.reindexAll(ProfileIndexingServiceConnector.TYPE);
+    LOG.info("| / END::Re-indexing identity(s) ---------------------------------");
+
     RequestLifeCycle.begin(PortalContainer.getInstance());
   }
 

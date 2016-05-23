@@ -32,14 +32,12 @@ import org.mockito.Mockito;
 import org.exoplatform.addons.es.index.IndexingOperationProcessor;
 import org.exoplatform.addons.es.index.IndexingService;
 import org.exoplatform.commons.api.search.data.SearchContext;
-import org.exoplatform.commons.utils.CommonsUtils;
 import org.exoplatform.commons.utils.PropertyManager;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 import org.exoplatform.services.organization.User;
 import org.exoplatform.services.security.ConversationState;
 import org.exoplatform.social.addons.test.AbstractCoreTest;
-import org.exoplatform.social.addons.updater.IdentityMigrationService;
 import org.exoplatform.social.addons.updater.RelationshipMigrationService;
 import org.exoplatform.social.core.identity.IdentityProvider;
 import org.exoplatform.social.core.identity.model.Identity;
@@ -49,10 +47,7 @@ import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvide
 import org.exoplatform.social.core.manager.IdentityManager;
 import org.exoplatform.social.core.profile.ProfileFilter;
 import org.exoplatform.social.core.relationship.model.Relationship;
-import org.exoplatform.social.core.relationship.model.Relationship.Type;
-import org.exoplatform.social.core.search.PeopleSearchConnector;
 import org.exoplatform.social.core.space.model.Space;
-import org.exoplatform.social.core.storage.api.RelationshipStorage;
 import org.exoplatform.social.core.storage.api.SpaceStorage;
 import org.exoplatform.social.core.storage.impl.IdentityStorageImpl;
 import org.exoplatform.social.core.storage.impl.RelationshipStorageImpl;
@@ -174,124 +169,6 @@ public class SearchTestIT extends AbstractCoreTest {
     assertThat(resultsInMary.size(), is(1));
   }
 
-  public void testMigrationAndReIndexing() throws Exception {
-    // create jcr data
-    LOG.info("Create connection for root,john,mary and demo");
-
-    rootIdentity = identityProvider.getIdentityByRemoteId("root");
-    identityStorageImpl.saveIdentity(rootIdentity);
-
-    johnIdentity = identityProvider.getIdentityByRemoteId("john");
-    identityStorageImpl.saveIdentity(johnIdentity);
-
-    maryIdentity = identityProvider.getIdentityByRemoteId("mary");
-    identityStorageImpl.saveIdentity(maryIdentity);
-
-    demoIdentity = identityProvider.getIdentityByRemoteId("demo");
-    identityStorageImpl.saveIdentity(demoIdentity);
-
-    IdentityStorageImpl identityStorage = CommonsUtils.getService(IdentityStorageImpl.class);
-
-    // ROOT
-    Profile profile = rootIdentity.getProfile();
-    profile.setProperty(Profile.FIRST_NAME, "Root");
-    profile.setProperty(Profile.LAST_NAME, "Root");
-    profile.setProperty(Profile.FULL_NAME, "Root Root");
-    profile.setProperty(Profile.POSITION, "Admin");
-    identityStorage.updateProfile(profile);
-
-    // MARY
-    profile = maryIdentity.getProfile();
-    profile.setProperty(Profile.FIRST_NAME, "Kelly");
-    profile.setProperty(Profile.LAST_NAME, "Mary");
-    profile.setProperty(Profile.FULL_NAME, "Mary Kelly");
-    profile.setProperty(Profile.POSITION, "Team Leader");
-    identityStorage.updateProfile(profile);
-
-    // DEMO
-    profile = demoIdentity.getProfile();
-    profile.setProperty(Profile.FIRST_NAME, "Exo");
-    profile.setProperty(Profile.LAST_NAME, "Demo");
-    profile.setProperty(Profile.FULL_NAME, "Demo Exo");
-    profile.setProperty(Profile.POSITION, "Team member");
-    identityStorage.updateProfile(profile);
-    indexingProcessor.process();
-
-    // John invites Demo
-    Relationship johnToDemo = new Relationship(johnIdentity, demoIdentity, Type.PENDING);
-    relationshipStorageImpl.saveRelationship(johnToDemo);
-
-    // John invites Mary
-    Relationship johnToMary = new Relationship(johnIdentity, maryIdentity, Type.PENDING);
-    relationshipStorageImpl.saveRelationship(johnToMary);
-
-    // John invites Root
-    Relationship johnToRoot = new Relationship(johnIdentity, rootIdentity, Type.PENDING);
-    relationshipStorageImpl.saveRelationship(johnToRoot);
-
-    // Root invites Mary
-    Relationship rootToMary = new Relationship(rootIdentity, maryIdentity, Type.PENDING);
-    relationshipStorageImpl.saveRelationship(rootToMary);
-
-    // Demo invites Mary
-    Relationship demoToMary = new Relationship(demoIdentity, maryIdentity, Type.PENDING);
-    relationshipStorageImpl.saveRelationship(demoToMary);
-
-    // Demo invites Root
-    Relationship demoToRoot = new Relationship(demoIdentity, rootIdentity, Type.PENDING);
-    relationshipStorageImpl.saveRelationship(demoToRoot);
-
-    // confirmed john and demo
-    johnToDemo.setStatus(Type.CONFIRMED);
-    relationshipStorageImpl.saveRelationship(johnToDemo);
-
-    // confirmed john and demo
-    johnToMary.setStatus(Type.CONFIRMED);
-    relationshipStorageImpl.saveRelationship(johnToMary);
-
-    // confirmed john and root
-    johnToRoot.setStatus(Type.CONFIRMED);
-    relationshipStorageImpl.saveRelationship(johnToRoot);
-
-    // confirmed demo and mary
-    demoToMary.setStatus(Type.CONFIRMED);
-    relationshipStorageImpl.saveRelationship(demoToMary);
-
-    //
-    relationshipMigration.doMigration();
-    getService(IdentityMigrationService.class).doMigration();
-
-    end();
-    begin();
-    // phase 1: create the profiles re-indexing and push to queue what created
-    // by RelationshipMigration
-    indexingProcessor.process();
-    // phase 2: create all the profiles indexing from queue
-    indexingProcessor.process();
-    refreshIndices();
-    //
-
-    rootIdentity = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, "root", true);
-    johnIdentity = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, "john", true);
-
-    RelationshipStorage relationshipStorage = CommonsUtils.getService(RelationshipStorage.class);
-
-    ProfileFilter profileFilter = new ProfileFilter();
-    List<Identity> results = relationshipStorage.getConnectionsByFilter(johnIdentity, profileFilter, 0, 10);
-    assertEquals(3, results.size());
-
-    ProfileFilter nameFilter = new ProfileFilter();
-    nameFilter.setName("John");
-    results = relationshipStorage.getConnectionsByFilter(rootIdentity, nameFilter, 0, 10);
-    assertEquals(1, results.size());
-
-    //
-    results = relationshipStorage.getOutgoingByFilter(rootIdentity, profileFilter, 0, 10);
-    assertEquals(1, results.size());
-    //
-    results = relationshipStorage.getIncomingByFilter(rootIdentity, profileFilter, 0, 10);
-    assertEquals(1, results.size());
-  }
   
   public void testPeopleName() throws Exception {    
     rootIdentity = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, "root", true);
