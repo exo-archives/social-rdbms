@@ -57,8 +57,14 @@
             <column name="ACTIVITY_ID" type="BIGINT"> 
                 <constraints nullable="false"/>
             </column>
-            <column name="LIKER_ID" type="NVARCHAR(36)"/>
+            <column name="LIKER_ID" type="NVARCHAR(36)">
+            	<constraints nullable="false"/>
+            </column>
         </createTable>
+        <addPrimaryKey columnNames="ACTIVITY_ID, LIKER_ID" constraintName="PK_SOC_ACTIVITY_LIKER_01" tableName="SOC_ACTIVITY_LIKERS"/>
+        <createIndex tableName="SOC_ACTIVITY_LIKERS" indexName="IDX_SOC_ACTIVITY_LIKERS_01">
+            <column name="ACTIVITY_ID"/>
+        </createIndex>
     </changeSet>
     <changeSet author="social" id="1.0.0-3">
         <createTable tableName="SOC_MENTIONS">

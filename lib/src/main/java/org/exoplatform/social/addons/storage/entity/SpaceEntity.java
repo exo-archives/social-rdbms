@@ -89,7 +89,7 @@ public class SpaceEntity implements Serializable {
   private String            description;
 
   @Column(name = "AVATAR_LAST_UPDATED")
-  private long              avatarLastUpdated;
+  private Long              avatarLastUpdated;
 
   @Column(name = "VISIBILITY")
   public VISIBILITY         visibility;
