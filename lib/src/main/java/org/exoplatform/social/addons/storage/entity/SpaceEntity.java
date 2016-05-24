@@ -89,7 +89,7 @@ public class SpaceEntity implements Serializable {
   private String            description;
 
   @Column(name = "AVATAR_LAST_UPDATED")
-  private Long              avatarLastUpdated;
+  private long              avatarLastUpdated;
 
   @Column(name = "VISIBILITY")
   public VISIBILITY         visibility;
@@ -104,7 +104,7 @@ public class SpaceEntity implements Serializable {
   public String             url;
 
   @Column(name = "CREATED_TIME")
-  private Long              createdTime      = System.currentTimeMillis();
+  private long              createdTime      = System.currentTimeMillis();
 
   public Long getId() {
     return id;
