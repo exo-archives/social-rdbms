@@ -391,7 +391,10 @@
                          tableName="SOC_SPACES_MEMBERS"/>
     <addUniqueConstraint columnNames="SPACE_ID, APP_ID"
                          constraintName="UK_SPACE_APP_01"
-                         tableName="SOC_APPS"/>                                                
+                         tableName="SOC_APPS"/>
+    <addUniqueConstraint columnNames="ACTIVITY_ID, MENTIONER_ID"
+                         constraintName="UK_ACTIVITY_MENTIONER_01"
+                         tableName="SOC_MENTIONS"/>                                                                         
   </changeSet>
 
 </databaseChangeLog>
