@@ -25,10 +25,10 @@ public class Mention {
   private Long id;
 
   @ManyToOne(fetch=FetchType.LAZY)
-  @JoinColumn(name="ACTIVITY_ID")
+  @JoinColumn(name="ACTIVITY_ID", nullable = false)
   private Activity activity;
 
-  @Column(name="MENTIONER_ID")
+  @Column(name="MENTIONER_ID", nullable = false)
   private String mentionId;
 
   public Long getId() {
