@@ -78,6 +78,9 @@
                 <constraints nullable="false"/>
             </column>
         </createTable>
+        <addUniqueConstraint columnNames="ACTIVITY_ID, MENTIONER_ID"
+                         constraintName="UK_ACTIVITY_MENTIONER_01"
+                         tableName="SOC_MENTIONS"/>
         <createIndex tableName="SOC_MENTIONS" indexName="IDX_SOC_MENTIONS_01">
             <column name="MENTIONER_ID"/>
         </createIndex>
@@ -285,6 +288,9 @@
           <constraints nullable="false"/>
         </column>
     </createTable>
+    <addUniqueConstraint columnNames="SPACE_ID, APP_ID"
+                         constraintName="UK_SPACE_APP_01"
+                         tableName="SOC_APPS"/>
     <modifySql dbms="mysql">
         <append value=" ENGINE=INNODB CHARSET=UTF8 COLLATE utf8_general_ci"/>
     </modifySql>
@@ -306,6 +312,9 @@
       <column name="LAST_ACCESS" type="BIGINT"/>
       <column name="VISITED" type="BIT"/>
     </createTable>
+    <addUniqueConstraint columnNames="SPACE_ID, USER_ID, STATUS"
+                         constraintName="UK_SPACE_USER_STATUS_01"
+                         tableName="SOC_SPACES_MEMBERS"/>
     <modifySql dbms="mysql">
       <append value=" ENGINE=INNODB CHARSET=UTF8 COLLATE utf8_general_ci"/>
     </modifySql>    
@@ -390,17 +399,4 @@
       <append value=" ENGINE=INNODB CHARSET=UTF8 COLLATE utf8_general_ci"/>
     </modifySql>
   </changeSet>
-  
-  <changeSet author="social" id="1.0.0-33">
-    <addUniqueConstraint columnNames="SPACE_ID, USER_ID, STATUS"
-                         constraintName="UK_SPACE_USER_STATUS_01"
-                         tableName="SOC_SPACES_MEMBERS"/>
-    <addUniqueConstraint columnNames="SPACE_ID, APP_ID"
-                         constraintName="UK_SPACE_APP_01"
-                         tableName="SOC_APPS"/>
-    <addUniqueConstraint columnNames="ACTIVITY_ID, MENTIONER_ID"
-                         constraintName="UK_ACTIVITY_MENTIONER_01"
-                         tableName="SOC_MENTIONS"/>                                                                         
-  </changeSet>
-
 </databaseChangeLog>
