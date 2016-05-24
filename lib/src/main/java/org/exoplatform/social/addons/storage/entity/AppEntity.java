@@ -20,16 +20,16 @@ public class AppEntity implements Serializable {
 
   private static final Log  LOG              = ExoLogger.getLogger(AppEntity.class);
 
-  @Column(name = "APP_ID", length = 50)
+  @Column(name = "APP_ID", length = 50, nullable = false)
   private String            appId;
 
-  @Column(name = "APP_NAME", length = 50)
+  @Column(name = "APP_NAME", length = 50, nullable = false)
   private String            appName;
 
-  @Column(name = "REMOVABLE")
+  @Column(name = "REMOVABLE", nullable = false)
   private boolean           isRemovable;
 
-  @Column(name = "STATUS")
+  @Column(name = "STATUS", nullable = false)
   private Status            status;
 
   public String getAppId() {
