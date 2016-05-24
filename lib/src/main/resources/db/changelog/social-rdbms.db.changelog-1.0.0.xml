@@ -236,14 +236,24 @@
           <constraints nullable="false" primaryKey="true" primaryKeyName="PK_SOC_SPACES"/>
         </column>
         <column name="APP" type="LONGTEXT"/>
-        <column name="PRETTY_NAME" type="NVARCHAR(200)"/>
-        <column name="DISPLAY_NAME" type="NVARCHAR(200)"/>
-        <column name="REGISTRATION" type="TINYINT"/>
+        <column name="PRETTY_NAME" type="NVARCHAR(200)">
+          <constraints nullable="false"/>
+        </column>
+        <column name="DISPLAY_NAME" type="NVARCHAR(200)">
+          <constraints nullable="false"/>
+        </column>
+        <column name="REGISTRATION" type="TINYINT">
+          <constraints nullable="false"/>
+        </column>
         <column name="DESCRIPTION" type="LONGTEXT"/>
         <column name="AVATAR_LAST_UPDATED" type="BIGINT"/>
-        <column name="VISIBILITY" type="TINYINT"/>
+        <column name="VISIBILITY" type="TINYINT">
+          <constraints nullable="false"/>
+        </column>
         <column name="PRIORITY" type="TINYINT"/>
-        <column name="GROUP_ID" type="NVARCHAR(200)"/>
+        <column name="GROUP_ID" type="NVARCHAR(200)">
+          <constraints nullable="false"/>
+        </column>
         <column name="URL" type="NVARCHAR(500)"/>
         <column name="CREATED_TIME" type="BIGINT"/>
     </createTable>
