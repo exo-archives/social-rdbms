@@ -25,19 +25,19 @@ public class Connection {
   @Column(name = "CONNECTION_ID")
   private Long id;
 
-  @Column(name="SENDER_ID", length = 36)
+  @Column(name="SENDER_ID", length = 36, nullable = false)
   private String senderId;
   
-  @Column(name="RECEIVER_ID", length = 36)
+  @Column(name="RECEIVER_ID", length = 36, nullable = false)
   private String receiverId;
   
   @Enumerated
-  @Column(name="STATUS")
+  @Column(name="STATUS", nullable = false)
   private Type status;
   
   /** */
   @Column(name="LAST_UPDATED")
-  private Long lastUpdated;
+  private Long lastUpdated = System.currentTimeMillis();
 
   public Connection() {
   }
