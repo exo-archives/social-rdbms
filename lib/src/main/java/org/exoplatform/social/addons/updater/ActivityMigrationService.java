@@ -672,11 +672,11 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
     Identity commenter = identityStorage.findIdentityById(commentEntity.getPosterId());
     mention(commenter, activityEntity, processMentions(eXoComment.getTitle()));
     //
+    activityEntity.addComment(commentEntity);
     commentEntity = commentDAO.create(commentEntity);
     eXoComment.setId(getExoCommentID(commentEntity.getId()));
     //
     activityEntity.setMentionerIds(processMentionOfComment(activityEntity, commentEntity, activity.getMentionedIds(), processMentions(eXoComment.getTitle()), true));
-    activityEntity.addComment(commentEntity);
     activityDAO.update(activityEntity);
   }
   

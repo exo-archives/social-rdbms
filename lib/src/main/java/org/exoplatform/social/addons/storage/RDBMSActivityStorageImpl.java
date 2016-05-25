@@ -368,11 +368,11 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
       saveStreamItemForCommenter(commenter, activityEntity);
       mention(commenter, activityEntity, processMentions(eXoComment.getTitle()));
       //
+      activityEntity.addComment(commentEntity);
       commentEntity = commentDAO.create(commentEntity);
       eXoComment.setId(getExoCommentID(commentEntity.getId()));
       //
       activityEntity.setMentionerIds(processMentionOfComment(activityEntity, commentEntity, activity.getMentionedIds(), processMentions(eXoComment.getTitle()), true));
-      activityEntity.addComment(commentEntity);
       activityEntity.setLastUpdated(System.currentTimeMillis());
       activityDAO.update(activityEntity);
       //
