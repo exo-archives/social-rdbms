@@ -370,10 +370,18 @@
       <column name="IDENTITY_ID" type="BIGINT" autoIncrement="${autoIncrement}" startWith="1">
         <constraints nullable="false" primaryKey="true" primaryKeyName="PK_SOC_IDENTITIES"/>
       </column>
-      <column name="PROVIDER_ID" type="NVARCHAR(50)"/>
-      <column name="REMOTE_ID" type="NVARCHAR(100)"/>
-      <column name="ENABLE"  type="BIT" defaultValue="1"/>
-      <column name="DELETED" type="BIT" defaultValue="0"/>
+      <column name="PROVIDER_ID" type="NVARCHAR(50)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="REMOTE_ID" type="NVARCHAR(100)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="ENABLE"  type="BIT" defaultValue="1">
+        <constraints nullable="false"/>
+      </column>
+      <column name="DELETED" type="BIT" defaultValue="0">
+        <constraints nullable="false"/>
+      </column>
     </createTable>
     <modifySql dbms="mysql">
       <append value=" ENGINE=INNODB CHARSET=UTF8 COLLATE utf8_general_ci"/>
