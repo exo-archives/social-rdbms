@@ -23,7 +23,7 @@ public class StreamItem {
   private Long id;
 
   @OneToOne
-  @JoinColumn(name = "ACTIVITY_ID")
+  @JoinColumn(name = "ACTIVITY_ID", nullable = false)
   private Activity activity;
 
   @Column(name = "ACTIVITY_ID", insertable=false, updatable=false)
@@ -32,15 +32,15 @@ public class StreamItem {
   /**
    * This is id's Identity owner of ActivityStream or SpaceStream
    */
-  @Column(name="OWNER_ID", length = 36)
+  @Column(name="OWNER_ID", length = 36, nullable = false)
   private String ownerId;
   
   /** */
-  @Column(name="LAST_UPDATED")
+  @Column(name="LAST_UPDATED", nullable = false)
   private Long lastUpdated;
 
   @Enumerated
-  @Column(name="STREAM_TYPE")
+  @Column(name="STREAM_TYPE", nullable = false)
   private StreamType streamType;
 
   public StreamItem() {

@@ -198,10 +198,18 @@
             <column name="STREAM_ITEM_ID" type="BIGINT" autoIncrement="${autoIncrement}" startWith="1">
               <constraints nullable="false" primaryKey="true" primaryKeyName="PK_SOC_STREAM_ITEMS"/>
             </column>
-            <column name="OWNER_ID" type="NVARCHAR(36)"/>
-            <column name="STREAM_TYPE" type="INT"/>
-            <column name="ACTIVITY_ID" type="BIGINT"/>
-            <column name="LAST_UPDATED" type="BIGINT"/>
+            <column name="OWNER_ID" type="NVARCHAR(36)">
+              <constraints nullable="false"/>
+            </column>
+            <column name="STREAM_TYPE" type="INT">
+              <constraints nullable="false"/>
+            </column>
+            <column name="ACTIVITY_ID" type="BIGINT">
+              <constraints nullable="false"/>
+            </column>
+            <column name="LAST_UPDATED" type="BIGINT">
+              <constraints nullable="false"/>
+            </column>
         </createTable>
     </changeSet>
     <changeSet author="social" id="1.0.0-8.1">
