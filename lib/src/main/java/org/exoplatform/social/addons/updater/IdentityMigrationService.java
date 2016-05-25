@@ -34,11 +34,13 @@ import org.exoplatform.management.jmx.annotations.NameTemplate;
 import org.exoplatform.management.jmx.annotations.Property;
 import org.exoplatform.social.addons.search.ProfileIndexingServiceConnector;
 import org.exoplatform.social.addons.storage.RDBMSIdentityStorageImpl;
+import org.exoplatform.social.core.chromattic.entity.DisabledEntity;
 import org.exoplatform.social.core.chromattic.entity.IdentityEntity;
 import org.exoplatform.social.core.chromattic.entity.ProfileEntity;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.identity.model.Profile;
 import org.exoplatform.social.core.model.AvatarAttachment;
+import org.exoplatform.social.core.storage.exception.NodeNotFoundException;
 import org.exoplatform.social.core.storage.impl.IdentityStorageImpl;
 
 import javax.jcr.Node;
@@ -213,7 +215,7 @@ public class IdentityMigrationService extends AbstractMigrationService<Identity>
     Identity identity = identityStorage.findIdentity(providerId, remoteId);
     if (identity != null) {
       LOG.info("Identity with providerId = " + identity.getProviderId() + " and remoteId=" + identity.getRemoteId() + " has already been migrated.");
-      return null;
+      return identity;
     }
 
     identity = new Identity(providerId, remoteId);
@@ -255,6 +257,68 @@ public class IdentityMigrationService extends AbstractMigrationService<Identity>
     identity.setProfile(profile);
 
     return identity;
+  }
+
+  public Identity migrateIdentity(String oldId) {
+    try {
+      IdentityEntity jcrEntity = _findById(IdentityEntity.class, oldId);
+
+      String providerId = jcrEntity.getProviderId();
+      String remoteId = jcrEntity.getRemoteId();
+
+      Identity identity = identityStorage.findIdentity(providerId, remoteId);
+
+      if (identity == null) {
+        identity = new Identity(providerId, remoteId);
+        identity.setDeleted(jcrEntity.isDeleted());
+        identity.setEnable(_getMixin(jcrEntity, DisabledEntity.class, false) == null);
+
+        identityStorage.saveIdentity(identity);
+
+        //
+        String id = identity.getId();
+        identity.setId(oldId);
+
+        // Migrate profile
+        Profile profile = new Profile(identity);
+        jcrIdentityStorage.loadProfile(profile);
+        String oldProfileId = profile.getId();
+        profile.setId("0");
+        identity.setId(id);
+
+        // Process profile
+        ProfileEntity entity = _findById(ProfileEntity.class, oldProfileId);
+        NTFile avatar = entity.getAvatar();
+        if (avatar != null) {
+          Resource resource = avatar.getContentResource();
+          AvatarAttachment attachment = new AvatarAttachment();
+          attachment.setMimeType(resource.getMimeType());
+          attachment.setInputStream(new ByteArrayInputStream(resource.getData()));
+
+          profile.setProperty(Profile.AVATAR, attachment);
+        }
+
+
+        identityStorage.saveProfile(profile);
+
+        identity.setProfile(profile);
+
+      }
+
+      if (identity != null) {
+        String newId = identity.getId();
+        identity.setId(oldId);
+        broadcastListener(identity, newId);
+      }
+
+      return identity;
+    } catch (NodeNotFoundException ex) {
+      LOG.error("Can not find indentity with oldId: " + oldId, ex);
+      return null;
+    } catch (Exception ex) {
+      LOG.error("Exception while migrate identity with oldId: " + oldId, ex);
+      return null;
+    }
   }
 
   private NodeIterator getIdentityNodes(long offset, int limit) {
