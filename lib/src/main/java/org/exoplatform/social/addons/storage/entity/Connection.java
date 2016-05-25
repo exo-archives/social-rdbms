@@ -36,7 +36,7 @@ public class Connection {
   private Type status;
   
   /** */
-  @Column(name="LAST_UPDATED")
+  @Column(name="LAST_UPDATED", nullable = false)
   private Long lastUpdated = System.currentTimeMillis();
 
   public Connection() {
