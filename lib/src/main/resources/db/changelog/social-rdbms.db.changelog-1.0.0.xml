@@ -19,17 +19,31 @@
             <column name="BODY_ID" type="NVARCHAR(36)"/>
             <column name="EXTERNAL_ID" type="NVARCHAR(36)"/>
             <column name="PROVIDER_ID" type="NVARCHAR(36)"/>
-            <column name="HIDDEN" type="BIT"/>
-            <column name="LAST_UPDATED" type="BIGINT"/>
-            <column name="LOCKED" type="BIT"/>
-            <column name="OWNER_ID" type="NVARCHAR(36)"/>
+            <column name="HIDDEN" type="BIT">
+              <constraints nullable="false"/>
+            </column>
+            <column name="LAST_UPDATED" type="BIGINT">
+              <constraints nullable="false"/>
+            </column>
+            <column name="LOCKED" type="BIT">
+              <constraints nullable="false"/>
+            </column>
+            <column name="OWNER_ID" type="NVARCHAR(36)">
+              <constraints nullable="false"/>
+            </column>
             <column name="PERMALINK" type="NVARCHAR(255)"/>
-            <column name="POSTED" type="BIGINT"/>
-            <column name="POSTER_ID" type="NVARCHAR(36)"/>
+            <column name="POSTED" type="BIGINT">
+              <constraints nullable="false"/>
+            </column>
+            <column name="POSTER_ID" type="NVARCHAR(36)">
+              <constraints nullable="false"/>
+            </column>
             <column name="PRIORITY" type="FLOAT(12)">
                 <constraints nullable="false"/>
             </column>
-            <column name="TITLE" type="LONGTEXT"/>
+            <column name="TITLE" type="LONGTEXT">
+              <constraints nullable="false"/>
+            </column>
             <column name="TITLE_ID" type="NVARCHAR(1024)"/>
             <column name="TYPE" type="NVARCHAR(255)"/>
         </createTable>
