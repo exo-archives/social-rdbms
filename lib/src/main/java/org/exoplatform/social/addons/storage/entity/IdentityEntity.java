@@ -62,16 +62,16 @@ public class IdentityEntity {
   @Column(name="IDENTITY_ID")
   private long id;
 
-  @Column(name = "PROVIDER_ID")
+  @Column(name = "PROVIDER_ID", nullable = false)
   private String providerId;
 
-  @Column(name = "REMOTE_ID")
+  @Column(name = "REMOTE_ID", nullable = false)
   private String remoteId;
 
-  @Column(name = "ENABLE")
+  @Column(name = "ENABLE", nullable = false)
   private boolean enable = true;
 
-  @Column(name = "DELETED")
+  @Column(name = "DELETED", nullable = false)
   private boolean deleted = false;
 
   @OneToOne(mappedBy = "identity", fetch = FetchType.LAZY, orphanRemoval = true)
