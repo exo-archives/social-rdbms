@@ -296,7 +296,9 @@
           <constraints nullable="false"/>
         </column>
         <column name="DESCRIPTION" type="LONGTEXT"/>
-        <column name="AVATAR_LAST_UPDATED" type="BIGINT"/>
+        <column name="AVATAR_LAST_UPDATED" type="BIGINT">
+          <constraints nullable="false"/>
+        </column>
         <column name="VISIBILITY" type="TINYINT">
           <constraints nullable="false"/>
         </column>

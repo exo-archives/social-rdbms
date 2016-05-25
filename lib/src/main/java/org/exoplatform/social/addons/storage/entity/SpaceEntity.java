@@ -88,8 +88,8 @@ public class SpaceEntity implements Serializable {
   @Column(name = "DESCRIPTION", length = 2000)
   private String            description;
 
-  @Column(name = "AVATAR_LAST_UPDATED")
-  private Long              avatarLastUpdated;
+  @Column(name = "AVATAR_LAST_UPDATED", nullable = false)
+  private Long              avatarLastUpdated = System.currentTimeMillis();
 
   @Column(name = "VISIBILITY")
   public VISIBILITY         visibility;
