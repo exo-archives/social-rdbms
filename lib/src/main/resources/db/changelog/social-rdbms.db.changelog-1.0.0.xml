@@ -16,7 +16,6 @@
             </column>
             <column name="APP_ID" type="NVARCHAR(36)"/>
             <column name="BODY" type="LONGTEXT"/>
-            <column name="BODY_ID" type="NVARCHAR(36)"/>
             <column name="EXTERNAL_ID" type="NVARCHAR(36)"/>
             <column name="PROVIDER_ID" type="NVARCHAR(36)"/>
             <column name="HIDDEN" type="BIT">
@@ -120,7 +119,6 @@
             </column>
             <column name="APP_ID" type="NVARCHAR(36)"/>
             <column name="BODY" type="LONGTEXT"/>
-            <column name="BODY_ID" type="NVARCHAR(36)"/>
             <column name="EXTERNAL_ID" type="NVARCHAR(36)"/>
             <column name="HIDDEN" type="BIT">
               <constraints nullable="false"/>
@@ -296,9 +294,7 @@
           <constraints nullable="false"/>
         </column>
         <column name="DESCRIPTION" type="LONGTEXT"/>
-        <column name="AVATAR_LAST_UPDATED" type="BIGINT">
-          <constraints nullable="false"/>
-        </column>
+        <column name="AVATAR_LAST_UPDATED" type="BIGINT"/>
         <column name="VISIBILITY" type="TINYINT">
           <constraints nullable="false"/>
         </column>

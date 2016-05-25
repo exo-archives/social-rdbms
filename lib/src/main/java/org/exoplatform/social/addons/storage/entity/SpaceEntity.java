@@ -88,8 +88,8 @@ public class SpaceEntity implements Serializable {
   @Column(name = "DESCRIPTION", length = 2000)
   private String            description;
 
-  @Column(name = "AVATAR_LAST_UPDATED", nullable = false)
-  private Long              avatarLastUpdated = System.currentTimeMillis();
+  @Column(name = "AVATAR_LAST_UPDATED")
+  private Long              avatarLastUpdated;
 
   @Column(name = "VISIBILITY")
   public VISIBILITY         visibility;
@@ -208,7 +208,7 @@ public class SpaceEntity implements Serializable {
 
   public SpaceEntity buildFrom(Space space) {
     this.setApp(AppEntity.parse(space.getApp()));
-    this.setAvatarLastUpdated(space.getAvatarLastUpdated());
+    this.setAvatarLastUpdated(space.getAvatarLastUpdated());      
     this.setCreatedTime(space.getCreatedTime());
     this.setDescription(space.getDescription());
     this.setDisplayName(space.getDisplayName());
