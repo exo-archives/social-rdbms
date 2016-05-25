@@ -103,7 +103,7 @@ public class SpaceEntity implements Serializable {
   @Column(name = "URL", length = 500)
   public String             url;
 
-  @Column(name = "CREATED_TIME")
+  @Column(name = "CREATED_TIME", nullable = false)
   private long              createdTime      = System.currentTimeMillis();
 
   public Long getId() {
