@@ -63,15 +63,9 @@ public abstract class BaseActivity implements Serializable {
   @Column(name="HIDDEN", nullable = false)
   private Boolean hidden = false;
   
-  @Deprecated
   @Column(name="BODY", length = 2000)
   private String body;
-
-  @Deprecated
-  @Column(name="BODY_ID", length = 36)
-  private String bodyId;
-
-  @Deprecated
+ 
   @Column(name="PRIORITY")
   private float priority;
 
