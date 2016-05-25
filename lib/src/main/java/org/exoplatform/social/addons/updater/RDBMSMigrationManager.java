@@ -3,6 +3,11 @@ package org.exoplatform.social.addons.updater;
 import java.lang.reflect.Field;
 import java.util.concurrent.CountDownLatch;
 
+import org.exoplatform.social.addons.storage.RDBMSIdentityStorageImpl;
+import org.exoplatform.social.core.manager.IdentityManager;
+import org.exoplatform.social.core.manager.IdentityManagerImpl;
+import org.exoplatform.social.core.storage.api.IdentityStorage;
+import org.exoplatform.social.core.storage.impl.IdentityStorageImpl;
 import org.picocontainer.Startable;
 
 import org.exoplatform.commons.api.persistence.DataInitializer;
@@ -109,6 +114,17 @@ public class RDBMSMigrationManager implements Startable {
               return;
             }
 
+            boolean useMigrationIdentityStorage = false;
+            IdentityManagerImpl identityManager = CommonsUtils.getService(IdentityManagerImpl.class);
+            IdentityStorage identityStorage = identityManager.getIdentityStorage();
+            if (!MigrationContext.isIdentityDone()) {
+              IdentityStorageImpl jcrIdentityStorage = CommonsUtils.getService(IdentityStorageImpl.class);
+              RDBMSIdentityStorageImpl jpaIdentityStorage = CommonsUtils.getService(RDBMSIdentityStorageImpl.class);
+              MigrationIdentityStorage storage = new MigrationIdentityStorage(jcrIdentityStorage, jpaIdentityStorage, getIdentityMigrationService());
+              identityManager.setIdentityStorage(storage);
+              useMigrationIdentityStorage = true;
+            }
+
 
             field =  SessionImpl.class.getDeclaredField("FORCE_USE_GET_NODES_LAZILY");
             if (field != null) {
@@ -140,6 +156,10 @@ public class RDBMSMigrationManager implements Startable {
                       && !MigrationContext.isIdentityDone()) {
                 getIdentityMigrationService().start();
                 updateSettingValue(MigrationContext.SOC_RDBMS_IDENTITY_MIGRATION_KEY, MigrationContext.isIdentityDone());
+
+                if (useMigrationIdentityStorage && MigrationContext.isIdentityDone()) {
+                  identityManager.setIdentityStorage(identityStorage);
+                }
               }
             }
 
