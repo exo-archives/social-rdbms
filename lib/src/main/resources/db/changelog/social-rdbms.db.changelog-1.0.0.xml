@@ -427,6 +427,7 @@
       </column>
       <column name="VALUE" type="NVARCHAR(2000)"/>
     </createTable>
+    <addPrimaryKey columnNames="PROFILE_ID, NAME" constraintName="PK_SOC_PROFILE_PROPERTY_01" tableName="SOC_IDENTITY_PROFILE_PROPERTY"/>
     <modifySql dbms="mysql">
       <append value=" ENGINE=INNODB CHARSET=UTF8 COLLATE utf8_general_ci"/>
     </modifySql>
