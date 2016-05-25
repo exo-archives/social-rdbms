@@ -22,6 +22,8 @@ import java.util.Map;
 })
 public class Comment extends BaseActivity {
 
+  private static final long serialVersionUID = 8385677663290737181L;
+
   @Id
   @SequenceGenerator(name="SEQ_SOC_COMMENTS_ID", sequenceName="SEQ_SOC_COMMENTS_ID")
   @GeneratedValue(strategy=GenerationType.AUTO, generator="SEQ_SOC_COMMENTS_ID")
@@ -38,7 +40,7 @@ public class Comment extends BaseActivity {
   private Map<String, String> templateParams;
 
   @ManyToOne(fetch=FetchType.LAZY)
-  @JoinColumn(name="ACTIVITY_ID")
+  @JoinColumn(name="ACTIVITY_ID", nullable = false)
   private Activity activity;
 
   public Comment() {
