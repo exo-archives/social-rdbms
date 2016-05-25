@@ -91,8 +91,8 @@ public class ProfileEntity {
   private List<ProfileExperienceEntity> experiences = new ArrayList<>();
 
   @Temporal(TemporalType.TIMESTAMP)
-  @Column(name = "CREATED_TIME")
-  private Date createdTime;
+  @Column(name = "CREATED_TIME", nullable = false)
+  private Date createdTime = new Date();
 
   public long getId() {
     return id;
