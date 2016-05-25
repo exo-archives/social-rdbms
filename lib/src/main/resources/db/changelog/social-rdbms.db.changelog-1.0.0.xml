@@ -420,7 +420,9 @@
       <column name="PROFILE_ID" type="BIGINT">
         <constraints foreignKeyName="FK_SOC_IDENTITY_PROFILE_PROPERTY" references="SOC_IDENTITY_PROFILE(PROFILE_ID)" nullable="false"/>
       </column>
-      <column name="NAME" type="NVARCHAR(250)"/>
+      <column name="NAME" type="NVARCHAR(250)">
+        <constraints nullable="false"/>
+      </column>
       <column name="VALUE" type="NVARCHAR(2000)"/>
     </createTable>
     <modifySql dbms="mysql">
