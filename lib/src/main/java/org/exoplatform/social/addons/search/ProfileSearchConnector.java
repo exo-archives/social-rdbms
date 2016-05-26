@@ -162,8 +162,8 @@ public class ProfileSearchConnector {
     if (identity != null && type != null) {
       esQuery.append("       ,\n");
       esQuery.append("\"query\" : {\n");
-      esQuery.append("    \"filtered\" :{\n");
-      esQuery.append("      \"query\" : {\n");
+      esQuery.append("    \"bool\" :{\n");
+      esQuery.append("      \"must\" : {\n");
       esQuery.append("        \"query_string\" : {\n");
       esQuery.append("          \"query\" : \"*"+ identity.getId() +"*\",\n");
       esQuery.append("          \"fields\" : [\"" + buildTypeEx(type) + "\"]\n");

@@ -9,8 +9,14 @@ import javax.persistence.*;
 @ExoEntity
 @Table(name = "SOC_CONNECTIONS",
        uniqueConstraints=@UniqueConstraint(columnNames = {"SENDER_ID", "RECEIVER_ID"}))
-@NamedQuery(name = "getRelationships",
-            query = "select r from Connection r")
+@NamedQueries({
+        @NamedQuery(name = "getRelationships",
+                query = "select r from Connection r"),
+        @NamedQuery(name = "SocConnection.deleteConnectionByIdentity",
+                query = "DELETE FROM Connection c WHERE c.senderId = :identityId OR c.receiverId = :identityId"),
+        @NamedQuery(name = "SocConnection.migrateSenderId", query = "UPDATE Connection c SET c.senderId = :newId WHERE c.senderId = :oldId"),
+        @NamedQuery(name = "SocConnection.migrateReceiverId", query = "UPDATE Connection c SET c.receiverId = :newId WHERE c.receiverId = :oldId")
+})
 public class Connection {
 
   @Id
@@ -19,19 +25,19 @@ public class Connection {
   @Column(name = "CONNECTION_ID")
   private Long id;
 
-  @Column(name="SENDER_ID", length = 36)
+  @Column(name="SENDER_ID", length = 36, nullable = false)
   private String senderId;
   
-  @Column(name="RECEIVER_ID", length = 36)
+  @Column(name="RECEIVER_ID", length = 36, nullable = false)
   private String receiverId;
   
   @Enumerated
-  @Column(name="STATUS")
+  @Column(name="STATUS", nullable = false)
   private Type status;
   
   /** */
-  @Column(name="LAST_UPDATED")
-  private Long lastUpdated;
+  @Column(name="LAST_UPDATED", nullable = false)
+  private Long lastUpdated = System.currentTimeMillis();
 
   public Connection() {
   }
@@ -71,7 +77,7 @@ public class Connection {
   }
 
   public void setStatus(Type status) {
-    if ((status == Type.ALL) || (status == Type.IGNORED) || (status == Type.PENDING)) {
+    if (status == Type.ALL) {
       throw new IllegalArgumentException("Illegal status ["+status+"]");
     }
     this.status = status;

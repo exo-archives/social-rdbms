@@ -146,6 +146,7 @@ public class ActivityDAOTest extends BaseCoreTest {
   
   private Activity saveActivity(Identity ownerIdentity, Activity activity) {
     activity.setOwnerId(ownerIdentity.getId());
+    activity.setPosterId(activity.getOwnerId());
     activity = activityDao.create(activity);
     tearDownActivityList.add(activity);
     //
@@ -218,9 +219,9 @@ public class ActivityDAOTest extends BaseCoreTest {
     Comment comment = new Comment();
     comment.setTitle(commentTitle);
     comment.setOwnerId(demoIdentity.getId());
+    activity.addComment(comment);
     commentDao.create(comment);
     
-    activity.addComment(comment);
     assertNotNull(comment.getId());
     activityDao.update(activity);
     //
@@ -252,8 +253,8 @@ public class ActivityDAOTest extends BaseCoreTest {
     //
     demoActivity = activityDao.find(demoActivity.getId());
     //
-    commentDao.create(comment);
     demoActivity.addComment(comment);
+    commentDao.create(comment);
     activityDao.update(demoActivity);
     //
     demoActivity = activityDao.find(demoActivity.getId());
@@ -280,8 +281,8 @@ public class ActivityDAOTest extends BaseCoreTest {
     comment.setTitle("demo comment");
     comment.setOwnerId(demoIdentity.getId());
     //
-    comment = commentDao.create(comment);
     demoActivity.addComment(comment);
+    comment = commentDao.create(comment);
     activityDao.update(demoActivity);
     //
     Activity activityAdded = commentDao.findActivity(comment.getId());
@@ -316,8 +317,8 @@ public class ActivityDAOTest extends BaseCoreTest {
       Comment maryComment = new Comment();
       maryComment.setOwnerId(maryIdentity.getId());
       maryComment.setTitle("mary comment");
-      commentDao.create(maryComment);
       demoActivity.addComment(maryComment);
+      commentDao.create(maryComment);
       activityDao.update(demoActivity);
     }
     
@@ -344,8 +345,8 @@ public class ActivityDAOTest extends BaseCoreTest {
     Comment maryComment = new Comment();
     maryComment.setTitle("mary comment");
     maryComment.setOwnerId(maryIdentity.getId());
-    commentDao.create(maryComment);
     demoActivity.addComment(maryComment);
+    commentDao.create(maryComment);
     activityDao.update(demoActivity);
     //
     maryComment = commentDao.find(maryComment.getId());

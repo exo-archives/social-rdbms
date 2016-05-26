@@ -50,6 +50,12 @@ public class ProfileESListenerImpl extends ProfileListenerPlugin {
   }
 
   @Override
+  public void aboutMeUpdated(ProfileLifeCycleEvent event) {
+    CommonsUtils.getService(IndexingService.class).reindex(ProfileIndexingServiceConnector.TYPE, event.getProfile().getIdentity().getId());
+    LOG.info("Handled the updated profile aboutme!");
+  }
+
+  @Override
   public void experienceSectionUpdated(ProfileLifeCycleEvent event) {
     CommonsUtils.getService(IndexingService.class).reindex(ProfileIndexingServiceConnector.TYPE, event.getProfile().getIdentity().getId());
     LOG.info("Handled the updated profile experience!");

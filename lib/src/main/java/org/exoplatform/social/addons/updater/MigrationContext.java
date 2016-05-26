@@ -28,12 +28,21 @@ public final class MigrationContext {
   public static final String SOC_RDBMS_ACTIVITY_CLEANUP_KEY = "SOC_RDBMS_ACTIVITY_CLEANUP_DONE";
   public static final String SOC_RDBMS_CONNECTION_MIGRATION_KEY = "SOC_RDBMS_CONNECTION_MIGRATION_DONE";
   public static final String SOC_RDBMS_CONNECTION_CLEANUP_KEY = "SOC_RDBMS_CONNECTION_CLEANUP_DONE";
+  public static final String SOC_RDBMS_SPACE_MIGRATION_KEY = "SOC_RDBMS_SPACE_MIGRATION_DONE";
+  public static final String SOC_RDBMS_SPACE_CLEANUP_KEY = "SOC_RDBMS_SPACE_CLEANUP_DONE";
+  public static final String SOC_RDBMS_IDENTITY_MIGRATION_KEY = "SOC_RDBMS_IDENTITY_MIGRATION_DONE";
+  public static final String SOC_RDBMS_IDENTITY_CLEANUP_KEY = "SOC_RDBMS_IDENTITY_CLEANUP_DONE";
+  
   //
   private static boolean isDone = false;
   private static boolean isActivityDone = false;
   private static boolean isActivityCleanupDone = false;
   private static boolean isConnectionDone = false;
   private static boolean isConnectionCleanupDone = false;
+  private static boolean isSpaceDone = false;
+  private static boolean isSpaceCleanupDone = false;
+  private static boolean isIdentityDone = false;
+  private static boolean isIdentityCleanupDone = false;
 
   public static boolean isDone() {
     return isDone;
@@ -75,4 +84,34 @@ public final class MigrationContext {
     MigrationContext.isConnectionCleanupDone = isConnectionCleanupDone;
   }
 
+  public static boolean isSpaceDone() {
+    return isSpaceDone;
+  }
+
+  public static void setSpaceDone(boolean isSpaceDone) {
+    MigrationContext.isSpaceDone = isSpaceDone;
+  }
+
+  public static boolean isSpaceCleanupDone() {
+    return isSpaceCleanupDone;
+  }
+
+  public static void setSpaceCleanupDone(boolean isSpaceCleanupDone) {
+    MigrationContext.isSpaceCleanupDone = isSpaceCleanupDone;
+  }
+
+  public static boolean isIdentityDone() {
+    return MigrationContext.isIdentityDone;
+  }
+  public static void setIdentityDone(boolean isIdentityDone) {
+    MigrationContext.isIdentityDone = isIdentityDone;
+  }
+
+  public static boolean isIdentityCleanupDone() {
+    return MigrationContext.isIdentityCleanupDone;
+  }
+
+  public static void setIdentityCleanupDone(boolean isIdentityCleanupDone) {
+    MigrationContext.isIdentityCleanupDone = isIdentityCleanupDone;
+  }
 }

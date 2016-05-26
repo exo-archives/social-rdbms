@@ -75,6 +75,14 @@ public class SpaceActivityMySqlPublisherTest extends AbstractCoreTest {
         LOG.warn("can not delete activity with id: " + activity.getId());
       }
     }
+    
+    for (Space space : spaceService.getAllSpaces()) {
+      Identity spaceIdentity = identityStorage.findIdentity(SpaceIdentityProvider.NAME, space.getPrettyName());
+      if (spaceIdentity != null) {
+        identityStorage.deleteIdentity(spaceIdentity);
+      }
+      spaceService.deleteSpace(space);
+    }
     super.tearDown();
   }
 
@@ -266,7 +274,6 @@ public class SpaceActivityMySqlPublisherTest extends AbstractCoreTest {
    space.setManagers(managers);
    space.setMembers(members);
    spaceService.saveSpace(space, true);
-   
    //broadcast event
    SpaceLifeCycleEvent event  = new SpaceLifeCycleEvent(space, rootIdentity.getRemoteId(), SpaceLifeCycleEvent.Type.SPACE_CREATED);
    spaceActivityPublisher.spaceCreated(event);

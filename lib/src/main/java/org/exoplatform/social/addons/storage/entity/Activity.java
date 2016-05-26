@@ -14,7 +14,13 @@ import org.exoplatform.commons.api.persistence.ExoEntity;
 @Entity
 @ExoEntity
 @Table(name = "SOC_ACTIVITIES")
+@NamedQueries({
+        @NamedQuery(name = "SocActivity.migratePosterId", query = "UPDATE Activity a SET a.posterId = :newId WHERE a.posterId = :oldId"),
+        @NamedQuery(name = "SocActivity.migrateOwnerId", query = "UPDATE Activity a SET a.ownerId = :newId WHERE a.ownerId = :oldId")
+})
 public class Activity extends BaseActivity {
+
+  private static final long serialVersionUID = -1489894321243127979L;
 
   @Id
   @SequenceGenerator(name="SEQ_SOC_ACTIVITIES_ID", sequenceName="SEQ_SOC_ACTIVITIES_ID")
@@ -27,7 +33,7 @@ public class Activity extends BaseActivity {
     name = "SOC_ACTIVITY_LIKERS",
     joinColumns=@JoinColumn(name = "ACTIVITY_ID")
   )
-  @Column(name="LIKER_ID")
+  @Column(name="LIKER_ID", nullable = false)
   private Set<String> likerIds = new HashSet<String>();
 
   @ElementCollection

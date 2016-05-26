@@ -16,20 +16,33 @@
             </column>
             <column name="APP_ID" type="NVARCHAR(36)"/>
             <column name="BODY" type="LONGTEXT"/>
-            <column name="BODY_ID" type="NVARCHAR(36)"/>
             <column name="EXTERNAL_ID" type="NVARCHAR(36)"/>
             <column name="PROVIDER_ID" type="NVARCHAR(36)"/>
-            <column name="HIDDEN" type="BIT"/>
-            <column name="LAST_UPDATED" type="BIGINT"/>
-            <column name="LOCKED" type="BIT"/>
-            <column name="OWNER_ID" type="NVARCHAR(36)"/>
+            <column name="HIDDEN" type="BIT">
+              <constraints nullable="false"/>
+            </column>
+            <column name="LAST_UPDATED" type="BIGINT">
+              <constraints nullable="false"/>
+            </column>
+            <column name="LOCKED" type="BIT">
+              <constraints nullable="false"/>
+            </column>
+            <column name="OWNER_ID" type="NVARCHAR(36)">
+              <constraints nullable="false"/>
+            </column>
             <column name="PERMALINK" type="NVARCHAR(255)"/>
-            <column name="POSTED" type="BIGINT"/>
-            <column name="POSTER_ID" type="NVARCHAR(36)"/>
+            <column name="POSTED" type="BIGINT">
+              <constraints nullable="false"/>
+            </column>
+            <column name="POSTER_ID" type="NVARCHAR(36)">
+              <constraints nullable="false"/>
+            </column>
             <column name="PRIORITY" type="FLOAT(12)">
                 <constraints nullable="false"/>
             </column>
-            <column name="TITLE" type="LONGTEXT"/>
+            <column name="TITLE" type="LONGTEXT">
+              <constraints nullable="false"/>
+            </column>
             <column name="TITLE_ID" type="NVARCHAR(1024)"/>
             <column name="TYPE" type="NVARCHAR(255)"/>
         </createTable>
@@ -54,11 +67,17 @@
 
     <changeSet author="social" id="1.0.0-2">
         <createTable tableName="SOC_ACTIVITY_LIKERS">
-            <column name="ACTIVITY_ID" type="BIGINT">
+            <column name="ACTIVITY_ID" type="BIGINT"> 
                 <constraints nullable="false"/>
             </column>
-            <column name="LIKER_ID" type="NVARCHAR(36)"/>
+            <column name="LIKER_ID" type="NVARCHAR(36)">
+            	<constraints nullable="false"/>
+            </column>
         </createTable>
+        <addPrimaryKey columnNames="ACTIVITY_ID, LIKER_ID" constraintName="PK_SOC_ACTIVITY_LIKER_01" tableName="SOC_ACTIVITY_LIKERS"/>
+        <createIndex tableName="SOC_ACTIVITY_LIKERS" indexName="IDX_SOC_ACTIVITY_LIKERS_01">
+            <column name="ACTIVITY_ID"/>
+        </createIndex>
     </changeSet>
     <changeSet author="social" id="1.0.0-3">
         <createTable tableName="SOC_MENTIONS">
@@ -72,6 +91,9 @@
                 <constraints nullable="false"/>
             </column>
         </createTable>
+        <addUniqueConstraint columnNames="ACTIVITY_ID, MENTIONER_ID"
+                         constraintName="UK_ACTIVITY_MENTIONER_01"
+                         tableName="SOC_MENTIONS"/>
         <createIndex tableName="SOC_MENTIONS" indexName="IDX_SOC_MENTIONS_01">
             <column name="MENTIONER_ID"/>
         </createIndex>
@@ -97,22 +119,33 @@
             </column>
             <column name="APP_ID" type="NVARCHAR(36)"/>
             <column name="BODY" type="LONGTEXT"/>
-            <column name="BODY_ID" type="NVARCHAR(36)"/>
             <column name="EXTERNAL_ID" type="NVARCHAR(36)"/>
-            <column name="HIDDEN" type="BIT"/>
-            <column name="LAST_UPDATED" type="BIGINT"/>
-            <column name="LOCKED" type="BIT"/>
+            <column name="HIDDEN" type="BIT">
+              <constraints nullable="false"/>
+            </column>
+            <column name="LAST_UPDATED" type="BIGINT">
+              <constraints nullable="false"/>
+            </column>
+            <column name="LOCKED" type="BIT">
+              <constraints nullable="false"/>
+            </column>
             <column name="OWNER_ID" type="NVARCHAR(36)"/>
             <column name="PERMALINK" type="NVARCHAR(255)"/>
-            <column name="POSTED" type="BIGINT"/>
-            <column name="POSTER_ID" type="NVARCHAR(36)"/>
-            <column name="PRIORITY" type="FLOAT(12)">
-                <constraints nullable="false"/>
+            <column name="POSTED" type="BIGINT">
+              <constraints nullable="false"/>
             </column>
-            <column name="TITLE" type="LONGTEXT"/>
+            <column name="POSTER_ID" type="NVARCHAR(36)">
+              <constraints nullable="false"/>
+            </column>
+            <column name="PRIORITY" type="FLOAT(12)"/>
+            <column name="TITLE" type="LONGTEXT">
+              <constraints nullable="false"/>
+            </column>
             <column name="TITLE_ID" type="NVARCHAR(1024)"/>
             <column name="TYPE" type="NVARCHAR(255)"/>
-            <column name="ACTIVITY_ID" type="BIGINT"/>
+            <column name="ACTIVITY_ID" type="BIGINT">
+              <constraints nullable="false"/>
+            </column>
         </createTable>
         <modifySql dbms="mysql">
             <append value=" ENGINE=INNODB CHARSET=UTF8 COLLATE utf8_general_ci"/>
@@ -146,11 +179,18 @@
             <column name="CONNECTION_ID" type="BIGINT" autoIncrement="${autoIncrement}" startWith="1">
               <constraints nullable="false" primaryKey="true" primaryKeyName="PK_SOC_CONNECTIONS"/>
             </column>
-            <column name="RECEIVER_ID" type="NVARCHAR(36)"/>
-            <column name="SENDER_ID" type="NVARCHAR(36)"/>
-            <column name="STATUS" type="INT"/>
-            <column name="PROFILE_ID" type="BIGINT"/>
-            <column name="LAST_UPDATED" type="BIGINT"/>
+            <column name="RECEIVER_ID" type="NVARCHAR(36)">
+              <constraints nullable="false"/>
+            </column>
+            <column name="SENDER_ID" type="NVARCHAR(36)">
+              <constraints nullable="false"/>
+            </column>
+            <column name="STATUS" type="INT">
+              <constraints nullable="false"/>
+            </column>
+            <column name="LAST_UPDATED" type="BIGINT">
+              <constraints nullable="false"/>
+            </column>
         </createTable>
         <createIndex tableName="SOC_CONNECTIONS" indexName="IDX_SOC_CONNECTIONS_01">
             <column name="RECEIVER_ID"/>
@@ -170,10 +210,18 @@
             <column name="STREAM_ITEM_ID" type="BIGINT" autoIncrement="${autoIncrement}" startWith="1">
               <constraints nullable="false" primaryKey="true" primaryKeyName="PK_SOC_STREAM_ITEMS"/>
             </column>
-            <column name="OWNER_ID" type="NVARCHAR(36)"/>
-            <column name="STREAM_TYPE" type="INT"/>
-            <column name="ACTIVITY_ID" type="BIGINT"/>
-            <column name="LAST_UPDATED" type="BIGINT"/>
+            <column name="OWNER_ID" type="NVARCHAR(36)">
+              <constraints nullable="false"/>
+            </column>
+            <column name="STREAM_TYPE" type="INT">
+              <constraints nullable="false"/>
+            </column>
+            <column name="ACTIVITY_ID" type="BIGINT">
+              <constraints nullable="false"/>
+            </column>
+            <column name="LAST_UPDATED" type="BIGINT">
+              <constraints nullable="false"/>
+            </column>
         </createTable>
     </changeSet>
     <changeSet author="social" id="1.0.0-8.1">
@@ -228,5 +276,181 @@
   </changeSet>
   <changeSet author="social" id="1.0.0-22" dbms="oracle,postgresql">
     <createSequence sequenceName="SEQ_SOC_STREAM_ITEMS_ID" startValue="1"/>
+  </changeSet>
+  
+  <changeSet author="social" id="1.0.0-23">
+    <createTable tableName="SOC_SPACES">
+        <column name="SPACE_ID" type="BIGINT" autoIncrement="${autoIncrement}" startWith="1">
+          <constraints nullable="false" primaryKey="true" primaryKeyName="PK_SOC_SPACES"/>
+        </column>
+        <column name="APP" type="LONGTEXT"/>
+        <column name="PRETTY_NAME" type="NVARCHAR(200)">
+          <constraints nullable="false"/>
+        </column>
+        <column name="DISPLAY_NAME" type="NVARCHAR(200)">
+          <constraints nullable="false"/>
+        </column>
+        <column name="REGISTRATION" type="TINYINT">
+          <constraints nullable="false"/>
+        </column>
+        <column name="DESCRIPTION" type="LONGTEXT"/>
+        <column name="AVATAR_LAST_UPDATED" type="BIGINT"/>
+        <column name="VISIBILITY" type="TINYINT">
+          <constraints nullable="false"/>
+        </column>
+        <column name="PRIORITY" type="TINYINT"/>
+        <column name="GROUP_ID" type="NVARCHAR(200)">
+          <constraints nullable="false"/>
+        </column>
+        <column name="URL" type="NVARCHAR(500)"/>
+        <column name="CREATED_TIME" type="BIGINT">
+          <constraints nullable="false"/>
+        </column>
+    </createTable>
+    <modifySql dbms="mysql">
+        <append value=" ENGINE=INNODB CHARSET=UTF8 COLLATE utf8_general_ci"/>
+    </modifySql>
+  </changeSet>
+  <changeSet author="social" id="1.0.0-24">
+    <createTable tableName="SOC_APPS">
+        <column name="SPACE_ID" type="BIGINT">
+          <constraints foreignKeyName="FK_SOC_APP_SPACE_01" references="SOC_SPACES(SPACE_ID)" nullable="false"/>
+        </column>
+        <column name="APP_ID" type="NVARCHAR(200)">
+ 	      <constraints nullable="false"/>        	
+        </column>
+        <column name="APP_NAME" type="NVARCHAR(200)">
+          <constraints nullable="false"/>
+        </column>
+        <column name="REMOVABLE" type="BIT">
+          <constraints nullable="false"/>
+        </column>
+        <column name="STATUS" type="TINYINT">
+          <constraints nullable="false"/>
+        </column>
+    </createTable>
+    <addUniqueConstraint columnNames="SPACE_ID, APP_ID"
+                         constraintName="UK_SPACE_APP_01"
+                         tableName="SOC_APPS"/>
+    <modifySql dbms="mysql">
+        <append value=" ENGINE=INNODB CHARSET=UTF8 COLLATE utf8_general_ci"/>
+    </modifySql>
+  </changeSet>
+  <changeSet author="social" id="1.0.0-25">
+    <createTable tableName="SOC_SPACES_MEMBERS">
+      <column name="SPACE_MEMBER_ID" type="BIGINT" autoIncrement="${autoIncrement}" startWith="1">
+        <constraints nullable="false" primaryKey="true" primaryKeyName="PK_SOC_SPACES_MEMBERS"/>
+      </column>
+      <column name="SPACE_ID" type="BIGINT">
+        <constraints foreignKeyName="FK_SOC_MEM_SPACE_01" references="SOC_SPACES(SPACE_ID)" nullable="false"/>
+      </column>
+      <column name="USER_ID" type="NVARCHAR(100)">
+      	<constraints nullable="false"/>
+      </column>
+      <column name="STATUS" type="NVARCHAR(36)">
+      	<constraints nullable="false"/>
+      </column>
+      <column name="LAST_ACCESS" type="BIGINT"/>
+      <column name="VISITED" type="BIT"/>
+    </createTable>
+    <addUniqueConstraint columnNames="SPACE_ID, USER_ID, STATUS"
+                         constraintName="UK_SPACE_USER_STATUS_01"
+                         tableName="SOC_SPACES_MEMBERS"/>
+    <modifySql dbms="mysql">
+      <append value=" ENGINE=INNODB CHARSET=UTF8 COLLATE utf8_general_ci"/>
+    </modifySql>    
+  </changeSet>
+
+  <changeSet author="social" id="1.0.0-26">
+    <createTable tableName="SOC_IDENTITY">
+      <column name="IDENTITY_ID" type="BIGINT" autoIncrement="${autoIncrement}" startWith="1">
+        <constraints nullable="false" primaryKey="true" primaryKeyName="PK_SOC_IDENTITIES"/>
+      </column>
+      <column name="PROVIDER_ID" type="NVARCHAR(50)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="REMOTE_ID" type="NVARCHAR(100)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="ENABLE"  type="BIT" defaultValue="1">
+        <constraints nullable="false"/>
+      </column>
+      <column name="DELETED" type="BIT" defaultValue="0">
+        <constraints nullable="false"/>
+      </column>
+    </createTable>
+    <modifySql dbms="mysql">
+      <append value=" ENGINE=INNODB CHARSET=UTF8 COLLATE utf8_general_ci"/>
+    </modifySql>
+  </changeSet>
+  <changeSet author="social" id="1.0.0-27">
+    <addUniqueConstraint columnNames="PROVIDER_ID, REMOTE_ID"
+                         constraintName="UK_PROVIDER_ID_REMOTE_ID_01"
+                         tableName="SOC_IDENTITY"/>
+  </changeSet>
+  <changeSet author="social" id="1.0.0-28" dbms="oracle,postgresql">
+    <createSequence sequenceName="SEQ_SOC_IDENTITY_ID" startValue="1"/>
+  </changeSet>
+
+  <changeSet author="social" id="1.0.0-29">
+    <createTable tableName="SOC_IDENTITY_PROFILE">
+      <column name="PROFILE_ID" type="BIGINT" autoIncrement="${autoIncrement}" startWith="1">
+        <constraints nullable="false" primaryKey="true" primaryKeyName="PK_SOC_IDENTITY_PROFILE"/>
+      </column>
+      <column name="IDENTITY_ID" type="BIGINT">
+        <constraints foreignKeyName="FK_SOC_IDENTITY_PROFILE" references="SOC_IDENTITY(IDENTITY_ID)" nullable="false"/>
+      </column>
+      <column name="URL" type="NVARCHAR(250)"/>
+      <column name="AVATAR_URL" type="NVARCHAR(250)"/>
+      <column name="AVATAR_MIMTYPE" type="NVARCHAR(250)"/>
+      <column name="AVATAR_IMAGE" type="MEDIUMBLOB"/>
+      <column name="CREATED_TIME" type="TIMESTAMP">
+        <constraints nullable="false"/>
+      </column>
+    </createTable>
+    <modifySql dbms="mysql">
+      <append value=" ENGINE=INNODB CHARSET=UTF8 COLLATE utf8_general_ci"/>
+    </modifySql>
+  </changeSet>
+  <changeSet author="social" id="1.0.0-30">
+    <addUniqueConstraint columnNames="IDENTITY_ID"
+                         constraintName="UK_IDENTITY_PROFILE_IDENTITY_ID_01"
+                         tableName="SOC_IDENTITY_PROFILE"/>
+  </changeSet>
+  <changeSet author="social" id="1.0.0-30" dbms="oracle,postgresql">
+    <createSequence sequenceName="SEQ_SOC_IDENTITY_PROFILE_ID" startValue="1"/>
+  </changeSet>
+
+  <changeSet author="social" id="1.0.0-31">
+    <createTable tableName="SOC_IDENTITY_PROFILE_PROPERTY">
+      <column name="PROFILE_ID" type="BIGINT">
+        <constraints foreignKeyName="FK_SOC_IDENTITY_PROFILE_PROPERTY" references="SOC_IDENTITY_PROFILE(PROFILE_ID)" nullable="false"/>
+      </column>
+      <column name="NAME" type="NVARCHAR(250)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="VALUE" type="NVARCHAR(2000)"/>
+    </createTable>
+    <addPrimaryKey columnNames="PROFILE_ID, NAME" constraintName="PK_SOC_PROFILE_PROPERTY_01" tableName="SOC_IDENTITY_PROFILE_PROPERTY"/>
+    <modifySql dbms="mysql">
+      <append value=" ENGINE=INNODB CHARSET=UTF8 COLLATE utf8_general_ci"/>
+    </modifySql>
+  </changeSet>
+
+  <changeSet author="social" id="1.0.0-32">
+    <createTable tableName="SOC_IDENTITY_PROFILE_EXPERIENCE">
+      <column name="PROFILE_ID" type="BIGINT">
+        <constraints foreignKeyName="FK_SOC_IDENTITY_PROFILE_EXPERIENCE" references="SOC_IDENTITY_PROFILE(PROFILE_ID)" nullable="false"/>
+      </column>
+      <column name="COMPANY" type="NVARCHAR(250)"/>
+      <column name="POSITION" type="NVARCHAR(500)"/>
+      <column name="START_DATE" type="NCHAR(10)"/>
+      <column name="END_DATE" type="NCHAR(10)"/>
+      <column name="SKILLS" type="NVARCHAR(2000)"/>
+      <column name="DESCRIPTION" type="LONGTEXT"/>
+    </createTable>
+    <modifySql dbms="mysql">
+      <append value=" ENGINE=INNODB CHARSET=UTF8 COLLATE utf8_general_ci"/>
+    </modifySql>
   </changeSet>
 </databaseChangeLog>

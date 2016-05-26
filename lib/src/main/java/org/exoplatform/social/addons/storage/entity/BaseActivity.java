@@ -16,7 +16,7 @@ import javax.persistence.MappedSuperclass;
 public abstract class BaseActivity implements Serializable {
   
   /** */
-  @Column(name="TITLE", length = 2000)
+  @Column(name="TITLE", length = 2000, nullable = false)
   private String title;
   
   /** */
@@ -28,11 +28,11 @@ public abstract class BaseActivity implements Serializable {
   private String titleId;
   
   /** */
-  @Column(name="POSTED")
+  @Column(name="POSTED", nullable = false)
   protected Long posted;
   
   /** */
-  @Column(name="LAST_UPDATED")
+  @Column(name="LAST_UPDATED", nullable = false)
   private Long lastUpdated;
   
   /** */
@@ -56,22 +56,16 @@ public abstract class BaseActivity implements Serializable {
   private String externalId;
   
   /** */
-  @Column(name="LOCKED")
+  @Column(name="LOCKED", nullable = false)
   private Boolean locked = false;
   
   /** */
-  @Column(name="HIDDEN")
+  @Column(name="HIDDEN", nullable = false)
   private Boolean hidden = false;
   
-  @Deprecated
   @Column(name="BODY", length = 2000)
   private String body;
-
-  @Deprecated
-  @Column(name="BODY_ID", length = 36)
-  private String bodyId;
-
-  @Deprecated
+ 
   @Column(name="PRIORITY")
   private float priority;
 

@@ -41,7 +41,6 @@ import org.exoplatform.social.core.storage.api.IdentityStorage;
  */
 public class StreamItemDAOTest extends BaseCoreTest {
   private List<ExoSocialActivity> tearDownActivityList;
-  private List<Space> tearDownSpaceList;
   private Identity ghostIdentity;
   private Identity raulIdentity;
   private Identity jameIdentity;
@@ -49,16 +48,17 @@ public class StreamItemDAOTest extends BaseCoreTest {
   
   private IdentityStorage identityStorage;
   private StreamItemDAO streamItemDAO;
+  private SpaceService spaceService;
 
   @Override
   public void setUp() throws Exception {
-    super.setUp();
+    super.setUp();    
     
     identityStorage = getService(IdentityStorage.class);
     streamItemDAO = getService(StreamItemDAO.class);
+    spaceService = getService(SpaceService.class);
     //
     tearDownActivityList = new ArrayList<ExoSocialActivity>();
-    tearDownSpaceList = new ArrayList<Space>();
     //
     ghostIdentity = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, "ghost", true);
     raulIdentity = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, "raul", true);
@@ -73,7 +73,7 @@ public class StreamItemDAOTest extends BaseCoreTest {
     }
     
     //
-    for (Space space : tearDownSpaceList) {
+    for (Space space : spaceService.getAllSpaces()) {
       Identity spaceIdentity = identityStorage.findIdentity(SpaceIdentityProvider.NAME, space.getPrettyName());
       if (spaceIdentity != null) {
         identityStorage.deleteIdentity(spaceIdentity);
@@ -288,7 +288,6 @@ public class StreamItemDAOTest extends BaseCoreTest {
     assertEquals(2, items.size());
     
     tearDownActivityList.add(activity);
-    tearDownSpaceList.add(space);
   }
   
   public void testPostOnSpaceAndMention() throws Exception {
@@ -302,7 +301,6 @@ public class StreamItemDAOTest extends BaseCoreTest {
     assertEquals(3, items.size());
     
     tearDownActivityList.add(activity);
-    tearDownSpaceList.add(space);
   }
   
   public void testDeleteActivity() {

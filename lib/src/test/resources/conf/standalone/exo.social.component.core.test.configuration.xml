@@ -90,6 +90,25 @@
   </component>
   
   <component>
+    <key>org.exoplatform.social.addons.storage.dao.SpaceDAO</key>
+    <type>org.exoplatform.social.addons.storage.dao.jpa.SpaceDAOImpl</type>
+  </component>
+  
+  <component>
+    <key>org.exoplatform.social.addons.storage.dao.SpaceMemberDAO</key>
+    <type>org.exoplatform.social.addons.storage.dao.jpa.SpaceMemberDAOImpl</type>
+  </component>
+
+  <component>
+    <key>org.exoplatform.social.addons.storage.dao.IdentityDAO</key>
+    <type>org.exoplatform.social.addons.storage.dao.jpa.IdentityDAOImpl</type>
+  </component>
+  <component>
+    <key>org.exoplatform.social.addons.storage.dao.ProfileDAO</key>
+    <type>org.exoplatform.social.addons.storage.dao.jpa.ProfileDAOImpl</type>
+  </component>
+  
+  <component>
     <key>org.exoplatform.commons.api.persistence.DataInitializer</key>
     <type>org.exoplatform.commons.persistence.impl.LiquibaseDataInitializer</type>
     <init-params>
@@ -118,6 +137,16 @@
     <key>org.exoplatform.social.addons.storage.dao.CommentDAO</key>
     <type>org.exoplatform.social.addons.storage.dao.jpa.CommentDAOImpl</type>
   </component>
+
+  <component>
+    <key>org.exoplatform.social.addons.storage.dao.IdentityDAO</key>
+    <type>org.exoplatform.social.addons.storage.dao.jpa.IdentityDAOImpl</type>
+  </component>
+
+  <component>
+    <key>org.exoplatform.social.addons.storage.dao.ProfileDAO</key>
+    <type>org.exoplatform.social.addons.storage.dao.jpa.ProfileDAOImpl</type>
+  </component>
   
 	<component>
 		<type>org.exoplatform.social.addons.updater.ActivityMigrationService</type>
@@ -140,7 +169,29 @@
 			</value-param>
 		</init-params>
 	</component>
+	
+	<component>
+		<type>org.exoplatform.social.addons.updater.SpaceMigrationService</type>
+		<init-params>
+			<value-param>
+				<name>LIMIT_THRESHOLD</name>
+				<description>The number limit of items migration each round</description>
+				<value>${exo.social.addons.SpaceMigrationService.limitThreshold:200}</value>
+			</value-param>
+		</init-params>
+	</component>
 
+  <component>
+    <type>org.exoplatform.social.addons.updater.IdentityMigrationService</type>
+    <init-params>
+      <value-param>
+        <name>LIMIT_THRESHOLD</name>
+        <description>The number limit of items migration each round</description>
+        <value>${exo.social.addons.IdentityMigrationService.limitThreshold:200}</value>
+      </value-param>
+    </init-params>
+  </component>  
+  
    <!--
     Activity storage components.
   -->
@@ -170,7 +221,7 @@
   -->
   <component>
     <key>org.exoplatform.social.core.storage.api.IdentityStorage</key>
-    <type>org.exoplatform.social.core.storage.cache.CachedIdentityStorage</type>
+    <type>org.exoplatform.social.addons.storage.RDBMSIdentityStorageImpl</type>
   </component>
 
   <component>
@@ -218,7 +269,7 @@
   -->
   <component>
     <key>org.exoplatform.social.core.storage.api.SpaceStorage</key>
-    <type>org.exoplatform.social.core.storage.cache.CachedSpaceStorage</type>
+    <type>org.exoplatform.social.addons.storage.RDBMSSpaceStorageImpl</type>
   </component>
 
   <component>
@@ -740,7 +791,14 @@
   </external-component-plugins>
   
    
-  
+  <external-component-plugins>
+    <target-component>org.exoplatform.commons.api.event.EventManager</target-component>
+    <component-plugin>
+      <name>SOC_IDENTITY_MIGRATION</name>
+      <set-method>addEventListener</set-method>
+      <type>org.exoplatform.social.addons.updater.listener.IdentityReferenceUpdaterListener</type>
+    </component-plugin>
+  </external-component-plugins>
   
    <external-component-plugins>
     <target-component>org.exoplatform.commons.chromattic.ChromatticManager</target-component>

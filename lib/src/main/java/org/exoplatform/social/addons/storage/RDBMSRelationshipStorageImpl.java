@@ -17,6 +17,8 @@
 package org.exoplatform.social.addons.storage;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -29,6 +31,10 @@ import java.util.Set;
 import java.util.TreeMap;
 
 import org.exoplatform.commons.api.persistence.ExoTransactional;
+import org.exoplatform.commons.utils.ListAccess;
+import org.exoplatform.services.log.ExoLogger;
+import org.exoplatform.services.log.Log;
+import org.exoplatform.social.addons.search.ExtendProfileFilter;
 import org.exoplatform.social.addons.search.ProfileSearchConnector;
 import org.exoplatform.social.addons.storage.dao.ConnectionDAO;
 import org.exoplatform.social.addons.storage.entity.Connection;
@@ -38,7 +44,7 @@ import org.exoplatform.social.core.profile.ProfileFilter;
 import org.exoplatform.social.core.relationship.model.Relationship;
 import org.exoplatform.social.core.relationship.model.Relationship.Type;
 import org.exoplatform.social.core.storage.RelationshipStorageException;
-import org.exoplatform.social.core.storage.api.IdentityStorage;
+import org.exoplatform.social.core.storage.api.RelationshipStorage;
 import org.exoplatform.social.core.storage.impl.RelationshipStorageImpl;
 
 /**
@@ -48,12 +54,14 @@ import org.exoplatform.social.core.storage.impl.RelationshipStorageImpl;
  * Jun 3, 2015  
  */
 public class RDBMSRelationshipStorageImpl extends RelationshipStorageImpl {
+
+  private static final Log LOG = ExoLogger.getLogger(RDBMSRelationshipStorageImpl.class);
   
   private final ConnectionDAO connectionDAO;
-  private final IdentityStorage identityStorage;
+  private final RDBMSIdentityStorageImpl identityStorage;
   private final ProfileSearchConnector profileESConnector;
 
-  public RDBMSRelationshipStorageImpl(IdentityStorage identityStorage, ConnectionDAO connectionDAO, ProfileSearchConnector profileESConnector) {
+  public RDBMSRelationshipStorageImpl(RDBMSIdentityStorageImpl identityStorage, ConnectionDAO connectionDAO, ProfileSearchConnector profileESConnector) {
     super(identityStorage);
     this.connectionDAO = connectionDAO;
     this.identityStorage = identityStorage;
@@ -64,33 +72,25 @@ public class RDBMSRelationshipStorageImpl extends RelationshipStorageImpl {
   @ExoTransactional
   public Relationship saveRelationship(Relationship relationship) throws RelationshipStorageException {
     if (relationship.getId() == null) {//create new relationship
-      Connection entity = new Connection();
+
+      Connection entity = connectionDAO.getConnection(relationship.getSender(), relationship.getReceiver());
+      if (entity == null) {
+        entity = new Connection();
+      }
+
       entity.setReceiverId(relationship.getReceiver().getId());
       entity.setSenderId(relationship.getSender().getId());
-      entity.setStatus((Relationship.Type.PENDING == relationship.getStatus()) ? Relationship.Type.OUTGOING : relationship.getStatus());
+      entity.setStatus(relationship.getStatus());
       entity.setLastUpdated(System.currentTimeMillis());
       //
       connectionDAO.create(entity);
       relationship.setId(Long.toString(entity.getId()));
 
-      //
-      Connection symmetricalEntity = new Connection();
-      symmetricalEntity.setSenderId(relationship.getReceiver().getId());
-      symmetricalEntity.setReceiverId(relationship.getSender().getId());
-      symmetricalEntity.setStatus((Relationship.Type.PENDING == relationship.getStatus()) ? Relationship.Type.INCOMING : relationship.getStatus());
-      symmetricalEntity.setLastUpdated(System.currentTimeMillis());
-      //
-      connectionDAO.create(symmetricalEntity);
     } else {//update an relationship
       Connection entity = connectionDAO.getConnection(relationship.getSender(), relationship.getReceiver());
       entity.setStatus(relationship.getStatus());
       entity.setLastUpdated(System.currentTimeMillis());
       connectionDAO.update(entity);
-      //
-      Connection symmetricalEntity = connectionDAO.getConnection(relationship.getReceiver(), relationship.getSender());
-      symmetricalEntity.setStatus(relationship.getStatus());
-      symmetricalEntity.setLastUpdated(System.currentTimeMillis());
-      connectionDAO.update(symmetricalEntity);
     }
     //
     return relationship;
@@ -100,9 +100,9 @@ public class RDBMSRelationshipStorageImpl extends RelationshipStorageImpl {
   @ExoTransactional
   public void removeRelationship(Relationship relationship) throws RelationshipStorageException {
     Connection connection = connectionDAO.getConnection(relationship.getSender(), relationship.getReceiver());
-    connectionDAO.delete(connection);
-    Connection symmetricalEntity = connectionDAO.getConnection(relationship.getReceiver(), relationship.getSender());
-    connectionDAO.delete(symmetricalEntity);
+    if (connection != null) {
+      connectionDAO.delete(connection);
+    }
   }
   
   @Override
@@ -153,16 +153,20 @@ public class RDBMSRelationshipStorageImpl extends RelationshipStorageImpl {
   
   @Override
   public List<Relationship> getReceiverRelationships(Identity receiver, Relationship.Type type, List<Identity> listCheckIdentity) throws RelationshipStorageException {
-    return getRelationships(receiver, Relationship.Type.INCOMING);
+    return getRelationships(null, receiver, type);
   }
   
   @Override
   public List<Relationship> getSenderRelationships(Identity sender, Relationship.Type type, List<Identity> listCheckIdentity) throws RelationshipStorageException {
-    return getRelationships(sender, Relationship.Type.OUTGOING);
+    return getRelationships(sender, null, type);
   }
   
   public List<Relationship> getRelationships(Identity identity, Relationship.Type type) {
     return convertRelationshipEntitiesToRelationships(connectionDAO.getConnections(identity, type, 0, -1));
+  }
+
+  public List<Relationship> getRelationships(Identity sender, Identity receiver, Type type) {
+    return convertRelationshipEntitiesToRelationships(connectionDAO.getConnections(sender, receiver, type));
   }
   
   @Override
@@ -226,21 +230,17 @@ public class RDBMSRelationshipStorageImpl extends RelationshipStorageImpl {
     if (item == null) return null;
     //
     Relationship relationship = new Relationship(Long.toString(item.getId()));
-    if (Relationship.Type.INCOMING.equals(item.getStatus())) {
-      relationship.setSender(identityStorage.findIdentityById(item.getReceiverId()));
-      relationship.setReceiver(identityStorage.findIdentityById(item.getSenderId()));
-    } else {
-      relationship.setSender(identityStorage.findIdentityById(item.getSenderId()));
-      relationship.setReceiver(identityStorage.findIdentityById(item.getReceiverId()));
-    }
-    relationship.setStatus(Relationship.Type.CONFIRMED.equals(item.getStatus()) ? item.getStatus() : Relationship.Type.PENDING);
+    relationship.setId(String.valueOf(item.getId()));
+    relationship.setSender(identityStorage.findIdentityById(item.getSenderId()));
+    relationship.setReceiver(identityStorage.findIdentityById(item.getReceiverId()));
+    relationship.setStatus(item.getStatus());
     return relationship;
   }
 
   @Override
   public List<Relationship> getSenderRelationships(String senderId, Type type, List<Identity> listCheckIdentity) throws RelationshipStorageException {
     Identity sender = identityStorage.findIdentityById(senderId);
-    return getSenderRelationships(sender, Relationship.Type.OUTGOING, listCheckIdentity);
+    return getSenderRelationships(sender, type, listCheckIdentity);
   }
 
   @Override
@@ -256,52 +256,33 @@ public class RDBMSRelationshipStorageImpl extends RelationshipStorageImpl {
 
   @Override
   public List<Identity> getConnectionsByFilter(Identity existingIdentity, ProfileFilter profileFilter, long offset, long limit) throws RelationshipStorageException {
-    return profileESConnector.search(existingIdentity, profileFilter, Relationship.Type.CONFIRMED, offset, limit);
+    //return profileESConnector.search(existingIdentity, profileFilter, Relationship.Type.CONFIRMED, offset, limit);
+    return searchConnectionByFilter(existingIdentity, Type.CONFIRMED, profileFilter, offset, limit);
   }
 
   @Override
   public List<Identity> getIncomingByFilter(Identity existingIdentity, ProfileFilter profileFilter, long offset, long limit) throws RelationshipStorageException {
-    //1. John requested connecting to Mary
-    //John indexing: {_id = JohnId, outgoings : maryId}
-    //Mary indexing: {_id = MaryId, incomings : johnId}
-    //2. John requested connecting to Demo
-    //John indexing: {_id = JohnId, outgoings : maryId, demoId}
-    //Demo indexing: {_id = DemoId, incomings : johnId}
-    //------------------------------------------------------
-    //the expectation of Mary's Incoming(Received UI Tab):  John
-    //that means: get All the user has MaryId in the outgoing list
-    //this code tells, find existingIdentity in the outgoing list of others
-    return profileESConnector.search(existingIdentity, profileFilter, Relationship.Type.OUTGOING, offset, limit);
+    return searchConnectionByFilter(existingIdentity, Type.INCOMING, profileFilter, offset, limit);
   }
 
   @Override
   public List<Identity> getOutgoingByFilter(Identity existingIdentity, ProfileFilter profileFilter, long offset, long limit) throws RelationshipStorageException {
-    //1. John requested connecting to Mary
-    //John indexing: {_id = JohnId, outgoings : maryId}
-    //Mary indexing: {_id = MaryId, incomings : johnId}
-    //2. John requested connecting to Demo
-    //John indexing: {_id = JohnId, outgoings : maryId, demoId}
-    //Demo indexing: {_id = DemoId, incomings : johnId}
-    //------------------------------------------------------
-    //the expectation of John's Outgoing(Pending UI tab):  Mary, Demo
-    //that means: get All the user has JohnId in the incoming list
-    //this code tells, find existingIdentity in the incoming list of others
-    return profileESConnector.search(existingIdentity, profileFilter, Relationship.Type.INCOMING, offset, limit);
+    return searchConnectionByFilter(existingIdentity, Type.OUTGOING, profileFilter, offset, limit);
   }
 
   @Override
   public int getConnectionsCountByFilter(Identity existingIdentity, ProfileFilter profileFilter) throws RelationshipStorageException {
-    return profileESConnector.count(existingIdentity, profileFilter, Relationship.Type.CONFIRMED);
+    return countConnectionByFilter(existingIdentity, Type.CONFIRMED, profileFilter);
   }
 
   @Override
   public int getIncomingCountByFilter(Identity existingIdentity, ProfileFilter profileFilter) throws RelationshipStorageException {
-    return profileESConnector.count(existingIdentity, profileFilter, Relationship.Type.OUTGOING);
+    return countConnectionByFilter(existingIdentity, Type.INCOMING, profileFilter);
   }
 
   @Override
   public int getOutgoingCountByFilter(Identity existingIdentity, ProfileFilter profileFilter) throws RelationshipStorageException {
-    return profileESConnector.count(existingIdentity, profileFilter, Relationship.Type.INCOMING);
+    return countConnectionByFilter(existingIdentity, Type.OUTGOING, profileFilter);
   }
 
   @Override
@@ -396,5 +377,33 @@ public class RDBMSRelationshipStorageImpl extends RelationshipStorageImpl {
      }
    }
    return suggestions;
+  }
+
+  private List<Identity> searchConnectionByFilter(Identity owner, Relationship.Type status, ProfileFilter profileFilter, long offset, long limit) {
+    ExtendProfileFilter xFilter = new ExtendProfileFilter(profileFilter);
+    xFilter.setConnection(owner);
+    xFilter.setConnectionStatus(status);
+
+    ListAccess<Identity> list = identityStorage.findByFilter(xFilter);
+    try {
+      return Arrays.asList(list.load((int)offset, (int)limit));
+    } catch (Exception ex) {
+      LOG.error(ex.getMessage(), ex);
+      return Collections.emptyList();
+    }
+  }
+
+  private int countConnectionByFilter(Identity owner, Relationship.Type status, ProfileFilter profileFilter) {
+    ExtendProfileFilter xFilter = new ExtendProfileFilter(profileFilter);
+    xFilter.setConnection(owner);
+    xFilter.setConnectionStatus(status);
+
+    ListAccess<Identity> list = identityStorage.findByFilter(xFilter);
+    try {
+      return list.getSize();
+    } catch (Exception ex) {
+      LOG.error(ex.getMessage(), ex);
+      return 0;
+    }
   }
 }

@@ -36,7 +36,51 @@
           <property name="index" value="profile"/>
         </properties-param>
       </init-params>
-   </component> 
+   </component>
+
+  <external-component-plugins>
+    <target-component>org.exoplatform.commons.api.search.SearchService</target-component>
+    <component-plugin>
+      <name>PeopleElasticUnifiedSearchServiceConnector</name>
+      <set-method>addConnector</set-method>
+      <type>org.exoplatform.social.addons.search.PeopleElasticUnifiedSearchServiceConnector</type>
+      <description>People ElasticSearch Connector</description>
+      <init-params>
+        <properties-param>
+          <name>constructor.params</name>
+          <property name="searchType" value="people"/>
+          <property name="displayName" value="People"/>
+          <property name="index" value="profile"/>
+          <property name="type" value="profile"/>
+          <property name="enable" value="${exo.unified-search.connector.people.enable:true}"/>
+          <property name="titleField" value="name"/>
+          <property name="searchFields" value="name,firstName,lastName,position,skills"/>
+        </properties-param>
+      </init-params>
+    </component-plugin>
+  </external-component-plugins>
+  
+  <external-component-plugins>
+    <target-component>org.exoplatform.commons.api.search.SearchService</target-component>
+    <component-plugin>
+      <name>SpaceElasticUnifiedSearchServiceConnector</name>
+      <set-method>addConnector</set-method>
+      <type>org.exoplatform.social.addons.search.SpaceElasticUnifiedSearchServiceConnector</type>
+      <description>Space ElasticSearch Connector</description>
+      <init-params>
+        <properties-param>
+          <name>constructor.params</name>
+          <property name="searchType" value="space"/>
+          <property name="displayName" value="Spaces"/>
+          <property name="index" value="space"/>
+          <property name="type" value="space"/>
+          <property name="enable" value="${exo.unified-search.connector.space.enable:true}"/>
+          <property name="titleField" value="displayName"/>
+          <property name="searchFields" value="prettyName,displayName,description"/>
+        </properties-param>
+      </init-params>
+    </component-plugin>
+  </external-component-plugins>
     
    <external-component-plugins>
     <target-component>org.exoplatform.commons.api.persistence.DataInitializer</target-component>
@@ -81,6 +125,15 @@
     </component-plugin>
   </external-component-plugins>
   
+  <external-component-plugins>
+    <target-component>org.exoplatform.social.core.space.spi.SpaceService</target-component>
+    <component-plugin>
+      <name>SpaceESListenerImpl</name>
+      <set-method>addSpaceListener</set-method>
+      <type>org.exoplatform.social.addons.search.listener.SpaceESListenerImpl</type>
+    </component-plugin>
+  </external-component-plugins>
+  
    <external-component-plugins>
     <target-component>org.exoplatform.addons.es.index.IndexingOperationProcessor</target-component>
     <component-plugin>
@@ -92,6 +145,22 @@
           <name>constructor.params</name>
           <property name="index" value="profile"/>
           <property name="type" value="profile"/>
+        </properties-param>
+      </init-params>
+    </component-plugin>
+  </external-component-plugins>
+  
+  <external-component-plugins>
+    <target-component>org.exoplatform.addons.es.index.IndexingOperationProcessor</target-component>
+    <component-plugin>
+      <name>SpaceIndexingServiceConnector</name>
+      <set-method>addConnector</set-method>
+      <type>org.exoplatform.social.addons.search.SpaceIndexingServiceConnector</type>
+      <init-params>
+        <properties-param>
+          <name>constructor.params</name>
+          <property name="index" value="space"/>
+          <property name="type" value="space"/>
         </properties-param>
       </init-params>
     </component-plugin>

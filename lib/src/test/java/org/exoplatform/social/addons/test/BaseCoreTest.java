@@ -95,7 +95,7 @@ public abstract class BaseCoreTest extends BaseExoTestCase {
   public static boolean wantCount = false;
   protected static int count;
   protected int maxQuery;
-  protected boolean hasByteMan;
+  protected boolean hasByteMan; 
 
   @Override
   protected void setUp() throws Exception {

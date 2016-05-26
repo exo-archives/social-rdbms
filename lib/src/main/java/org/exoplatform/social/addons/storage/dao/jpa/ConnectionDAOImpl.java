@@ -77,6 +77,16 @@ public class ConnectionDAOImpl extends GenericDAOJPAImpl<Connection, Long> imple
   }
 
   @Override
+  public List<Connection> getConnections(Identity sender, Identity receiver, Type status) {
+    return RelationshipQueryBuilder.builder()
+                                   .sender(sender)
+                                   .receiver(receiver)
+                                   .status(status)
+                                   .build()
+                                   .getResultList();
+  }
+
+  @Override
   public int getConnectionsCount(Identity identity, Type type) {
     return RelationshipQueryBuilder.builder()
                                    .owner(identity)

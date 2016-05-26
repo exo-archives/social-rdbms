@@ -25,11 +25,10 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
-import javax.jcr.Session;
-
-import junit.framework.AssertionFailedError;
-
 import org.apache.commons.lang.ArrayUtils;
+import org.exoplatform.social.addons.storage.RDBMSIdentityStorageImpl;
+import org.jboss.byteman.contrib.bmunit.BMUnit;
+
 import org.exoplatform.commons.testing.BaseExoTestCase;
 import org.exoplatform.commons.utils.ListAccess;
 import org.exoplatform.component.test.ConfigurationUnit;
@@ -42,6 +41,7 @@ import org.exoplatform.services.organization.OrganizationService;
 import org.exoplatform.services.organization.User;
 import org.exoplatform.services.security.ConversationState;
 import org.exoplatform.services.security.MembershipEntry;
+import org.exoplatform.social.addons.search.ProfileSearchConnector;
 import org.exoplatform.social.addons.storage.dao.ConnectionDAO;
 import org.exoplatform.social.addons.storage.entity.Connection;
 import org.exoplatform.social.core.identity.model.Identity;
@@ -54,7 +54,9 @@ import org.exoplatform.social.core.space.SpaceUtils;
 import org.exoplatform.social.core.space.model.Space;
 import org.exoplatform.social.core.space.spi.SpaceService;
 import org.exoplatform.social.core.storage.api.ActivityStorage;
-import org.jboss.byteman.contrib.bmunit.BMUnit;
+
+import junit.framework.AssertionFailedError;
+import org.mockito.Mockito;
 
 /**
  * @author <a href="mailto:thanhvc@exoplatform.com">Thanh Vu</a>
@@ -77,12 +79,14 @@ public abstract class AbstractCoreTest extends BaseExoTestCase {
   protected ActivityManager activityManager;
   protected ActivityStorage activityStorage;
 
+  protected RDBMSIdentityStorageImpl identityStorage;
+  
+  protected ProfileSearchConnector mockProfileSearch = Mockito.mock(ProfileSearchConnector.class);
+
   protected Identity rootIdentity;
   protected Identity johnIdentity;
   protected Identity maryIdentity;
   protected Identity demoIdentity;
-
-  protected Session session;
   
   public static boolean wantCount = false;
   private static int count;
@@ -105,6 +109,7 @@ public abstract class AbstractCoreTest extends BaseExoTestCase {
     activityStorage = getService(ActivityStorage.class);
     relationshipManager = getService(RelationshipManager.class);
     spaceService = getService(SpaceService.class);
+    identityStorage = getService(RDBMSIdentityStorageImpl.class);
     //
     rootIdentity = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, "root", false);
     johnIdentity = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, "john", false);
@@ -120,10 +125,10 @@ public abstract class AbstractCoreTest extends BaseExoTestCase {
       reDao.delete(item);
     }
 
-    identityManager.deleteIdentity(rootIdentity);
-    identityManager.deleteIdentity(johnIdentity);
-    identityManager.deleteIdentity(maryIdentity);
-    identityManager.deleteIdentity(demoIdentity);
+    identityStorage.removeIdentity(rootIdentity);
+    identityStorage.removeIdentity(johnIdentity);
+    identityStorage.removeIdentity(maryIdentity);
+    identityStorage.removeIdentity(demoIdentity);
     //
     end();
   }  

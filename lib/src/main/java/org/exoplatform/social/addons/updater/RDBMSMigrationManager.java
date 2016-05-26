@@ -3,6 +3,8 @@ package org.exoplatform.social.addons.updater;
 import java.lang.reflect.Field;
 import java.util.concurrent.CountDownLatch;
 
+import org.picocontainer.Startable;
+
 import org.exoplatform.commons.api.persistence.DataInitializer;
 import org.exoplatform.commons.api.settings.SettingService;
 import org.exoplatform.commons.api.settings.SettingValue;
@@ -14,7 +16,6 @@ import org.exoplatform.services.jcr.impl.core.SessionImpl;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 import org.exoplatform.settings.impl.SettingServiceImpl;
-import org.picocontainer.Startable;
 
 public class RDBMSMigrationManager implements Startable {
   private static final Log LOG = ExoLogger.getLogger(RDBMSMigrationManager.class);
@@ -28,6 +29,10 @@ public class RDBMSMigrationManager implements Startable {
   private RelationshipMigrationService relationshipMigration;
 
   private ActivityMigrationService activityMigration;
+  
+  private SpaceMigrationService spaceMigration;
+
+  private IdentityMigrationService identityMigration;
   
   private SettingService settingService;
 
@@ -57,6 +62,20 @@ public class RDBMSMigrationManager implements Startable {
     return relationshipMigration == null ? CommonsUtils.getService(RelationshipMigrationService.class) : relationshipMigration;
   }
 
+  public IdentityMigrationService getIdentityMigrationService() {
+    if (identityMigration == null) {
+      identityMigration = CommonsUtils.getService(IdentityMigrationService.class);
+    }
+    return identityMigration;
+  }
+
+  public SpaceMigrationService getSpaceMigrationService() {
+    if (spaceMigration == null) {
+      spaceMigration = CommonsUtils.getService(SpaceMigrationService.class);
+    }
+    return spaceMigration;
+  }
+
   @Override
   public void start() {
     initMigrationSetting();
@@ -67,6 +86,30 @@ public class RDBMSMigrationManager implements Startable {
         Field field =  null;
         try {
           if (!MigrationContext.isDone()) {
+
+            try {
+              getRelationshipMigration().getProviderRoot();
+            } catch (Exception ex) {
+              LOG.debug("no JCR data, stopping JCR to RDBMS migration");
+
+              // Update and mark that migrate was done
+              updateSettingValue(MigrationContext.SOC_RDBMS_CONNECTION_MIGRATION_KEY, Boolean.TRUE);
+              updateSettingValue(MigrationContext.SOC_RDBMS_ACTIVITY_MIGRATION_KEY, Boolean.TRUE);
+              updateSettingValue(MigrationContext.SOC_RDBMS_SPACE_MIGRATION_KEY, Boolean.TRUE);
+              updateSettingValue(MigrationContext.SOC_RDBMS_IDENTITY_MIGRATION_KEY, Boolean.TRUE);
+
+              updateSettingValue(MigrationContext.SOC_RDBMS_CONNECTION_CLEANUP_KEY, Boolean.TRUE);
+              updateSettingValue(MigrationContext.SOC_RDBMS_ACTIVITY_CLEANUP_KEY, Boolean.TRUE);
+              updateSettingValue(MigrationContext.SOC_RDBMS_SPACE_CLEANUP_KEY, Boolean.TRUE);
+              updateSettingValue(MigrationContext.SOC_RDBMS_IDENTITY_CLEANUP_KEY, Boolean.TRUE);
+
+              updateSettingValue(MigrationContext.SOC_RDBMS_MIGRATION_STATUS_KEY, Boolean.TRUE);
+              MigrationContext.setDone(true);
+
+              return;
+            }
+
+
             field =  SessionImpl.class.getDeclaredField("FORCE_USE_GET_NODES_LAZILY");
             if (field != null) {
               field.setAccessible(true);
@@ -79,12 +122,24 @@ public class RDBMSMigrationManager implements Startable {
               if (!MigrationContext.isConnectionDone()) {
                 relationshipMigration = CommonsUtils.getService(RelationshipMigrationService.class);
                 relationshipMigration.start();
-                updateSettingValue(MigrationContext.SOC_RDBMS_CONNECTION_MIGRATION_KEY, Boolean.TRUE);
+                updateSettingValue(MigrationContext.SOC_RDBMS_CONNECTION_MIGRATION_KEY, MigrationContext.isConnectionDone());
               }
               if (!MigrationContext.isDone() && MigrationContext.isConnectionDone() && !MigrationContext.isActivityDone()) {
-                activityMigration = CommonsUtils.getService(ActivityMigrationService.class);
-                activityMigration.start();
-                updateSettingValue(MigrationContext.SOC_RDBMS_ACTIVITY_MIGRATION_KEY, Boolean.TRUE);
+                getActivityMigrationService().start();
+                updateSettingValue(MigrationContext.SOC_RDBMS_ACTIVITY_MIGRATION_KEY, MigrationContext.isActivityDone());
+              }
+              if (!MigrationContext.isDone() && MigrationContext.isConnectionDone() && MigrationContext.isActivityDone() 
+                  && !MigrationContext.isSpaceDone()) {
+                getSpaceMigrationService().start();
+                updateSettingValue(MigrationContext.SOC_RDBMS_SPACE_MIGRATION_KEY, MigrationContext.isSpaceDone());
+              }
+
+              // Migrate identities
+              if (!MigrationContext.isDone() && MigrationContext.isConnectionDone()
+                      && MigrationContext.isActivityDone() && MigrationContext.isSpaceDone()
+                      && !MigrationContext.isIdentityDone()) {
+                getIdentityMigrationService().start();
+                updateSettingValue(MigrationContext.SOC_RDBMS_IDENTITY_MIGRATION_KEY, MigrationContext.isIdentityDone());
               }
             }
 
@@ -105,11 +160,24 @@ public class RDBMSMigrationManager implements Startable {
 
             // cleanup activities
             if (!MigrationContext.isDone() && MigrationContext.isActivityDone() && !MigrationContext.isActivityCleanupDone()) {
-              activityMigration.doRemove();
+              getActivityMigrationService().doRemove();
               updateSettingValue(MigrationContext.SOC_RDBMS_ACTIVITY_CLEANUP_KEY, Boolean.TRUE);
+            }
+            
+            // cleanup spaces
+            if (!MigrationContext.isDone() && MigrationContext.isSpaceDone() && !MigrationContext.isSpaceCleanupDone()) {
+              getSpaceMigrationService().doRemove();
+              updateSettingValue(MigrationContext.SOC_RDBMS_SPACE_CLEANUP_KEY, Boolean.TRUE);
+            }
+
+            // Cleanup identity
+            if (!MigrationContext.isDone() && MigrationContext.isIdentityDone() && !MigrationContext.isIdentityCleanupDone()) {
+              getIdentityMigrationService().doRemove();
+              updateSettingValue(MigrationContext.SOC_RDBMS_IDENTITY_CLEANUP_KEY, Boolean.TRUE);
               updateSettingValue(MigrationContext.SOC_RDBMS_MIGRATION_STATUS_KEY, Boolean.TRUE);
               MigrationContext.setDone(true);
             }
+            
             //
             LOG.info("END ASYNC MIGRATION-----------------------------------------------------");
           }
@@ -145,6 +213,12 @@ public class RDBMSMigrationManager implements Startable {
     //
     MigrationContext.setActivityDone(getOrCreateSettingValue(MigrationContext.SOC_RDBMS_ACTIVITY_MIGRATION_KEY));
     MigrationContext.setActivityCleanupDone(getOrCreateSettingValue(MigrationContext.SOC_RDBMS_ACTIVITY_CLEANUP_KEY));
+
+    MigrationContext.setSpaceDone(getOrCreateSettingValue(MigrationContext.SOC_RDBMS_SPACE_MIGRATION_KEY));
+    MigrationContext.setSpaceCleanupDone(getOrCreateSettingValue(MigrationContext.SOC_RDBMS_SPACE_CLEANUP_KEY));
+
+    MigrationContext.setIdentityDone(getOrCreateSettingValue(MigrationContext.SOC_RDBMS_IDENTITY_MIGRATION_KEY));
+    MigrationContext.setIdentityCleanupDone(getOrCreateSettingValue(MigrationContext.SOC_RDBMS_IDENTITY_CLEANUP_KEY));
   }
 
   private boolean getOrCreateSettingValue(String key) {
@@ -177,10 +251,17 @@ public class RDBMSMigrationManager implements Startable {
     }
   }
 
+  private ActivityMigrationService getActivityMigrationService() {
+    if (activityMigration == null) {
+      activityMigration = CommonsUtils.getService(ActivityMigrationService.class);
+    }
+    return activityMigration;
+  }
+
   @Override
   public void stop() {
     relationshipMigration.stop();
-    activityMigration.stop();
+    getActivityMigrationService().stop();
     try {
       this.migrationThread.join();
     } catch (InterruptedException e) {

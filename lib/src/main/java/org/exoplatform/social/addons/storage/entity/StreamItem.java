@@ -10,7 +10,10 @@ import javax.persistence.*;
 @Entity
 @ExoEntity
 @Table(name = "SOC_STREAM_ITEMS")
-@NamedQuery(name = "getStreamByActivityId", query = "select s from StreamItem s join s.activity A where A.id = :activityId")
+@NamedQueries({
+        @NamedQuery(name = "SocStreamItem.migrateOwner", query = "UPDATE StreamItem s SET s.ownerId = :newId WHERE s.ownerId = :oldId"),
+        @NamedQuery(name = "getStreamByActivityId", query = "select s from StreamItem s join s.activity A where A.id = :activityId")
+})
 public class StreamItem {
 
   @Id
@@ -20,7 +23,7 @@ public class StreamItem {
   private Long id;
 
   @OneToOne
-  @JoinColumn(name = "ACTIVITY_ID")
+  @JoinColumn(name = "ACTIVITY_ID", nullable = false)
   private Activity activity;
 
   @Column(name = "ACTIVITY_ID", insertable=false, updatable=false)
@@ -29,15 +32,15 @@ public class StreamItem {
   /**
    * This is id's Identity owner of ActivityStream or SpaceStream
    */
-  @Column(name="OWNER_ID", length = 36)
+  @Column(name="OWNER_ID", length = 36, nullable = false)
   private String ownerId;
   
   /** */
-  @Column(name="LAST_UPDATED")
+  @Column(name="LAST_UPDATED", nullable = false)
   private Long lastUpdated;
 
   @Enumerated
-  @Column(name="STREAM_TYPE")
+  @Column(name="STREAM_TYPE", nullable = false)
   private StreamType streamType;
 
   public StreamItem() {

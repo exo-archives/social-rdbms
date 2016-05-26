@@ -12,11 +12,17 @@ import java.util.Map;
 @Entity
 @ExoEntity
 @Table(name = "SOC_COMMENTS")
-@NamedQuery(
-  name = "getActivityByComment",
-  query = "select a from Activity a join a.comments Comment where Comment.id = :COMMENT_ID"
-)
+@NamedQueries({
+        @NamedQuery(name = "SocComment.migratePosterId", query = "UPDATE Comment c SET c.posterId = :newId WHERE c.posterId = :oldId"),
+        @NamedQuery(name = "SocComment.migrateOwnerId", query = "UPDATE Comment c SET c.ownerId = :newId WHERE c.ownerId = :oldId"),
+        @NamedQuery(
+                name = "getActivityByComment",
+                query = "select a from Activity a join a.comments Comment where Comment.id = :COMMENT_ID"
+        )
+})
 public class Comment extends BaseActivity {
+
+  private static final long serialVersionUID = 8385677663290737181L;
 
   @Id
   @SequenceGenerator(name="SEQ_SOC_COMMENTS_ID", sequenceName="SEQ_SOC_COMMENTS_ID")
@@ -34,7 +40,7 @@ public class Comment extends BaseActivity {
   private Map<String, String> templateParams;
 
   @ManyToOne(fetch=FetchType.LAZY)
-  @JoinColumn(name="ACTIVITY_ID")
+  @JoinColumn(name="ACTIVITY_ID", nullable = false)
   private Activity activity;
 
   public Comment() {

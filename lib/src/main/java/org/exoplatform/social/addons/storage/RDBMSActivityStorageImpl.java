@@ -72,7 +72,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
   private final ActivityDAO activityDAO;
   private final CommentDAO commentDAO;
   private final StreamItemDAO streamItemDAO;
-  private final IdentityStorage identityStorage;
+  private IdentityStorage identityStorage;
   private final SpaceStorage spaceStorage;
   private final SortedSet<ActivityProcessor> activityProcessors;
   private static final Pattern MENTION_PATTERN = Pattern.compile("@([^\\s]+)|@([^\\s]+)$");
@@ -368,11 +368,11 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
       saveStreamItemForCommenter(commenter, activityEntity);
       mention(commenter, activityEntity, processMentions(eXoComment.getTitle()));
       //
+      activityEntity.addComment(commentEntity);
       commentEntity = commentDAO.create(commentEntity);
       eXoComment.setId(getExoCommentID(commentEntity.getId()));
       //
       activityEntity.setMentionerIds(processMentionOfComment(activityEntity, commentEntity, activity.getMentionedIds(), processMentions(eXoComment.getTitle()), true));
-      activityEntity.addComment(commentEntity);
       activityEntity.setLastUpdated(System.currentTimeMillis());
       activityDAO.update(activityEntity);
       //
@@ -1121,5 +1121,9 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
     return spaceStorage.getMemberSpaceIds(ownerIdentity.getId(), 0, -1);
  
    }
-  
+
+
+  public void setIdentityStorage(IdentityStorage identityStorage) {
+    this.identityStorage = identityStorage;
+  }
 }

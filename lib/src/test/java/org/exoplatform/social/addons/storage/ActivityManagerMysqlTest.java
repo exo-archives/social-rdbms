@@ -23,12 +23,15 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
-
+import org.exoplatform.social.core.profile.ProfileFilter;
+import org.exoplatform.social.core.storage.api.IdentityStorage;
+import org.mockito.Mockito;
 import org.exoplatform.commons.utils.ListAccess;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 import org.exoplatform.services.organization.OrganizationService;
 import org.exoplatform.services.organization.User;
+import org.exoplatform.social.addons.search.ProfileSearchConnector;
 import org.exoplatform.social.addons.test.AbstractCoreTest;
 import org.exoplatform.social.common.RealtimeListAccess;
 import org.exoplatform.social.core.activity.model.ExoSocialActivity;
@@ -63,7 +66,10 @@ public class ActivityManagerMysqlTest extends AbstractCoreTest {
     super.setUp();
     tearDownActivityList = new ArrayList<ExoSocialActivity>();
     tearDownSpaceList = new ArrayList<Space>();
-    
+
+    RDBMSIdentityStorageImpl identityStorage = (RDBMSIdentityStorageImpl) getService(IdentityStorage.class);
+    identityStorage.setProfileSearchConnector(mockProfileSearch);
+
     ghostIdentity = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, "ghost", true);
     raulIdentity = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, "raul", true);
     jameIdentity = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, "jame", true);
@@ -88,14 +94,16 @@ public class ActivityManagerMysqlTest extends AbstractCoreTest {
     identityManager.deleteIdentity(raulIdentity);
     identityManager.deleteIdentity(paulIdentity);
     
-    for (Space space : tearDownSpaceList) {
+    for (Space space : spaceService.getAllSpaces()) {
       Identity spaceIdentity = identityManager.getOrCreateIdentity(SpaceIdentityProvider.NAME, space.getPrettyName(), false);
       if (spaceIdentity != null) {
         identityManager.deleteIdentity(spaceIdentity);
       }
       spaceService.deleteSpace(space);
-    }
+    }    
     
+    RDBMSIdentityStorageImpl identityStorage = (RDBMSIdentityStorageImpl) getService(IdentityStorage.class);
+    identityStorage.setProfileSearchConnector(getService(ProfileSearchConnector.class));
     super.tearDown();
   }
 
@@ -748,7 +756,6 @@ public class ActivityManagerMysqlTest extends AbstractCoreTest {
   
   public void testGetActivitiesOfUserSpacesWithListAccess() throws Exception {
     Space space = this.getSpaceInstance(spaceService, 0);
-    tearDownSpaceList.add(space);
     Identity spaceIdentity = this.identityManager.getOrCreateIdentity(SpaceIdentityProvider.NAME, space.getPrettyName(), false);
     
     int totalNumber = 10;
@@ -772,7 +779,6 @@ public class ActivityManagerMysqlTest extends AbstractCoreTest {
     assertEquals("demoActivities.getSize() must return: 10", 10, demoActivities.getSize());
     
     Space space2 = this.getSpaceInstance(spaceService, 1);
-    tearDownSpaceList.add(space2);
     Identity spaceIdentity2 = this.identityManager.getOrCreateIdentity(SpaceIdentityProvider.NAME, space2.getPrettyName(), false);
     
     //demo posts activities to space2
@@ -1214,6 +1220,11 @@ public class ActivityManagerMysqlTest extends AbstractCoreTest {
   }
   
   public void testGetLastIdenties() throws Exception {
+    Mockito.when(mockProfileSearch.search(Mockito.any(Identity.class), Mockito.any(ProfileFilter.class),
+            Mockito.any(Relationship.Type.class), Mockito.anyLong(), Mockito.anyLong()))
+            .thenReturn(Arrays.asList(paulIdentity))
+            .thenReturn(Arrays.asList(paulIdentity))
+            .thenReturn(Arrays.asList(paulIdentity, jameIdentity, raulIdentity, ghostIdentity, demoIdentity));
     List<Identity> lastIds = identityManager.getLastIdentities(1);
     assertEquals(1, lastIds.size());
     Identity id1 = lastIds.get(0);
@@ -1227,27 +1238,50 @@ public class ActivityManagerMysqlTest extends AbstractCoreTest {
     User user1 = os.getUserHandler().createUserInstance("newId1");
     os.getUserHandler().createUser(user1, false);
     Identity newId1 = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, "newId1", false);
+
+    Mockito.when(mockProfileSearch.search(Mockito.any(Identity.class), Mockito.any(ProfileFilter.class),
+            Mockito.any(Relationship.Type.class), Mockito.anyLong(), Mockito.anyLong()))
+            .thenReturn(Arrays.asList(newId1))
+            .thenReturn(Arrays.asList(paulIdentity));
+
     lastIds = identityManager.getLastIdentities(1);
     assertEquals(1, lastIds.size());
     assertEquals(newId1, lastIds.get(0));
     identityManager.deleteIdentity(newId1);
-    assertNull(identityManager.getIdentity(newId1.getId(), false));
+    assertTrue(identityManager.getIdentity(newId1.getId(), false).isDeleted());
     lastIds = identityManager.getLastIdentities(1);
     assertEquals(1, lastIds.size());
     assertEquals(id1, lastIds.get(0));
     User user2 = os.getUserHandler().createUserInstance("newId2");
     os.getUserHandler().createUser(user2, false);
     Identity newId2 = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, "newId2", true);
+
+    Mockito.when(mockProfileSearch.search(Mockito.any(Identity.class), Mockito.any(ProfileFilter.class),
+            Mockito.any(Relationship.Type.class), Mockito.anyLong(), Mockito.anyLong()))
+            .thenReturn(Arrays.asList(newId2, paulIdentity, jameIdentity, raulIdentity, ghostIdentity))
+            .thenReturn(Arrays.asList(paulIdentity, jameIdentity, raulIdentity, ghostIdentity, demoIdentity));
+
     lastIds = identityManager.getLastIdentities(5);
     assertEquals(5, lastIds.size());
     assertEquals(newId2, lastIds.get(0));
     identityManager.deleteIdentity(newId2);
-    assertNull(identityManager.getIdentity(newId2.getId(), true));
+    assertTrue(identityManager.getIdentity(newId2.getId(), true).isDeleted());
     lastIds = identityManager.getLastIdentities(5);
     assertEquals(5, lastIds.size());
     assertEquals(id1, lastIds.get(0));
+
+
     newId1 = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, "newId1", false);
     newId2 = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, "newId2", true);
+
+    Mockito.when(mockProfileSearch.search(Mockito.any(Identity.class), Mockito.any(ProfileFilter.class),
+            Mockito.any(Relationship.Type.class), Mockito.anyLong(), Mockito.anyLong()))
+            .thenReturn(Arrays.asList(newId2))
+            .thenReturn(Arrays.asList(newId2, newId1))
+            .thenReturn(Arrays.asList(newId2))
+            .thenReturn(Arrays.asList(newId2, paulIdentity))
+            .thenReturn(Arrays.asList(paulIdentity));
+
     lastIds = identityManager.getLastIdentities(1);
     assertEquals(1, lastIds.size());
     assertEquals(newId2, lastIds.get(0));
@@ -1257,7 +1291,7 @@ public class ActivityManagerMysqlTest extends AbstractCoreTest {
     assertEquals(newId1, lastIds.get(1));
     identityManager.deleteIdentity(newId1);
     os.getUserHandler().removeUser("newId1", false);
-    assertNull(identityManager.getIdentity(newId1.getId(), true));
+    assertTrue(identityManager.getIdentity(newId1.getId(), true).isDeleted());
     lastIds = identityManager.getLastIdentities(1);
     assertEquals(1, lastIds.size());
     assertEquals(newId2, lastIds.get(0));
@@ -1267,7 +1301,7 @@ public class ActivityManagerMysqlTest extends AbstractCoreTest {
     assertFalse(newId1.equals(lastIds.get(1)));
     identityManager.deleteIdentity(newId2);
     os.getUserHandler().removeUser("newId2", false);
-    assertNull(identityManager.getIdentity(newId2.getId(), false));
+    assertTrue(identityManager.getIdentity(newId2.getId(), false).isDeleted());
     lastIds = identityManager.getLastIdentities(1);
     assertEquals(1, lastIds.size());
     assertEquals(id1, lastIds.get(0));
@@ -1404,7 +1438,7 @@ public class ActivityManagerMysqlTest extends AbstractCoreTest {
       space.setRegistration(Space.OPEN);
       space.setDescription("add new space " + number);
       space.setType(DefaultSpaceApplicationHandler.NAME);
-      space.setVisibility(Space.OPEN);
+      space.setVisibility(Space.PUBLIC);
       space.setRegistration(Space.VALIDATION);
       space.setPriority(Space.INTERMEDIATE_PRIORITY);
       space.setGroupId(SpaceUtils.SPACE_GROUP + "/" + space.getPrettyName());

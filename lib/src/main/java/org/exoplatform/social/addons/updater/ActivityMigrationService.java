@@ -16,6 +16,7 @@ import javax.jcr.PropertyIterator;
 import javax.jcr.RepositoryException;
 
 import org.apache.commons.lang.ArrayUtils;
+
 import org.exoplatform.commons.api.event.EventManager;
 import org.exoplatform.commons.persistence.impl.EntityManagerService;
 import org.exoplatform.commons.utils.XPathUtils;
@@ -32,6 +33,7 @@ import org.exoplatform.social.addons.storage.dao.CommentDAO;
 import org.exoplatform.social.addons.storage.entity.Activity;
 import org.exoplatform.social.addons.storage.entity.Comment;
 import org.exoplatform.social.addons.updater.utils.MigrationCounter;
+import org.exoplatform.social.addons.updater.utils.StringUtil;
 import org.exoplatform.social.core.activity.model.ExoSocialActivity;
 import org.exoplatform.social.core.activity.model.ExoSocialActivityImpl;
 import org.exoplatform.social.core.chromattic.entity.ActivityEntity;
@@ -59,7 +61,7 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
   public static final String EVENT_LISTENER_KEY = "SOC_ACTIVITY_MIGRATION";
   private static final Pattern MENTION_PATTERN = Pattern.compile("@([^\\s]+)|@([^\\s]+)$");
   public static final Pattern USER_NAME_VALIDATOR_REGEX = Pattern.compile("^[\\p{L}][\\p{L}._\\-\\d]+$");
-  public final static String COMMENT_PREFIX = "comment";
+  public final static String COMMENT_PREFIX = "comment";  
   
   private final ActivityStorage activityStorage;
   private final ActivityStorageImpl activityJCRStorage;
@@ -91,112 +93,151 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
   @Managed
   @ManagedDescription("Manual to start run miguration data of activities from JCR to RDBMS.")
   public void doMigration() throws Exception {
-    migrateUserActivities();
+    RequestLifeCycle.end();
+
+    numberFailed += migrateUserActivities();
     // migrate activities from space
-    migrateSpaceActivities();
-    
-    MigrationContext.setActivityDone(true);
-    LOG.info("Done to migration activities from JCR to RDBMS");
+    numberFailed += migrateSpaceActivities();
+
+    RequestLifeCycle.begin(PortalContainer.getInstance());
   }
 
-  private void migrateUserActivities() throws Exception {
-    RequestLifeCycle.begin(PortalContainer.getInstance());
-    boolean begunTx = startTx();
+  private long migrateUserActivities() throws Exception {
+    LOG.info("| \\ Start:: migrate activity of users -------------");
+
     MigrationCounter counter = MigrationCounter.builder().threshold(LIMIT_THRESHOLD).build();
     counter.newTotalAndWatch();
-    // doing with normal users
-    NodeIterator it = getIdentityNodes(counter.getTotal(), LIMIT_THRESHOLD);
-    if(it == null || it.getSize() == 0) {
-      return;
-    }
-    Identity owner = null; 
-    Node node = null;
-    try {
-      while (it.hasNext()) {
-        if(forceStop) {
-          return;
-        }
-        node = (Node) it.next();
-        owner = identityStorage.findIdentityById(node.getUUID());
-        counter.newBatchAndWatch();
-        counter.getAndIncrementTotal();
-        LOG.info(String.format("|  \\ START::user number: %s (%s user)", counter.getTotal(), owner.getRemoteId()));
-        IdentityEntity identityEntity = _findById(IdentityEntity.class, owner.getId());
-        migrationByIdentity(null, identityEntity);
-        
-        LOG.info(String.format("| / END:: user's activity consumed %s(ms) -------------", counter.endBatchWatch()));
-        //
-        if (counter.isPersistPoint()) {
-          endTx(begunTx);
-          RequestLifeCycle.end();
-          RequestLifeCycle.begin(PortalContainer.getInstance());
-          begunTx = startTx();
-          it = getIdentityNodes(counter.getTotal(), LIMIT_THRESHOLD);
-        }
-      }
-      LOG.info(String.format("| / END::%s user(s) consumed %s(ms) -------------", counter.getTotal(), counter.endTotalWatch()));
-    } catch (Exception e) {
-      LOG.error("Failed to migration for user Activity.", e);
-    } finally {
-      endTx(begunTx);
-      RequestLifeCycle.end();
-      RequestLifeCycle.begin(PortalContainer.getInstance());
-    }
-  }
 
-  private void migrateSpaceActivities() throws Exception {
-    RequestLifeCycle.begin(PortalContainer.getInstance());
-    long t = System.currentTimeMillis();
-    NodeIterator it = getSpaceIdentityNodes();
-    if(it == null || it.getSize() == 0) {
-      return;
-    }
-    int size = (int) it.getSize(), count = 0;
-    boolean begunTx = startTx();
-    Node node = null;
-    long offset = 0;
-    boolean isSkip = (lastUserProcess != null);
-    Identity owner = null; 
-    try {
-      while (it.hasNext()) {
-        if (forceStop) {
-          return;
-        }
-        node = (Node) it.next();
-        offset++;
-        owner = identityStorage.findIdentityById(node.getUUID());
-        if (isSkip) {
-          if (lastUserProcess.equals(owner.getRemoteId())) {
-            lastUserProcess = null;
-            isSkip = false;
-          } else {
-            continue;
+    long numberUserFailed = 0;
+
+    boolean cont = true;
+    while(cont && !forkStop) {
+
+      try {
+        RequestLifeCycle.begin(PortalContainer.getInstance());
+
+        NodeIterator it = getIdentityNodes(counter.getTotal(), LIMIT_THRESHOLD);
+        if (it == null || it.getSize() <= 0) {
+          cont = false;
+
+        } else {
+
+          Identity owner = null;
+          Node node = null;
+
+          while(it != null && it.hasNext()) {
+            if (forkStop) {
+              break;
+            }
+
+            node = (Node)it.next();
+            owner = identityStorage.findIdentityById(node.getUUID());
+
+            counter.newBatchAndWatch();
+            counter.getAndIncrementTotal();
+
+            LOG.info(String.format("|  \\ START::user number: %s (%s user)", counter.getTotal(), owner.getRemoteId()));
+            IdentityEntity identityEntity = _findById(IdentityEntity.class, owner.getId());
+            try {
+              migrationByIdentity(null, identityEntity);
+            } catch (Exception ex) {
+              numberUserFailed++;
+              LOG.error(String.format("Failed migrate user %s", owner.getRemoteId()), ex);
+            }
+            LOG.info(String.format("|  / END:: migrate activity of user %s consumed %s(ms) -------------", owner.getRemoteId(), counter.endBatchWatch()));
+
+            if (counter.isPersistPoint()) {
+              RequestLifeCycle.end();
+              RequestLifeCycle.begin(PortalContainer.getInstance());
+              it = getIdentityNodes(counter.getTotal(), LIMIT_THRESHOLD);
+            }
           }
         }
-        //
-        IdentityEntity spaceEntity = _findById(IdentityEntity.class, node.getUUID());
-        migrationByIdentity(null, spaceEntity);
-        ++count;
-        processLog("Activities migration spaces", size, count);
-        //
-        if (count % LIMIT_THRESHOLD == 0) {
-          LOG.info(String.format("Commit database into RDBMS and reCreate JCR-Session at offset: " + offset));
-          endTx(begunTx);
-          RequestLifeCycle.end();
-          RequestLifeCycle.begin(PortalContainer.getInstance());
-          begunTx = startTx();
-          it = getSpaceIdentityNodes();
-          it.skip(offset);
-        }
+
+      } catch (Exception ex) {
+        LOG.error(ex.getMessage(), ex);
+      } finally {
+        RequestLifeCycle.end();
       }
-      LOG.info(String.format("Done to migration %s space activities from JCR to RDBMS on %s(ms)", offset, (System.currentTimeMillis() - t)));
-    } catch (Exception e) {
-      LOG.error("Failed to migration for Space Activity.", e);
-    } finally {
-      endTx(begunTx);
-      RequestLifeCycle.end();
-      RequestLifeCycle.begin(PortalContainer.getInstance());
     }
+
+    if (numberUserFailed > 0) {
+      LOG.error(String.format("|   Failed in migrate activities of %s user(s)", numberUserFailed));
+    }
+    LOG.info(String.format("| / END:: %s user(s) consumed %s(ms) -------------", counter.getTotal(), counter.endTotalWatch()));
+
+    return numberUserFailed;
+  }
+
+  private long migrateSpaceActivities() throws Exception {
+    LOG.info("Start to migration space activities from JCR to RDBMS");
+    long t = System.currentTimeMillis();
+
+    boolean isSkip = (lastUserProcess != null);
+
+    boolean cont = true;
+    long offset = 0;
+    long numberSpaceFailed = 0;
+
+    while(cont && !forkStop) {
+
+      try {
+        RequestLifeCycle.begin(PortalContainer.getInstance());
+
+        NodeIterator it = getSpaceIdentityNodes(offset, LIMIT_THRESHOLD);
+        if (it == null || it.getSize() <= 0) {
+          cont = false;
+
+        } else {
+          Identity owner = null;
+          Node node = null;
+
+          while(it.hasNext()) {
+            if (forceStop) {
+              break;
+            }
+
+            node = (Node) it.next();
+            offset++;
+            owner = identityStorage.findIdentityById(node.getUUID());
+
+            if (isSkip) {
+              if (lastUserProcess.equals(owner.getRemoteId())) {
+                lastUserProcess = null;
+                isSkip = false;
+              } else {
+                continue;
+              }
+            }
+
+            long t1 = System.currentTimeMillis();
+            //
+            IdentityEntity spaceEntity = _findById(IdentityEntity.class, node.getUUID());
+            LOG.info(String.format("|  \\ START::space number: %s (%s space)", offset, owner.getRemoteId()));
+            try {
+              migrationByIdentity(null, spaceEntity);
+            } catch (Exception ex) {
+              numberSpaceFailed++;
+              LOG.error(String.format("Failed migrate space %s", owner.getRemoteId()), ex);
+            }
+            LOG.info(String.format("|  / END:: migrate activity of space %s consumed %s(ms) -------------", owner.getRemoteId(), (System.currentTimeMillis() - t1)));
+
+          }
+        }
+
+      } catch (Exception ex ) {
+        LOG.error(ex.getMessage(), ex);
+      } finally {
+        RequestLifeCycle.end();
+      }
+    }
+
+    if (numberSpaceFailed > 0) {
+      LOG.info(" Failed migration for " + numberSpaceFailed + " space(s)");
+    }
+
+    LOG.info(String.format("Done to migration %s space activities from JCR to RDBMS on %s(ms)", offset, (System.currentTimeMillis() - t)));
+    return numberSpaceFailed;
   }
 
   @Override
@@ -208,6 +249,8 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
   
   protected void beforeMigration() throws Exception {
     MigrationContext.setActivityDone(false);
+    numberFailed = 0;
+
     LOG.info("Stating to migration activities from JCR to RDBMS........");
     NodeIterator iterator = nodes("SELECT * FROM soc:activityUpdater");
     if (iterator.hasNext()) {
@@ -220,8 +263,12 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
   }
 
   private void migrationByIdentity(String userName, IdentityEntity identityEntity) throws Exception {
-    boolean begunTx = startTx();
+    boolean begunTx = false;
+    long numberActivitiesFailed = 0;
+
     try {
+      begunTx = startTx();
+
       if (identityEntity == null) {
         Identity poster = identityStorage.findIdentity(OrganizationIdentityProvider.NAME, userName);
         try {
@@ -231,6 +278,7 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
           return;
         }
       }
+
       String providerId = identityEntity.getProviderId();
       String type = (OrganizationIdentityProvider.NAME.equals(providerId)) ? "user" : "space";
       LOG.info(String.format("    Migration activities for %s: %s", type, identityEntity.getRemoteId()));
@@ -243,22 +291,30 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
         //Only goto last on first users
         lastActivity = null;
       }
+
       long t = System.currentTimeMillis();
       int count = 0;
+
       while (activityIterator.hasNext()) {
         String activityId = activityIterator.next().getId();
         //
         try {
           ExoSocialActivity activity = activityJCRStorage.getActivity(activityId);
           Map<String, String> params = activity.getTemplateParams();
+
           if (params != null && !params.isEmpty()) {
             
             for(Map.Entry<String, String> entry: params.entrySet()) {
+
               String value = entry.getValue();
+
               if (value.length() >= 1024) {
-                LOG.info("===================== activity id " + activity.getId() + " new value length = " +  value.length() + " - " + value);
+                LOG.info("===================== activity id " + activity.getId() + " new value length = " +  value.length());
                 params.put(entry.getKey(), "");
               }
+
+              //Remove long UTF-8 char
+              params.put(entry.getKey(), StringUtil.removeLongUTF(entry.getValue()));
             }
             
             activity.setTemplateParams(params);
@@ -268,6 +324,8 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
           owner.setProviderId(providerId);
           //
           activity.setId(null);
+          activity.setTitle(StringUtil.removeLongUTF(activity.getTitle()));
+          activity.setBody(StringUtil.removeLongUTF(activity.getBody()));         
           activity = activityStorage.saveActivity(owner, activity);
           //
           doBroadcastListener(activity, activityId);
@@ -288,30 +346,38 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
           }
           
           List<ActivityEntity> commentEntities = activityEntity.getComments();
-          for (ActivityEntity commentEntity : commentEntities) {
-            ExoSocialActivity comment = fillCommentFromEntity(commentEntity);
-            if (comment != null) {
-              String oldCommentId = comment.getId();
-              comment.setId(null);
-              Map<String, String> commentParams = comment.getTemplateParams();
-              if (commentParams != null && !commentParams.isEmpty()) {
-                
-                for(Map.Entry<String, String> entry: commentParams.entrySet()) {
-                  String value = entry.getValue();
-                  if (value.length() >= 1024) {
-                    LOG.info("===================== comment id " + oldCommentId + " new value length = " +  value.length() + " - " + value);
-                    commentParams.put(entry.getKey(), "");
+          if (commentEntities != null) {
+            for (ActivityEntity commentEntity : commentEntities) {
+              ExoSocialActivity comment = fillCommentFromEntity(commentEntity);
+              if (comment != null) {
+                String oldCommentId = comment.getId();
+                comment.setId(null);
+                Map<String, String> commentParams = comment.getTemplateParams();
+                if (commentParams != null && !commentParams.isEmpty()) {
+
+                  for (Map.Entry<String, String> entry : commentParams.entrySet()) {
+
+                    String value = entry.getValue();
+
+                    if (value.length() >= 1024) {
+                      LOG.info("===================== comment id " + oldCommentId + " new value length = " + value.length());
+                      commentParams.put(entry.getKey(), "");
+                    }
+
+                    //remove long UTF-8 char
+                    commentParams.put(entry.getKey(), StringUtil.removeLongUTF(entry.getValue()));
+
                   }
+
+                  comment.setTemplateParams(commentParams);
                 }
-                
-                comment.setTemplateParams(commentParams);
+                activity.setTemplateParams(params);
+                saveComment(activity, comment);
+                //
+                doBroadcastListener(comment, oldCommentId);
+                commentParams = null;
+                params = null;
               }
-              activity.setTemplateParams(params);
-              saveComment(activity, comment);
-              //
-              doBroadcastListener(comment, oldCommentId);
-              commentParams = null;
-              params = null;
             }
           }
           
@@ -327,11 +393,18 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
           
         } catch (Exception e) {
           LOG.error("Failed to migrate activity id : " + activityId, e);
+          numberActivitiesFailed++;
         }
       }
+
+      if (numberActivitiesFailed > 0) {
+        LOG.error(String.format("    Failed migration for %s activitie(s)", numberActivitiesFailed));
+      }
       LOG.info(String.format("    Done migration %s activitie(s) for %s consumed %s(ms) ", count, identityEntity.getRemoteId(), System.currentTimeMillis() - t));
-    } catch (Exception e) {
-      LOG.error("Failed to migrate activities of user " + userName, e);
+      if (numberActivitiesFailed > 0) {
+        throw new Exception("Migration is failed for " + numberActivitiesFailed + " activities");
+      }
+
     } finally {
       endTx(begunTx);
     }
@@ -345,9 +418,13 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
   }
 
   protected void afterMigration() throws Exception {
-    if (forceStop) {
+    if (forceStop || numberFailed > 0) {
       return;
     }
+
+    MigrationContext.setActivityDone(true);
+    LOG.info("Done to migration activities from JCR to RDBMS");
+
     if (previousActivityId != null) {
       try {
         ActivityEntity previousActivity = getSession().findById(ActivityEntity.class, previousActivityId);
@@ -362,12 +439,16 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
 
   public void doRemove() throws Exception {
     LOG.info("Start remove activities from JCR to RDBMS");
-    removeActivity();
+    try {
+      RequestLifeCycle.begin(PortalContainer.getInstance());
+      removeActivity();
+    } finally {
+      RequestLifeCycle.end();
+    }
     LOG.info("Done to removed activities from JCR");
   }
 
   private void removeActivity() {
-    RequestLifeCycle.begin(PortalContainer.getInstance());
     long t = System.currentTimeMillis();
     long offset = 0;
     NodeIterator it = getIdentityNodes(offset, LIMIT_REMOVED_THRESHOLD);
@@ -530,9 +611,9 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
     try {
       //
       comment.setId(activityEntity.getId());
-      comment.setTitle(activityEntity.getTitle());
+      comment.setTitle(StringUtil.removeLongUTF(activityEntity.getTitle()));
       comment.setTitleId(activityEntity.getTitleId());
-      comment.setBody(activityEntity.getBody());
+      comment.setBody(StringUtil.removeLongUTF(activityEntity.getBody()));
       comment.setBodyId(activityEntity.getBodyId());
       comment.setPostedTime(activityEntity.getPostedTime());
       comment.setUpdated(getLastUpdatedTime(activityEntity, comment.getPostedTime()));
@@ -591,11 +672,11 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
     Identity commenter = identityStorage.findIdentityById(commentEntity.getPosterId());
     mention(commenter, activityEntity, processMentions(eXoComment.getTitle()));
     //
+    activityEntity.addComment(commentEntity);
     commentEntity = commentDAO.create(commentEntity);
     eXoComment.setId(getExoCommentID(commentEntity.getId()));
     //
     activityEntity.setMentionerIds(processMentionOfComment(activityEntity, commentEntity, activity.getMentionedIds(), processMentions(eXoComment.getTitle()), true));
-    activityEntity.addComment(commentEntity);
     activityDAO.update(activityEntity);
   }
   
@@ -694,5 +775,5 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
       if(identity != null) {
       }
     }
-  }
+  }  
 }

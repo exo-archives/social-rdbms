@@ -10,6 +10,12 @@ import javax.persistence.*;
 @Entity
 @ExoEntity
 @Table(name="SOC_MENTIONS")
+@NamedQueries({
+        @NamedQuery(name = "SocMention.migrateMentionId",
+                query = "UPDATE Mention m SET m.mentionId = :newId WHERE m.mentionId = :oldId"),
+        @NamedQuery(name = "SocMention.selectMentionByOldId",
+                query = "SELECT m FROM Mention m WHERE m.mentionId LIKE :oldId"),
+})
 public class Mention {
 
   @Id
@@ -19,10 +25,10 @@ public class Mention {
   private Long id;
 
   @ManyToOne(fetch=FetchType.LAZY)
-  @JoinColumn(name="ACTIVITY_ID")
+  @JoinColumn(name="ACTIVITY_ID", nullable = false)
   private Activity activity;
 
-  @Column(name="MENTIONER_ID")
+  @Column(name="MENTIONER_ID", nullable = false)
   private String mentionId;
 
   public Long getId() {
