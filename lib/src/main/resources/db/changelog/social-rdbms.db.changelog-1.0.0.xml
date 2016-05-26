@@ -328,10 +328,7 @@
         <column name="STATUS" type="TINYINT">
           <constraints nullable="false"/>
         </column>
-    </createTable>
-    <addUniqueConstraint columnNames="SPACE_ID, APP_ID"
-                         constraintName="UK_SPACE_APP_01"
-                         tableName="SOC_APPS"/>
+    </createTable>    
     <modifySql dbms="mysql">
         <append value=" ENGINE=INNODB CHARSET=UTF8 COLLATE utf8_general_ci"/>
     </modifySql>
@@ -352,10 +349,7 @@
       </column>
       <column name="LAST_ACCESS" type="BIGINT"/>
       <column name="VISITED" type="BIT"/>
-    </createTable>
-    <addUniqueConstraint columnNames="SPACE_ID, USER_ID, STATUS"
-                         constraintName="UK_SPACE_USER_STATUS_01"
-                         tableName="SOC_SPACES_MEMBERS"/>
+    </createTable>    
     <modifySql dbms="mysql">
       <append value=" ENGINE=INNODB CHARSET=UTF8 COLLATE utf8_general_ci"/>
     </modifySql>    
@@ -430,8 +424,7 @@
         <constraints nullable="false"/>
       </column>
       <column name="VALUE" type="NVARCHAR(2000)"/>
-    </createTable>
-    <addPrimaryKey columnNames="PROFILE_ID, NAME" constraintName="PK_SOC_PROFILE_PROPERTY_01" tableName="SOC_IDENTITY_PROFILE_PROPERTY"/>
+    </createTable>    
     <modifySql dbms="mysql">
       <append value=" ENGINE=INNODB CHARSET=UTF8 COLLATE utf8_general_ci"/>
     </modifySql>
@@ -452,5 +445,15 @@
     <modifySql dbms="mysql">
       <append value=" ENGINE=INNODB CHARSET=UTF8 COLLATE utf8_general_ci"/>
     </modifySql>
+  </changeSet>
+  
+  <changeSet author="social" id="1.0.0-33">
+    <addUniqueConstraint columnNames="SPACE_ID, APP_ID"
+                         constraintName="UK_SPACE_APP_01"
+                         tableName="SOC_APPS"/>
+    <addUniqueConstraint columnNames="SPACE_ID, USER_ID, STATUS"
+                         constraintName="UK_SPACE_USER_STATUS_01"
+                         tableName="SOC_SPACES_MEMBERS"/>                         
+    <addPrimaryKey columnNames="PROFILE_ID, NAME" constraintName="PK_SOC_PROFILE_PROPERTY_01" tableName="SOC_IDENTITY_PROFILE_PROPERTY"/>                                                    
   </changeSet>
 </databaseChangeLog>
