@@ -30,9 +30,12 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
+import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
 import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author <a href="mailto:tuyennt@exoplatform.com">Tuyen Nguyen The</a>.
@@ -77,8 +80,18 @@ public class IdentityEntity {
   @OneToOne(mappedBy = "identity", fetch = FetchType.LAZY, orphanRemoval = true)
   private ProfileEntity profile;
 
+  @OneToMany(mappedBy = "receiver", fetch = FetchType.LAZY, cascade = {CascadeType.REMOVE}, orphanRemoval = true)
+  private List<Connection> incomingConnections;
+
+  @OneToMany(mappedBy = "sender", fetch = FetchType.LAZY, cascade = {CascadeType.REMOVE}, orphanRemoval = true)
+  private List<Connection> outgoingConnections;
+
   public long getId() {
     return id;
+  }
+
+  public String getStringId() {
+    return String.valueOf(id);
   }
 
   public void setId(long id) {

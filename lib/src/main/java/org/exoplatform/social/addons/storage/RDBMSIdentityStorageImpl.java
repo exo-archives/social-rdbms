@@ -132,7 +132,7 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
       return null;
     }
 
-    Identity identity = new Identity(String.valueOf(entity.getId()));
+    Identity identity = new Identity(entity.getStringId());
     mapToIdentity(entity, identity);
     return identity;
   }
@@ -351,7 +351,7 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
     } else {
       entity = getIdentityDAO().create(entity);
     }
-    identity.setId(String.valueOf(entity.getId()));
+    identity.setId(entity.getStringId());
   }
 
   /**
@@ -450,7 +450,7 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
 
     // Delete all connection
     query = em.createNamedQuery("SocConnection.deleteConnectionByIdentity");
-    query.setParameter("identityId", String.valueOf(id));
+    query.setParameter("identityId", id);
     query.executeUpdate();
 
     if(OrganizationIdentityProvider.NAME.equals(provider)) {
@@ -872,7 +872,7 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
 
     // Delete all connection
     query = em.createNamedQuery("SocConnection.deleteConnectionByIdentity");
-    query.setParameter("identityId", String.valueOf(id));
+    query.setParameter("identityId", id);
     query.executeUpdate();
 
     if(OrganizationIdentityProvider.NAME.equals(provider)) {

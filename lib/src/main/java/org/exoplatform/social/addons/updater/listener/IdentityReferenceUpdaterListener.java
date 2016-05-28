@@ -49,17 +49,6 @@ public class IdentityReferenceUpdaterListener extends Listener<Identity, String>
 
     Query query;
 
-    // Update Connection
-    query = em.createNamedQuery("SocConnection.migrateSenderId");
-    query.setParameter("newId", newId);
-    query.setParameter("oldId", oldId);
-    query.executeUpdate();
-
-    query = em.createNamedQuery("SocConnection.migrateReceiverId");
-    query.setParameter("newId", newId);
-    query.setParameter("oldId", oldId);
-    query.executeUpdate();
-
     // Update activity poster
     query = em.createNamedQuery("SocActivity.migratePosterId");
     query.setParameter("newId", newId);

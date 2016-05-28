@@ -135,23 +135,18 @@ public class RDBMSMigrationManager implements Startable {
             LOG.info("START ASYNC MIGRATION---------------------------------------------------");
             //
             if (!MigrationContext.isDone()) {
-              if (!MigrationContext.isConnectionDone()) {
-                relationshipMigration = CommonsUtils.getService(RelationshipMigrationService.class);
-                relationshipMigration.start();
-                updateSettingValue(MigrationContext.SOC_RDBMS_CONNECTION_MIGRATION_KEY, MigrationContext.isConnectionDone());
-              }
-              if (!MigrationContext.isDone() && MigrationContext.isConnectionDone() && !MigrationContext.isActivityDone()) {
+              if (!MigrationContext.isDone() && !MigrationContext.isActivityDone()) {
                 getActivityMigrationService().start();
                 updateSettingValue(MigrationContext.SOC_RDBMS_ACTIVITY_MIGRATION_KEY, MigrationContext.isActivityDone());
               }
-              if (!MigrationContext.isDone() && MigrationContext.isConnectionDone() && MigrationContext.isActivityDone() 
+              if (!MigrationContext.isDone() && MigrationContext.isActivityDone()
                   && !MigrationContext.isSpaceDone()) {
                 getSpaceMigrationService().start();
                 updateSettingValue(MigrationContext.SOC_RDBMS_SPACE_MIGRATION_KEY, MigrationContext.isSpaceDone());
               }
 
               // Migrate identities
-              if (!MigrationContext.isDone() && MigrationContext.isConnectionDone()
+              if (!MigrationContext.isDone()
                       && MigrationContext.isActivityDone() && MigrationContext.isSpaceDone()
                       && !MigrationContext.isIdentityDone()) {
                 getIdentityMigrationService().start();
@@ -160,6 +155,12 @@ public class RDBMSMigrationManager implements Startable {
                 if (useMigrationIdentityStorage && MigrationContext.isIdentityDone()) {
                   identityManager.setIdentityStorage(identityStorage);
                 }
+              }
+
+              if (!MigrationContext.isDone() && MigrationContext.isIdentityDone() && !MigrationContext.isConnectionDone()) {
+                relationshipMigration = CommonsUtils.getService(RelationshipMigrationService.class);
+                relationshipMigration.start();
+                updateSettingValue(MigrationContext.SOC_RDBMS_CONNECTION_MIGRATION_KEY, MigrationContext.isConnectionDone());
               }
             }
 
