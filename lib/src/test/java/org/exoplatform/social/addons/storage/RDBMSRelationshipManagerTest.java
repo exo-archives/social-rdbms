@@ -78,7 +78,7 @@ public class RDBMSRelationshipManagerTest extends AbstractCoreTest {
     
     identityStorage.removeIdentity(ghostIdentity);
     identityStorage.removeIdentity(paulIdentity);
-
+    ConversationState.setCurrent(null);
     super.tearDown();
   }
 
