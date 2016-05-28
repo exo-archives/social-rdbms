@@ -20,10 +20,11 @@ import org.exoplatform.management.jmx.annotations.NameTemplate;
 import org.exoplatform.management.jmx.annotations.Property;
 import org.exoplatform.social.addons.search.ProfileIndexingServiceConnector;
 import org.exoplatform.social.addons.storage.dao.ConnectionDAO;
+import org.exoplatform.social.addons.storage.dao.IdentityDAO;
 import org.exoplatform.social.addons.storage.entity.Connection;
 import org.exoplatform.social.core.chromattic.entity.IdentityEntity;
 import org.exoplatform.social.core.chromattic.entity.RelationshipEntity;
-import org.exoplatform.social.core.identity.model.Identity;
+import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvider;
 import org.exoplatform.social.core.relationship.model.Relationship;
 import org.exoplatform.social.core.storage.impl.IdentityStorageImpl;
 
@@ -33,16 +34,19 @@ import org.exoplatform.social.core.storage.impl.IdentityStorageImpl;
 public class RelationshipMigrationService extends AbstractMigrationService<Relationship> {
   public static final String EVENT_LISTENER_KEY = "SOC_RELATIONSHIP_MIGRATION";
   private final ConnectionDAO connectionDAO;
+  private final IdentityDAO identityDAO;
   private static final int LIMIT_REMOVED_THRESHOLD = 10;
 
   public RelationshipMigrationService(InitParams initParams,
                                       IdentityStorageImpl identityStorage,
                                       ConnectionDAO connectionDAO,
+                                      IdentityDAO identityDAO,
                                       EventManager<Relationship, String> eventManager,
                                       EntityManagerService entityManagerService) {
 
     super(initParams, identityStorage, eventManager, entityManagerService);
     this.connectionDAO = connectionDAO;
+    this.identityDAO = identityDAO;
     this.LIMIT_THRESHOLD = getInteger(initParams, LIMIT_THRESHOLD_KEY, 200);
   }
 
@@ -146,6 +150,11 @@ public class RelationshipMigrationService extends AbstractMigrationService<Relat
 
     LOG.info(String.format("| / END::Relationships migration for (%s) user(s) with %s relationship(s) consumed %s(ms)", offset, total, System.currentTimeMillis() - t));
     RequestLifeCycle.begin(PortalContainer.getInstance());
+
+    LOG.info("| \\ START::Re-indexing identity(s) ---------------------------------");
+    IndexingService indexingService = CommonsUtils.getService(IndexingService.class);
+    indexingService.reindexAll(ProfileIndexingServiceConnector.TYPE);
+    LOG.info("| / END::Re-indexing identity(s) ---------------------------------");
   }
   
   private int migrateRelationshipEntity(NodeIterator it, String userName, boolean isIncoming, Relationship.Type status) throws RepositoryException {
@@ -153,9 +162,9 @@ public class RelationshipMigrationService extends AbstractMigrationService<Relat
     startTx();
     while (it.hasNext()) {
       Node relationshipNode = it.nextNode();
-      String receiverId = relationshipNode.getProperty("soc:from").getString();
+      String receiverId = relationshipNode.getProperty("soc:to").getString();
       LOG.debug("|     - FROM ID = " + receiverId);
-      String senderId = relationshipNode.getProperty("soc:to").getString();
+      String senderId = relationshipNode.getProperty("soc:from").getString();
       LOG.debug("|     - TO ID = " + senderId);
       long lastUpdated = System.currentTimeMillis();
       if (relationshipNode.hasProperty("exo:lastModifiedDate")) {
@@ -165,16 +174,21 @@ public class RelationshipMigrationService extends AbstractMigrationService<Relat
       //handle the duplicate connection key by catch exception
       try {
         //check the sender
-        Identity sender = new Identity(isIncoming ? senderId : receiverId);
-        Identity receiver = new Identity(isIncoming ? receiverId : senderId);
-        Connection exist = connectionDAO.getConnection(sender, receiver);
+        //Identity sender = new Identity(isIncoming ? senderId : receiverId);
+        //Identity receiver = new Identity(isIncoming ? receiverId : senderId);
+
+        IdentityEntity senderIdentity = _findById(IdentityEntity.class, senderId);
+        IdentityEntity receiverIdentity = _findById(IdentityEntity.class, receiverId);
+
+        org.exoplatform.social.addons.storage.entity.IdentityEntity sender = identityDAO.findByProviderAndRemoteId(OrganizationIdentityProvider.NAME, senderIdentity.getRemoteId());
+        org.exoplatform.social.addons.storage.entity.IdentityEntity receiver = identityDAO.findByProviderAndRemoteId(OrganizationIdentityProvider.NAME, receiverIdentity.getRemoteId());
+
+        Connection exist = connectionDAO.getConnection(sender.getId(), receiver.getId());
         if (exist == null) {
-          exist = connectionDAO.getConnection(receiver, sender);
+          exist = connectionDAO.getConnection(receiver.getId(), sender.getId());
         }
         if (exist == null) {
-          Connection entity = new Connection();       
-          entity.setSenderId(sender.getId());
-          entity.setReceiverId(receiver.getId());
+          Connection entity = new Connection(sender, receiver);
           entity.setStatus(status);
           entity.setLastUpdated(lastUpdated);
           //

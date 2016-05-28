@@ -66,6 +66,20 @@ public class ConnectionDAOImpl extends GenericDAOJPAImpl<Connection, Long> imple
   }
 
   @Override
+  public Connection getConnection(Long sender, Long reciver) {
+    TypedQuery<Connection> query = getEntityManager().createNamedQuery("SocConnection.findConnectionBySenderAndReceiver", Connection.class);
+    query.setParameter("sender", sender);
+    query.setParameter("reciver", reciver);
+    query.setMaxResults(1);
+
+    try {
+      return query.getSingleResult();
+    } catch (NoResultException ex) {
+      return null;
+    }
+  }
+
+  @Override
   public List<Connection> getConnections(Identity identity, Type type, long offset, long limit) {
     return RelationshipQueryBuilder.builder()
                                    .owner(identity)

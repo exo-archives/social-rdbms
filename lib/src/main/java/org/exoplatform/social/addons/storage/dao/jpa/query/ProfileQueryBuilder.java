@@ -106,37 +106,33 @@ public class ProfileQueryBuilder {
 
       if (filter.getConnection() != null) {
         Identity owner = filter.getConnection();
+        Long ownerId = Long.valueOf(owner.getId());
         Relationship.Type status = filter.getConnectionStatus();
 
-        Subquery sub = query.subquery(Connection.class);
-        Root connection = sub.from(Connection.class);
-        Path sender = connection.get(Connection_.senderId);
-        Path receiver = connection.get(Connection_.receiverId);
+        if (status == Relationship.Type.INCOMING) {
+          Join<IdentityEntity, Connection> outgoing = identity.join(IdentityEntity_.outgoingConnections, JoinType.INNER);
+          predicates.add(cb.and(cb.equal(outgoing.get(Connection_.receiver), ownerId), cb.equal(outgoing.get(Connection_.status), Relationship.Type.PENDING)));
 
-        CriteriaBuilder.Case select = cb.selectCase();
-        select.when(cb.equal(sender, owner.getId()), receiver).otherwise(sender);
-        Predicate predicate;
+        } else if (status == Relationship.Type.OUTGOING) {
+          Join<IdentityEntity, Connection> incoming = identity.join(IdentityEntity_.incomingConnections, JoinType.INNER);
+          predicates.add(cb.and(cb.equal(incoming.get(Connection_.sender), ownerId), cb.equal(incoming.get(Connection_.status), Relationship.Type.PENDING)));
 
-        if (status == Relationship.Type.OUTGOING) {
-          predicate = cb.equal(connection.get(Connection_.senderId), owner.getId());
-        } else if (status == Relationship.Type.INCOMING) {
-          predicate = cb.equal(connection.get(Connection_.receiverId), owner.getId());
         } else {
-          predicate = cb.or(cb.equal(connection.get(Connection_.senderId), owner.getId()),
-                  cb.equal(connection.get(Connection_.receiverId), owner.getId()));
-        }
+          Join<IdentityEntity, Connection> incoming = identity.join(IdentityEntity_.incomingConnections, JoinType.LEFT);
+          Join<IdentityEntity, Connection> outgoing = identity.join(IdentityEntity_.outgoingConnections, JoinType.LEFT);
 
-        if (status != null) {
-          if (status == Relationship.Type.OUTGOING || status == Relationship.Type.INCOMING) {
-            predicate = cb.and(predicate, cb.equal(connection.get(Connection_.status), Relationship.Type.PENDING));
-          } else {
-            predicate = cb.and(predicate, cb.equal(connection.get(Connection_.status), status));
+          Predicate out = cb.equal(outgoing.get(Connection_.receiver), ownerId);
+          if (status != null) {
+            out = cb.and(out, cb.equal(outgoing.get(Connection_.status), status));
           }
+
+          Predicate in = cb.equal(incoming.get(Connection_.sender), ownerId);
+          if (status != null) {
+            in = cb.and(in, cb.equal(incoming.get(Connection_.status), status));
+          }
+
+          predicates.add(cb.or(in, out));
         }
-
-        sub.select(select).where(predicate);
-
-        predicates.add(identity.get(IdentityEntity_.id).as(String.class).in(sub));
       }
 
       ListJoin<ProfileEntity, ProfileExperienceEntity> experience = profile.join(ProfileEntity_.experiences, JoinType.LEFT);
