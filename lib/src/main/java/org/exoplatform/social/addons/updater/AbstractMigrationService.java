@@ -72,7 +72,7 @@ public abstract class AbstractMigrationService<T>  extends AbstractStorage {
         Event<T, String> event = new Event<T, String>(getListenerKey(), t, newId);
         listener.onEvent(event);
       } catch (Exception e) {
-        LOG.error("Failed to broadcastListener for listener: " + listener.getName(), e);
+        LOG.warn("Activity is still migrated, but failed to broadcastListener for listener: " + listener.getName(), e);
       }
     }
   }
