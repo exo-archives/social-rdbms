@@ -9,12 +9,12 @@ import java.util.Map;
 /**
  * Created by bdechateauvieux on 3/24/15.
  */
-@Entity
+@Entity(name = "SocComment")
 @ExoEntity
 @Table(name = "SOC_COMMENTS")
 @NamedQueries({
-        @NamedQuery(name = "SocComment.migratePosterId", query = "UPDATE Comment c SET c.posterId = :newId WHERE c.posterId = :oldId"),
-        @NamedQuery(name = "SocComment.migrateOwnerId", query = "UPDATE Comment c SET c.ownerId = :newId WHERE c.ownerId = :oldId"),
+        @NamedQuery(name = "SocComment.migratePosterId", query = "UPDATE SocComment c SET c.posterId = :newId WHERE c.posterId = :oldId"),
+        @NamedQuery(name = "SocComment.migrateOwnerId", query = "UPDATE SocComment c SET c.ownerId = :newId WHERE c.ownerId = :oldId"),
         @NamedQuery(
                 name = "getActivityByComment",
                 query = "select a from Activity a join a.comments Comment where Comment.id = :COMMENT_ID"
