@@ -12,10 +12,12 @@ import javax.persistence.*;
 @NamedQueries({
         @NamedQuery(name = "getRelationships",
                 query = "select r from Connection r"),
+        @NamedQuery(name = "SocConnection.findConnectionBySenderAndReceiver",
+                query = "SELECT c FROM Connection c WHERE c.sender.id = :sender AND c.receiver.id = :reciver"),
         @NamedQuery(name = "SocConnection.deleteConnectionByIdentity",
-                query = "DELETE FROM Connection c WHERE c.senderId = :identityId OR c.receiverId = :identityId"),
-        @NamedQuery(name = "SocConnection.migrateSenderId", query = "UPDATE Connection c SET c.senderId = :newId WHERE c.senderId = :oldId"),
-        @NamedQuery(name = "SocConnection.migrateReceiverId", query = "UPDATE Connection c SET c.receiverId = :newId WHERE c.receiverId = :oldId")
+                query = "DELETE FROM Connection c WHERE c.sender.id = :identityId OR c.receiver.id = :identityId"),
+        @NamedQuery(name = "SocConnection.migrateSenderId", query = "UPDATE Connection c SET c.sender.id = :newId WHERE c.sender.id = :oldId"),
+        @NamedQuery(name = "SocConnection.migrateReceiverId", query = "UPDATE Connection c SET c.receiver.id = :newId WHERE c.receiver.id = :oldId")
 })
 public class Connection {
 
@@ -25,11 +27,13 @@ public class Connection {
   @Column(name = "CONNECTION_ID")
   private Long id;
 
-  @Column(name="SENDER_ID", length = 36, nullable = false)
-  private String senderId;
-  
-  @Column(name="RECEIVER_ID", length = 36, nullable = false)
-  private String receiverId;
+  @ManyToOne(fetch = FetchType.EAGER, optional = false)
+  @JoinColumn(name = "SENDER_ID", referencedColumnName = "IDENTITY_ID")
+  private IdentityEntity sender;
+
+  @ManyToOne(fetch = FetchType.EAGER, optional = false)
+  @JoinColumn(name = "RECEIVER_ID", referencedColumnName = "IDENTITY_ID")
+  private IdentityEntity receiver;
   
   @Enumerated
   @Column(name="STATUS", nullable = false)
@@ -42,10 +46,9 @@ public class Connection {
   public Connection() {
   }
 
-  public Connection(String senderId, String receiverId, Type status) {
-    this.senderId = senderId;
-    this.receiverId = receiverId;
-    this.status = status;
+  public Connection(IdentityEntity sender, IdentityEntity receiver) {
+    this.sender = sender;
+    this.receiver = receiver;
   }
 
   public Long getId() {
@@ -56,20 +59,20 @@ public class Connection {
     this.id = id;
   }
 
-  public String getSenderId() {
-    return senderId;
+  public IdentityEntity getSender() {
+    return sender;
   }
 
-  public void setSenderId(String senderId) {
-    this.senderId = senderId;
+  public void setSender(IdentityEntity sender) {
+    this.sender = sender;
   }
 
-  public String getReceiverId() {
-    return receiverId;
+  public IdentityEntity getReceiver() {
+    return receiver;
   }
 
-  public void setReceiverId(String receiverId) {
-    this.receiverId = receiverId;
+  public void setReceiver(IdentityEntity receiver) {
+    this.receiver = receiver;
   }
 
   public Type getStatus() {

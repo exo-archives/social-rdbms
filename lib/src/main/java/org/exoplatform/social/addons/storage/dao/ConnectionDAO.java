@@ -51,6 +51,8 @@ public interface ConnectionDAO extends GenericDAO<Connection, Long> {
    */
   Connection getConnection(Identity identity1, Identity identity2);
 
+  Connection getConnection(Long sender, Long receiver);
+
   
   /**
    * @param identity

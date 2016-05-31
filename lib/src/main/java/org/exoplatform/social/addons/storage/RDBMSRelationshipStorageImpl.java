@@ -37,6 +37,7 @@ import org.exoplatform.services.log.Log;
 import org.exoplatform.social.addons.search.ExtendProfileFilter;
 import org.exoplatform.social.addons.search.ProfileSearchConnector;
 import org.exoplatform.social.addons.storage.dao.ConnectionDAO;
+import org.exoplatform.social.addons.storage.dao.IdentityDAO;
 import org.exoplatform.social.addons.storage.entity.Connection;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.identity.model.Profile;
@@ -58,12 +59,14 @@ public class RDBMSRelationshipStorageImpl extends RelationshipStorageImpl {
   private static final Log LOG = ExoLogger.getLogger(RDBMSRelationshipStorageImpl.class);
   
   private final ConnectionDAO connectionDAO;
+  private final IdentityDAO identityDAO;
   private final RDBMSIdentityStorageImpl identityStorage;
   private final ProfileSearchConnector profileESConnector;
 
-  public RDBMSRelationshipStorageImpl(RDBMSIdentityStorageImpl identityStorage, ConnectionDAO connectionDAO, ProfileSearchConnector profileESConnector) {
+  public RDBMSRelationshipStorageImpl(RDBMSIdentityStorageImpl identityStorage, ConnectionDAO connectionDAO, IdentityDAO identityDAO, ProfileSearchConnector profileESConnector) {
     super(identityStorage);
     this.connectionDAO = connectionDAO;
+    this.identityDAO = identityDAO;
     this.identityStorage = identityStorage;
     this.profileESConnector = profileESConnector;
   }
@@ -78,8 +81,8 @@ public class RDBMSRelationshipStorageImpl extends RelationshipStorageImpl {
         entity = new Connection();
       }
 
-      entity.setReceiverId(relationship.getReceiver().getId());
-      entity.setSenderId(relationship.getSender().getId());
+      entity.setReceiver(identityDAO.find(Long.valueOf(relationship.getReceiver().getId())));
+      entity.setSender(identityDAO.find(Long.valueOf(relationship.getSender().getId())));
       entity.setStatus(relationship.getStatus());
       entity.setLastUpdated(System.currentTimeMillis());
       //
@@ -214,10 +217,10 @@ public class RDBMSRelationshipStorageImpl extends RelationshipStorageImpl {
 
   private Identity getIdentityFromRelationshipItem(Connection item, String ownerId) {
     Identity identity = null;
-    if (ownerId.equals(item.getSenderId())) {
-      identity = identityStorage.findIdentityById(item.getReceiverId());
+    if (ownerId.equals(item.getSender().getStringId())) {
+      identity = identityStorage.findIdentityById(item.getReceiver().getStringId());
     } else {
-      identity = identityStorage.findIdentityById(item.getSenderId());
+      identity = identityStorage.findIdentityById(item.getSender().getStringId());
     }
     if (identity == null) return null;
     //load profile
@@ -231,8 +234,8 @@ public class RDBMSRelationshipStorageImpl extends RelationshipStorageImpl {
     //
     Relationship relationship = new Relationship(Long.toString(item.getId()));
     relationship.setId(String.valueOf(item.getId()));
-    relationship.setSender(identityStorage.findIdentityById(item.getSenderId()));
-    relationship.setReceiver(identityStorage.findIdentityById(item.getReceiverId()));
+    relationship.setSender(identityStorage.findIdentityById(item.getSender().getStringId()));
+    relationship.setReceiver(identityStorage.findIdentityById(item.getReceiver().getStringId()));
     relationship.setStatus(item.getStatus());
     return relationship;
   }

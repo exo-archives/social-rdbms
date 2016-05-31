@@ -174,37 +174,6 @@
             <append value=" ENGINE=INNODB CHARSET=UTF8 COLLATE utf8_general_ci"/>
         </modifySql>
     </changeSet>
-    <changeSet author="social" id="1.0.0-7">
-        <createTable tableName="SOC_CONNECTIONS">
-            <column name="CONNECTION_ID" type="BIGINT" autoIncrement="${autoIncrement}" startWith="1">
-              <constraints nullable="false" primaryKey="true" primaryKeyName="PK_SOC_CONNECTIONS"/>
-            </column>
-            <column name="RECEIVER_ID" type="NVARCHAR(36)">
-              <constraints nullable="false"/>
-            </column>
-            <column name="SENDER_ID" type="NVARCHAR(36)">
-              <constraints nullable="false"/>
-            </column>
-            <column name="STATUS" type="INT">
-              <constraints nullable="false"/>
-            </column>
-            <column name="LAST_UPDATED" type="BIGINT">
-              <constraints nullable="false"/>
-            </column>
-        </createTable>
-        <createIndex tableName="SOC_CONNECTIONS" indexName="IDX_SOC_CONNECTIONS_01">
-            <column name="RECEIVER_ID"/>
-        </createIndex>
-        <createIndex tableName="SOC_CONNECTIONS" indexName="IDX_SOC_CONNECTIONS_02">
-            <column name="SENDER_ID"/>
-        </createIndex>
-        <createIndex tableName="SOC_CONNECTIONS" indexName="IDX_SOC_CONNECTIONS_03">
-            <column name="LAST_UPDATED" descending="true"/>
-        </createIndex>
-        <createIndex tableName="SOC_CONNECTIONS" indexName="IDX_SOC_CONNECTIONS_04">
-            <column name="STATUS"/>
-        </createIndex>
-    </changeSet>
     <changeSet author="social" id="1.0.0-8">
         <createTable tableName="SOC_STREAM_ITEMS">
             <column name="STREAM_ITEM_ID" type="BIGINT" autoIncrement="${autoIncrement}" startWith="1">
@@ -455,5 +424,37 @@
                          constraintName="UK_SPACE_USER_STATUS_01"
                          tableName="SOC_SPACES_MEMBERS"/>                         
     <addPrimaryKey columnNames="PROFILE_ID, NAME" constraintName="PK_SOC_PROFILE_PROPERTY_01" tableName="SOC_IDENTITY_PROFILE_PROPERTY"/>                                                    
+  </changeSet>
+
+  <changeSet author="social" id="1.0.0-34">
+    <createTable tableName="SOC_CONNECTIONS">
+      <column name="CONNECTION_ID" type="BIGINT" autoIncrement="${autoIncrement}" startWith="1">
+        <constraints nullable="false" primaryKey="true" primaryKeyName="PK_SOC_CONNECTIONS"/>
+      </column>
+      <column name="SENDER_ID" type="BIGINT">
+        <constraints foreignKeyName="FK_SOC_CONNECTION_SENDER" references="SOC_IDENTITY(IDENTITY_ID)" nullable="false"/>
+      </column>
+      <column name="RECEIVER_ID" type="BIGINT">
+        <constraints foreignKeyName="FK_SOC_CONNECTION_RECEIVER" references="SOC_IDENTITY(IDENTITY_ID)" nullable="false"/>
+      </column>
+      <column name="STATUS" type="INT">
+        <constraints nullable="false"/>
+      </column>
+      <column name="LAST_UPDATED" type="BIGINT">
+        <constraints nullable="false"/>
+      </column>
+    </createTable>
+    <createIndex tableName="SOC_CONNECTIONS" indexName="IDX_SOC_CONNECTIONS_01">
+      <column name="RECEIVER_ID"/>
+    </createIndex>
+    <createIndex tableName="SOC_CONNECTIONS" indexName="IDX_SOC_CONNECTIONS_02">
+      <column name="SENDER_ID"/>
+    </createIndex>
+    <createIndex tableName="SOC_CONNECTIONS" indexName="IDX_SOC_CONNECTIONS_03">
+      <column name="LAST_UPDATED" descending="true"/>
+    </createIndex>
+    <createIndex tableName="SOC_CONNECTIONS" indexName="IDX_SOC_CONNECTIONS_04">
+      <column name="STATUS"/>
+    </createIndex>
   </changeSet>
 </databaseChangeLog>

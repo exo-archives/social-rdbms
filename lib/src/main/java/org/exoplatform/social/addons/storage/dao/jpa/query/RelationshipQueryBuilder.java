@@ -33,6 +33,7 @@ import javax.persistence.criteria.Root;
 import org.exoplatform.commons.persistence.impl.EntityManagerHolder;
 import org.exoplatform.social.addons.storage.entity.Connection;
 import org.exoplatform.social.addons.storage.entity.Connection_;
+import org.exoplatform.social.addons.storage.entity.IdentityEntity_;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.profile.ProfileFilter;
 import org.exoplatform.social.core.relationship.model.Relationship;
@@ -102,8 +103,8 @@ public final class RelationshipQueryBuilder {
     
     Predicate predicate = null;
     if (this.sender != null && this.receiver != null) {
-      predicate = cb.equal(connection.get(Connection_.senderId), sender.getId()) ;
-      predicate = cb.and(predicate, cb.equal(connection.get(Connection_.receiverId), receiver.getId()));
+      predicate = cb.equal(connection.get(Connection_.sender).get(IdentityEntity_.id), Long.valueOf(sender.getId())) ;
+      predicate = cb.and(predicate, cb.equal(connection.get(Connection_.receiver).get(IdentityEntity_.id), Long.valueOf(receiver.getId())));
     }
     
     CriteriaQuery<Connection> select = criteria.select(connection).distinct(true);
@@ -124,19 +125,19 @@ public final class RelationshipQueryBuilder {
     Root<Connection> connection = criteria.from(Connection.class);
 
     List<Predicate> predicates = new ArrayList<>();
-    Path sender = connection.get(Connection_.senderId);
-    Path receiver = connection.get(Connection_.receiverId);
+    Path sender = connection.get(Connection_.sender).get(IdentityEntity_.id);
+    Path receiver = connection.get(Connection_.receiver).get(IdentityEntity_.id);
 
     //owner
     if (this.owner != null) {
       Predicate predicate = null;
       if (this.status == Type.OUTGOING) {
-        predicate = cb.equal(sender, owner.getId());
+        predicate = cb.equal(sender, Long.valueOf(owner.getId()));
       } else if (this.status == Type.INCOMING) {
-        predicate = cb.equal(receiver, owner.getId());
+        predicate = cb.equal(receiver, Long.valueOf(owner.getId()));
       } else {
-        predicate = cb.or(cb.equal(sender, owner.getId()),
-                cb.equal(receiver, owner.getId()));
+        predicate = cb.or(cb.equal(sender, Long.valueOf(owner.getId())),
+                cb.equal(receiver, Long.valueOf(owner.getId())));
       }
       predicates.add(predicate);
     }
@@ -150,10 +151,10 @@ public final class RelationshipQueryBuilder {
     }
 
     if (this.sender != null) {
-      predicates.add(cb.equal(sender, this.sender.getId()));
+      predicates.add(cb.equal(sender, Long.valueOf(this.sender.getId())));
     }
     if (this.receiver != null) {
-      predicates.add(cb.equal(receiver, this.receiver.getId()));
+      predicates.add(cb.equal(receiver, Long.valueOf(this.receiver.getId())));
     }
     
     CriteriaQuery<Connection> select = criteria.select(connection).distinct(true);
@@ -182,12 +183,12 @@ public final class RelationshipQueryBuilder {
     //owner
     if (this.owner != null) {
       if (this.status == Type.OUTGOING) {
-        predicate = cb.equal(connection.get(Connection_.senderId), owner.getId());
+        predicate = cb.equal(connection.get(Connection_.sender).get(IdentityEntity_.id), Long.valueOf(owner.getId()));
       } else if (this.status == Type.INCOMING) {
-        predicate = cb.equal(connection.get(Connection_.receiverId), owner.getId());
+        predicate = cb.equal(connection.get(Connection_.receiver).get(IdentityEntity_.id), Long.valueOf(owner.getId()));
       } else {
-        predicate = cb.or(cb.equal(connection.get(Connection_.senderId), owner.getId()),
-                cb.equal(connection.get(Connection_.receiverId), owner.getId()));
+        predicate = cb.or(cb.equal(connection.get(Connection_.sender).get(IdentityEntity_.id), Long.valueOf(owner.getId())),
+                cb.equal(connection.get(Connection_.receiver).get(IdentityEntity_.id), Long.valueOf(owner.getId())));
       }
     }
     //status
@@ -215,12 +216,12 @@ public final class RelationshipQueryBuilder {
     //owner
     if (this.owner != null) {
       if (this.status == Type.OUTGOING) {
-        predicate = cb.equal(connection.get(Connection_.senderId), owner.getId());
+        predicate = cb.equal(connection.get(Connection_.sender).get(IdentityEntity_.id), Long.valueOf(owner.getId()));
       } else if (this.status == Type.INCOMING) {
-        predicate = cb.equal(connection.get(Connection_.receiverId), owner.getId());
+        predicate = cb.equal(connection.get(Connection_.receiver).get(IdentityEntity_.id), Long.valueOf(owner.getId()));
       } else {
-        predicate = cb.or(cb.equal(connection.get(Connection_.senderId), owner.getId()),
-                cb.equal(connection.get(Connection_.receiverId), owner.getId()));
+        predicate = cb.or(cb.equal(connection.get(Connection_.sender).get(IdentityEntity_.id), Long.valueOf(owner.getId())),
+                cb.equal(connection.get(Connection_.receiver).get(IdentityEntity_.id), Long.valueOf(owner.getId())));
       }
     }
     //status
@@ -280,7 +281,7 @@ public final class RelationshipQueryBuilder {
     Predicate predicate = null;
     // owner
     if (this.owner != null) {
-      predicate = cb.equal(connection.get(Connection_.senderId), owner.getId());
+      predicate = cb.equal(connection.get(Connection_.sender).get(IdentityEntity_.id), Long.valueOf(owner.getId()));
     }
     // status
     if (this.status != null) {
@@ -292,9 +293,9 @@ public final class RelationshipQueryBuilder {
     //Exclude identities
       List<Identity> excludedIdentityList = profileFilter.getExcludedIdentityList();
       if (excludedIdentityList != null && excludedIdentityList.size() > 0) {
-        In<String> in = cb.in(connection.get(Connection_.receiverId));
+        In<Long> in = cb.in(connection.get(Connection_.receiver).get(IdentityEntity_.id));
         for (Identity id : excludedIdentityList) {
-          in.value(id.getId());
+          in.value(Long.valueOf(id.getId()));
         }
         predicate = cb.and(predicate, in.not());  
       }
