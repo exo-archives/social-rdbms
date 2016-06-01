@@ -37,21 +37,21 @@ import javax.persistence.Table;
 /**
  * @author <a href="mailto:tuyennt@exoplatform.com">Tuyen Nguyen The</a>.
  */
-@Entity
+@Entity(name = "SocIdentityEntity")
 @ExoEntity
 @Table(name = "SOC_IDENTITY")
 @NamedQueries({
         @NamedQuery(
                 name = "SocIdentity.findByProviderAndRemoteId",
-                query = "SELECT id FROM IdentityEntity id WHERE id.providerId = :providerId AND id.remoteId = :remoteId"
+                query = "SELECT id FROM SocIdentityEntity id WHERE id.providerId = :providerId AND id.remoteId = :remoteId"
         ),
         @NamedQuery(
                 name = "SocIdentity.countIdentityByProvider",
-                query = "SELECT count(id) FROM IdentityEntity id WHERE id.deleted = FALSE AND id.enable = TRUE AND id.providerId = :providerId"
+                query = "SELECT count(id) FROM SocIdentityEntity id WHERE id.deleted = FALSE AND id.enable = TRUE AND id.providerId = :providerId"
         ),
         @NamedQuery(
                 name = "SocIdentity.getAllIds",
-                query = "SELECT i.id FROM IdentityEntity i"
+                query = "SELECT i.id FROM SocIdentityEntity i"
         )
 })
 public class IdentityEntity {

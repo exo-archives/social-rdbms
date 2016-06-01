@@ -48,13 +48,13 @@ import java.util.Map;
 /**
  * @author <a href="mailto:tuyennt@exoplatform.com">Tuyen Nguyen The</a>.
  */
-@Entity
+@Entity(name = "SocProfileEntity")
 @ExoEntity
 @Table(name = "SOC_IDENTITY_PROFILE")
 @NamedQueries({
         @NamedQuery(
                 name = "SocProfile.findByIdentity",
-                query = "SELECT p FROM ProfileEntity p WHERE p.identity.id = :identityId"
+                query = "SELECT p FROM SocProfileEntity p WHERE p.identity.id = :identityId"
         )
 })
 public class ProfileEntity {

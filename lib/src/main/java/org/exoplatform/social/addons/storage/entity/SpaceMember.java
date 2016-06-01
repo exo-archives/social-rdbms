@@ -16,13 +16,13 @@ import javax.persistence.Table;
 
 import org.exoplatform.commons.api.persistence.ExoEntity;
 
-@Entity
+@Entity(name = "SocSpaceMember")
 @ExoEntity
 @Table(name = "SOC_SPACES_MEMBERS")
 @NamedQueries({
-    @NamedQuery(name = "SpaceMember.deleteBySpace", query = "DELETE FROM SpaceMember mem WHERE mem.space.id = :spaceId"),
-    @NamedQuery(name = "SpaceMember.getMember", query = "SELECT mem FROM SpaceMember mem WHERE mem.userId = :userId AND mem.space.id = :spaceId AND mem.status = :status"),
-    @NamedQuery(name = "SpaceMember.deleteByUsername", query = "DELETE FROM SpaceMember sm WHERE sm.userId = :username")})
+    @NamedQuery(name = "SpaceMember.deleteBySpace", query = "DELETE FROM SocSpaceMember mem WHERE mem.space.id = :spaceId"),
+    @NamedQuery(name = "SpaceMember.getMember", query = "SELECT mem FROM SocSpaceMember mem WHERE mem.userId = :userId AND mem.space.id = :spaceId AND mem.status = :status"),
+    @NamedQuery(name = "SpaceMember.deleteByUsername", query = "DELETE FROM SocSpaceMember sm WHERE sm.userId = :username")})
 public class SpaceMember implements Serializable {
 
   private static final long serialVersionUID = 1015703779692801839L;

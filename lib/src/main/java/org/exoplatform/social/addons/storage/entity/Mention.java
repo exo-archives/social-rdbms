@@ -7,14 +7,14 @@ import javax.persistence.*;
 /**
  * Created by bdechateauvieux on 7/7/15.
  */
-@Entity
+@Entity(name = "SocMention")
 @ExoEntity
 @Table(name="SOC_MENTIONS")
 @NamedQueries({
         @NamedQuery(name = "SocMention.migrateMentionId",
-                query = "UPDATE Mention m SET m.mentionId = :newId WHERE m.mentionId = :oldId"),
+                query = "UPDATE SocMention m SET m.mentionId = :newId WHERE m.mentionId = :oldId"),
         @NamedQuery(name = "SocMention.selectMentionByOldId",
-                query = "SELECT m FROM Mention m WHERE m.mentionId LIKE :oldId"),
+                query = "SELECT m FROM SocMention m WHERE m.mentionId LIKE :oldId"),
 })
 public class Mention {
 

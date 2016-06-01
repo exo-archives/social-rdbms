@@ -11,12 +11,16 @@ import org.exoplatform.commons.api.persistence.ExoEntity;
 /**
  * Created by bdechateauvieux on 3/24/15.
  */
-@Entity
+@Entity(name = "SocActivity")
 @ExoEntity
 @Table(name = "SOC_ACTIVITIES")
 @NamedQueries({
-        @NamedQuery(name = "SocActivity.migratePosterId", query = "UPDATE Activity a SET a.posterId = :newId WHERE a.posterId = :oldId"),
-        @NamedQuery(name = "SocActivity.migrateOwnerId", query = "UPDATE Activity a SET a.ownerId = :newId WHERE a.ownerId = :oldId")
+        @NamedQuery(
+                name = "getActivityByComment",
+                query = "select a from SocActivity a join a.comments Comment where Comment.id = :COMMENT_ID"
+        ),
+        @NamedQuery(name = "SocActivity.migratePosterId", query = "UPDATE SocActivity a SET a.posterId = :newId WHERE a.posterId = :oldId"),
+        @NamedQuery(name = "SocActivity.migrateOwnerId", query = "UPDATE SocActivity a SET a.ownerId = :newId WHERE a.ownerId = :oldId")
 })
 public class Activity extends BaseActivity {
 
