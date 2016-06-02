@@ -260,7 +260,10 @@ public class IdentityMigrationService extends AbstractMigrationService<Identity>
   }
 
   public Identity migrateIdentity(String oldId) {
+    boolean begun = false;
     try {
+      RequestLifeCycle.begin(PortalContainer.getInstance());
+      begun = startTx();
       IdentityEntity jcrEntity = _findById(IdentityEntity.class, oldId);
 
       String providerId = jcrEntity.getProviderId();
@@ -318,6 +321,13 @@ public class IdentityMigrationService extends AbstractMigrationService<Identity>
     } catch (Exception ex) {
       LOG.error("Exception while migrate identity with oldId: " + oldId, ex);
       return null;
+    } finally {
+      try {
+        endTx(begun);
+      } catch (Exception ex) {
+        LOG.error("Error while commit transaction", ex);
+      }
+      RequestLifeCycle.end();
     }
   }
 

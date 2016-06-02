@@ -25,7 +25,6 @@ import org.exoplatform.services.listener.Event;
 import org.exoplatform.services.listener.Listener;
 import org.exoplatform.social.addons.storage.entity.Mention;
 import org.exoplatform.social.core.identity.model.Identity;
-import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvider;
 
 import javax.persistence.EntityManager;
 import javax.persistence.Query;
@@ -43,66 +42,78 @@ public class IdentityReferenceUpdaterListener extends Listener<Identity, String>
       return;
     }
 
-    Identity identity = event.getSource();
-    String newId = event.getData();
-    String oldId = identity.getId();
+    boolean startTx = false;
+    try {
+      if (!em.getTransaction().isActive()) {
+        em.getTransaction().begin();
+        startTx = true;
+      }
 
-    Query query;
+      Identity identity = event.getSource();
+      String newId = event.getData();
+      String oldId = identity.getId();
 
-    // Update activity poster
-    query = em.createNamedQuery("SocActivity.migratePosterId");
-    query.setParameter("newId", newId);
-    query.setParameter("oldId", oldId);
-    query.executeUpdate();
+      Query query;
 
-    // Activity owner
-    query = em.createNamedQuery("SocActivity.migrateOwnerId");
-    query.setParameter("newId", newId);
-    query.setParameter("oldId", oldId);
-    query.executeUpdate();
+      // Update activity poster
+      query = em.createNamedQuery("SocActivity.migratePosterId");
+      query.setParameter("newId", newId);
+      query.setParameter("oldId", oldId);
+      query.executeUpdate();
 
-    // Comment poster
-    query = em.createNamedQuery("SocComment.migratePosterId");
-    query.setParameter("newId", newId);
-    query.setParameter("oldId", oldId);
-    query.executeUpdate();
+      // Activity owner
+      query = em.createNamedQuery("SocActivity.migrateOwnerId");
+      query.setParameter("newId", newId);
+      query.setParameter("oldId", oldId);
+      query.executeUpdate();
 
-    // Comment owner
-    query = em.createNamedQuery("SocComment.migrateOwnerId");
-    query.setParameter("newId", newId);
-    query.setParameter("oldId", oldId);
-    query.executeUpdate();
+      // Comment poster
+      query = em.createNamedQuery("SocComment.migratePosterId");
+      query.setParameter("newId", newId);
+      query.setParameter("oldId", oldId);
+      query.executeUpdate();
 
-    //activity mention
-    query = em.createNamedQuery("SocMention.migrateMentionId");
-    query.setParameter("newId", newId);
-    query.setParameter("oldId", oldId);
-    query.executeUpdate();
+      // Comment owner
+      query = em.createNamedQuery("SocComment.migrateOwnerId");
+      query.setParameter("newId", newId);
+      query.setParameter("oldId", oldId);
+      query.executeUpdate();
 
-    query = em.createNamedQuery("SocMention.selectMentionByOldId", Mention.class);
-    query.setParameter("oldId", oldId + "@%");
-    List<Mention> list = query.getResultList();
-    if (list != null && list.size() > 0) {
-      for (Mention m : list) {
-        String mentionId = m.getMentionId();
-        mentionId = mentionId.replace(oldId, newId);
-        m.setMentionId(mentionId);
-        em.merge(m);
+      //activity mention
+      query = em.createNamedQuery("SocMention.migrateMentionId");
+      query.setParameter("newId", newId);
+      query.setParameter("oldId", oldId);
+      query.executeUpdate();
+
+      query = em.createNamedQuery("SocMention.selectMentionByOldId", Mention.class);
+      query.setParameter("oldId", oldId + "@%");
+      List<Mention> list = query.getResultList();
+      if (list != null && list.size() > 0) {
+        for (Mention m : list) {
+          String mentionId = m.getMentionId();
+          mentionId = mentionId.replace(oldId, newId);
+          m.setMentionId(mentionId);
+          em.merge(m);
+        }
+      }
+
+
+      //TODO: Can not use the JPQL for this?
+      // Activity Liker
+      query = em.createNativeQuery("UPDATE SOC_ACTIVITY_LIKERS SET LIKER_ID = ? WHERE LIKER_ID = ?");
+      query.setParameter(1, newId);
+      query.setParameter(2, oldId);
+      query.executeUpdate();
+
+      // Stream Item
+      query = em.createNamedQuery("SocStreamItem.migrateOwner");
+      query.setParameter("newId", newId);
+      query.setParameter("oldId", oldId);
+      query.executeUpdate();
+    } finally {
+      if (startTx) {
+        em.getTransaction().commit();
       }
     }
-
-
-    //TODO: Can not use the JPQL for this?
-    // Activity Liker
-    query = em.createNativeQuery("UPDATE SOC_ACTIVITY_LIKERS SET LIKER_ID = ? WHERE LIKER_ID = ?");
-    query.setParameter(1, newId);
-    query.setParameter(2, oldId);
-    query.executeUpdate();
-
-    // Stream Item
-    query = em.createNamedQuery("SocStreamItem.migrateOwner");
-    query.setParameter("newId", newId);
-    query.setParameter("oldId", oldId);
-    query.executeUpdate();
   }
 }
