@@ -532,11 +532,11 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
    * @param title
    */
   private String[] processMentions(String title) {
-    String[] mentionerIds = new String[0];
     if (title == null || title.length() == 0) {
       return ArrayUtils.EMPTY_STRING_ARRAY;
     }
 
+    Set<String> mentions = new HashSet<>();
     Matcher matcher = MENTION_PATTERN.matcher(title);
     while (matcher.find()) {
       String remoteId = matcher.group().substring(1);
@@ -545,11 +545,11 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
       }
       Identity identity = identityStorage.findIdentity(OrganizationIdentityProvider.NAME, remoteId);
       // if not the right mention then ignore
-      if (identity != null) {
-        mentionerIds = (String[]) ArrayUtils.add(mentionerIds, identity.getId());
+      if (identity != null && !mentions.contains(identity.getId())) {
+        mentions.add(identity.getId());
       }
     }
-    return mentionerIds;
+    return mentions.toArray(new String[mentions.size()]);
   }
   
   @Override

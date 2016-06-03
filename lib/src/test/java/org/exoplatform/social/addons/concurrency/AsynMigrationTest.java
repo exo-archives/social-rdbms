@@ -247,11 +247,13 @@ public class AsynMigrationTest extends BaseCoreTest {
 
     //
     LOG.info("Create the activities storage on JCR ....");
+    jcrStorage.setInjectStreams(false);
     createActivityToOtherIdentity(rootIdentity, johnIdentity, 5);
     createActivityToOtherIdentity(demoIdentity, maryIdentity, 5);
     createActivityToOtherIdentity(johnIdentity, demoIdentity, 5);
     createActivityToOtherIdentity(maryIdentity, rootIdentity, 5);
     createActivityEmoji(rootIdentity, rootIdentity);
+    jcrStorage.setInjectStreams(true);
     LOG.info("Done created the activities storage on JCR.");
     end();
 

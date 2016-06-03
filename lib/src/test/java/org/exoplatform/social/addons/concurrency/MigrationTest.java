@@ -180,7 +180,9 @@ public class MigrationTest extends BaseCoreTest {
             .isComment(false)
             .take();
 
+    activityJCRStorage.setInjectStreams(false);
     activityJCRStorage.saveActivity(johnIdentity, activity);
+    activityJCRStorage.setInjectStreams(true);
 
     end();
 
@@ -196,11 +198,10 @@ public class MigrationTest extends BaseCoreTest {
       }
     });
 
+    switchToUseJPAStorage();
+    identityMigrationService.start();
     activityMigration.start();
 
-    switchToUseJPAStorage();
-
-    identityMigrationService.start();
 
     begin();
 
