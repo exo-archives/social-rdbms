@@ -1,5 +1,6 @@
 package org.exoplatform.social.addons.updater;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.HashSet;
@@ -28,6 +29,7 @@ import org.exoplatform.management.annotations.ManagedDescription;
 import org.exoplatform.management.jmx.annotations.NameTemplate;
 import org.exoplatform.management.jmx.annotations.Property;
 import org.exoplatform.services.jcr.impl.core.NodeImpl;
+import org.exoplatform.social.addons.storage.RDBMSIdentityStorageImpl;
 import org.exoplatform.social.addons.storage.dao.ActivityDAO;
 import org.exoplatform.social.addons.storage.dao.CommentDAO;
 import org.exoplatform.social.addons.storage.entity.Activity;
@@ -46,6 +48,7 @@ import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvider;
 import org.exoplatform.social.core.storage.ActivityStorageException;
 import org.exoplatform.social.core.storage.api.ActivityStorage;
+import org.exoplatform.social.core.storage.exception.NodeNotFoundException;
 import org.exoplatform.social.core.storage.impl.ActivityStorageImpl;
 import org.exoplatform.social.core.storage.impl.IdentityStorageImpl;
 import org.exoplatform.social.core.storage.impl.StorageUtils;
@@ -65,6 +68,9 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
   
   private final ActivityStorage activityStorage;
   private final ActivityStorageImpl activityJCRStorage;
+
+  protected final RDBMSIdentityStorageImpl identityJPAStorage;
+
   private final CommentDAO commentDAO;
   private final ActivityDAO activityDAO;
 
@@ -79,10 +85,12 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
                                   ActivityStorage activityStorage,
                                   ActivityStorageImpl activityJCRStorage,
                                   IdentityStorageImpl identityStorage,
+                                  RDBMSIdentityStorageImpl rdbmsIdentityStorage,
                                   EventManager<ExoSocialActivity, String> eventManager,
                                   EntityManagerService entityManagerService) {
 
     super(initParams, identityStorage, eventManager, entityManagerService);
+    this.identityJPAStorage = rdbmsIdentityStorage;
     this.commentDAO = commentDAO;
     this.activityDAO = activityDAO;
     this.activityStorage = activityStorage;
@@ -279,6 +287,8 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
         }
       }
 
+      Identity jpaIdentity = identityJPAStorage.findIdentity(identityEntity.getProviderId(), identityEntity.getRemoteId());
+
       String providerId = identityEntity.getProviderId();
       String type = (OrganizationIdentityProvider.NAME.equals(providerId)) ? "user" : "space";
       LOG.info(String.format("    Migration activities for %s: %s", type, identityEntity.getRemoteId()));
@@ -320,13 +330,21 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
             activity.setTemplateParams(params);
           }
           //
-          Identity owner = new Identity(identityEntity.getId());
-          owner.setProviderId(providerId);
+          //Identity owner = new Identity(identityEntity.getId());
+          //owner.setProviderId(providerId);
           //
           activity.setId(null);
           activity.setTitle(StringUtil.removeLongUTF(activity.getTitle()));
-          activity.setBody(StringUtil.removeLongUTF(activity.getBody()));         
-          activity = activityStorage.saveActivity(owner, activity);
+          activity.setBody(StringUtil.removeLongUTF(activity.getBody()));
+
+          //
+          activity.setLikeIdentityIds(convertToNewIds(activity.getLikeIdentityIds()));
+          activity.setCommentedIds(convertToNewIds(activity.getCommentedIds()));
+          activity.setMentionedIds(convertToNewIds(activity.getMentionedIds()));
+          activity.setUserId(getNewIdentityId(activity.getUserId()));
+          activity.setPosterId(getNewIdentityId(activity.getPosterId()));
+
+          activity = activityStorage.saveActivity(jpaIdentity, activity);
           //
           doBroadcastListener(activity, activityId);
           
@@ -372,7 +390,14 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
                   comment.setTemplateParams(commentParams);
                 }
                 activity.setTemplateParams(params);
-                saveComment(activity, comment);
+
+                comment.setLikeIdentityIds(convertToNewIds(comment.getLikeIdentityIds()));
+                comment.setCommentedIds(convertToNewIds(comment.getCommentedIds()));
+                comment.setMentionedIds(convertToNewIds(comment.getMentionedIds()));
+                comment.setUserId(getNewIdentityId(comment.getUserId()));
+                comment.setPosterId(getNewIdentityId(comment.getPosterId()));
+
+                activityStorage.saveComment(activity, comment);
                 //
                 doBroadcastListener(comment, oldCommentId);
                 commentParams = null;
@@ -663,117 +688,41 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
   protected String getListenerKey() {
     return EVENT_LISTENER_KEY;
   }
-  
-  public void saveComment(ExoSocialActivity activity, ExoSocialActivity eXoComment) throws ActivityStorageException {
-    Activity activityEntity = activityDAO.find(Long.valueOf(activity.getId()));
-    Comment commentEntity = convertCommentToCommentEntity(eXoComment);
-    commentEntity.setActivity(activityEntity);
-    //
-    Identity commenter = identityStorage.findIdentityById(commentEntity.getPosterId());
-    mention(commenter, activityEntity, processMentions(eXoComment.getTitle()));
-    //
-    activityEntity.addComment(commentEntity);
-    commentEntity = commentDAO.create(commentEntity);
-    eXoComment.setId(getExoCommentID(commentEntity.getId()));
-    //
-    activityEntity.setMentionerIds(processMentionOfComment(activityEntity, commentEntity, activity.getMentionedIds(), processMentions(eXoComment.getTitle()), true));
-    activityDAO.update(activityEntity);
-  }
-  
-  private String getExoCommentID(Long commentId) {
-    return String.valueOf(COMMENT_PREFIX + commentId);
-  }
-  
-  private Comment convertCommentToCommentEntity(ExoSocialActivity comment) {
-    Comment commentEntity = new Comment();
-    commentEntity.setTitle(comment.getTitle());
-    commentEntity.setTitleId(comment.getTitleId());
-    commentEntity.setBody(comment.getBody());
-    commentEntity.setPosterId(comment.getPosterId());
-    if (comment.getTemplateParams() != null) {
-      commentEntity.setTemplateParams(comment.getTemplateParams());
+
+  private String getNewIdentityId(String oldId) {
+    if (oldId == null || oldId.isEmpty()) {
+      return null;
     }
-    //
-    commentEntity.setLocked(comment.isLocked());
-    commentEntity.setHidden(comment.isHidden());
-    //
-    commentEntity.setPosted(comment.getPostedTime());
-    Calendar c = Calendar.getInstance();
-    c.setTime(comment.getUpdated());
-    commentEntity.setLastUpdated(c.getTimeInMillis());
-    //
-    return commentEntity;
-  }
-  
-  private Set<String> processMentionOfComment(Activity activityEntity, Comment commentEntity, String[] activityMentioners, String[] commentMentioners, boolean isAdded) {
-    Set<String> mentioners = new HashSet<String>(Arrays.asList(activityMentioners));
-    if (commentMentioners.length == 0) return mentioners;
-    //
-    for (String mentioner : commentMentioners) {
-      if (!mentioners.contains(mentioner) && isAdded) {
-        mentioners.add(mentioner);
-      }
-      if (mentioners.contains(mentioner) && !isAdded) {
-        if (isAllowedToRemove(activityEntity, commentEntity, mentioner)) {
-          mentioners.remove(mentioner);
+    try {
+      IdentityEntity entity = _findById(IdentityEntity.class, oldId);
+      if (entity != null) {
+        Identity id = identityJPAStorage.findIdentity(entity.getProviderId(), entity.getRemoteId());
+        if (id != null) {
+          return id.getId();
         }
       }
+      return null;
+    } catch (NodeNotFoundException ex) {
+      return null;
     }
-    return mentioners;
   }
-  
-  private boolean isAllowedToRemove(Activity activity, Comment comment, String mentioner) {
-    if (ArrayUtils.contains(processMentions(activity.getTitle()), mentioner)) {
-      return false;
+
+  private String[] convertToNewIds(String[] oldIds) {
+    if (oldIds == null || oldIds.length == 0) {
+      return new String[0];
     }
-    List<Comment> comments = activity.getComments();
-    comments.remove(comment);
-    for (Comment cmt : comments) {
-      if (ArrayUtils.contains(processMentions(cmt.getTitle()), mentioner)) {
-        return false;
+    List<String> list = new ArrayList<>(oldIds.length);
+    for(String old : oldIds) {
+      int index = old.indexOf('@');
+      if (index != -1) {
+        old = old.substring(0, index);
       }
-    }
-    return true;
-  }
-  
-  /**
-   * Processes Mentioners who has been mentioned via the Activity.
-   * 
-   * @param title
-   */
-  private String[] processMentions(String title) {
-    String[] mentionerIds = new String[0];
-    if (title == null || title.length() == 0) {
-      return ArrayUtils.EMPTY_STRING_ARRAY;
+      String id = getNewIdentityId(old);
+      if (id != null) {
+        list.add(id);
+      }
     }
 
-    Matcher matcher = MENTION_PATTERN.matcher(title);
-    while (matcher.find()) {
-      String remoteId = matcher.group().substring(1);
-      if (!USER_NAME_VALIDATOR_REGEX.matcher(remoteId).matches()) {
-        continue;
-      }
-      Identity identity = identityStorage.findIdentity(OrganizationIdentityProvider.NAME, remoteId);
-      // if not the right mention then ignore
-      if (identity != null) {
-        mentionerIds = (String[]) ArrayUtils.add(mentionerIds, identity.getId());
-      }
-    }
-    return mentionerIds;
+    return list.toArray(new String[list.size()]);
   }
-  
-
-  /**
-   * Creates StreamItem for each user who has mentioned on the activity
-   * 
-   * @param owner
-   * @param activity
-   */
-  private void mention(Identity owner, Activity activity, String [] mentions) {
-    for (String mentioner : mentions) {
-      Identity identity = identityStorage.findIdentityById(mentioner);
-      if(identity != null) {
-      }
-    }
-  }  
 }

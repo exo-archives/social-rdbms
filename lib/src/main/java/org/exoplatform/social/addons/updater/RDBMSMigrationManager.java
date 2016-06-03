@@ -135,19 +135,14 @@ public class RDBMSMigrationManager implements Startable {
             LOG.info("START ASYNC MIGRATION---------------------------------------------------");
             //
             if (!MigrationContext.isDone()) {
-              if (!MigrationContext.isDone() && !MigrationContext.isActivityDone()) {
-                getActivityMigrationService().start();
-                updateSettingValue(MigrationContext.SOC_RDBMS_ACTIVITY_MIGRATION_KEY, MigrationContext.isActivityDone());
-              }
-              if (!MigrationContext.isDone() && MigrationContext.isActivityDone()
-                  && !MigrationContext.isSpaceDone()) {
+              //TODO: should migrate space first or identity first
+              if (!MigrationContext.isDone() && !MigrationContext.isSpaceDone()) {
                 getSpaceMigrationService().start();
                 updateSettingValue(MigrationContext.SOC_RDBMS_SPACE_MIGRATION_KEY, MigrationContext.isSpaceDone());
               }
 
               // Migrate identities
-              if (!MigrationContext.isDone()
-                      && MigrationContext.isActivityDone() && MigrationContext.isSpaceDone()
+              if (!MigrationContext.isDone() && MigrationContext.isSpaceDone()
                       && !MigrationContext.isIdentityDone()) {
                 getIdentityMigrationService().start();
                 updateSettingValue(MigrationContext.SOC_RDBMS_IDENTITY_MIGRATION_KEY, MigrationContext.isIdentityDone());
@@ -155,6 +150,11 @@ public class RDBMSMigrationManager implements Startable {
                 if (useMigrationIdentityStorage && MigrationContext.isIdentityDone()) {
                   identityManager.setIdentityStorage(identityStorage);
                 }
+              }
+
+              if (!MigrationContext.isDone() && MigrationContext.isIdentityDone() && !MigrationContext.isActivityDone()) {
+                getActivityMigrationService().start();
+                updateSettingValue(MigrationContext.SOC_RDBMS_ACTIVITY_MIGRATION_KEY, MigrationContext.isActivityDone());
               }
 
               if (!MigrationContext.isDone() && MigrationContext.isIdentityDone() && !MigrationContext.isConnectionDone()) {
