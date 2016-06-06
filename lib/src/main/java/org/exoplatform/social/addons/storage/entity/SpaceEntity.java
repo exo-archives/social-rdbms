@@ -44,7 +44,7 @@ import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
 
 import org.exoplatform.commons.api.persistence.ExoEntity;
-import org.exoplatform.social.addons.storage.entity.SpaceMember.Status;
+import org.exoplatform.social.addons.storage.entity.SpaceMemberEntity.Status;
 import org.exoplatform.social.core.space.model.Space;
 
 @Entity(name = "SocSpaceEntity")
@@ -67,7 +67,7 @@ public class SpaceEntity implements Serializable {
   private Long              id;
 
   @OneToMany(fetch = FetchType.LAZY, mappedBy = "space", cascade = CascadeType.ALL, orphanRemoval = true)
-  private Set<SpaceMember>  members          = new HashSet<>();
+  private Set<SpaceMemberEntity>  members          = new HashSet<>();
 
   /**
    * The list of applications with portlet Id, application name, and its state
@@ -203,7 +203,7 @@ public class SpaceEntity implements Serializable {
     this.createdTime = createdTime;
   }
 
-  public Set<SpaceMember> getMembers() {
+  public Set<SpaceMemberEntity> getMembers() {
     return members;
   }
 
@@ -266,25 +266,25 @@ public class SpaceEntity implements Serializable {
   }
 
   private void buildMembers(Space space) {
-    Set<SpaceMember> invited = this.getMembers(Status.INVITED);
+    Set<SpaceMemberEntity> invited = this.getMembers(Status.INVITED);
     merge(invited, space.getInvitedUsers(), Status.INVITED);
 
-    Set<SpaceMember> manager = this.getMembers(Status.MANAGER);
+    Set<SpaceMemberEntity> manager = this.getMembers(Status.MANAGER);
     merge(manager, space.getManagers(), Status.MANAGER);
 
-    Set<SpaceMember> member = this.getMembers(Status.MEMBER);
+    Set<SpaceMemberEntity> member = this.getMembers(Status.MEMBER);
     merge(member, space.getMembers(), Status.MEMBER);
 
-    Set<SpaceMember> pending = this.getMembers(Status.PENDING);
+    Set<SpaceMemberEntity> pending = this.getMembers(Status.PENDING);
     merge(pending, space.getPendingUsers(), Status.PENDING);
   }
 
-  private void merge(Set<SpaceMember> spaceMembers, String[] userIds, Status status) {
+  private void merge(Set<SpaceMemberEntity> spaceMembers, String[] userIds, Status status) {
     Set<String> ids = new HashSet<>(userIds != null ? Arrays.asList(userIds) : Collections.<String> emptyList());
 
-    Iterator<SpaceMember> mems = spaceMembers.iterator();
+    Iterator<SpaceMemberEntity> mems = spaceMembers.iterator();
     while (mems.hasNext()) {
-      SpaceMember mem = mems.next();
+      SpaceMemberEntity mem = mems.next();
       String id = mem.getUserId();
 
       if (ids.contains(mem.getUserId())) {
@@ -295,13 +295,13 @@ public class SpaceEntity implements Serializable {
     }
 
     for (String id : ids) {
-      this.getMembers().add(new SpaceMember(this, id, status));
+      this.getMembers().add(new SpaceMemberEntity(this, id, status));
     }
   }
 
-  private Set<SpaceMember> getMembers(Status status) {
-    Set<SpaceMember> mems = new HashSet<>();
-    for (SpaceMember mem : getMembers()) {
+  private Set<SpaceMemberEntity> getMembers(Status status) {
+    Set<SpaceMemberEntity> mems = new HashSet<>();
+    for (SpaceMemberEntity mem : getMembers()) {
       if (mem.getStatus().equals(status)) {
         mems.add(mem);
       }
@@ -311,7 +311,7 @@ public class SpaceEntity implements Serializable {
 
   private String[] getUserIds(Status status) {
     List<String> ids = new LinkedList<>();
-    for (SpaceMember mem : getMembers(status)) {
+    for (SpaceMemberEntity mem : getMembers(status)) {
       ids.add(mem.getUserId());
     }
     return ids.toArray(new String[ids.size()]);

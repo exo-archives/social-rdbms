@@ -35,9 +35,9 @@ import org.exoplatform.social.addons.search.XSpaceFilter;
 import org.exoplatform.social.addons.storage.entity.AppEntity_;
 import org.exoplatform.social.addons.storage.entity.SpaceEntity;
 import org.exoplatform.social.addons.storage.entity.SpaceEntity_;
-import org.exoplatform.social.addons.storage.entity.SpaceMember;
-import org.exoplatform.social.addons.storage.entity.SpaceMember.Status;
-import org.exoplatform.social.addons.storage.entity.SpaceMember_;
+import org.exoplatform.social.addons.storage.entity.SpaceMemberEntity;
+import org.exoplatform.social.addons.storage.entity.SpaceMemberEntity.Status;
+import org.exoplatform.social.addons.storage.entity.SpaceMemberEntity_;
 import org.exoplatform.social.core.search.Sorting;
 import org.exoplatform.social.core.search.Sorting.SortBy;
 import org.exoplatform.social.core.space.model.Space;
@@ -108,15 +108,15 @@ public final class SpaceQueryBuilder {
     
     //status
     if (!spaceFilter.getStatus().isEmpty()) {
-      Path<SpaceMember> join = (Path<SpaceMember>)root.getJoins().iterator().next();
+      Path<SpaceMemberEntity> join = (Path<SpaceMemberEntity>)root.getJoins().iterator().next();
             
       List<Predicate> pStatusList = new LinkedList<>();      
       for(Status status : spaceFilter.getStatus()) {
-        pStatusList.add(cb.equal(join.get(SpaceMember_.status), status));
+        pStatusList.add(cb.equal(join.get(SpaceMemberEntity_.status), status));
       }      
       
       Predicate tmp = cb.and(cb.or(pStatusList.toArray(new Predicate[pStatusList.size()])),
-                             cb.equal(join.get(SpaceMember_.userId), spaceFilter.getRemoteId()));
+                             cb.equal(join.get(SpaceMemberEntity_.userId), spaceFilter.getRemoteId()));
       boolean includePrivate = spaceFilter.isIncludePrivate();
       if (includePrivate) {
         predicates.add(cb.or(cb.equal(root.get(SpaceEntity_.visibility), SpaceEntity.VISIBILITY.PRIVATE), tmp));
@@ -129,9 +129,9 @@ public final class SpaceQueryBuilder {
       Subquery<Long> sub = criteria.subquery(Long.class);
       Root<SpaceEntity> spaceSub = sub.from(SpaceEntity.class);
 
-      Path<SpaceMember> join = spaceSub.join(SpaceEntity_.members);
+      Path<SpaceMemberEntity> join = spaceSub.join(SpaceEntity_.members);
       sub.select(spaceSub.get(SpaceEntity_.id));
-      sub.where(cb.equal(join.get(SpaceMember_.userId), spaceFilter.getRemoteId()));
+      sub.where(cb.equal(join.get(SpaceMemberEntity_.userId), spaceFilter.getRemoteId()));
       
       predicates.add(cb.not(cb.in(root.get(SpaceEntity_.id)).value(sub)));
     }
@@ -202,12 +202,12 @@ public final class SpaceQueryBuilder {
 
   private Order[] buildOrder(Root<SpaceEntity> spaceEntity, CriteriaBuilder cb) {
     List<Order> orders = new LinkedList<>();
-    Path<SpaceMember> join = (Path<SpaceMember>)spaceEntity.getJoins().iterator().next();
+    Path<SpaceMemberEntity> join = (Path<SpaceMemberEntity>)spaceEntity.getJoins().iterator().next();
     
     if (spaceFilter.isLastAccess()) {
-      orders.add(cb.desc(join.get(SpaceMember_.lastAccess)));
+      orders.add(cb.desc(join.get(SpaceMemberEntity_.lastAccess)));
     } else if (spaceFilter.isVisited()) {
-      orders.add(cb.desc(join.get(SpaceMember_.visited)));
+      orders.add(cb.desc(join.get(SpaceMemberEntity_.visited)));
       orders.add(cb.asc(spaceEntity.get(SpaceEntity_.prettyName)));
     } else {
       Sorting sorting = spaceFilter.getSorting();

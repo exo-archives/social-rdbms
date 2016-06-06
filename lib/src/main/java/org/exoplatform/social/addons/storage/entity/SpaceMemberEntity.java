@@ -23,7 +23,7 @@ import org.exoplatform.commons.api.persistence.ExoEntity;
     @NamedQuery(name = "SpaceMember.deleteBySpace", query = "DELETE FROM SocSpaceMember mem WHERE mem.space.id = :spaceId"),
     @NamedQuery(name = "SpaceMember.getMember", query = "SELECT mem FROM SocSpaceMember mem WHERE mem.userId = :userId AND mem.space.id = :spaceId AND mem.status = :status"),
     @NamedQuery(name = "SpaceMember.deleteByUsername", query = "DELETE FROM SocSpaceMember sm WHERE sm.userId = :username")})
-public class SpaceMember implements Serializable {
+public class SpaceMemberEntity implements Serializable {
 
   private static final long serialVersionUID = 1015703779692801839L;
 
@@ -49,11 +49,11 @@ public class SpaceMember implements Serializable {
   @Column(name = "VISITED")
   private boolean           visited;
 
-  public SpaceMember() {
+  public SpaceMemberEntity() {
     this(null, null, null);
   }
 
-  public SpaceMember(SpaceEntity space, String userId, Status status) {
+  public SpaceMemberEntity(SpaceEntity space, String userId, Status status) {
     this.setSpace(space);
     this.setUserId(userId);
     this.setStatus(status);
@@ -112,7 +112,7 @@ public class SpaceMember implements Serializable {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
 
-    SpaceMember that = (SpaceMember) o;
+    SpaceMemberEntity that = (SpaceMemberEntity) o;
 
     if (!space.equals(that.space)) return false;
     if (!userId.equals(that.userId)) return false;

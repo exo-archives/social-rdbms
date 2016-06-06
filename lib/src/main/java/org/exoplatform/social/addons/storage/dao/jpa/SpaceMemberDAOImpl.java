@@ -7,9 +7,9 @@ import javax.persistence.TypedQuery;
 import org.exoplatform.commons.persistence.impl.GenericDAOJPAImpl;
 import org.exoplatform.social.addons.storage.dao.SpaceMemberDAO;
 import org.exoplatform.social.addons.storage.entity.SpaceEntity;
-import org.exoplatform.social.addons.storage.entity.SpaceMember;
+import org.exoplatform.social.addons.storage.entity.SpaceMemberEntity;
 
-public class SpaceMemberDAOImpl extends GenericDAOJPAImpl<SpaceMember, Long> implements SpaceMemberDAO {
+public class SpaceMemberDAOImpl extends GenericDAOJPAImpl<SpaceMemberEntity, Long> implements SpaceMemberDAO {
 
   @Override
   public void deleteBySpace(SpaceEntity entity) {
@@ -19,11 +19,11 @@ public class SpaceMemberDAOImpl extends GenericDAOJPAImpl<SpaceMember, Long> imp
   }
 
   @Override
-  public SpaceMember getMember(String remoteId, Long spaceId) {
-    TypedQuery<SpaceMember> query = getEntityManager().createNamedQuery("SpaceMember.getMember", SpaceMember.class);
+  public SpaceMemberEntity getMember(String remoteId, Long spaceId) {
+    TypedQuery<SpaceMemberEntity> query = getEntityManager().createNamedQuery("SpaceMember.getMember", SpaceMemberEntity.class);
     query.setParameter("userId", remoteId);
     query.setParameter("spaceId", spaceId);
-    query.setParameter("status", SpaceMember.Status.MEMBER);
+    query.setParameter("status", SpaceMemberEntity.Status.MEMBER);
     try {
       return query.getSingleResult();      
     } catch (NoResultException ex) {

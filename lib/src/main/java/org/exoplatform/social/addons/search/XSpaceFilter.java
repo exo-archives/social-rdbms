@@ -4,7 +4,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.exoplatform.social.addons.storage.entity.SpaceMember.Status;
+import org.exoplatform.social.addons.storage.entity.SpaceMemberEntity.Status;
 import org.exoplatform.social.core.space.SpaceFilter;
 
 public class XSpaceFilter extends SpaceFilter {

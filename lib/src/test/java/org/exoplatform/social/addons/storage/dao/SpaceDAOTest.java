@@ -22,8 +22,8 @@ import java.util.Set;
 
 import org.exoplatform.social.addons.storage.entity.AppEntity;
 import org.exoplatform.social.addons.storage.entity.SpaceEntity;
-import org.exoplatform.social.addons.storage.entity.SpaceMember;
-import org.exoplatform.social.addons.storage.entity.SpaceMember.Status;
+import org.exoplatform.social.addons.storage.entity.SpaceMemberEntity;
+import org.exoplatform.social.addons.storage.entity.SpaceMemberEntity.Status;
 import org.exoplatform.social.addons.test.BaseCoreTest;
 
 public class SpaceDAOTest extends BaseCoreTest {
@@ -102,7 +102,7 @@ public class SpaceDAOTest extends BaseCoreTest {
     spaceEntity.setVisibility(SpaceEntity.VISIBILITY.PRIVATE);
     spaceEntity.setAvatarLastUpdated(1L);
 
-    SpaceMember mem = new SpaceMember();
+    SpaceMemberEntity mem = new SpaceMemberEntity();
     mem.setSpace(spaceEntity);
     mem.setStatus(Status.PENDING);
     mem.setUserId("root");
