@@ -107,6 +107,27 @@ public class SpaceMember implements Serializable {
     this.visited = visited;
   }
 
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+
+    SpaceMember that = (SpaceMember) o;
+
+    if (!space.equals(that.space)) return false;
+    if (!userId.equals(that.userId)) return false;
+    return status == that.status;
+
+  }
+
+  @Override
+  public int hashCode() {
+    int result = space.hashCode();
+    result = 31 * result + userId.hashCode();
+    result = 31 * result + status.hashCode();
+    return result;
+  }
+
   public static enum Status {
     MEMBER, MANAGER, PENDING, INVITED;
   }

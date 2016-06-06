@@ -22,6 +22,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
@@ -265,20 +266,20 @@ public class SpaceEntity implements Serializable {
   }
 
   private void buildMembers(Space space) {
-    List<SpaceMember> invited = this.getMembers(Status.INVITED);
+    Set<SpaceMember> invited = this.getMembers(Status.INVITED);
     merge(invited, space.getInvitedUsers(), Status.INVITED);
 
-    List<SpaceMember> manager = this.getMembers(Status.MANAGER);
+    Set<SpaceMember> manager = this.getMembers(Status.MANAGER);
     merge(manager, space.getManagers(), Status.MANAGER);
 
-    List<SpaceMember> member = this.getMembers(Status.MEMBER);
+    Set<SpaceMember> member = this.getMembers(Status.MEMBER);
     merge(member, space.getMembers(), Status.MEMBER);
 
-    List<SpaceMember> pending = this.getMembers(Status.PENDING);
+    Set<SpaceMember> pending = this.getMembers(Status.PENDING);
     merge(pending, space.getPendingUsers(), Status.PENDING);
   }
 
-  private void merge(List<SpaceMember> spaceMembers, String[] userIds, Status status) {
+  private void merge(Set<SpaceMember> spaceMembers, String[] userIds, Status status) {
     Set<String> ids = new HashSet<>(userIds != null ? Arrays.asList(userIds) : Collections.<String> emptyList());
 
     Iterator<SpaceMember> mems = spaceMembers.iterator();
@@ -298,8 +299,8 @@ public class SpaceEntity implements Serializable {
     }
   }
 
-  private List<SpaceMember> getMembers(Status status) {
-    List<SpaceMember> mems = new LinkedList<>();
+  private Set<SpaceMember> getMembers(Status status) {
+    Set<SpaceMember> mems = new HashSet<>();
     for (SpaceMember mem : getMembers()) {
       if (mem.getStatus().equals(status)) {
         mems.add(mem);
