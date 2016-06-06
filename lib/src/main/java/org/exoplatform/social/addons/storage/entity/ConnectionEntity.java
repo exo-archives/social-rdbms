@@ -19,7 +19,7 @@ import javax.persistence.*;
         @NamedQuery(name = "SocConnection.migrateSenderId", query = "UPDATE SocConnection c SET c.sender.id = :newId WHERE c.sender.id = :oldId"),
         @NamedQuery(name = "SocConnection.migrateReceiverId", query = "UPDATE SocConnection c SET c.receiver.id = :newId WHERE c.receiver.id = :oldId")
 })
-public class Connection {
+public class ConnectionEntity {
 
   @Id
   @SequenceGenerator(name="SEQ_SOC_CONNECTIONS_ID", sequenceName="SEQ_SOC_CONNECTIONS_ID")
@@ -43,10 +43,10 @@ public class Connection {
   @Column(name="LAST_UPDATED", nullable = false)
   private Long lastUpdated = System.currentTimeMillis();
 
-  public Connection() {
+  public ConnectionEntity() {
   }
 
-  public Connection(IdentityEntity sender, IdentityEntity receiver) {
+  public ConnectionEntity(IdentityEntity sender, IdentityEntity receiver) {
     this.sender = sender;
     this.receiver = receiver;
   }

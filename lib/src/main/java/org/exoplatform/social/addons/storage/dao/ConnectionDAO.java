@@ -19,7 +19,7 @@ package org.exoplatform.social.addons.storage.dao;
 import java.util.List;
 
 import org.exoplatform.commons.api.persistence.GenericDAO;
-import org.exoplatform.social.addons.storage.entity.Connection;
+import org.exoplatform.social.addons.storage.entity.ConnectionEntity;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.profile.ProfileFilter;
 import org.exoplatform.social.core.relationship.model.Relationship;
@@ -31,7 +31,7 @@ import org.exoplatform.social.core.relationship.model.Relationship.Type;
  *          exo@exoplatform.com
  * Jun 4, 2015  
  */
-public interface ConnectionDAO extends GenericDAO<Connection, Long> {
+public interface ConnectionDAO extends GenericDAO<ConnectionEntity, Long> {
 
   /**
    * Has the connections
@@ -49,9 +49,9 @@ public interface ConnectionDAO extends GenericDAO<Connection, Long> {
    * @param identity2
    * @return
    */
-  Connection getConnection(Identity identity1, Identity identity2);
+  ConnectionEntity getConnection(Identity identity1, Identity identity2);
 
-  Connection getConnection(Long sender, Long receiver);
+  ConnectionEntity getConnection(Long sender, Long receiver);
 
   
   /**
@@ -61,9 +61,9 @@ public interface ConnectionDAO extends GenericDAO<Connection, Long> {
    * @param limit
    * @return
    */
-  List<Connection> getConnections(Identity identity, Type type, long offset, long limit);
+  List<ConnectionEntity> getConnections(Identity identity, Type type, long offset, long limit);
 
-  List<Connection> getConnections(Identity sender, Identity receiver, Type status);
+  List<ConnectionEntity> getConnections(Identity sender, Identity receiver, Type status);
 
   /**
    * @param identity
@@ -77,9 +77,9 @@ public interface ConnectionDAO extends GenericDAO<Connection, Long> {
    * @param limit
    * @return
    */
-  List<Connection> getLastConnections(Identity identity, int limit);
+  List<ConnectionEntity> getLastConnections(Identity identity, int limit);
 
-  List<Connection> getConnectionsByFilter(Identity existingIdentity, ProfileFilter profileFilter, Type type, long offset, long limit);
+  List<ConnectionEntity> getConnectionsByFilter(Identity existingIdentity, ProfileFilter profileFilter, Type type, long offset, long limit);
 
   int getConnectionsByFilterCount(Identity identity, ProfileFilter profileFilter, Type type);
 

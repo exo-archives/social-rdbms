@@ -28,7 +28,7 @@ import org.exoplatform.services.organization.UserHandler;
 import org.exoplatform.services.security.ConversationState;
 import org.exoplatform.services.security.IdentityRegistry;
 import org.exoplatform.social.addons.storage.dao.ConnectionDAO;
-import org.exoplatform.social.addons.storage.entity.Connection;
+import org.exoplatform.social.addons.storage.entity.ConnectionEntity;
 import org.exoplatform.social.addons.test.AbstractCoreTest;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.identity.model.Profile;
@@ -71,8 +71,8 @@ public class RDBMSRelationshipManagerTest extends AbstractCoreTest {
   @Override
   protected void tearDown() throws Exception {
     ConnectionDAO connectionDAO = getService(ConnectionDAO.class);
-    List<Connection> items = connectionDAO.findAll();
-    for (Connection item : items) {
+    List<ConnectionEntity> items = connectionDAO.findAll();
+    for (ConnectionEntity item : items) {
       connectionDAO.delete(item);
     }
     

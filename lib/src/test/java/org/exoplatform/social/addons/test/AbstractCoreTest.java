@@ -43,7 +43,7 @@ import org.exoplatform.services.security.ConversationState;
 import org.exoplatform.services.security.MembershipEntry;
 import org.exoplatform.social.addons.search.ProfileSearchConnector;
 import org.exoplatform.social.addons.storage.dao.ConnectionDAO;
-import org.exoplatform.social.addons.storage.entity.Connection;
+import org.exoplatform.social.addons.storage.entity.ConnectionEntity;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvider;
 import org.exoplatform.social.core.manager.ActivityManager;
@@ -120,8 +120,8 @@ public abstract class AbstractCoreTest extends BaseExoTestCase {
   @Override
   protected void tearDown() throws Exception {
     ConnectionDAO reDao = getService(ConnectionDAO.class);
-    List<Connection> reItems = reDao.findAll();
-    for (Connection item :  reItems) {
+    List<ConnectionEntity> reItems = reDao.findAll();
+    for (ConnectionEntity item :  reItems) {
       reDao.delete(item);
     }
 

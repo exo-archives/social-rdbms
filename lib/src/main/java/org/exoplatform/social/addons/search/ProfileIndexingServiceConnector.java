@@ -31,7 +31,7 @@ import org.exoplatform.addons.es.index.impl.ElasticIndexingServiceConnector;
 import org.exoplatform.container.xml.InitParams;
 import org.exoplatform.social.addons.storage.dao.ConnectionDAO;
 import org.exoplatform.social.addons.storage.dao.IdentityDAO;
-import org.exoplatform.social.addons.storage.entity.Connection;
+import org.exoplatform.social.addons.storage.entity.ConnectionEntity;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.identity.model.Profile;
 import org.exoplatform.social.core.manager.IdentityManager;
@@ -79,7 +79,7 @@ public class ProfileIndexingServiceConnector extends ElasticIndexingServiceConne
     fields.put("email", profile.getEmail());
     Date createdDate = new Date(profile.getCreatedTime());
     //confirmed connections
-    List<Connection> connections = connectionDAO.getConnections(identity, Relationship.Type.CONFIRMED, 0, -1);
+    List<ConnectionEntity> connections = connectionDAO.getConnections(identity, Relationship.Type.CONFIRMED, 0, -1);
     String connectionsStr = buildConnectionsToStr(identity, connections);
     if (connectionsStr.length() > 0) {
       fields.put("connections", connectionsStr);
@@ -105,10 +105,10 @@ public class ProfileIndexingServiceConnector extends ElasticIndexingServiceConne
    * @param connections
    * @return
    */
-  private String buildConnectionsToStr(Identity identity, List<Connection> connections) {
+  private String buildConnectionsToStr(Identity identity, List<ConnectionEntity> connections) {
     StringBuilder sb = new StringBuilder();
     String identityId = identity.getId();
-    for(Connection con : connections) {
+    for(ConnectionEntity con : connections) {
       if (identityId.equals(con.getSender().getStringId())) {
         sb.append(con.getReceiver().getStringId()).append(",");
       } else {
@@ -141,7 +141,7 @@ public class ProfileIndexingServiceConnector extends ElasticIndexingServiceConne
     fields.put("email", profile.getEmail());
     Date createdDate = new Date(profile.getCreatedTime());
     //confirmed connections
-    List<Connection> connections = connectionDAO.getConnections(identity, Relationship.Type.CONFIRMED, 0, -1);
+    List<ConnectionEntity> connections = connectionDAO.getConnections(identity, Relationship.Type.CONFIRMED, 0, -1);
     String connectionsStr = buildConnectionsToStr(identity, connections);
     if (connectionsStr.length() > 0) {
       fields.put("connections", connectionsStr);

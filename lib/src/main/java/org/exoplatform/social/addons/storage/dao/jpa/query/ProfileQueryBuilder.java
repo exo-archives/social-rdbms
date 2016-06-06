@@ -20,8 +20,8 @@
 package org.exoplatform.social.addons.storage.dao.jpa.query;
 
 import org.exoplatform.social.addons.search.ExtendProfileFilter;
-import org.exoplatform.social.addons.storage.entity.Connection;
-import org.exoplatform.social.addons.storage.entity.Connection_;
+import org.exoplatform.social.addons.storage.entity.ConnectionEntity;
+import org.exoplatform.social.addons.storage.entity.ConnectionEntity_;
 import org.exoplatform.social.addons.storage.entity.IdentityEntity;
 import org.exoplatform.social.addons.storage.entity.IdentityEntity_;
 import org.exoplatform.social.addons.storage.entity.ProfileEntity;
@@ -110,25 +110,25 @@ public class ProfileQueryBuilder {
         Relationship.Type status = filter.getConnectionStatus();
 
         if (status == Relationship.Type.INCOMING) {
-          Join<IdentityEntity, Connection> outgoing = identity.join(IdentityEntity_.outgoingConnections, JoinType.INNER);
-          predicates.add(cb.and(cb.equal(outgoing.get(Connection_.receiver), ownerId), cb.equal(outgoing.get(Connection_.status), Relationship.Type.PENDING)));
+          Join<IdentityEntity, ConnectionEntity> outgoing = identity.join(IdentityEntity_.outgoingConnections, JoinType.INNER);
+          predicates.add(cb.and(cb.equal(outgoing.get(ConnectionEntity_.receiver), ownerId), cb.equal(outgoing.get(ConnectionEntity_.status), Relationship.Type.PENDING)));
 
         } else if (status == Relationship.Type.OUTGOING) {
-          Join<IdentityEntity, Connection> incoming = identity.join(IdentityEntity_.incomingConnections, JoinType.INNER);
-          predicates.add(cb.and(cb.equal(incoming.get(Connection_.sender), ownerId), cb.equal(incoming.get(Connection_.status), Relationship.Type.PENDING)));
+          Join<IdentityEntity, ConnectionEntity> incoming = identity.join(IdentityEntity_.incomingConnections, JoinType.INNER);
+          predicates.add(cb.and(cb.equal(incoming.get(ConnectionEntity_.sender), ownerId), cb.equal(incoming.get(ConnectionEntity_.status), Relationship.Type.PENDING)));
 
         } else {
-          Join<IdentityEntity, Connection> incoming = identity.join(IdentityEntity_.incomingConnections, JoinType.LEFT);
-          Join<IdentityEntity, Connection> outgoing = identity.join(IdentityEntity_.outgoingConnections, JoinType.LEFT);
+          Join<IdentityEntity, ConnectionEntity> incoming = identity.join(IdentityEntity_.incomingConnections, JoinType.LEFT);
+          Join<IdentityEntity, ConnectionEntity> outgoing = identity.join(IdentityEntity_.outgoingConnections, JoinType.LEFT);
 
-          Predicate out = cb.equal(outgoing.get(Connection_.receiver), ownerId);
+          Predicate out = cb.equal(outgoing.get(ConnectionEntity_.receiver), ownerId);
           if (status != null) {
-            out = cb.and(out, cb.equal(outgoing.get(Connection_.status), status));
+            out = cb.and(out, cb.equal(outgoing.get(ConnectionEntity_.status), status));
           }
 
-          Predicate in = cb.equal(incoming.get(Connection_.sender), ownerId);
+          Predicate in = cb.equal(incoming.get(ConnectionEntity_.sender), ownerId);
           if (status != null) {
-            in = cb.and(in, cb.equal(incoming.get(Connection_.status), status));
+            in = cb.and(in, cb.equal(incoming.get(ConnectionEntity_.status), status));
           }
 
           predicates.add(cb.or(in, out));

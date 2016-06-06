@@ -36,8 +36,8 @@ import javax.persistence.criteria.Subquery;
 import org.exoplatform.commons.persistence.impl.EntityManagerHolder;
 import org.exoplatform.social.addons.storage.entity.ActivityEntity;
 import org.exoplatform.social.addons.storage.entity.ActivityEntity_;
-import org.exoplatform.social.addons.storage.entity.Connection;
-import org.exoplatform.social.addons.storage.entity.Connection_;
+import org.exoplatform.social.addons.storage.entity.ConnectionEntity;
+import org.exoplatform.social.addons.storage.entity.ConnectionEntity_;
 import org.exoplatform.social.addons.storage.entity.IdentityEntity_;
 import org.exoplatform.social.addons.storage.entity.StreamItem;
 import org.exoplatform.social.addons.storage.entity.StreamItem_;
@@ -224,17 +224,17 @@ public final class AStreamQueryBuilder {
     
     if (this.myIdentity != null) {
       long identityId = Long.valueOf(this.myIdentity.getId());
-      Root<Connection> subRoot1 = subQuery1.from(Connection.class);
+      Root<ConnectionEntity> subRoot1 = subQuery1.from(ConnectionEntity.class);
 
-      Path receiver = subRoot1.get(Connection_.receiver).get(IdentityEntity_.id);
-      Path sender = subRoot1.get(Connection_.sender).get(IdentityEntity_.id);
+      Path receiver = subRoot1.get(ConnectionEntity_.receiver).get(IdentityEntity_.id);
+      Path sender = subRoot1.get(ConnectionEntity_.sender).get(IdentityEntity_.id);
 
       CriteriaBuilder.Case select = cb.selectCase();
       select.when(cb.equal(receiver, identityId), sender).otherwise(receiver);
 
       subQuery1.select(select.as(String.class));
       subQuery1.where(cb.and(cb.or(cb.equal(sender, identityId), cb.equal(receiver, identityId)),
-              cb.equal(subRoot1.<Relationship.Type>get(Connection_.status), Relationship.Type.CONFIRMED)));
+              cb.equal(subRoot1.<Relationship.Type>get(ConnectionEntity_.status), Relationship.Type.CONFIRMED)));
 
       Predicate posterConnection = cb.and(cb.in(stream.get(StreamItem_.ownerId)).value(subQuery1), cb.equal(stream.get(StreamItem_.streamType), StreamType.POSTER));
       if (predicate != null) {
@@ -296,17 +296,17 @@ public final class AStreamQueryBuilder {
     if (this.myIdentity != null) {
 
       long identityId = Long.valueOf(this.myIdentity.getId());
-      Root<Connection> subRoot1 = subQuery1.from(Connection.class);
+      Root<ConnectionEntity> subRoot1 = subQuery1.from(ConnectionEntity.class);
 
-      Path receiver = subRoot1.get(Connection_.receiver).get(IdentityEntity_.id);
-      Path sender = subRoot1.get(Connection_.sender).get(IdentityEntity_.id);
+      Path receiver = subRoot1.get(ConnectionEntity_.receiver).get(IdentityEntity_.id);
+      Path sender = subRoot1.get(ConnectionEntity_.sender).get(IdentityEntity_.id);
 
       CriteriaBuilder.Case select = cb.selectCase();
       select.when(cb.equal(sender, identityId), receiver).otherwise(sender);
 
       subQuery1.select(select.as(String.class));
       subQuery1.where(cb.and(cb.or(cb.equal(sender, identityId), cb.equal(receiver, identityId)),
-                             cb.equal(subRoot1.<Relationship.Type> get(Connection_.status), Relationship.Type.CONFIRMED)));
+                             cb.equal(subRoot1.<Relationship.Type> get(ConnectionEntity_.status), Relationship.Type.CONFIRMED)));
       
       predicates.add(cb.and(cb.in(stream.get(StreamItem_.ownerId)).value(subQuery1), cb.equal(stream.get(StreamItem_.streamType), StreamType.POSTER)));
     }

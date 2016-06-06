@@ -26,7 +26,7 @@ import org.exoplatform.commons.api.persistence.ExoTransactional;
 import org.exoplatform.commons.persistence.impl.GenericDAOJPAImpl;
 import org.exoplatform.social.addons.storage.dao.ConnectionDAO;
 import org.exoplatform.social.addons.storage.dao.jpa.query.RelationshipQueryBuilder;
-import org.exoplatform.social.addons.storage.entity.Connection;
+import org.exoplatform.social.addons.storage.entity.ConnectionEntity;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.profile.ProfileFilter;
 import org.exoplatform.social.core.relationship.model.Relationship;
@@ -38,7 +38,7 @@ import org.exoplatform.social.core.relationship.model.Relationship.Type;
  *          exo@exoplatform.com
  * Jun 4, 2015  
  */
-public class ConnectionDAOImpl extends GenericDAOJPAImpl<Connection, Long> implements ConnectionDAO {
+public class ConnectionDAOImpl extends GenericDAOJPAImpl<ConnectionEntity, Long> implements ConnectionDAO {
 
   @Override
   @ExoTransactional
@@ -51,8 +51,8 @@ public class ConnectionDAOImpl extends GenericDAOJPAImpl<Connection, Long> imple
   }
 
   @Override
-  public Connection getConnection(Identity identity1, Identity identity2) {
-    TypedQuery<Connection> query = RelationshipQueryBuilder.builder()
+  public ConnectionEntity getConnection(Identity identity1, Identity identity2) {
+    TypedQuery<ConnectionEntity> query = RelationshipQueryBuilder.builder()
                                                                  .sender(identity1)
                                                                  .receiver(identity2)
                                                                  .buildSingleRelationship();
@@ -66,8 +66,8 @@ public class ConnectionDAOImpl extends GenericDAOJPAImpl<Connection, Long> imple
   }
 
   @Override
-  public Connection getConnection(Long sender, Long reciver) {
-    TypedQuery<Connection> query = getEntityManager().createNamedQuery("SocConnection.findConnectionBySenderAndReceiver", Connection.class);
+  public ConnectionEntity getConnection(Long sender, Long reciver) {
+    TypedQuery<ConnectionEntity> query = getEntityManager().createNamedQuery("SocConnection.findConnectionBySenderAndReceiver", ConnectionEntity.class);
     query.setParameter("sender", sender);
     query.setParameter("reciver", reciver);
     query.setMaxResults(1);
@@ -80,7 +80,7 @@ public class ConnectionDAOImpl extends GenericDAOJPAImpl<Connection, Long> imple
   }
 
   @Override
-  public List<Connection> getConnections(Identity identity, Type type, long offset, long limit) {
+  public List<ConnectionEntity> getConnections(Identity identity, Type type, long offset, long limit) {
     return RelationshipQueryBuilder.builder()
                                    .owner(identity)
                                    .status(type)
@@ -91,7 +91,7 @@ public class ConnectionDAOImpl extends GenericDAOJPAImpl<Connection, Long> imple
   }
 
   @Override
-  public List<Connection> getConnections(Identity sender, Identity receiver, Type status) {
+  public List<ConnectionEntity> getConnections(Identity sender, Identity receiver, Type status) {
     return RelationshipQueryBuilder.builder()
                                    .sender(sender)
                                    .receiver(receiver)
@@ -111,7 +111,7 @@ public class ConnectionDAOImpl extends GenericDAOJPAImpl<Connection, Long> imple
   }
 
   @Override
-  public List<Connection> getLastConnections(Identity identity, int limit) {
+  public List<ConnectionEntity> getLastConnections(Identity identity, int limit) {
     return RelationshipQueryBuilder.builder()
                                    .owner(identity)
                                    .status(Relationship.Type.CONFIRMED)
@@ -121,7 +121,7 @@ public class ConnectionDAOImpl extends GenericDAOJPAImpl<Connection, Long> imple
                                    .getResultList();
   }
   
-  public List<Connection> getConnectionsByFilter(Identity existingIdentity, ProfileFilter profileFilter, Type type, long offset, long limit) {
+  public List<ConnectionEntity> getConnectionsByFilter(Identity existingIdentity, ProfileFilter profileFilter, Type type, long offset, long limit) {
     return RelationshipQueryBuilder.builder()
                                    .owner(existingIdentity)
                                    .status(type)

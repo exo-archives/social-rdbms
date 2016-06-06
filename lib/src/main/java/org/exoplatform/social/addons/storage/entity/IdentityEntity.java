@@ -81,10 +81,10 @@ public class IdentityEntity {
   private ProfileEntity profile;
 
   @OneToMany(mappedBy = "receiver", fetch = FetchType.LAZY, cascade = {CascadeType.REMOVE}, orphanRemoval = true)
-  private List<Connection> incomingConnections;
+  private List<ConnectionEntity> incomingConnections;
 
   @OneToMany(mappedBy = "sender", fetch = FetchType.LAZY, cascade = {CascadeType.REMOVE}, orphanRemoval = true)
-  private List<Connection> outgoingConnections;
+  private List<ConnectionEntity> outgoingConnections;
 
   public long getId() {
     return id;

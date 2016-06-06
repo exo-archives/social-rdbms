@@ -38,7 +38,7 @@ import org.exoplatform.social.addons.search.ExtendProfileFilter;
 import org.exoplatform.social.addons.search.ProfileSearchConnector;
 import org.exoplatform.social.addons.storage.dao.ConnectionDAO;
 import org.exoplatform.social.addons.storage.dao.IdentityDAO;
-import org.exoplatform.social.addons.storage.entity.Connection;
+import org.exoplatform.social.addons.storage.entity.ConnectionEntity;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.identity.model.Profile;
 import org.exoplatform.social.core.profile.ProfileFilter;
@@ -76,9 +76,9 @@ public class RDBMSRelationshipStorageImpl extends RelationshipStorageImpl {
   public Relationship saveRelationship(Relationship relationship) throws RelationshipStorageException {
     if (relationship.getId() == null) {//create new relationship
 
-      Connection entity = connectionDAO.getConnection(relationship.getSender(), relationship.getReceiver());
+      ConnectionEntity entity = connectionDAO.getConnection(relationship.getSender(), relationship.getReceiver());
       if (entity == null) {
-        entity = new Connection();
+        entity = new ConnectionEntity();
       }
 
       entity.setReceiver(identityDAO.find(Long.valueOf(relationship.getReceiver().getId())));
@@ -90,7 +90,7 @@ public class RDBMSRelationshipStorageImpl extends RelationshipStorageImpl {
       relationship.setId(Long.toString(entity.getId()));
 
     } else {//update an relationship
-      Connection entity = connectionDAO.getConnection(relationship.getSender(), relationship.getReceiver());
+      ConnectionEntity entity = connectionDAO.getConnection(relationship.getSender(), relationship.getReceiver());
       entity.setStatus(relationship.getStatus());
       entity.setLastUpdated(System.currentTimeMillis());
       connectionDAO.update(entity);
@@ -102,7 +102,7 @@ public class RDBMSRelationshipStorageImpl extends RelationshipStorageImpl {
   @Override
   @ExoTransactional
   public void removeRelationship(Relationship relationship) throws RelationshipStorageException {
-    Connection connection = connectionDAO.getConnection(relationship.getSender(), relationship.getReceiver());
+    ConnectionEntity connection = connectionDAO.getConnection(relationship.getSender(), relationship.getReceiver());
     if (connection != null) {
       connectionDAO.delete(connection);
     }
@@ -117,7 +117,7 @@ public class RDBMSRelationshipStorageImpl extends RelationshipStorageImpl {
     if (identity2==null) {
       throw new IllegalArgumentException("Argument identity2 is null");
     }
-    Connection item = connectionDAO.getConnection(identity1, identity2);
+    ConnectionEntity item = connectionDAO.getConnection(identity1, identity2);
     if (item == null) {
       item = connectionDAO.getConnection(identity2, identity1);
     }
@@ -197,25 +197,25 @@ public class RDBMSRelationshipStorageImpl extends RelationshipStorageImpl {
     return convertRelationshipEntitiesToIdentities(connectionDAO.getLastConnections(identity, limit), identity.getId());
   }
   
-  private List<Identity> convertRelationshipEntitiesToIdentities(List<Connection> connections, String ownerId) {
+  private List<Identity> convertRelationshipEntitiesToIdentities(List<ConnectionEntity> connections, String ownerId) {
     List<Identity> identities = new ArrayList<Identity>();
     if (connections == null) return identities;
-    for (Connection item : connections) {
+    for (ConnectionEntity item : connections) {
       identities.add(getIdentityFromRelationshipItem(item, ownerId));
     }
     return identities;
   }
   
-  private List<Relationship> convertRelationshipEntitiesToRelationships(List<Connection> connections) {
+  private List<Relationship> convertRelationshipEntitiesToRelationships(List<ConnectionEntity> connections) {
     List<Relationship> relationships = new ArrayList<Relationship>();
     if (connections == null) return relationships;
-    for (Connection item : connections) {
+    for (ConnectionEntity item : connections) {
       relationships.add(convertRelationshipItemToRelationship(item));
     }
     return relationships;
   }
 
-  private Identity getIdentityFromRelationshipItem(Connection item, String ownerId) {
+  private Identity getIdentityFromRelationshipItem(ConnectionEntity item, String ownerId) {
     Identity identity = null;
     if (ownerId.equals(item.getSender().getStringId())) {
       identity = identityStorage.findIdentityById(item.getReceiver().getStringId());
@@ -229,7 +229,7 @@ public class RDBMSRelationshipStorageImpl extends RelationshipStorageImpl {
     return identity;
   }
   
-  private Relationship convertRelationshipItemToRelationship(Connection item) {
+  private Relationship convertRelationshipItemToRelationship(ConnectionEntity item) {
     if (item == null) return null;
     //
     Relationship relationship = new Relationship(Long.toString(item.getId()));

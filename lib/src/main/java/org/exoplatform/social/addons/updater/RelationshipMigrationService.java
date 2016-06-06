@@ -21,7 +21,7 @@ import org.exoplatform.management.jmx.annotations.Property;
 import org.exoplatform.social.addons.search.ProfileIndexingServiceConnector;
 import org.exoplatform.social.addons.storage.dao.ConnectionDAO;
 import org.exoplatform.social.addons.storage.dao.IdentityDAO;
-import org.exoplatform.social.addons.storage.entity.Connection;
+import org.exoplatform.social.addons.storage.entity.ConnectionEntity;
 import org.exoplatform.social.core.chromattic.entity.IdentityEntity;
 import org.exoplatform.social.core.chromattic.entity.RelationshipEntity;
 import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvider;
@@ -183,12 +183,12 @@ public class RelationshipMigrationService extends AbstractMigrationService<Relat
         org.exoplatform.social.addons.storage.entity.IdentityEntity sender = identityDAO.findByProviderAndRemoteId(OrganizationIdentityProvider.NAME, senderIdentity.getRemoteId());
         org.exoplatform.social.addons.storage.entity.IdentityEntity receiver = identityDAO.findByProviderAndRemoteId(OrganizationIdentityProvider.NAME, receiverIdentity.getRemoteId());
 
-        Connection exist = connectionDAO.getConnection(sender.getId(), receiver.getId());
+        ConnectionEntity exist = connectionDAO.getConnection(sender.getId(), receiver.getId());
         if (exist == null) {
           exist = connectionDAO.getConnection(receiver.getId(), sender.getId());
         }
         if (exist == null) {
-          Connection entity = new Connection(sender, receiver);
+          ConnectionEntity entity = new ConnectionEntity(sender, receiver);
           entity.setStatus(status);
           entity.setLastUpdated(lastUpdated);
           //
