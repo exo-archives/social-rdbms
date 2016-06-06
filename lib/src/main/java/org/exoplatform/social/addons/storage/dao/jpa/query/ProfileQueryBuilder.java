@@ -93,7 +93,7 @@ public class ProfileQueryBuilder {
       }
 
       if (filter.isExcludeDisabled()) {
-        predicates.add(cb.isTrue(identity.get(IdentityEntity_.enable)));
+        predicates.add(cb.isTrue(identity.get(IdentityEntity_.enabled)));
       }
 
       if (filter.getIdentityIds() != null && filter.getIdentityIds().size() > 0) {

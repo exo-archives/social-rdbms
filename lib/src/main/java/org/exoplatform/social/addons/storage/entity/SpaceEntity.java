@@ -20,9 +20,9 @@ package org.exoplatform.social.addons.storage.entity;
 import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
@@ -42,6 +42,8 @@ import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
 import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
+import javax.persistence.Temporal;
+import javax.persistence.TemporalType;
 
 import org.exoplatform.commons.api.persistence.ExoEntity;
 import org.exoplatform.social.addons.storage.entity.SpaceMemberEntity.Status;
@@ -51,7 +53,7 @@ import org.exoplatform.social.core.space.model.Space;
 @ExoEntity
 @Table(name = "SOC_SPACES")
 @NamedQueries({
-    @NamedQuery(name = "SpaceEntity.getLastSpaces", query = "SELECT sp FROM SocSpaceEntity sp ORDER BY sp.createdTime DESC"),
+    @NamedQuery(name = "SpaceEntity.getLastSpaces", query = "SELECT sp FROM SocSpaceEntity sp ORDER BY sp.createdDate DESC"),
     @NamedQuery(name = "SpaceEntity.getSpaceByGroupId", query = "SELECT sp FROM SocSpaceEntity sp WHERE sp.groupId = :groupId"),
     @NamedQuery(name = "SpaceEntity.getSpaceByPrettyName", query = "SELECT sp FROM SocSpaceEntity sp WHERE sp.prettyName = :prettyName"),
     @NamedQuery(name = "SpaceEntity.getSpaceByDisplayName", query = "SELECT sp FROM SocSpaceEntity sp WHERE sp.displayName = :displayName"),
@@ -104,8 +106,9 @@ public class SpaceEntity implements Serializable {
   @Column(name = "URL", length = 500)
   public String             url;
 
-  @Column(name = "CREATED_TIME", nullable = false)
-  private long              createdTime      = System.currentTimeMillis();
+  @Temporal(TemporalType.TIMESTAMP)
+  @Column(name = "CREATED_DATE", nullable = false)
+  private Date              createdDate      = new Date();
 
   public Long getId() {
     return id;
@@ -195,12 +198,12 @@ public class SpaceEntity implements Serializable {
     this.url = url;
   }
 
-  public Long getCreatedTime() {
-    return createdTime;
+  public Date getCreatedDate() {
+    return createdDate;
   }
 
-  public void setCreatedTime(Long createdTime) {
-    this.createdTime = createdTime;
+  public void setCreatedDate(Date createdDate) {
+    this.createdDate = createdDate;
   }
 
   public Set<SpaceMemberEntity> getMembers() {
@@ -210,7 +213,7 @@ public class SpaceEntity implements Serializable {
   public SpaceEntity buildFrom(Space space) {
     this.setApp(AppEntity.parse(space.getApp()));
     this.setAvatarLastUpdated(space.getAvatarLastUpdated());      
-    this.setCreatedTime(space.getCreatedTime());
+    this.setCreatedDate(new Date(space.getCreatedTime()));
     this.setDescription(space.getDescription());
     this.setDisplayName(space.getDisplayName());
     this.setGroupId(space.getGroupId());

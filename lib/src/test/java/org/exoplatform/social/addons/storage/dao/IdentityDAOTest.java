@@ -94,14 +94,14 @@ public class IdentityDAOTest extends BaseCoreTest {
 
     identity = identityDAO.find(identity.getId());
     assertFalse(identity.isDeleted());
-    assertTrue(identity.isEnable());
+    assertTrue(identity.isEnabled());
 
-    identity.setEnable(false);
+    identity.setEnabled(false);
     identityDAO.update(identity);
 
     identity = identityDAO.find(identity.getId());
     assertFalse(identity.isDeleted());
-    assertFalse(identity.isEnable());
+    assertFalse(identity.isEnabled());
 
     deleteIdentities.add(identity);
   }
@@ -123,7 +123,7 @@ public class IdentityDAOTest extends BaseCoreTest {
     IdentityEntity entity = new IdentityEntity();
     entity.setProviderId(OrganizationIdentityProvider.NAME);
     entity.setRemoteId("usera");
-    entity.setEnable(true);
+    entity.setEnabled(true);
     entity.setDeleted(false);
     return entity;
   }

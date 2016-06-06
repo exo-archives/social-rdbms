@@ -145,7 +145,7 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
       identity.setProfile(null);
       identity.setProfileLoader(new RDBMSProfileLoader(this, identity));
     }
-    identity.setEnable(entity.isEnable());
+    identity.setEnable(entity.isEnabled());
     identity.setDeleted(entity.isDeleted());
   }
   private Profile convertToProfile(ProfileEntity entity, Identity identity) {
@@ -242,7 +242,7 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
   private void mapToEntity(Identity identity, IdentityEntity entity) {
     entity.setProviderId(identity.getProviderId());
     entity.setRemoteId(identity.getRemoteId());
-    entity.setEnable(identity.isEnable());
+    entity.setEnabled(identity.isEnable());
     entity.setDeleted(identity.isDeleted());
   }
   private ProfileEntity convertToProfileEntity(Profile profile) {
@@ -715,7 +715,7 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
     if (entity == null) {
       throw new IllegalArgumentException("Identity does not exists");
     }
-    entity.setEnable(isEnable);
+    entity.setEnabled(isEnable);
     getIdentityDAO().update(entity);
   }
 

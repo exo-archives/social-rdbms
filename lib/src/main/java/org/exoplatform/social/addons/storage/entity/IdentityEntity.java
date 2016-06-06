@@ -50,7 +50,7 @@ import java.util.List;
         ),
         @NamedQuery(
                 name = "SocIdentity.countIdentityByProvider",
-                query = "SELECT count(id) FROM SocIdentityEntity id WHERE id.deleted = FALSE AND id.enable = TRUE AND id.providerId = :providerId"
+                query = "SELECT count(id) FROM SocIdentityEntity id WHERE id.deleted = FALSE AND id.enabled = TRUE AND id.providerId = :providerId"
         ),
         @NamedQuery(
                 name = "SocIdentity.getAllIds",
@@ -71,8 +71,8 @@ public class IdentityEntity {
   @Column(name = "REMOTE_ID", nullable = false)
   private String remoteId;
 
-  @Column(name = "ENABLE", nullable = false)
-  private boolean enable = true;
+  @Column(name = "ENABLED", nullable = false)
+  private boolean enabled = true;
 
   @Column(name = "DELETED", nullable = false)
   private boolean deleted = false;
@@ -114,12 +114,12 @@ public class IdentityEntity {
     this.remoteId = remoteId;
   }
 
-  public boolean isEnable() {
-    return enable;
+  public boolean isEnabled() {
+    return enabled;
   }
 
-  public void setEnable(boolean enable) {
-    this.enable = enable;
+  public void setEnabled(boolean enabled) {
+    this.enabled = enabled;
   }
 
   public boolean isDeleted() {

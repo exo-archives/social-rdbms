@@ -245,7 +245,6 @@
         <column name="SPACE_ID" type="BIGINT" autoIncrement="${autoIncrement}" startWith="1">
           <constraints nullable="false" primaryKey="true" primaryKeyName="PK_SOC_SPACES"/>
         </column>
-        <column name="APP" type="LONGTEXT"/>
         <column name="PRETTY_NAME" type="NVARCHAR(200)">
           <constraints nullable="false"/>
         </column>
@@ -328,7 +327,7 @@
       <column name="REMOTE_ID" type="NVARCHAR(100)">
         <constraints nullable="false"/>
       </column>
-      <column name="ENABLE"  type="BIT" defaultValue="1">
+      <column name="ENABLED"  type="BIT" defaultValue="1">
         <constraints nullable="false"/>
       </column>
       <column name="DELETED" type="BIT" defaultValue="0">

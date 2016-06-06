@@ -223,7 +223,7 @@ public final class SpaceQueryBuilder {
 
   private Expression<?> getShortField(Root<SpaceEntity> spaceEntity, SortBy sortBy) {
     if (sortBy.equals(SortBy.DATE)) {      
-      return spaceEntity.get(SpaceEntity_.createdTime);
+      return spaceEntity.get(SpaceEntity_.createdDate);
     } else {
       return spaceEntity.get(SpaceEntity_.prettyName);
     }

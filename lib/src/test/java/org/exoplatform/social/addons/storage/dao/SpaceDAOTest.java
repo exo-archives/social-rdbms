@@ -139,7 +139,7 @@ public class SpaceDAOTest extends BaseCoreTest {
     assertEquals(spaceEntity.getUrl(), result.getUrl());
     assertEquals(spaceEntity.getVisibility(), result.getVisibility());
     assertEquals(spaceEntity.getAvatarLastUpdated(), result.getAvatarLastUpdated());
-    assertEquals(spaceEntity.getCreatedTime(), result.getCreatedTime());
+    assertEquals(spaceEntity.getCreatedDate(), result.getCreatedDate());
     assertEquals(1, result.getMembers().size());
   }
 }

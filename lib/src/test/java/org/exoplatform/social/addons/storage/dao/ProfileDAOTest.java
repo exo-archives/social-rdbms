@@ -140,7 +140,7 @@ public class ProfileDAOTest extends BaseCoreTest {
     IdentityEntity identity = new IdentityEntity();
     identity.setProviderId(OrganizationIdentityProvider.NAME);
     identity.setRemoteId("user_test_profile");
-    identity.setEnable(true);
+    identity.setEnabled(true);
     identity.setDeleted(false);
 
     return identity;

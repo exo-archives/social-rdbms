@@ -467,7 +467,7 @@ public class RDBMSSpaceStorageImpl extends AbstractStorage implements SpaceStora
       member.setLastAccess(System.currentTimeMillis());
       // consider visited if access after create time more than 2s
       if (!member.isVisited()) {
-        member.setVisited((member.getLastAccess() - member.getSpace().getCreatedTime()) >= 2000);
+        member.setVisited((member.getLastAccess() - member.getSpace().getCreatedDate().getTime()) >= 2000);
       }
     }
     spaceMemberDAO.update(member);
@@ -606,7 +606,7 @@ public class RDBMSSpaceStorageImpl extends AbstractStorage implements SpaceStora
     }
     space.setGroupId(entity.getGroupId());
     space.setUrl(entity.getUrl());
-    space.setCreatedTime(entity.getCreatedTime());
+    space.setCreatedTime(entity.getCreatedDate().getTime());
 
     if (entity.getAvatarLastUpdated() != null) {
       try {
