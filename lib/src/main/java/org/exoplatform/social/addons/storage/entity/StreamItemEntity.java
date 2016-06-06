@@ -14,7 +14,7 @@ import javax.persistence.*;
         @NamedQuery(name = "SocStreamItem.migrateOwner", query = "UPDATE SocStreamItem s SET s.ownerId = :newId WHERE s.ownerId = :oldId"),
         @NamedQuery(name = "getStreamByActivityId", query = "select s from SocStreamItem s join s.activity A where A.id = :activityId")
 })
-public class StreamItem {
+public class StreamItemEntity {
 
   @Id
   @SequenceGenerator(name="SEQ_SOC_STREAM_ITEMS_ID", sequenceName="SEQ_SOC_STREAM_ITEMS_ID")
@@ -43,10 +43,10 @@ public class StreamItem {
   @Column(name="STREAM_TYPE", nullable = false)
   private StreamType streamType;
 
-  public StreamItem() {
+  public StreamItemEntity() {
   }
 
-  public StreamItem(StreamType streamType) {
+  public StreamItemEntity(StreamType streamType) {
     this.streamType = streamType;
   }
 

@@ -26,8 +26,8 @@ import javax.persistence.criteria.Root;
 
 import org.exoplatform.commons.persistence.impl.GenericDAOJPAImpl;
 import org.exoplatform.social.addons.storage.dao.StreamItemDAO;
-import org.exoplatform.social.addons.storage.entity.StreamItem;
-import org.exoplatform.social.addons.storage.entity.StreamItem_;
+import org.exoplatform.social.addons.storage.entity.StreamItemEntity;
+import org.exoplatform.social.addons.storage.entity.StreamItemEntity_;
 
 /**
  * Created by The eXo Platform SAS
@@ -35,20 +35,20 @@ import org.exoplatform.social.addons.storage.entity.StreamItem_;
  *          exo@exoplatform.com
  * May 18, 2015  
  */
-public class StreamItemDAOImpl extends GenericDAOJPAImpl<StreamItem, Long>  implements StreamItemDAO {
+public class StreamItemDAOImpl extends GenericDAOJPAImpl<StreamItemEntity, Long>  implements StreamItemDAO {
 
   //Add customize methods here
   
-  public List<StreamItem> findStreamItemByActivityId(Long activityId) {
+  public List<StreamItemEntity> findStreamItemByActivityId(Long activityId) {
     try {
       EntityManager em = getEntityManager();
       CriteriaBuilder cb = em.getCriteriaBuilder();
-      CriteriaQuery<StreamItem> criteria = cb.createQuery(StreamItem.class);
-      Root<StreamItem> root = criteria.from(StreamItem.class);
-      CriteriaQuery<StreamItem> select = criteria.select(root);
-      select.where(cb.equal(root.get(StreamItem_.activity), activityId));
+      CriteriaQuery<StreamItemEntity> criteria = cb.createQuery(StreamItemEntity.class);
+      Root<StreamItemEntity> root = criteria.from(StreamItemEntity.class);
+      CriteriaQuery<StreamItemEntity> select = criteria.select(root);
+      select.where(cb.equal(root.get(StreamItemEntity_.activity), activityId));
       //
-      TypedQuery<StreamItem> typedQuery = em.createQuery(select);
+      TypedQuery<StreamItemEntity> typedQuery = em.createQuery(select);
       return typedQuery.getResultList();
     } catch (RuntimeException e) {
       return null;

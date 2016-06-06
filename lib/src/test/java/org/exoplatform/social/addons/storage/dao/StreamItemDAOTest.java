@@ -20,7 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.exoplatform.services.security.ConversationState;
-import org.exoplatform.social.addons.storage.entity.StreamItem;
+import org.exoplatform.social.addons.storage.entity.StreamItemEntity;
 import org.exoplatform.social.addons.test.BaseCoreTest;
 import org.exoplatform.social.core.activity.model.ExoSocialActivity;
 import org.exoplatform.social.core.activity.model.ExoSocialActivityImpl;
@@ -95,7 +95,7 @@ public class StreamItemDAOTest extends BaseCoreTest {
     ExoSocialActivity activity = createActivity("post on my stream", demoIdentity.getId());
     activityStorage.saveActivity(demoIdentity, activity);
     tearDownActivityList.add(activity);
-    List<StreamItem> items = streamItemDAO.findStreamItemByActivityId(Long.valueOf(activity.getId()));
+    List<StreamItemEntity> items = streamItemDAO.findStreamItemByActivityId(Long.valueOf(activity.getId()));
     assertEquals(1, items.size());
   }
   
@@ -115,7 +115,7 @@ public class StreamItemDAOTest extends BaseCoreTest {
     ExoSocialActivity comment = createActivity("comment on his activity", demoIdentity.getId());
     activityStorage.saveComment(activity, comment);
     
-    List<StreamItem> items = streamItemDAO.findStreamItemByActivityId(Long.valueOf(activity.getId()));
+    List<StreamItemEntity> items = streamItemDAO.findStreamItemByActivityId(Long.valueOf(activity.getId()));
     assertEquals(2, items.size());
   }
   
@@ -139,7 +139,7 @@ public class StreamItemDAOTest extends BaseCoreTest {
     ExoSocialActivity comment = createActivity("comment on demo's activity", maryIdentity.getId());
     activityStorage.saveComment(activity, comment);
     
-    List<StreamItem> items = streamItemDAO.findStreamItemByActivityId(Long.valueOf(activity.getId()));
+    List<StreamItemEntity> items = streamItemDAO.findStreamItemByActivityId(Long.valueOf(activity.getId()));
     assertEquals(2, items.size());
   }
   
@@ -154,7 +154,7 @@ public class StreamItemDAOTest extends BaseCoreTest {
     comment = createActivity("comment on demo's activity 2", maryIdentity.getId());
     activityStorage.saveComment(activity, comment);
     
-    List<StreamItem> items = streamItemDAO.findStreamItemByActivityId(Long.valueOf(activity.getId()));
+    List<StreamItemEntity> items = streamItemDAO.findStreamItemByActivityId(Long.valueOf(activity.getId()));
     assertEquals(2, items.size());
   }
   
@@ -214,7 +214,7 @@ public class StreamItemDAOTest extends BaseCoreTest {
     ExoSocialActivity comment = createActivity("comment on demo's activity @demo", maryIdentity.getId());
     activityStorage.saveComment(activity, comment);
     
-    List<StreamItem> items = streamItemDAO.findStreamItemByActivityId(Long.valueOf(activity.getId()));
+    List<StreamItemEntity> items = streamItemDAO.findStreamItemByActivityId(Long.valueOf(activity.getId()));
     assertEquals(3, items.size());
   }
   
@@ -226,7 +226,7 @@ public class StreamItemDAOTest extends BaseCoreTest {
     ExoSocialActivity comment = createActivity("comment on demo's activity @root", maryIdentity.getId());
     activityStorage.saveComment(activity, comment);
     
-    List<StreamItem> items = streamItemDAO.findStreamItemByActivityId(Long.valueOf(activity.getId()));
+    List<StreamItemEntity> items = streamItemDAO.findStreamItemByActivityId(Long.valueOf(activity.getId()));
     assertEquals(3, items.size());
   }
   
@@ -246,7 +246,7 @@ public class StreamItemDAOTest extends BaseCoreTest {
     ExoSocialActivity activity = createActivity("post activity and mention @mary", demoIdentity.getId());
     activityStorage.saveActivity(demoIdentity, activity);
     tearDownActivityList.add(activity);
-    List<StreamItem> items = streamItemDAO.findStreamItemByActivityId(Long.valueOf(activity.getId()));
+    List<StreamItemEntity> items = streamItemDAO.findStreamItemByActivityId(Long.valueOf(activity.getId()));
     assertEquals(2, items.size());
   }
   
@@ -255,7 +255,7 @@ public class StreamItemDAOTest extends BaseCoreTest {
     activityStorage.saveActivity(demoIdentity, activity);
     tearDownActivityList.add(activity);
     activityManager.saveLike(activity, maryIdentity);
-    List<StreamItem> items = streamItemDAO.findStreamItemByActivityId(Long.valueOf(activity.getId()));
+    List<StreamItemEntity> items = streamItemDAO.findStreamItemByActivityId(Long.valueOf(activity.getId()));
     assertEquals(2, items.size());
   }
   
@@ -265,7 +265,7 @@ public class StreamItemDAOTest extends BaseCoreTest {
     tearDownActivityList.add(activity);
     activityManager.saveLike(activity, maryIdentity);
     activityManager.deleteLike(activity, maryIdentity);;
-    List<StreamItem> items = streamItemDAO.findStreamItemByActivityId(Long.valueOf(activity.getId()));
+    List<StreamItemEntity> items = streamItemDAO.findStreamItemByActivityId(Long.valueOf(activity.getId()));
     assertEquals(1, items.size());
   }
   
@@ -273,7 +273,7 @@ public class StreamItemDAOTest extends BaseCoreTest {
     ExoSocialActivity activity = createActivity("demo post on mary's stream", demoIdentity.getId());
     activityStorage.saveActivity(maryIdentity, activity);
     tearDownActivityList.add(activity);
-    List<StreamItem> items = streamItemDAO.findStreamItemByActivityId(Long.valueOf(activity.getId()));
+    List<StreamItemEntity> items = streamItemDAO.findStreamItemByActivityId(Long.valueOf(activity.getId()));
     assertEquals(2, items.size());
   }
   
@@ -284,7 +284,7 @@ public class StreamItemDAOTest extends BaseCoreTest {
     ExoSocialActivity activity = createActivity("demo post on the space 1", demoIdentity.getId());
     activityStorage.saveActivity(spaceIdentity, activity);
     
-    List<StreamItem> items = streamItemDAO.findStreamItemByActivityId(Long.valueOf(activity.getId()));
+    List<StreamItemEntity> items = streamItemDAO.findStreamItemByActivityId(Long.valueOf(activity.getId()));
     assertEquals(2, items.size());
     
     tearDownActivityList.add(activity);
@@ -297,7 +297,7 @@ public class StreamItemDAOTest extends BaseCoreTest {
     ExoSocialActivity activity = createActivity("demo post on the space 1 and mention @mary", demoIdentity.getId());
     activityStorage.saveActivity(spaceIdentity, activity);
     
-    List<StreamItem> items = streamItemDAO.findStreamItemByActivityId(Long.valueOf(activity.getId()));
+    List<StreamItemEntity> items = streamItemDAO.findStreamItemByActivityId(Long.valueOf(activity.getId()));
     assertEquals(3, items.size());
     
     tearDownActivityList.add(activity);
@@ -308,7 +308,7 @@ public class StreamItemDAOTest extends BaseCoreTest {
     activityStorage.saveActivity(demoIdentity, activity);
     activityManager.saveLike(activity, maryIdentity);
     activityManager.deleteActivity(activity);
-    List<StreamItem> items = streamItemDAO.findStreamItemByActivityId(Long.valueOf(activity.getId()));
+    List<StreamItemEntity> items = streamItemDAO.findStreamItemByActivityId(Long.valueOf(activity.getId()));
     assertEquals(0, items.size());
   }
   

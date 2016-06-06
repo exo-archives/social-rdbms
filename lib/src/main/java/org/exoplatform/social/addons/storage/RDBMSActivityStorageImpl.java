@@ -46,7 +46,7 @@ import org.exoplatform.social.addons.storage.dao.ConnectionDAO;
 import org.exoplatform.social.addons.storage.dao.StreamItemDAO;
 import org.exoplatform.social.addons.storage.entity.ActivityEntity;
 import org.exoplatform.social.addons.storage.entity.CommentEntity;
-import org.exoplatform.social.addons.storage.entity.StreamItem;
+import org.exoplatform.social.addons.storage.entity.StreamItemEntity;
 import org.exoplatform.social.addons.storage.entity.StreamType;
 import org.exoplatform.social.core.ActivityProcessor;
 import org.exoplatform.social.core.activity.filter.ActivityFilter;
@@ -386,8 +386,8 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
   }
   
   private void updateLastUpdatedForStreamItem(ActivityEntity activity) {
-    List<StreamItem> items = streamItemDAO.findStreamItemByActivityId(activity.getId());
-    for (StreamItem item : items) {
+    List<StreamItemEntity> items = streamItemDAO.findStreamItemByActivityId(activity.getId());
+    for (StreamItemEntity item : items) {
       item.setLastUpdated(activity.getLastUpdated());
       streamItemDAO.update(item);
     }
@@ -417,7 +417,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
         if (isAllowedToRemove(activityEntity, commentEntity, mentioner)) {
           mentioners.remove(mentioner);
           //remove stream item
-          StreamItem item = new StreamItem(StreamType.MENTIONER);
+          StreamItemEntity item = new StreamItemEntity(StreamType.MENTIONER);
           item.setOwnerId(mentioner);
           activityEntity.removeStreamItem(item);
         }
@@ -507,13 +507,13 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
   }
   
   private void createStreamItem(StreamType streamType, ActivityEntity activity, String ownerId){
-    StreamItem streamItem = new StreamItem(streamType);
+    StreamItemEntity streamItem = new StreamItemEntity(streamType);
     streamItem.setOwnerId(ownerId);
     streamItem.setLastUpdated(activity.getLastUpdated());
     boolean isExist = false;
     if (activity.getId() != null) {
       //TODO need to improve it
-      for (StreamItem item : activity.getStreamItems()) {
+      for (StreamItemEntity item : activity.getStreamItems()) {
         if (item.getOwnerId().equals(ownerId) && streamType.equals(item.getStreamType())) {
           isExist = true;
           break;
@@ -586,7 +586,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
     activity.setMentionerIds(processMentionOfComment(activity, comment, activity.getMentionerIds().toArray(new String[activity.getMentionerIds().size()]), processMentions(comment.getTitle()), false));
     //
     if (!hasOtherComment(activity, comment.getPosterId())) {
-      StreamItem item = new StreamItem(StreamType.COMMENTER);
+      StreamItemEntity item = new StreamItemEntity(StreamType.COMMENTER);
       item.setOwnerId(comment.getPosterId());
       activity.removeStreamItem(item);
     }
@@ -878,7 +878,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
     }
     if (oldLikerList.size() > 0) {//unlike ==> remove stream item
       for (String id : oldLikerList) {
-        StreamItem item = new StreamItem(StreamType.LIKER);
+        StreamItemEntity item = new StreamItemEntity(StreamType.LIKER);
         item.setOwnerId(id);
         activity.removeStreamItem(item);
       }

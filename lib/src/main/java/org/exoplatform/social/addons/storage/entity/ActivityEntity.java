@@ -61,7 +61,7 @@ public class ActivityEntity extends BaseActivity {
   
   /** */
   @OneToMany(cascade=CascadeType.ALL, orphanRemoval=true, mappedBy="activity", fetch=FetchType.LAZY)
-  private List<StreamItem> streamItems;
+  private List<StreamItemEntity> streamItems;
 
   /** */
   public ActivityEntity() {
@@ -143,11 +143,11 @@ public class ActivityEntity extends BaseActivity {
     this.comments.add(comment);
   }
   
-  public List<StreamItem> getStreamItems() {
+  public List<StreamItemEntity> getStreamItems() {
     return streamItems;
   }
 
-  public void setStreamItems(List<StreamItem> streamItems) {
+  public void setStreamItems(List<StreamItemEntity> streamItems) {
     this.streamItems = streamItems;
   }
 
@@ -155,16 +155,16 @@ public class ActivityEntity extends BaseActivity {
    * Adds the stream item entity to this activity
    * @param item the stream item
    */
-  public void addStreamItem(StreamItem item) {
+  public void addStreamItem(StreamItemEntity item) {
     if (this.streamItems == null) {
-      this.streamItems = new ArrayList<StreamItem>();
+      this.streamItems = new ArrayList<StreamItemEntity>();
     }
     item.setActivity(this);
     this.streamItems.add(item);
   }
   
-  public void removeStreamItem(StreamItem item) {
-    for (StreamItem it : this.getStreamItems()) {
+  public void removeStreamItem(StreamItemEntity item) {
+    for (StreamItemEntity it : this.getStreamItems()) {
       if (it.getOwnerId().equals(item.getOwnerId()) && it.getStreamType().equals(item.getStreamType())) {
         this.streamItems.remove(it);
         break;

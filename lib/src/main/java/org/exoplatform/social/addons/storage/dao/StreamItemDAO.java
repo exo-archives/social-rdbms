@@ -19,7 +19,7 @@ package org.exoplatform.social.addons.storage.dao;
 import java.util.List;
 
 import org.exoplatform.commons.api.persistence.GenericDAO;
-import org.exoplatform.social.addons.storage.entity.StreamItem;
+import org.exoplatform.social.addons.storage.entity.StreamItemEntity;
 
 /**
  * Created by The eXo Platform SAS
@@ -27,8 +27,8 @@ import org.exoplatform.social.addons.storage.entity.StreamItem;
  *          exo@exoplatform.com
  * May 18, 2015  
  */
-public interface StreamItemDAO extends GenericDAO<StreamItem, Long> {
+public interface StreamItemDAO extends GenericDAO<StreamItemEntity, Long> {
 
   //Add customize methods here
-  List<StreamItem> findStreamItemByActivityId(Long activityId);
+  List<StreamItemEntity> findStreamItemByActivityId(Long activityId);
 }
