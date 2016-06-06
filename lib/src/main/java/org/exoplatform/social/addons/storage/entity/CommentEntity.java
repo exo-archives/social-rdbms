@@ -16,7 +16,7 @@ import java.util.Map;
         @NamedQuery(name = "SocComment.migratePosterId", query = "UPDATE SocComment c SET c.posterId = :newId WHERE c.posterId = :oldId"),
         @NamedQuery(name = "SocComment.migrateOwnerId", query = "UPDATE SocComment c SET c.ownerId = :newId WHERE c.ownerId = :oldId")
 })
-public class Comment extends BaseActivity {
+public class CommentEntity extends BaseActivity {
 
   private static final long serialVersionUID = 8385677663290737181L;
 
@@ -39,7 +39,7 @@ public class Comment extends BaseActivity {
   @JoinColumn(name="ACTIVITY_ID", nullable = false)
   private ActivityEntity activity;
 
-  public Comment() {
+  public CommentEntity() {
     setPosted(new Date().getTime());
     setLastUpdated(new Date().getTime());
   }

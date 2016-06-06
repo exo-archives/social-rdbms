@@ -27,7 +27,7 @@ import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 import org.exoplatform.services.security.ConversationState;
 import org.exoplatform.social.addons.storage.entity.ActivityEntity;
-import org.exoplatform.social.addons.storage.entity.Comment;
+import org.exoplatform.social.addons.storage.entity.CommentEntity;
 import org.exoplatform.social.addons.test.BaseCoreTest;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvider;
@@ -216,7 +216,7 @@ public class ActivityDAOTest extends BaseCoreTest {
     String commentTitle = "Comment title";
     
     //demo comments on john's activity
-    Comment comment = new Comment();
+    CommentEntity comment = new CommentEntity();
     comment.setTitle(commentTitle);
     comment.setOwnerId(demoIdentity.getId());
     activity.addComment(comment);
@@ -227,7 +227,7 @@ public class ActivityDAOTest extends BaseCoreTest {
     //
     activity = activityDao.find(activity.getId());
     
-    List<Comment> demoComments = commentDao.getComments(activity, 0, -1);
+    List<CommentEntity> demoComments = commentDao.getComments(activity, 0, -1);
     assertNotNull(demoComments);
     assertEquals(1, demoComments.size());
     
@@ -247,7 +247,7 @@ public class ActivityDAOTest extends BaseCoreTest {
     demoActivity.setOwnerId(identityId);
     saveActivity(johnIdentity, demoActivity);
     // comment
-    Comment comment = new Comment();
+    CommentEntity comment = new CommentEntity();
     comment.setTitle("demo comment");
     comment.setOwnerId(demoIdentity.getId());
     //
@@ -258,7 +258,7 @@ public class ActivityDAOTest extends BaseCoreTest {
     activityDao.update(demoActivity);
     //
     demoActivity = activityDao.find(demoActivity.getId());
-    List<Comment> demoComments = demoActivity.getComments();
+    List<CommentEntity> demoComments = demoActivity.getComments();
     Long commentId = demoComments.get(0).getId();
     //
     comment = commentDao.find(commentId);
@@ -277,7 +277,7 @@ public class ActivityDAOTest extends BaseCoreTest {
     demoActivity.setOwnerId(identityId);
     saveActivity(johnIdentity, demoActivity);
     // comment
-    Comment comment = new Comment();
+    CommentEntity comment = new CommentEntity();
     comment.setTitle("demo comment");
     comment.setOwnerId(demoIdentity.getId());
     //
@@ -314,7 +314,7 @@ public class ActivityDAOTest extends BaseCoreTest {
     int total = 10;
     
     for (int i = 0; i < total; i ++) {
-      Comment maryComment = new Comment();
+      CommentEntity maryComment = new CommentEntity();
       maryComment.setOwnerId(maryIdentity.getId());
       maryComment.setTitle("mary comment");
       demoActivity.addComment(maryComment);
@@ -323,7 +323,7 @@ public class ActivityDAOTest extends BaseCoreTest {
     }
     
     demoActivity = activityDao.find(demoActivity.getId());
-    List<Comment> maryComments = demoActivity.getComments();
+    List<CommentEntity> maryComments = demoActivity.getComments();
     assertNotNull(maryComments);
     assertEquals(total, maryComments.size());
   }
@@ -342,7 +342,7 @@ public class ActivityDAOTest extends BaseCoreTest {
     saveActivity(demoIdentity, demoActivity);
     tearDownActivityList.add(demoActivity);
     
-    Comment maryComment = new Comment();
+    CommentEntity maryComment = new CommentEntity();
     maryComment.setTitle("mary comment");
     maryComment.setOwnerId(maryIdentity.getId());
     demoActivity.addComment(maryComment);

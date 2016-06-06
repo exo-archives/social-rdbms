@@ -20,7 +20,7 @@ import java.util.List;
 
 import org.exoplatform.commons.api.persistence.GenericDAO;
 import org.exoplatform.social.addons.storage.entity.ActivityEntity;
-import org.exoplatform.social.addons.storage.entity.Comment;
+import org.exoplatform.social.addons.storage.entity.CommentEntity;
 
 /**
  * Created by The eXo Platform SAS
@@ -28,7 +28,7 @@ import org.exoplatform.social.addons.storage.entity.Comment;
  *          exo@exoplatform.com
  * May 18, 2015  
  */
-public interface CommentDAO extends GenericDAO<Comment, Long> {
+public interface CommentDAO extends GenericDAO<CommentEntity, Long> {
 
   /**
    * 
@@ -37,7 +37,7 @@ public interface CommentDAO extends GenericDAO<Comment, Long> {
    * @param limit
    * @return
    */
-  List<Comment> getComments(ActivityEntity existingActivity, int offset, int limit);
+  List<CommentEntity> getComments(ActivityEntity existingActivity, int offset, int limit);
   
   /**
    * 
@@ -46,7 +46,7 @@ public interface CommentDAO extends GenericDAO<Comment, Long> {
    * @param limit
    * @return
    */
-  List<Comment> getNewerOfComments(ActivityEntity existingActivity, long sinceTime, int limit);
+  List<CommentEntity> getNewerOfComments(ActivityEntity existingActivity, long sinceTime, int limit);
   
   /**
    * 
@@ -55,7 +55,7 @@ public interface CommentDAO extends GenericDAO<Comment, Long> {
    * @param limit
    * @return
    */
-  List<Comment> getOlderOfComments(ActivityEntity existingActivity, long sinceTime, int limit);
+  List<CommentEntity> getOlderOfComments(ActivityEntity existingActivity, long sinceTime, int limit);
 
   /**
    * 

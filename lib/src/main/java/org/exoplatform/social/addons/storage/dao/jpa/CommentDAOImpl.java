@@ -25,7 +25,7 @@ import org.exoplatform.commons.persistence.impl.GenericDAOJPAImpl;
 import org.exoplatform.social.addons.storage.dao.CommentDAO;
 import org.exoplatform.social.addons.storage.dao.jpa.query.CommentQueryBuilder;
 import org.exoplatform.social.addons.storage.entity.ActivityEntity;
-import org.exoplatform.social.addons.storage.entity.Comment;
+import org.exoplatform.social.addons.storage.entity.CommentEntity;
 
 /**
  * Created by The eXo Platform SAS
@@ -33,10 +33,10 @@ import org.exoplatform.social.addons.storage.entity.Comment;
  *          exo@exoplatform.com
  * May 18, 2015  
  */
-public class CommentDAOImpl extends GenericDAOJPAImpl<Comment, Long>  implements CommentDAO {
+public class CommentDAOImpl extends GenericDAOJPAImpl<CommentEntity, Long>  implements CommentDAO {
   
   @Override
-  public List<Comment> getComments(ActivityEntity existingActivity, int offset, int limit) {
+  public List<CommentEntity> getComments(ActivityEntity existingActivity, int offset, int limit) {
     
     return CommentQueryBuilder.builder()
                               .activityId(existingActivity.getId())
@@ -48,7 +48,7 @@ public class CommentDAOImpl extends GenericDAOJPAImpl<Comment, Long>  implements
   }
   
   @Override
-  public List<Comment> getNewerOfComments(ActivityEntity existingActivity, long sinceTime, int limit) {
+  public List<CommentEntity> getNewerOfComments(ActivityEntity existingActivity, long sinceTime, int limit) {
     
     return CommentQueryBuilder.builder()
                               .activityId(existingActivity.getId())
@@ -62,7 +62,7 @@ public class CommentDAOImpl extends GenericDAOJPAImpl<Comment, Long>  implements
   }
   
   @Override
-  public List<Comment> getOlderOfComments(ActivityEntity existingActivity, long sinceTime, int limit) {
+  public List<CommentEntity> getOlderOfComments(ActivityEntity existingActivity, long sinceTime, int limit) {
     return CommentQueryBuilder.builder()
                               .activityId(existingActivity.getId())
                               .offset(0)

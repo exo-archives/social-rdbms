@@ -50,7 +50,7 @@ public class ActivityEntity extends BaseActivity {
   private Map<String, String> templateParams = new LinkedHashMap<String, String>();
 
   @OneToMany(cascade=CascadeType.ALL, orphanRemoval=true, mappedBy="activity", fetch=FetchType.LAZY)
-  private List<Comment> comments;
+  private List<CommentEntity> comments;
 
   @OneToMany(cascade=CascadeType.ALL, orphanRemoval=true, mappedBy="activity", fetch=FetchType.LAZY)
   private List<Mention> mentions;
@@ -123,11 +123,11 @@ public class ActivityEntity extends BaseActivity {
     this.templateParams = templateParams;
   }
 
-  public List<Comment> getComments() {
+  public List<CommentEntity> getComments() {
     return comments;
   }
 
-  public void setComments(List<Comment> comments) {
+  public void setComments(List<CommentEntity> comments) {
     this.comments = comments;
   }
 
@@ -135,9 +135,9 @@ public class ActivityEntity extends BaseActivity {
    * Adds the comment item entity to this activity
    * @param item the stream item
    */
-  public void addComment(Comment comment) {
+  public void addComment(CommentEntity comment) {
     if (this.comments == null) {
-      this.comments = new ArrayList<Comment>();
+      this.comments = new ArrayList<CommentEntity>();
     }
     comment.setActivity(this);
     this.comments.add(comment);

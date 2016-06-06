@@ -32,8 +32,8 @@ import javax.persistence.criteria.Root;
 import org.exoplatform.commons.persistence.impl.EntityManagerHolder;
 import org.exoplatform.social.addons.storage.entity.ActivityEntity;
 import org.exoplatform.social.addons.storage.entity.ActivityEntity_;
-import org.exoplatform.social.addons.storage.entity.Comment;
-import org.exoplatform.social.addons.storage.entity.Comment_;
+import org.exoplatform.social.addons.storage.entity.CommentEntity;
+import org.exoplatform.social.addons.storage.entity.CommentEntity_;
 
 /**
  * Created by The eXo Platform SAS
@@ -104,12 +104,12 @@ public final class CommentQueryBuilder {
    * Builds the Typed Query
    * @return
    */
-  public TypedQuery<Comment> build() {
+  public TypedQuery<CommentEntity> build() {
     EntityManager em = EntityManagerHolder.get();
     CriteriaBuilder cb = em.getCriteriaBuilder();
-    CriteriaQuery<Comment> criteria = cb.createQuery(Comment.class);
-    Root<Comment> comment = criteria.from(Comment.class);
-    Join<Comment, ActivityEntity> activity = comment.join(Comment_.activity);
+    CriteriaQuery<CommentEntity> criteria = cb.createQuery(CommentEntity.class);
+    Root<CommentEntity> comment = criteria.from(CommentEntity.class);
+    Join<CommentEntity, ActivityEntity> activity = comment.join(CommentEntity_.activity);
     
     List<Predicate> predicates = new ArrayList<Predicate>();
     //owner
@@ -120,16 +120,16 @@ public final class CommentQueryBuilder {
     //newer or older
     if (this.sinceTime > 0) {
       if (isNewer) {
-        predicates.add(cb.greaterThan(comment.<Long>get(Comment_.lastUpdated), this.sinceTime));
+        predicates.add(cb.greaterThan(comment.<Long>get(CommentEntity_.lastUpdated), this.sinceTime));
       } else {
-        predicates.add(cb.lessThan(comment.<Long>get(Comment_.lastUpdated), this.sinceTime));
+        predicates.add(cb.lessThan(comment.<Long>get(CommentEntity_.lastUpdated), this.sinceTime));
       }
     }
     
     //filter hidden = FALSE
-    predicates.add(cb.equal(comment.<Boolean>get(Comment_.hidden), Boolean.FALSE));
+    predicates.add(cb.equal(comment.<Boolean>get(CommentEntity_.hidden), Boolean.FALSE));
     
-    CriteriaQuery<Comment> select = criteria.select(comment);
+    CriteriaQuery<CommentEntity> select = criteria.select(comment);
     select.where(predicates.toArray(new Predicate[0]));
     if (this.descOrder) {
       select.orderBy(cb.desc(comment.<Long> get(ActivityEntity_.lastUpdated)));
@@ -137,7 +137,7 @@ public final class CommentQueryBuilder {
       select.orderBy(cb.asc(comment.<Long> get(ActivityEntity_.lastUpdated)));
     }
 
-    TypedQuery<Comment> typedQuery = em.createQuery(select);
+    TypedQuery<CommentEntity> typedQuery = em.createQuery(select);
     if (this.limit > 0) {
       typedQuery.setFirstResult((int) offset);
       typedQuery.setMaxResults((int) limit);
@@ -155,8 +155,8 @@ public final class CommentQueryBuilder {
     EntityManager em = EntityManagerHolder.get();
     CriteriaBuilder cb = em.getCriteriaBuilder();
     CriteriaQuery<Long> criteria = cb.createQuery(Long.class);
-    Root<Comment> comment = criteria.from(Comment.class);
-    Join<Comment, ActivityEntity> activity = comment.join(Comment_.activity);
+    Root<CommentEntity> comment = criteria.from(CommentEntity.class);
+    Join<CommentEntity, ActivityEntity> activity = comment.join(CommentEntity_.activity);
     
     List<Predicate> predicates = new ArrayList<Predicate>();
     //owner
@@ -167,14 +167,14 @@ public final class CommentQueryBuilder {
     //newer or older
     if (this.sinceTime > 0) {
       if (isNewer) {
-        predicates.add(cb.greaterThan(comment.<Long>get(Comment_.lastUpdated), this.sinceTime));
+        predicates.add(cb.greaterThan(comment.<Long>get(CommentEntity_.lastUpdated), this.sinceTime));
       } else {
-        predicates.add(cb.lessThan(comment.<Long>get(Comment_.lastUpdated), this.sinceTime));
+        predicates.add(cb.lessThan(comment.<Long>get(CommentEntity_.lastUpdated), this.sinceTime));
       }
     }
     
     //hidden
-    predicates.add(cb.equal(activity.<Boolean>get(Comment_.hidden), Boolean.FALSE));
+    predicates.add(cb.equal(activity.<Boolean>get(CommentEntity_.hidden), Boolean.FALSE));
     
     CriteriaQuery<Long> select = criteria.select(cb.count(comment));
     select.where(predicates.toArray(new Predicate[0]));
@@ -187,8 +187,8 @@ public final class CommentQueryBuilder {
     CriteriaBuilder cb = em.getCriteriaBuilder();
     CriteriaQuery<ActivityEntity> criteria = cb.createQuery(ActivityEntity.class);
     Root<ActivityEntity> a = criteria.from(ActivityEntity.class);
-    ListJoin<ActivityEntity, Comment> o = a.join(ActivityEntity_.comments, JoinType.LEFT);
-    Predicate p = cb.equal(o.get(Comment_.id), commentId);
+    ListJoin<ActivityEntity, CommentEntity> o = a.join(ActivityEntity_.comments, JoinType.LEFT);
+    Predicate p = cb.equal(o.get(CommentEntity_.id), commentId);
 
     CriteriaQuery<ActivityEntity> select = criteria.select(a);
     select.where(p);

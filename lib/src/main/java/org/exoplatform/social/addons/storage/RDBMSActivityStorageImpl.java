@@ -45,7 +45,7 @@ import org.exoplatform.social.addons.storage.dao.CommentDAO;
 import org.exoplatform.social.addons.storage.dao.ConnectionDAO;
 import org.exoplatform.social.addons.storage.dao.StreamItemDAO;
 import org.exoplatform.social.addons.storage.entity.ActivityEntity;
-import org.exoplatform.social.addons.storage.entity.Comment;
+import org.exoplatform.social.addons.storage.entity.CommentEntity;
 import org.exoplatform.social.addons.storage.entity.StreamItem;
 import org.exoplatform.social.addons.storage.entity.StreamType;
 import org.exoplatform.social.core.ActivityProcessor;
@@ -149,8 +149,8 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
     //
     List<String> commentIds = new ArrayList<String>();
     List<String> replyToIds = new ArrayList<String>();
-    List<Comment> comments = activityEntity.getComments() != null ? activityEntity.getComments() : new ArrayList<Comment>();
-    for (Comment comment : comments) {
+    List<CommentEntity> comments = activityEntity.getComments() != null ? activityEntity.getComments() : new ArrayList<CommentEntity>();
+    for (CommentEntity comment : comments) {
       if (!commentIds.contains(comment.getPosterId())) {
         commentIds.add(comment.getPosterId());
       }
@@ -221,7 +221,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
     return false;
   }
   
-  private ExoSocialActivity convertCommentEntityToComment(Comment comment) {
+  private ExoSocialActivity convertCommentEntityToComment(CommentEntity comment) {
     ExoSocialActivity exoComment = new ExoSocialActivityImpl(comment.getPosterId(), null,
         comment.getTitle(), comment.getBody(), false);
     exoComment.setId(getExoCommentID(comment.getId()));
@@ -248,17 +248,17 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
     return exoComment;
   }
 
-  private List<ExoSocialActivity> convertCommentEntitiesToComments(List<Comment> comments) {
+  private List<ExoSocialActivity> convertCommentEntitiesToComments(List<CommentEntity> comments) {
     List<ExoSocialActivity> exoSocialActivities = new ArrayList<ExoSocialActivity>();
     if (comments == null) return exoSocialActivities;
-    for (Comment comment : comments) {
+    for (CommentEntity comment : comments) {
       exoSocialActivities.add(convertCommentEntityToComment(comment));
     }
     return exoSocialActivities;
   }
   
-  private Comment convertCommentToCommentEntity(ExoSocialActivity comment) {
-    Comment commentEntity = new Comment();
+  private CommentEntity convertCommentToCommentEntity(ExoSocialActivity comment) {
+    CommentEntity commentEntity = new CommentEntity();
     if (comment.getId() != null) {
       commentEntity = commentDAO.find(getCommentID(comment.getId()));
     }
@@ -312,7 +312,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
 
   public ExoSocialActivity getComment(String commentId) throws ActivityStorageException {
     try {
-      Comment entity = commentDAO.find(getCommentID(commentId));
+      CommentEntity entity = commentDAO.find(getCommentID(commentId));
       return convertCommentEntityToComment(entity);
     } catch (Exception e) {
       if (PropertyManager.isDevelopping()) {
@@ -361,7 +361,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
     try {
       EntityManagerHolder.get().lock(activityEntity, LockModeType.PESSIMISTIC_WRITE);
       
-      Comment commentEntity = convertCommentToCommentEntity(eXoComment);
+      CommentEntity commentEntity = convertCommentToCommentEntity(eXoComment);
       commentEntity.setActivity(activityEntity);
       //
       Identity commenter = identityStorage.findIdentityById(commentEntity.getPosterId());
@@ -405,7 +405,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
     }
   }
   
-  private Set<String> processMentionOfComment(ActivityEntity activityEntity, Comment commentEntity, String[] activityMentioners, String[] commentMentioners, boolean isAdded) {
+  private Set<String> processMentionOfComment(ActivityEntity activityEntity, CommentEntity commentEntity, String[] activityMentioners, String[] commentMentioners, boolean isAdded) {
     Set<String> mentioners = new HashSet<String>(Arrays.asList(activityMentioners));
     if (commentMentioners.length == 0) return mentioners;
     //
@@ -426,13 +426,13 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
     return mentioners;
   }
   
-  private boolean isAllowedToRemove(ActivityEntity activity, Comment comment, String mentioner) {
+  private boolean isAllowedToRemove(ActivityEntity activity, CommentEntity comment, String mentioner) {
     if (ArrayUtils.contains(processMentions(activity.getTitle()), mentioner)) {
       return false;
     }
-    List<Comment> comments = activity.getComments();
+    List<CommentEntity> comments = activity.getComments();
     comments.remove(comment);
-    for (Comment cmt : comments) {
+    for (CommentEntity cmt : comments) {
       if (ArrayUtils.contains(processMentions(cmt.getTitle()), mentioner)) {
         return false;
       }
@@ -577,7 +577,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
   @Override
   @ExoTransactional
   public void deleteComment(String activityId, String commentId) throws ActivityStorageException {
-    Comment comment = commentDAO.find(getCommentID(commentId));
+    CommentEntity comment = commentDAO.find(getCommentID(commentId));
     commentDAO.delete(comment);
     //
     ActivityEntity activity = activityDAO.find(Long.valueOf(activityId));
@@ -595,7 +595,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
   }
   
   private boolean hasOtherComment(ActivityEntity activity, String poster) {
-    for (Comment comment : activity.getComments()) {
+    for (CommentEntity comment : activity.getComments()) {
       if (poster.equals(comment.getPosterId())) {
         return true;
       }
@@ -788,7 +788,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
 
   @Override
   public List<ExoSocialActivity> getComments(ExoSocialActivity existingActivity, int offset, int limit) {
-    List<Comment> comments = commentDAO.getComments(activityDAO.find(Long.valueOf(existingActivity.getId())), offset, limit);
+    List<CommentEntity> comments = commentDAO.getComments(activityDAO.find(Long.valueOf(existingActivity.getId())), offset, limit);
     
     return convertCommentEntitiesToComments(comments);
   }
@@ -821,7 +821,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
   @Override
   @ExoTransactional
   public List<ExoSocialActivity> getNewerComments(ExoSocialActivity existingActivity, Long sinceTime, int limit) {
-    List<Comment> comments = commentDAO.getNewerOfComments(activityDAO.find(Long.valueOf(existingActivity.getId())), sinceTime, limit);
+    List<CommentEntity> comments = commentDAO.getNewerOfComments(activityDAO.find(Long.valueOf(existingActivity.getId())), sinceTime, limit);
     //
     return convertCommentEntitiesToComments(comments);
   }
@@ -829,7 +829,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
   @Override
   @ExoTransactional
   public List<ExoSocialActivity> getOlderComments(ExoSocialActivity existingActivity, Long sinceTime, int limit) {
-    List<Comment> comments = commentDAO.getOlderOfComments(activityDAO.find(Long.valueOf(existingActivity.getId())), sinceTime, limit);
+    List<CommentEntity> comments = commentDAO.getOlderOfComments(activityDAO.find(Long.valueOf(existingActivity.getId())), sinceTime, limit);
     return convertCommentEntitiesToComments(comments);
   }
 
@@ -857,7 +857,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
 
     if (existingActivity.getId().startsWith(COMMENT_PREFIX)) {
       // update comment
-      Comment comment = convertCommentToCommentEntity(existingActivity);
+      CommentEntity comment = convertCommentToCommentEntity(existingActivity);
       //comment.setLastUpdated(System.currentTimeMillis());
       commentDAO.update(comment);
     } else {
