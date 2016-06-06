@@ -37,9 +37,6 @@
             <column name="POSTER_ID" type="NVARCHAR(36)">
               <constraints nullable="false"/>
             </column>
-            <column name="PRIORITY" type="FLOAT(12)">
-                <constraints nullable="false"/>
-            </column>
             <column name="TITLE" type="LONGTEXT">
               <constraints nullable="false"/>
             </column>
