@@ -53,7 +53,7 @@ public class ActivityEntity extends BaseActivity {
   private List<CommentEntity> comments;
 
   @OneToMany(cascade=CascadeType.ALL, orphanRemoval=true, mappedBy="activity", fetch=FetchType.LAZY)
-  private List<Mention> mentions;
+  private List<MentionEntity> mentions;
 
   /** */
   @Column(name="PROVIDER_ID", length = 36)
@@ -88,7 +88,7 @@ public class ActivityEntity extends BaseActivity {
   public Set<String> getMentionerIds() {
     Set<String> result = new HashSet<String>();
     if (this.mentions!=null) {
-      for (Mention mention : this.mentions) {
+      for (MentionEntity mention : this.mentions) {
         result.add(mention.getMentionId());
       }
     }
@@ -97,7 +97,7 @@ public class ActivityEntity extends BaseActivity {
 
   public void setMentionerIds(Set<String> mentionerIds) {
     if (this.mentions==null) {
-      this.mentions = new ArrayList<Mention>();
+      this.mentions = new ArrayList<MentionEntity>();
     }
     this.mentions.clear();
     for (String mentionerId : mentionerIds) {
@@ -107,9 +107,9 @@ public class ActivityEntity extends BaseActivity {
 
   private void addMention(String mentionerId) {
     if (this.mentions==null) {
-      this.mentions = new ArrayList<Mention>();
+      this.mentions = new ArrayList<MentionEntity>();
     }
-    Mention mention = new Mention();
+    MentionEntity mention = new MentionEntity();
     mention.setMentionId(mentionerId);
     mention.setActivity(this);
     this.mentions.add(mention);

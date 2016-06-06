@@ -23,7 +23,7 @@ import org.exoplatform.commons.persistence.impl.EntityManagerService;
 import org.exoplatform.commons.utils.CommonsUtils;
 import org.exoplatform.services.listener.Event;
 import org.exoplatform.services.listener.Listener;
-import org.exoplatform.social.addons.storage.entity.Mention;
+import org.exoplatform.social.addons.storage.entity.MentionEntity;
 import org.exoplatform.social.core.identity.model.Identity;
 
 import javax.persistence.EntityManager;
@@ -85,11 +85,11 @@ public class IdentityReferenceUpdaterListener extends Listener<Identity, String>
       query.setParameter("oldId", oldId);
       query.executeUpdate();
 
-      query = em.createNamedQuery("SocMention.selectMentionByOldId", Mention.class);
+      query = em.createNamedQuery("SocMention.selectMentionByOldId", MentionEntity.class);
       query.setParameter("oldId", oldId + "@%");
-      List<Mention> list = query.getResultList();
+      List<MentionEntity> list = query.getResultList();
       if (list != null && list.size() > 0) {
-        for (Mention m : list) {
+        for (MentionEntity m : list) {
           String mentionId = m.getMentionId();
           mentionId = mentionId.replace(oldId, newId);
           m.setMentionId(mentionId);

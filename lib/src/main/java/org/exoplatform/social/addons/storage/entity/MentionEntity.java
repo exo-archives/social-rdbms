@@ -16,7 +16,7 @@ import javax.persistence.*;
         @NamedQuery(name = "SocMention.selectMentionByOldId",
                 query = "SELECT m FROM SocMention m WHERE m.mentionId LIKE :oldId"),
 })
-public class Mention {
+public class MentionEntity {
 
   @Id
   @SequenceGenerator(name="SEQ_SOC_MENTIONS_ID", sequenceName="SEQ_SOC_MENTIONS_ID")
