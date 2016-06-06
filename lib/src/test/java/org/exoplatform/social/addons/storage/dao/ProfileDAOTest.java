@@ -118,7 +118,7 @@ public class ProfileDAOTest extends BaseCoreTest {
   private ProfileEntity createProfile() {
     ProfileEntity profile = new ProfileEntity();
     profile.setIdentity(identity);
-    profile.setCreatedTime(new Date());
+    profile.setCreatedDate(new Date());
     profile.setUrl("/profile/root");
     profile.setAvatarURL("/profile/root/avatar.png");
 

@@ -349,18 +349,18 @@
   </changeSet>
 
   <changeSet author="social" id="1.0.0-29">
-    <createTable tableName="SOC_IDENTITY_PROFILE">
+    <createTable tableName="SOC_PROFILES">
       <column name="PROFILE_ID" type="BIGINT" autoIncrement="${autoIncrement}" startWith="1">
-        <constraints nullable="false" primaryKey="true" primaryKeyName="PK_SOC_IDENTITY_PROFILE"/>
+        <constraints nullable="false" primaryKey="true" primaryKeyName="PK_SOC_PROFILES"/>
       </column>
       <column name="IDENTITY_ID" type="BIGINT">
         <constraints foreignKeyName="FK_SOC_IDENTITY_PROFILE" references="SOC_IDENTITY(IDENTITY_ID)" nullable="false"/>
       </column>
       <column name="URL" type="NVARCHAR(250)"/>
       <column name="AVATAR_URL" type="NVARCHAR(250)"/>
-      <column name="AVATAR_MIMTYPE" type="NVARCHAR(250)"/>
+      <column name="AVATAR_MIMETYPE" type="NVARCHAR(250)"/>
       <column name="AVATAR_IMAGE" type="MEDIUMBLOB"/>
-      <column name="CREATED_TIME" type="TIMESTAMP">
+      <column name="CREATED_DATE" type="TIMESTAMP">
         <constraints nullable="false"/>
       </column>
     </createTable>
@@ -370,17 +370,17 @@
   </changeSet>
   <changeSet author="social" id="1.0.0-30">
     <addUniqueConstraint columnNames="IDENTITY_ID"
-                         constraintName="UK_IDENTITY_PROFILE_IDENTITY_ID_01"
-                         tableName="SOC_IDENTITY_PROFILE"/>
+                         constraintName="UK_PROFILE_IDENTITY_ID_01"
+                         tableName="SOC_PROFILES"/>
   </changeSet>
   <changeSet author="social" id="1.0.0-30" dbms="oracle,postgresql">
-    <createSequence sequenceName="SEQ_SOC_IDENTITY_PROFILE_ID" startValue="1"/>
+    <createSequence sequenceName="SEQ_SOC_PROFILE_ID" startValue="1"/>
   </changeSet>
 
   <changeSet author="social" id="1.0.0-31">
-    <createTable tableName="SOC_IDENTITY_PROFILE_PROPERTY">
+    <createTable tableName="SOC_PROFILE_PROPERTIES">
       <column name="PROFILE_ID" type="BIGINT">
-        <constraints foreignKeyName="FK_SOC_IDENTITY_PROFILE_PROPERTY" references="SOC_IDENTITY_PROFILE(PROFILE_ID)" nullable="false"/>
+        <constraints foreignKeyName="FK_SOC_PROFILE_PROPERTIES" references="SOC_PROFILES(PROFILE_ID)" nullable="false"/>
       </column>
       <column name="NAME" type="NVARCHAR(250)">
         <constraints nullable="false"/>
@@ -393,9 +393,9 @@
   </changeSet>
 
   <changeSet author="social" id="1.0.0-32">
-    <createTable tableName="SOC_IDENTITY_PROFILE_EXPERIENCE">
+    <createTable tableName="SOC_PROFILE_EXPERIENCES">
       <column name="PROFILE_ID" type="BIGINT">
-        <constraints foreignKeyName="FK_SOC_IDENTITY_PROFILE_EXPERIENCE" references="SOC_IDENTITY_PROFILE(PROFILE_ID)" nullable="false"/>
+        <constraints foreignKeyName="FK_SOC_PROFILE_EXPERIENCES" references="SOC_PROFILES(PROFILE_ID)" nullable="false"/>
       </column>
       <column name="COMPANY" type="NVARCHAR(250)"/>
       <column name="POSITION" type="NVARCHAR(500)"/>
@@ -424,7 +424,7 @@
     <addUniqueConstraint columnNames="SPACE_ID, USER_ID, STATUS"
                          constraintName="UK_SPACE_USER_STATUS_01"
                          tableName="SOC_SPACES_MEMBERS"/>                         
-    <addPrimaryKey columnNames="PROFILE_ID, NAME" constraintName="PK_SOC_PROFILE_PROPERTY_01" tableName="SOC_IDENTITY_PROFILE_PROPERTY"/>                                                    
+    <addPrimaryKey columnNames="PROFILE_ID, NAME" constraintName="PK_SOC_PROFILE_PROPERTIES_01" tableName="SOC_PROFILE_PROPERTIES"/>                                                    
   </changeSet>
 
   <changeSet author="social" id="1.0.0-34">

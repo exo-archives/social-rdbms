@@ -229,7 +229,7 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
       }
     }
 
-    p.setCreatedTime(entity.getCreatedTime().getTime());
+    p.setCreatedTime(entity.getCreatedDate().getTime());
     p.setLastLoaded(System.currentTimeMillis());
   }
 
@@ -314,7 +314,7 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
     entity.setProperties(entityProperties);
 
     Date created = profile.getCreatedTime() <= 0 ? new Date() : new Date(profile.getCreatedTime());
-    entity.setCreatedTime(created);
+    entity.setCreatedDate(created);
   }
 
   private long parseId(String id) {
@@ -551,7 +551,7 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
 
     mapToProfileEntity(profile, entity);
 
-    entity.setCreatedTime(new Date());
+    entity.setCreatedDate(new Date());
 
     if (entity.getId() > 0) {
       profileDAO.update(entity);

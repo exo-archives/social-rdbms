@@ -50,7 +50,7 @@ import java.util.Map;
  */
 @Entity(name = "SocProfileEntity")
 @ExoEntity
-@Table(name = "SOC_IDENTITY_PROFILE")
+@Table(name = "SOC_PROFILES")
 @NamedQueries({
         @NamedQuery(
                 name = "SocProfile.findByIdentity",
@@ -59,8 +59,8 @@ import java.util.Map;
 })
 public class ProfileEntity {
   @Id
-  @SequenceGenerator(name="SEQ_SOC_IDENTITY_PROFILE_ID", sequenceName="SEQ_SOC_IDENTITY_PROFILE_ID")
-  @GeneratedValue(strategy= GenerationType.AUTO, generator="SEQ_SOC_IDENTITY_PROFILE_ID")
+  @SequenceGenerator(name="SEQ_SOC_PROFILE_ID", sequenceName="SEQ_SOC_PROFILE_ID")
+  @GeneratedValue(strategy= GenerationType.AUTO, generator="SEQ_SOC_PROFILE_ID")
   @Column(name="PROFILE_ID")
   private long id;
 
@@ -73,7 +73,7 @@ public class ProfileEntity {
   @Column(name = "AVATAR_URL")
   private String avatarURL;
 
-  @Column(name = "AVATAR_MIMTYPE")
+  @Column(name = "AVATAR_MIMETYPE")
   private String avatarMimeType;
 
   @Lob
@@ -83,16 +83,16 @@ public class ProfileEntity {
   @ElementCollection(fetch = FetchType.EAGER)
   @MapKeyColumn(name = "NAME")
   @Column(name = "VALUE")
-  @CollectionTable(name = "SOC_IDENTITY_PROFILE_PROPERTY", joinColumns = {@JoinColumn(name = "PROFILE_ID")})
+  @CollectionTable(name = "SOC_PROFILE_PROPERTIES", joinColumns = {@JoinColumn(name = "PROFILE_ID")})
   private Map<String, String> properties = new HashMap<String, String>();
 
   @ElementCollection(fetch = FetchType.LAZY)
-  @CollectionTable(name = "SOC_IDENTITY_PROFILE_EXPERIENCE", joinColumns = {@JoinColumn(name = "PROFILE_ID")})
+  @CollectionTable(name = "SOC_PROFILE_EXPERIENCES", joinColumns = {@JoinColumn(name = "PROFILE_ID")})
   private List<ProfileExperienceEntity> experiences = new ArrayList<>();
 
   @Temporal(TemporalType.TIMESTAMP)
-  @Column(name = "CREATED_TIME", nullable = false)
-  private Date createdTime = new Date();
+  @Column(name = "CREATED_DATE", nullable = false)
+  private Date createdDate = new Date();
 
   public long getId() {
     return id;
@@ -158,11 +158,11 @@ public class ProfileEntity {
     this.experiences = experiences;
   }
 
-  public Date getCreatedTime() {
-    return createdTime;
+  public Date getCreatedDate() {
+    return createdDate;
   }
 
-  public void setCreatedTime(Date createdTime) {
-    this.createdTime = createdTime;
+  public void setCreatedDate(Date createdTime) {
+    this.createdDate = createdTime;
   }
 }
