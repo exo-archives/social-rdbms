@@ -26,7 +26,7 @@ public class Mention {
 
   @ManyToOne(fetch=FetchType.LAZY)
   @JoinColumn(name="ACTIVITY_ID", nullable = false)
-  private Activity activity;
+  private ActivityEntity activity;
 
   @Column(name="MENTIONER_ID", nullable = false)
   private String mentionId;
@@ -39,11 +39,11 @@ public class Mention {
     this.id = id;
   }
 
-  public Activity getActivity() {
+  public ActivityEntity getActivity() {
     return activity;
   }
 
-  public void setActivity(Activity activity) {
+  public void setActivity(ActivityEntity activity) {
     this.activity = activity;
   }
 

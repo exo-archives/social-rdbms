@@ -44,7 +44,7 @@ import org.exoplatform.social.addons.storage.dao.ActivityDAO;
 import org.exoplatform.social.addons.storage.dao.CommentDAO;
 import org.exoplatform.social.addons.storage.dao.ConnectionDAO;
 import org.exoplatform.social.addons.storage.dao.StreamItemDAO;
-import org.exoplatform.social.addons.storage.entity.Activity;
+import org.exoplatform.social.addons.storage.entity.ActivityEntity;
 import org.exoplatform.social.addons.storage.entity.Comment;
 import org.exoplatform.social.addons.storage.entity.StreamItem;
 import org.exoplatform.social.addons.storage.entity.StreamType;
@@ -119,7 +119,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
     super.setInjectStreams(mustInject);
   }
 
-  private ExoSocialActivity convertActivityEntityToActivity(Activity activityEntity) {
+  private ExoSocialActivity convertActivityEntityToActivity(ActivityEntity activityEntity) {
     if(activityEntity == null) return null;
     //
     ExoSocialActivity activity = new ExoSocialActivityImpl(activityEntity.getPosterId(), activityEntity.getType(),
@@ -167,8 +167,8 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
     return activity;
   }
 
-  private Activity convertActivityToActivityEntity(ExoSocialActivity activity, String ownerId) {
-    Activity activityEntity  =  new Activity();
+  private ActivityEntity convertActivityToActivityEntity(ExoSocialActivity activity, String ownerId) {
+    ActivityEntity activityEntity  =  new ActivityEntity();
     if (activity.getId() != null) {
       activityEntity = activityDAO.find(Long.valueOf(activity.getId()));
     }
@@ -281,10 +281,10 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
     return commentEntity;
   }
   
-  private List<ExoSocialActivity> convertActivityEntitiesToActivities(List<Activity> activities) {
+  private List<ExoSocialActivity> convertActivityEntitiesToActivities(List<ActivityEntity> activities) {
     List<ExoSocialActivity> exoSocialActivities = new ArrayList<ExoSocialActivity>();
     if (activities == null) return exoSocialActivities;
-    for (Activity activity : activities) {
+    for (ActivityEntity activity : activities) {
       exoSocialActivities.add(convertActivityEntityToActivity(activity));
     }
     return exoSocialActivities;
@@ -300,7 +300,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
       return getComment(activityId);
     }
     try {
-      Activity entity = activityDAO.find(Long.valueOf(activityId));
+      ActivityEntity entity = activityDAO.find(Long.valueOf(activityId));
       return convertActivityEntityToActivity(entity);
     } catch (Exception e) {
       if (PropertyManager.isDevelopping()) {
@@ -357,7 +357,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
   @Override
   @ExoTransactional
   public void saveComment(ExoSocialActivity activity, ExoSocialActivity eXoComment) throws ActivityStorageException {
-    Activity activityEntity = activityDAO.find(Long.valueOf(activity.getId()));
+    ActivityEntity activityEntity = activityDAO.find(Long.valueOf(activity.getId()));
     try {
       EntityManagerHolder.get().lock(activityEntity, LockModeType.PESSIMISTIC_WRITE);
       
@@ -385,7 +385,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
 
   }
   
-  private void updateLastUpdatedForStreamItem(Activity activity) {
+  private void updateLastUpdatedForStreamItem(ActivityEntity activity) {
     List<StreamItem> items = streamItemDAO.findStreamItemByActivityId(activity.getId());
     for (StreamItem item : items) {
       item.setLastUpdated(activity.getLastUpdated());
@@ -398,14 +398,14 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
    * @param commenter
    * @param activityEntity
    */
-  private void saveStreamItemForCommenter(Identity commenter, Activity activityEntity) {
+  private void saveStreamItemForCommenter(Identity commenter, ActivityEntity activityEntity) {
     Identity ownerActivity = identityStorage.findIdentityById(activityEntity.getOwnerId());
     if (! SpaceIdentityProvider.NAME.equals(ownerActivity.getProviderId())) {
       createStreamItem(StreamType.COMMENTER, activityEntity, commenter.getId());
     }
   }
   
-  private Set<String> processMentionOfComment(Activity activityEntity, Comment commentEntity, String[] activityMentioners, String[] commentMentioners, boolean isAdded) {
+  private Set<String> processMentionOfComment(ActivityEntity activityEntity, Comment commentEntity, String[] activityMentioners, String[] commentMentioners, boolean isAdded) {
     Set<String> mentioners = new HashSet<String>(Arrays.asList(activityMentioners));
     if (commentMentioners.length == 0) return mentioners;
     //
@@ -426,7 +426,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
     return mentioners;
   }
   
-  private boolean isAllowedToRemove(Activity activity, Comment comment, String mentioner) {
+  private boolean isAllowedToRemove(ActivityEntity activity, Comment comment, String mentioner) {
     if (ArrayUtils.contains(processMentions(activity.getTitle()), mentioner)) {
       return false;
     }
@@ -442,7 +442,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
   
   @Override
   public ExoSocialActivity saveActivity(Identity owner, ExoSocialActivity activity) throws ActivityStorageException {
-    Activity entity = convertActivityToActivityEntity(activity, owner.getId());
+    ActivityEntity entity = convertActivityToActivityEntity(activity, owner.getId());
     //
     entity.setOwnerId(owner.getId());
     entity.setProviderId(owner.getProviderId());
@@ -459,12 +459,12 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
    * @param spaceOwner
    * @param activity
    */
-  private void spaceMembers(Identity spaceOwner, Activity activity) {
+  private void spaceMembers(Identity spaceOwner, ActivityEntity activity) {
     createStreamItem(StreamType.SPACE, activity, spaceOwner.getId());
     createStreamItem(StreamType.SPACE, activity, activity.getPosterId());
   }
   
-  private void saveStreamItem(Identity owner, Activity activity) {
+  private void saveStreamItem(Identity owner, ActivityEntity activity) {
     //create StreamItem    
     if (OrganizationIdentityProvider.NAME.equals(owner.getProviderId())) {
       //poster
@@ -483,7 +483,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
    * @param owner
    * @param activity
    */
-  private void poster(Identity owner, Activity activity) {
+  private void poster(Identity owner, ActivityEntity activity) {
     createStreamItem(StreamType.POSTER, activity, activity.getPosterId());
     //User A posts a new activity on user B stream (A connected B)
     if (!owner.getId().equals(activity.getPosterId())) {
@@ -497,7 +497,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
    * @param owner
    * @param activity
    */
-  private void mention(Identity owner, Activity activity, String [] mentions) {
+  private void mention(Identity owner, ActivityEntity activity, String [] mentions) {
     for (String mentioner : mentions) {
       Identity identity = identityStorage.findIdentityById(mentioner);
       if(identity != null) {
@@ -506,7 +506,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
     }
   }
   
-  private void createStreamItem(StreamType streamType, Activity activity, String ownerId){
+  private void createStreamItem(StreamType streamType, ActivityEntity activity, String ownerId){
     StreamItem streamItem = new StreamItem(streamType);
     streamItem.setOwnerId(ownerId);
     streamItem.setLastUpdated(activity.getLastUpdated());
@@ -566,7 +566,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
 
   @Override
   public void deleteActivity(String activityId) throws ActivityStorageException {
-    Activity a = activityDAO.find(Long.valueOf(activityId));
+    ActivityEntity a = activityDAO.find(Long.valueOf(activityId));
     if (a != null) {
       activityDAO.delete(a);
     } else {
@@ -580,7 +580,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
     Comment comment = commentDAO.find(getCommentID(commentId));
     commentDAO.delete(comment);
     //
-    Activity activity = activityDAO.find(Long.valueOf(activityId));
+    ActivityEntity activity = activityDAO.find(Long.valueOf(activityId));
     activity.getComments().remove(comment);
     //
     activity.setMentionerIds(processMentionOfComment(activity, comment, activity.getMentionerIds().toArray(new String[activity.getMentionerIds().size()]), processMentions(comment.getTitle()), false));
@@ -594,7 +594,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
     activityDAO.update(activity);
   }
   
-  private boolean hasOtherComment(Activity activity, String poster) {
+  private boolean hasOtherComment(ActivityEntity activity, String poster) {
     for (Comment comment : activity.getComments()) {
       if (poster.equals(comment.getPosterId())) {
         return true;
@@ -861,14 +861,14 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
       //comment.setLastUpdated(System.currentTimeMillis());
       commentDAO.update(comment);
     } else {
-      Activity activityEntity = convertActivityToActivityEntity(existingActivity, null);
+      ActivityEntity activityEntity = convertActivityToActivityEntity(existingActivity, null);
       //create or remove liker if exist
       processLikerActivity(new HashSet<String>(Arrays.asList(existingActivity.getLikeIdentityIds())), new HashSet<String>(Arrays.asList(updatedActivity.getLikeIdentityIds())), activityEntity);
       activityDAO.update(activityEntity);
     }
   }
   
-  private void processLikerActivity(Set<String> newLikerList, Set<String> oldLikerList, Activity activity) {
+  private void processLikerActivity(Set<String> newLikerList, Set<String> oldLikerList, ActivityEntity activity) {
     for (String id : newLikerList) {
       if (!oldLikerList.contains(id)) {//new like ==> create stream item
         createStreamItem(StreamType.LIKER, activity, id);

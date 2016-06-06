@@ -24,7 +24,7 @@ import org.exoplatform.commons.api.persistence.ExoTransactional;
 import org.exoplatform.commons.persistence.impl.GenericDAOJPAImpl;
 import org.exoplatform.social.addons.storage.dao.CommentDAO;
 import org.exoplatform.social.addons.storage.dao.jpa.query.CommentQueryBuilder;
-import org.exoplatform.social.addons.storage.entity.Activity;
+import org.exoplatform.social.addons.storage.entity.ActivityEntity;
 import org.exoplatform.social.addons.storage.entity.Comment;
 
 /**
@@ -36,7 +36,7 @@ import org.exoplatform.social.addons.storage.entity.Comment;
 public class CommentDAOImpl extends GenericDAOJPAImpl<Comment, Long>  implements CommentDAO {
   
   @Override
-  public List<Comment> getComments(Activity existingActivity, int offset, int limit) {
+  public List<Comment> getComments(ActivityEntity existingActivity, int offset, int limit) {
     
     return CommentQueryBuilder.builder()
                               .activityId(existingActivity.getId())
@@ -48,7 +48,7 @@ public class CommentDAOImpl extends GenericDAOJPAImpl<Comment, Long>  implements
   }
   
   @Override
-  public List<Comment> getNewerOfComments(Activity existingActivity, long sinceTime, int limit) {
+  public List<Comment> getNewerOfComments(ActivityEntity existingActivity, long sinceTime, int limit) {
     
     return CommentQueryBuilder.builder()
                               .activityId(existingActivity.getId())
@@ -62,7 +62,7 @@ public class CommentDAOImpl extends GenericDAOJPAImpl<Comment, Long>  implements
   }
   
   @Override
-  public List<Comment> getOlderOfComments(Activity existingActivity, long sinceTime, int limit) {
+  public List<Comment> getOlderOfComments(ActivityEntity existingActivity, long sinceTime, int limit) {
     return CommentQueryBuilder.builder()
                               .activityId(existingActivity.getId())
                               .offset(0)
@@ -74,7 +74,7 @@ public class CommentDAOImpl extends GenericDAOJPAImpl<Comment, Long>  implements
   }
 
   @Override
-  public int getNumberOfComments(Activity existingActivity) {
+  public int getNumberOfComments(ActivityEntity existingActivity) {
     return CommentQueryBuilder.builder()
                               .activityId(existingActivity.getId())
                               .buildCount()
@@ -84,7 +84,7 @@ public class CommentDAOImpl extends GenericDAOJPAImpl<Comment, Long>  implements
 
   @Override
   @ExoTransactional
-  public Activity findActivity(Long commentId) {
+  public ActivityEntity findActivity(Long commentId) {
     try {
       return CommentQueryBuilder.builder().commentId(commentId).buildActivty();
     } catch (NoResultException e) {

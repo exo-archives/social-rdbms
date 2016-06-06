@@ -46,7 +46,7 @@ import org.exoplatform.social.addons.storage.dao.ActivityDAO;
 import org.exoplatform.social.addons.storage.dao.IdentityDAO;
 import org.exoplatform.social.addons.storage.dao.ProfileDAO;
 import org.exoplatform.social.addons.storage.dao.SpaceDAO;
-import org.exoplatform.social.addons.storage.entity.Activity;
+import org.exoplatform.social.addons.storage.entity.ActivityEntity;
 import org.exoplatform.social.addons.storage.entity.IdentityEntity;
 import org.exoplatform.social.addons.storage.entity.ProfileEntity;
 import org.exoplatform.social.addons.storage.entity.ProfileExperienceEntity;
@@ -645,7 +645,7 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
     } else if (type == Profile.AttachedActivityType.RELATIONSHIP) {
       t = "USER_ACTIVITIES_FOR_RELATIONSHIP";
     }
-    List<Activity> activities = activityDAO.getActivitiesByPoster(profile.getIdentity(), 0, 1, t);
+    List<ActivityEntity> activities = activityDAO.getActivitiesByPoster(profile.getIdentity(), 0, 1, t);
     if (activities != null && activities.size() > 0) {
       return String.valueOf(activities.get(0).getId());
     } else {

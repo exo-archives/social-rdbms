@@ -25,8 +25,7 @@ import javax.persistence.Tuple;
 import org.exoplatform.commons.persistence.impl.GenericDAOJPAImpl;
 import org.exoplatform.social.addons.storage.dao.ActivityDAO;
 import org.exoplatform.social.addons.storage.dao.jpa.query.AStreamQueryBuilder;
-import org.exoplatform.social.addons.storage.entity.Activity;
-import org.exoplatform.social.addons.storage.entity.Activity_;
+import org.exoplatform.social.addons.storage.entity.ActivityEntity;
 import org.exoplatform.social.addons.storage.entity.StreamItem_;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.storage.ActivityStorageException;
@@ -37,9 +36,9 @@ import org.exoplatform.social.core.storage.ActivityStorageException;
  *          exo@exoplatform.com
  * May 18, 2015  
  */
-public class ActivityDAOImpl extends GenericDAOJPAImpl<Activity, Long> implements ActivityDAO {
+public class ActivityDAOImpl extends GenericDAOJPAImpl<ActivityEntity, Long> implements ActivityDAO {
   
-  public List<Activity> getActivities(Identity owner, Identity viewer, long offset, long limit) throws ActivityStorageException {
+  public List<ActivityEntity> getActivities(Identity owner, Identity viewer, long offset, long limit) throws ActivityStorageException {
     return AStreamQueryBuilder.builder()
                               .owner(owner)
                               .viewer(viewer)
@@ -59,7 +58,7 @@ public class ActivityDAOImpl extends GenericDAOJPAImpl<Activity, Long> implement
         .getResultList());
   }
 
-  public List<Activity> getActivityFeed(Identity ownerIdentity, int offset, int limit, List<String> spaceIds) {
+  public List<ActivityEntity> getActivityFeed(Identity ownerIdentity, int offset, int limit, List<String> spaceIds) {
     return AStreamQueryBuilder.builder()
                               .owner(ownerIdentity)
                               .myIdentity(ownerIdentity)
@@ -96,7 +95,7 @@ public class ActivityDAOImpl extends GenericDAOJPAImpl<Activity, Long> implement
   }
   
   @Override
-  public List<Activity> getNewerOnActivityFeed(Identity ownerIdentity, long sinceTime, int limit, List<String> spaceIds) {
+  public List<ActivityEntity> getNewerOnActivityFeed(Identity ownerIdentity, long sinceTime, int limit, List<String> spaceIds) {
     return AStreamQueryBuilder.builder()
                               .owner(ownerIdentity)
                               .myIdentity(ownerIdentity)
@@ -123,7 +122,7 @@ public class ActivityDAOImpl extends GenericDAOJPAImpl<Activity, Long> implement
   }
 
   @Override
-  public List<Activity> getOlderOnActivityFeed(Identity ownerIdentity, long sinceTime,int limit, List<String> spaceIds) {
+  public List<ActivityEntity> getOlderOnActivityFeed(Identity ownerIdentity, long sinceTime,int limit, List<String> spaceIds) {
     return AStreamQueryBuilder.builder()
                               .owner(ownerIdentity)
                               .myIdentity(ownerIdentity)
@@ -148,7 +147,7 @@ public class ActivityDAOImpl extends GenericDAOJPAImpl<Activity, Long> implement
   }
 
   @Override
-  public List<Activity> getUserActivities(Identity owner,
+  public List<ActivityEntity> getUserActivities(Identity owner,
                                           long offset,
                                           long limit) throws ActivityStorageException {
 
@@ -171,7 +170,7 @@ public class ActivityDAOImpl extends GenericDAOJPAImpl<Activity, Long> implement
   }
   
   @Override
-  public List<Activity> getNewerOnUserActivities(Identity ownerIdentity, long sinceTime, int limit) {
+  public List<ActivityEntity> getNewerOnUserActivities(Identity ownerIdentity, long sinceTime, int limit) {
     return AStreamQueryBuilder.builder()
                               .owner(ownerIdentity)
                               .newer(sinceTime)
@@ -194,7 +193,7 @@ public class ActivityDAOImpl extends GenericDAOJPAImpl<Activity, Long> implement
   }
 
   @Override
-  public List<Activity> getOlderOnUserActivities(Identity ownerIdentity, long sinceTime, int limit) {
+  public List<ActivityEntity> getOlderOnUserActivities(Identity ownerIdentity, long sinceTime, int limit) {
     return AStreamQueryBuilder.builder()
                               .owner(ownerIdentity)
                               .older(sinceTime)
@@ -214,7 +213,7 @@ public class ActivityDAOImpl extends GenericDAOJPAImpl<Activity, Long> implement
                               .intValue();
   }
 
-  public List<Activity> getSpaceActivities(Identity spaceOwner, long offset, long limit) throws ActivityStorageException {
+  public List<ActivityEntity> getSpaceActivities(Identity spaceOwner, long offset, long limit) throws ActivityStorageException {
     return AStreamQueryBuilder.builder()
                               .owner(spaceOwner)
                               .offset(offset)
@@ -242,7 +241,7 @@ public class ActivityDAOImpl extends GenericDAOJPAImpl<Activity, Long> implement
   }
   
   @Override
-  public List<Activity> getNewerOnSpaceActivities(Identity spaceIdentity, long sinceTime, int limit) {
+  public List<ActivityEntity> getNewerOnSpaceActivities(Identity spaceIdentity, long sinceTime, int limit) {
     return AStreamQueryBuilder.builder()
                               .owner(spaceIdentity)
                               .ascOrder()
@@ -263,7 +262,7 @@ public class ActivityDAOImpl extends GenericDAOJPAImpl<Activity, Long> implement
   }
 
   @Override
-  public List<Activity> getOlderOnSpaceActivities(Identity spaceIdentity, long sinceTime, int limit) {
+  public List<ActivityEntity> getOlderOnSpaceActivities(Identity spaceIdentity, long sinceTime, int limit) {
     return AStreamQueryBuilder.builder()
                               .owner(spaceIdentity)
                               .older(sinceTime)
@@ -283,7 +282,7 @@ public class ActivityDAOImpl extends GenericDAOJPAImpl<Activity, Long> implement
   }
 
   @Override
-  public List<Activity> getUserSpacesActivities(Identity ownerIdentity, int offset, int limit, List<String> spaceIds) {
+  public List<ActivityEntity> getUserSpacesActivities(Identity ownerIdentity, int offset, int limit, List<String> spaceIds) {
     if (spaceIds.size() > 0) {
       return AStreamQueryBuilder.builder()
                                 .memberOfSpaceIds(spaceIds)
@@ -326,7 +325,7 @@ public class ActivityDAOImpl extends GenericDAOJPAImpl<Activity, Long> implement
   }
   
   @Override
-  public List<Activity> getNewerOnUserSpacesActivities(Identity ownerIdentity,
+  public List<ActivityEntity> getNewerOnUserSpacesActivities(Identity ownerIdentity,
                                                        long sinceTime,
                                                        int limit, List<String> spaceIds) {
     if (spaceIds.size() > 0) {
@@ -358,7 +357,7 @@ public class ActivityDAOImpl extends GenericDAOJPAImpl<Activity, Long> implement
   }
 
   @Override
-  public List<Activity> getOlderOnUserSpacesActivities(Identity ownerIdentity, long sinceTime, int limit, List<String> spaceIds) {
+  public List<ActivityEntity> getOlderOnUserSpacesActivities(Identity ownerIdentity, long sinceTime, int limit, List<String> spaceIds) {
     if (spaceIds.size() > 0) {
       return AStreamQueryBuilder.builder()
                                 .memberOfSpaceIds(spaceIds)
@@ -388,7 +387,7 @@ public class ActivityDAOImpl extends GenericDAOJPAImpl<Activity, Long> implement
   }
 
   @Override
-  public List<Activity> getActivitiesOfConnections(Identity ownerIdentity, int offset, int limit) {
+  public List<ActivityEntity> getActivitiesOfConnections(Identity ownerIdentity, int offset, int limit) {
     return AStreamQueryBuilder.builder()
                               .myIdentity(ownerIdentity)
                               .offset(offset)
@@ -417,7 +416,7 @@ public class ActivityDAOImpl extends GenericDAOJPAImpl<Activity, Long> implement
   }
 
   @Override
-  public List<Activity> getNewerOnActivitiesOfConnections(Identity ownerIdentity, long sinceTime, long limit) {
+  public List<ActivityEntity> getNewerOnActivitiesOfConnections(Identity ownerIdentity, long sinceTime, long limit) {
     return AStreamQueryBuilder.builder()
                               .myIdentity(ownerIdentity)
                               .newer(sinceTime)
@@ -439,7 +438,7 @@ public class ActivityDAOImpl extends GenericDAOJPAImpl<Activity, Long> implement
   }
 
   @Override
-  public List<Activity> getOlderOnActivitiesOfConnections(Identity ownerIdentity, long sinceTime, int limit) {
+  public List<ActivityEntity> getOlderOnActivitiesOfConnections(Identity ownerIdentity, long sinceTime, int limit) {
     return AStreamQueryBuilder.builder()
                               .myIdentity(ownerIdentity)
                               .older(sinceTime)
@@ -460,7 +459,7 @@ public class ActivityDAOImpl extends GenericDAOJPAImpl<Activity, Long> implement
   }
 
   @Override
-  public List<Activity> getActivitiesByPoster(Identity posterIdentity, int offset, int limit, String... activityTypes) {
+  public List<ActivityEntity> getActivitiesByPoster(Identity posterIdentity, int offset, int limit, String... activityTypes) {
     return AStreamQueryBuilder.builder()
                               .owner(posterIdentity)
                               .activityTypes(activityTypes)

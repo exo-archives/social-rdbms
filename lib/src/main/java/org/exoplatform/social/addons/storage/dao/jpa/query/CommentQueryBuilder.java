@@ -30,8 +30,8 @@ import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 
 import org.exoplatform.commons.persistence.impl.EntityManagerHolder;
-import org.exoplatform.social.addons.storage.entity.Activity;
-import org.exoplatform.social.addons.storage.entity.Activity_;
+import org.exoplatform.social.addons.storage.entity.ActivityEntity;
+import org.exoplatform.social.addons.storage.entity.ActivityEntity_;
 import org.exoplatform.social.addons.storage.entity.Comment;
 import org.exoplatform.social.addons.storage.entity.Comment_;
 
@@ -109,12 +109,12 @@ public final class CommentQueryBuilder {
     CriteriaBuilder cb = em.getCriteriaBuilder();
     CriteriaQuery<Comment> criteria = cb.createQuery(Comment.class);
     Root<Comment> comment = criteria.from(Comment.class);
-    Join<Comment, Activity> activity = comment.join(Comment_.activity);
+    Join<Comment, ActivityEntity> activity = comment.join(Comment_.activity);
     
     List<Predicate> predicates = new ArrayList<Predicate>();
     //owner
     if (this.activityId != null) {
-      predicates.add(cb.equal(activity.get(Activity_.id), this.activityId));
+      predicates.add(cb.equal(activity.get(ActivityEntity_.id), this.activityId));
     }
     
     //newer or older
@@ -132,9 +132,9 @@ public final class CommentQueryBuilder {
     CriteriaQuery<Comment> select = criteria.select(comment);
     select.where(predicates.toArray(new Predicate[0]));
     if (this.descOrder) {
-      select.orderBy(cb.desc(comment.<Long> get(Activity_.lastUpdated)));
+      select.orderBy(cb.desc(comment.<Long> get(ActivityEntity_.lastUpdated)));
     } else {
-      select.orderBy(cb.asc(comment.<Long> get(Activity_.lastUpdated)));
+      select.orderBy(cb.asc(comment.<Long> get(ActivityEntity_.lastUpdated)));
     }
 
     TypedQuery<Comment> typedQuery = em.createQuery(select);
@@ -156,12 +156,12 @@ public final class CommentQueryBuilder {
     CriteriaBuilder cb = em.getCriteriaBuilder();
     CriteriaQuery<Long> criteria = cb.createQuery(Long.class);
     Root<Comment> comment = criteria.from(Comment.class);
-    Join<Comment, Activity> activity = comment.join(Comment_.activity);
+    Join<Comment, ActivityEntity> activity = comment.join(Comment_.activity);
     
     List<Predicate> predicates = new ArrayList<Predicate>();
     //owner
     if (this.activityId != null) {
-      predicates.add(cb.equal(activity.get(Activity_.id), this.activityId));
+      predicates.add(cb.equal(activity.get(ActivityEntity_.id), this.activityId));
     }
     
     //newer or older
@@ -182,17 +182,17 @@ public final class CommentQueryBuilder {
     return em.createQuery(select);
   }
   
-  public Activity buildActivty() {
+  public ActivityEntity buildActivty() {
     EntityManager em = EntityManagerHolder.get();
     CriteriaBuilder cb = em.getCriteriaBuilder();
-    CriteriaQuery<Activity> criteria = cb.createQuery(Activity.class);
-    Root<Activity> a = criteria.from(Activity.class);
-    ListJoin<Activity, Comment> o = a.join(Activity_.comments, JoinType.LEFT);
+    CriteriaQuery<ActivityEntity> criteria = cb.createQuery(ActivityEntity.class);
+    Root<ActivityEntity> a = criteria.from(ActivityEntity.class);
+    ListJoin<ActivityEntity, Comment> o = a.join(ActivityEntity_.comments, JoinType.LEFT);
     Predicate p = cb.equal(o.get(Comment_.id), commentId);
 
-    CriteriaQuery<Activity> select = criteria.select(a);
+    CriteriaQuery<ActivityEntity> select = criteria.select(a);
     select.where(p);
-    TypedQuery<Activity> typedQuery = em.createQuery(select);
+    TypedQuery<ActivityEntity> typedQuery = em.createQuery(select);
     return typedQuery.getSingleResult();
   }
 }

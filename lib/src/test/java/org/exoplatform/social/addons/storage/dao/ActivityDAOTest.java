@@ -26,7 +26,7 @@ import java.util.Set;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 import org.exoplatform.services.security.ConversationState;
-import org.exoplatform.social.addons.storage.entity.Activity;
+import org.exoplatform.social.addons.storage.entity.ActivityEntity;
 import org.exoplatform.social.addons.storage.entity.Comment;
 import org.exoplatform.social.addons.test.BaseCoreTest;
 import org.exoplatform.social.core.identity.model.Identity;
@@ -42,7 +42,7 @@ import org.exoplatform.social.core.space.model.Space;
  */
 public class ActivityDAOTest extends BaseCoreTest {
   private final Log LOG = ExoLogger.getLogger(ActivityDAOTest.class);
-  private Set<Activity> tearDownActivityList;
+  private Set<ActivityEntity> tearDownActivityList;
   private List<Space> tearDownSpaceList;
   private Identity ghostIdentity;
   private Identity raulIdentity;
@@ -58,7 +58,7 @@ public class ActivityDAOTest extends BaseCoreTest {
     activityDao = getService(ActivityDAO.class);
     commentDao = getService(CommentDAO.class);
     //
-    tearDownActivityList = new HashSet<Activity>();
+    tearDownActivityList = new HashSet<ActivityEntity>();
     tearDownSpaceList = new ArrayList<Space>();
     //
     ghostIdentity = identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, "ghost", true);
@@ -69,7 +69,7 @@ public class ActivityDAOTest extends BaseCoreTest {
 
   @Override
   public void tearDown() throws Exception {
-    for (Activity activity : tearDownActivityList) {
+    for (ActivityEntity activity : tearDownActivityList) {
       try {
         activityDao.delete(activity);
       } catch (Exception e) {
@@ -99,7 +99,7 @@ public class ActivityDAOTest extends BaseCoreTest {
     
     String activityTitle = "activity title";
     String johnIdentityId = johnIdentity.getId();
-    Activity activity = createActivity(activityTitle, maryIdentity.getId());
+    ActivityEntity activity = createActivity(activityTitle, maryIdentity.getId());
     activity.setLocked(true);
     
     activity.setPosterId(johnIdentityId);
@@ -107,7 +107,7 @@ public class ActivityDAOTest extends BaseCoreTest {
     
     activity = activityDao.create(activity);
     
-    Activity got = activityDao.find(activity.getId());
+    ActivityEntity got = activityDao.find(activity.getId());
     assertNotNull(got);
     assertEquals(activityTitle, got.getTitle());
     assertEquals(johnIdentityId, got.getPosterId());
@@ -123,8 +123,8 @@ public class ActivityDAOTest extends BaseCoreTest {
     tearDownActivityList.add(got);
   }
   
-  private Activity createActivity(String activityTitle, String posterId) {
-    Activity activity = new Activity();
+  private ActivityEntity createActivity(String activityTitle, String posterId) {
+    ActivityEntity activity = new ActivityEntity();
     // test for reserving order of map values for i18n activity
     Map<String, String> templateParams = new LinkedHashMap<String, String>();
     templateParams.put("key1", "value 1");
@@ -144,7 +144,7 @@ public class ActivityDAOTest extends BaseCoreTest {
   }
   
   
-  private Activity saveActivity(Identity ownerIdentity, Activity activity) {
+  private ActivityEntity saveActivity(Identity ownerIdentity, ActivityEntity activity) {
     activity.setOwnerId(ownerIdentity.getId());
     activity.setPosterId(activity.getOwnerId());
     activity = activityDao.create(activity);
@@ -153,14 +153,14 @@ public class ActivityDAOTest extends BaseCoreTest {
     return activity;
   }
   /**
-   * Test {@link activityDao#updateActivity(Activity)}
+   * Test {@link activityDao#updateActivity(ActivityEntity)}
    * 
    * @throws Exception
    */
   public void testUpdateActivity() throws Exception {
     String activityTitle = "activity title";
     String userId = johnIdentity.getId();
-    Activity activity = createActivity(activityTitle, userId);
+    ActivityEntity activity = createActivity(activityTitle, userId);
     saveActivity(johnIdentity, activity);
     //
     activity = activityDao.find(activity.getId());
@@ -185,7 +185,7 @@ public class ActivityDAOTest extends BaseCoreTest {
   public void testDeleteActivity() throws Exception {
     String activityTitle = "activity title";
     String userId = johnIdentity.getId();
-    Activity activity = new Activity();
+    ActivityEntity activity = new ActivityEntity();
     activity.setTitle(activityTitle);
     activity.setOwnerId(userId);
     activity = activityDao.create(activity);
@@ -201,7 +201,7 @@ public class ActivityDAOTest extends BaseCoreTest {
   }
 
   /**
-   * Test {@link activityDao#saveComment(Activity, Activity)}
+   * Test {@link activityDao#saveComment(ActivityEntity, ActivityEntity)}
    * 
    * @throws Exception
    * @since 1.2.0-Beta3
@@ -209,7 +209,7 @@ public class ActivityDAOTest extends BaseCoreTest {
   public void testSaveComment() throws Exception {
     String activityTitle = "activity title";
     String userId = johnIdentity.getId();
-    Activity activity = new Activity();
+    ActivityEntity activity = new ActivityEntity();
     activity.setTitle(activityTitle);
     activity.setOwnerId(userId);
     saveActivity(johnIdentity, activity);
@@ -237,12 +237,12 @@ public class ActivityDAOTest extends BaseCoreTest {
   }
 
   /**
-   * Tests {@link activityDao#getActivityByComment(Activity)}.
+   * Tests {@link activityDao#getActivityByComment(ActivityEntity)}.
    */
   public void testGetActivityByComment() {
     String activityTitle = "activity title";
     String identityId = johnIdentity.getId();
-    Activity demoActivity = new Activity();
+    ActivityEntity demoActivity = new ActivityEntity();
     demoActivity.setTitle(activityTitle);
     demoActivity.setOwnerId(identityId);
     saveActivity(johnIdentity, demoActivity);
@@ -267,12 +267,12 @@ public class ActivityDAOTest extends BaseCoreTest {
   }
 
   /**
-   * Tests {@link activityDao#getActivityByComment(Activity)}.
+   * Tests {@link activityDao#getActivityByComment(ActivityEntity)}.
    */
   public void testGetActivityByCommentId() throws Exception {
     String activityTitle = "activity title";
     String identityId = johnIdentity.getId();
-    Activity demoActivity = new Activity();
+    ActivityEntity demoActivity = new ActivityEntity();
     demoActivity.setTitle(activityTitle);
     demoActivity.setOwnerId(identityId);
     saveActivity(johnIdentity, demoActivity);
@@ -285,14 +285,14 @@ public class ActivityDAOTest extends BaseCoreTest {
     comment = commentDao.create(comment);
     activityDao.update(demoActivity);
     //
-    Activity activityAdded = commentDao.findActivity(comment.getId());
+    ActivityEntity activityAdded = commentDao.findActivity(comment.getId());
     assertEquals(demoActivity.getId(), activityAdded.getId());
     //
     final Long acId = demoActivity.getId(), cmId = comment.getId();
     executeAsync(new Runnable() {
       @Override
       public void run() {
-        Activity activityAdded = commentDao.findActivity(cmId);
+        ActivityEntity activityAdded = commentDao.findActivity(cmId);
         assertNotNull(activityAdded);
         assertEquals(acId, activityAdded.getId());
       }
@@ -300,12 +300,12 @@ public class ActivityDAOTest extends BaseCoreTest {
   }
 
   /**
-   * Test {@link activityDao#getComments(Activity)}
+   * Test {@link activityDao#getComments(ActivityEntity)}
    * 
    * @throws Exception
    */
   public void testGetComments() throws Exception {
-    Activity demoActivity = new Activity();
+    ActivityEntity demoActivity = new ActivityEntity();
     demoActivity.setTitle("demo activity");
     demoActivity.setOwnerId(demoIdentity.getId());
     saveActivity(johnIdentity, demoActivity);
@@ -330,13 +330,13 @@ public class ActivityDAOTest extends BaseCoreTest {
 
   
   /**
-   * Test {@link activityDao#deleteComment(Activity, Activity)}
+   * Test {@link activityDao#deleteComment(ActivityEntity, ActivityEntity)}
    * 
    * @throws Exception
    * @since 4.3.x
    */
   public void testDeleteComment() throws Exception {
-    Activity demoActivity = new Activity();
+    ActivityEntity demoActivity = new ActivityEntity();
     demoActivity.setTitle("demo activity");
     demoActivity.setOwnerId(demoIdentity.getId());
     saveActivity(demoIdentity, demoActivity);

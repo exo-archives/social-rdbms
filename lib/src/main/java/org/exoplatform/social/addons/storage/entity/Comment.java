@@ -37,7 +37,7 @@ public class Comment extends BaseActivity {
 
   @ManyToOne(fetch=FetchType.LAZY)
   @JoinColumn(name="ACTIVITY_ID", nullable = false)
-  private Activity activity;
+  private ActivityEntity activity;
 
   public Comment() {
     setPosted(new Date().getTime());
@@ -60,11 +60,11 @@ public class Comment extends BaseActivity {
     this.templateParams = templateParams;
   }
 
-  public Activity getActivity() {
+  public ActivityEntity getActivity() {
     return activity;
   }
 
-  public void setActivity(Activity activity) {
+  public void setActivity(ActivityEntity activity) {
     this.activity = activity;
   }
 

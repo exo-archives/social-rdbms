@@ -40,7 +40,7 @@ import org.exoplatform.social.addons.storage.RDBMSActivityStorageImpl;
 import org.exoplatform.social.addons.storage.RDBMSIdentityStorageImpl;
 import org.exoplatform.social.addons.storage.RDBMSSpaceStorageImpl;
 import org.exoplatform.social.addons.storage.dao.ActivityDAO;
-import org.exoplatform.social.addons.storage.entity.Activity;
+import org.exoplatform.social.addons.storage.entity.ActivityEntity;
 import org.exoplatform.social.addons.test.BaseCoreTest;
 import org.exoplatform.social.addons.test.MaxQueryNumber;
 import org.exoplatform.social.addons.test.QueryNumberTest;
@@ -134,8 +134,8 @@ public class AsynMigrationTest extends BaseCoreTest {
     begin();
     ActivityDAO dao = getService(ActivityDAO.class);
     //
-    List<Activity> items = dao.findAll();
-    for (Activity item : items) {
+    List<ActivityEntity> items = dao.findAll();
+    for (ActivityEntity item : items) {
       dao.delete(item);
     }
 

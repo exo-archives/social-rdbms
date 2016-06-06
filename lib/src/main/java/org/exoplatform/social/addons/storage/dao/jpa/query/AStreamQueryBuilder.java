@@ -34,8 +34,8 @@ import javax.persistence.criteria.Root;
 import javax.persistence.criteria.Subquery;
 
 import org.exoplatform.commons.persistence.impl.EntityManagerHolder;
-import org.exoplatform.social.addons.storage.entity.Activity;
-import org.exoplatform.social.addons.storage.entity.Activity_;
+import org.exoplatform.social.addons.storage.entity.ActivityEntity;
+import org.exoplatform.social.addons.storage.entity.ActivityEntity_;
 import org.exoplatform.social.addons.storage.entity.Connection;
 import org.exoplatform.social.addons.storage.entity.Connection_;
 import org.exoplatform.social.addons.storage.entity.IdentityEntity_;
@@ -130,24 +130,24 @@ public final class AStreamQueryBuilder {
   }
 
   
-  public TypedQuery<Activity> build() {
+  public TypedQuery<ActivityEntity> build() {
     
     EntityManager em = EntityManagerHolder.get();
     CriteriaBuilder cb = em.getCriteriaBuilder();
-    CriteriaQuery<Activity> criteria = cb.createQuery(Activity.class);
-    Root<Activity> activity = criteria.from(Activity.class);
-    Join<Activity, StreamItem> streamItem = activity.join(Activity_.streamItems);
+    CriteriaQuery<ActivityEntity> criteria = cb.createQuery(ActivityEntity.class);
+    Root<ActivityEntity> activity = criteria.from(ActivityEntity.class);
+    Join<ActivityEntity, StreamItem> streamItem = activity.join(ActivityEntity_.streamItems);
 
-    CriteriaQuery<Activity> select;
+    CriteriaQuery<ActivityEntity> select;
     select = criteria.select(activity).distinct(true);
-    select.where(getPredicateForStream(activity, streamItem, cb, criteria.subquery(Activity.class), criteria.subquery(Activity.class), criteria.subquery(String.class)));
+    select.where(getPredicateForStream(activity, streamItem, cb, criteria.subquery(ActivityEntity.class), criteria.subquery(ActivityEntity.class), criteria.subquery(String.class)));
     if (this.descOrder) {
-      select.orderBy(cb.desc(activity.<Long> get(Activity_.lastUpdated)));
+      select.orderBy(cb.desc(activity.<Long> get(ActivityEntity_.lastUpdated)));
     } else {
-      select.orderBy(cb.asc(activity.<Long> get(Activity_.lastUpdated)));
+      select.orderBy(cb.asc(activity.<Long> get(ActivityEntity_.lastUpdated)));
     }
 
-    TypedQuery<Activity> typedQuery = em.createQuery(select);
+    TypedQuery<ActivityEntity> typedQuery = em.createQuery(select);
     if (this.limit > 0) {
       typedQuery.setFirstResult((int) offset);
       typedQuery.setMaxResults((int) limit);
@@ -190,17 +190,17 @@ public final class AStreamQueryBuilder {
     EntityManager em = EntityManagerHolder.get();
     CriteriaBuilder cb = em.getCriteriaBuilder();
     CriteriaQuery<Long> criteria = cb.createQuery(Long.class);
-    Root<Activity> activity = criteria.from(Activity.class);
-    Join<Activity, StreamItem> streamItem = activity.join(Activity_.streamItems);
+    Root<ActivityEntity> activity = criteria.from(ActivityEntity.class);
+    Join<ActivityEntity, StreamItem> streamItem = activity.join(ActivityEntity_.streamItems);
 
     CriteriaQuery<Long> select = criteria.select(cb.countDistinct(activity));
-    select.where(getPredicateForStream(activity, streamItem, cb, criteria.subquery(Activity.class), criteria.subquery(Activity.class), criteria.subquery(String.class)));
+    select.where(getPredicateForStream(activity, streamItem, cb, criteria.subquery(ActivityEntity.class), criteria.subquery(ActivityEntity.class), criteria.subquery(String.class)));
 
     return em.createQuery(select);
   }
   
-  private Predicate getPredicateForStream(Root<Activity> activity, Join<Activity, StreamItem> stream, CriteriaBuilder cb, Subquery<Activity> commentQuery,
-                                 Subquery<Activity> mentionQuery, Subquery<String> subQuery1) {
+  private Predicate getPredicateForStream(Root<ActivityEntity> activity, Join<ActivityEntity, StreamItem> stream, CriteriaBuilder cb, Subquery<ActivityEntity> commentQuery,
+                                 Subquery<ActivityEntity> mentionQuery, Subquery<String> subQuery1) {
 
     Predicate predicate = null;
     //owner
@@ -209,7 +209,7 @@ public final class AStreamQueryBuilder {
                   
       //view user's stream
       if (this.viewer != null && !this.viewer.getId().equals(this.owner.getId())) {
-        predicate = cb.and(predicate, cb.equal(activity.get(Activity_.providerId), OrganizationIdentityProvider.NAME));
+        predicate = cb.and(predicate, cb.equal(activity.get(ActivityEntity_.providerId), OrganizationIdentityProvider.NAME));
       }
     }
     
@@ -247,25 +247,25 @@ public final class AStreamQueryBuilder {
     if (this.sinceTime > 0) {
       if (isNewer) {
         if (predicate != null) {
-          predicate = cb.and(predicate, cb.greaterThan(activity.<Long>get(Activity_.lastUpdated), this.sinceTime));
+          predicate = cb.and(predicate, cb.greaterThan(activity.<Long>get(ActivityEntity_.lastUpdated), this.sinceTime));
         } else {
-          predicate = cb.greaterThan(activity.<Long>get(Activity_.lastUpdated), this.sinceTime);
+          predicate = cb.greaterThan(activity.<Long>get(ActivityEntity_.lastUpdated), this.sinceTime);
         }
 
       } else {
         if (predicate != null) {
-          predicate = cb.and(predicate, cb.lessThan(activity.<Long>get(Activity_.lastUpdated), this.sinceTime));
+          predicate = cb.and(predicate, cb.lessThan(activity.<Long>get(ActivityEntity_.lastUpdated), this.sinceTime));
         } else {
-          predicate = cb.lessThan(activity.<Long>get(Activity_.lastUpdated), this.sinceTime);
+          predicate = cb.lessThan(activity.<Long>get(ActivityEntity_.lastUpdated), this.sinceTime);
         }
       }
     }
 
     //filter hidden = FALSE
     if (predicate != null) {
-      predicate = cb.and(predicate, cb.equal(activity.<Boolean>get(Activity_.hidden), Boolean.FALSE));
+      predicate = cb.and(predicate, cb.equal(activity.<Boolean>get(ActivityEntity_.hidden), Boolean.FALSE));
     } else {
-      predicate = cb.equal(activity.<Boolean>get(Activity_.hidden), Boolean.FALSE);
+      predicate = cb.equal(activity.<Boolean>get(ActivityEntity_.hidden), Boolean.FALSE);
     }
     return predicate;
   }
@@ -352,22 +352,22 @@ public final class AStreamQueryBuilder {
 
   }
 
-  public TypedQuery<Activity> buildGetActivitiesByPoster() {
+  public TypedQuery<ActivityEntity> buildGetActivitiesByPoster() {
     EntityManager em = EntityManagerHolder.get();
     CriteriaBuilder cb = em.getCriteriaBuilder();
-    CriteriaQuery<Activity> criteria = cb.createQuery(Activity.class);
-    Root<Activity> activity = criteria.from(Activity.class);
-    Predicate predicate = cb.equal(activity.get(Activity_.posterId), owner.getId());
+    CriteriaQuery<ActivityEntity> criteria = cb.createQuery(ActivityEntity.class);
+    Root<ActivityEntity> activity = criteria.from(ActivityEntity.class);
+    Predicate predicate = cb.equal(activity.get(ActivityEntity_.posterId), owner.getId());
     if (this.activityTypes != null && this.activityTypes.length > 0) {
       List<String> types = new ArrayList<String>(Arrays.asList(this.activityTypes));
-      predicate = cb.and(predicate, addInClause(cb, activity.get(Activity_.type), types));
+      predicate = cb.and(predicate, addInClause(cb, activity.get(ActivityEntity_.type), types));
     }
     //
-    CriteriaQuery<Activity> select = criteria.select(activity).distinct(true);
+    CriteriaQuery<ActivityEntity> select = criteria.select(activity).distinct(true);
     select.where(predicate);
-    select.orderBy(cb.desc(activity.<Long> get(Activity_.lastUpdated)));
+    select.orderBy(cb.desc(activity.<Long> get(ActivityEntity_.lastUpdated)));
 
-    TypedQuery<Activity> typedQuery = em.createQuery(select);
+    TypedQuery<ActivityEntity> typedQuery = em.createQuery(select);
     if (this.limit > 0) {
       typedQuery.setFirstResult((int) offset);
       typedQuery.setMaxResults((int) limit);
@@ -380,11 +380,11 @@ public final class AStreamQueryBuilder {
     EntityManager em = EntityManagerHolder.get();
     CriteriaBuilder cb = em.getCriteriaBuilder();
     CriteriaQuery<Long> criteria = cb.createQuery(Long.class);
-    Root<Activity> activity = criteria.from(Activity.class);
-    Predicate predicate = cb.equal(activity.get(Activity_.posterId), owner.getId());
+    Root<ActivityEntity> activity = criteria.from(ActivityEntity.class);
+    Predicate predicate = cb.equal(activity.get(ActivityEntity_.posterId), owner.getId());
     if (this.activityTypes != null && this.activityTypes.length > 0) {
       List<String> types = new ArrayList<String>(Arrays.asList(this.activityTypes));
-      predicate = cb.and(predicate, addInClause(cb, activity.get(Activity_.type), types));
+      predicate = cb.and(predicate, addInClause(cb, activity.get(ActivityEntity_.type), types));
     }
     //
     CriteriaQuery<Long> select = criteria.select(cb.countDistinct(activity));

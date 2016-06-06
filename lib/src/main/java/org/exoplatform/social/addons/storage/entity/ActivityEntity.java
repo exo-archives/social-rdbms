@@ -22,7 +22,7 @@ import org.exoplatform.commons.api.persistence.ExoEntity;
         @NamedQuery(name = "SocActivity.migratePosterId", query = "UPDATE SocActivity a SET a.posterId = :newId WHERE a.posterId = :oldId"),
         @NamedQuery(name = "SocActivity.migrateOwnerId", query = "UPDATE SocActivity a SET a.ownerId = :newId WHERE a.ownerId = :oldId")
 })
-public class Activity extends BaseActivity {
+public class ActivityEntity extends BaseActivity {
 
   private static final long serialVersionUID = -1489894321243127979L;
 
@@ -64,7 +64,7 @@ public class Activity extends BaseActivity {
   private List<StreamItem> streamItems;
 
   /** */
-  public Activity() {
+  public ActivityEntity() {
     setPosted(new Date().getTime());
     setLastUpdated(new Date().getTime());
   }

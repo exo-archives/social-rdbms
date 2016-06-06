@@ -30,13 +30,12 @@ import org.exoplatform.management.jmx.annotations.Property;
 import org.exoplatform.services.jcr.impl.core.NodeImpl;
 import org.exoplatform.social.addons.storage.dao.ActivityDAO;
 import org.exoplatform.social.addons.storage.dao.CommentDAO;
-import org.exoplatform.social.addons.storage.entity.Activity;
+import org.exoplatform.social.addons.storage.entity.ActivityEntity;
 import org.exoplatform.social.addons.storage.entity.Comment;
 import org.exoplatform.social.addons.updater.utils.MigrationCounter;
 import org.exoplatform.social.addons.updater.utils.StringUtil;
 import org.exoplatform.social.core.activity.model.ExoSocialActivity;
 import org.exoplatform.social.core.activity.model.ExoSocialActivityImpl;
-import org.exoplatform.social.core.chromattic.entity.ActivityEntity;
 import org.exoplatform.social.core.chromattic.entity.ActivityListEntity;
 import org.exoplatform.social.core.chromattic.entity.ActivityParameters;
 import org.exoplatform.social.core.chromattic.entity.HidableEntity;
@@ -69,7 +68,7 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
   private final ActivityDAO activityDAO;
 
   private String previousActivityId = null;
-  private ActivityEntity lastActivity = null;
+  private org.exoplatform.social.core.chromattic.entity.ActivityEntity lastActivity = null;
   private String lastUserProcess = null;
   private boolean forceStop = false;
   
@@ -255,7 +254,7 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
     NodeIterator iterator = nodes("SELECT * FROM soc:activityUpdater");
     if (iterator.hasNext()) {
       String currentUUID = iterator.nextNode().getUUID();
-      lastActivity = _findById(ActivityEntity.class, currentUUID);
+      lastActivity = _findById(org.exoplatform.social.core.chromattic.entity.ActivityEntity.class, currentUUID);
       if (lastActivity != null) {
         lastUserProcess = lastActivity.getPosterIdentity().getRemoteId();
       }
@@ -331,12 +330,14 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
           doBroadcastListener(activity, activityId);
           
           //
-          ActivityEntity activityEntity = getSession().findById(ActivityEntity.class, activityId);
+          org.exoplatform.social.core.chromattic.entity.ActivityEntity activityEntity = 
+              getSession().findById(org.exoplatform.social.core.chromattic.entity.ActivityEntity.class, activityId);
           _getMixin(activityEntity, ActivityUpdaterEntity.class, true);
           //
           if (previousActivityId != null) {
             try {
-              ActivityEntity previousActivity = getSession().findById(ActivityEntity.class, previousActivityId);
+              org.exoplatform.social.core.chromattic.entity.ActivityEntity previousActivity = 
+                  getSession().findById(org.exoplatform.social.core.chromattic.entity.ActivityEntity.class, previousActivityId);
               if (previousActivity != null) {
                 _removeMixin(previousActivity, ActivityUpdaterEntity.class);
               }
@@ -345,9 +346,9 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
             }
           }
           
-          List<ActivityEntity> commentEntities = activityEntity.getComments();
+          List<org.exoplatform.social.core.chromattic.entity.ActivityEntity> commentEntities = activityEntity.getComments();
           if (commentEntities != null) {
-            for (ActivityEntity commentEntity : commentEntities) {
+            for (org.exoplatform.social.core.chromattic.entity.ActivityEntity commentEntity : commentEntities) {
               ExoSocialActivity comment = fillCommentFromEntity(commentEntity);
               if (comment != null) {
                 String oldCommentId = comment.getId();
@@ -427,7 +428,8 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
 
     if (previousActivityId != null) {
       try {
-        ActivityEntity previousActivity = getSession().findById(ActivityEntity.class, previousActivityId);
+        org.exoplatform.social.core.chromattic.entity.ActivityEntity previousActivity = 
+            getSession().findById(org.exoplatform.social.core.chromattic.entity.ActivityEntity.class, previousActivityId);
         if (previousActivity != null) {
           _removeMixin(previousActivity, ActivityUpdaterEntity.class);
         }
@@ -606,7 +608,7 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
     return isDone;
   }
 
-  private ExoSocialActivity fillCommentFromEntity(ActivityEntity activityEntity) {
+  private ExoSocialActivity fillCommentFromEntity(org.exoplatform.social.core.chromattic.entity.ActivityEntity activityEntity) {
     ExoSocialActivity comment = new ExoSocialActivityImpl();
     try {
       //
@@ -651,7 +653,7 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
     return comment;
   }
 
-  private long getLastUpdatedTime(ActivityEntity activityEntity, Long postTime) {
+  private long getLastUpdatedTime(org.exoplatform.social.core.chromattic.entity.ActivityEntity activityEntity, Long postTime) {
     try {
       return activityEntity.getLastUpdated();
     } catch (Exception e) {
@@ -665,7 +667,7 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
   }
   
   public void saveComment(ExoSocialActivity activity, ExoSocialActivity eXoComment) throws ActivityStorageException {
-    Activity activityEntity = activityDAO.find(Long.valueOf(activity.getId()));
+    ActivityEntity activityEntity = activityDAO.find(Long.valueOf(activity.getId()));
     Comment commentEntity = convertCommentToCommentEntity(eXoComment);
     commentEntity.setActivity(activityEntity);
     //
@@ -705,7 +707,7 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
     return commentEntity;
   }
   
-  private Set<String> processMentionOfComment(Activity activityEntity, Comment commentEntity, String[] activityMentioners, String[] commentMentioners, boolean isAdded) {
+  private Set<String> processMentionOfComment(ActivityEntity activityEntity, Comment commentEntity, String[] activityMentioners, String[] commentMentioners, boolean isAdded) {
     Set<String> mentioners = new HashSet<String>(Arrays.asList(activityMentioners));
     if (commentMentioners.length == 0) return mentioners;
     //
@@ -722,7 +724,7 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
     return mentioners;
   }
   
-  private boolean isAllowedToRemove(Activity activity, Comment comment, String mentioner) {
+  private boolean isAllowedToRemove(ActivityEntity activity, Comment comment, String mentioner) {
     if (ArrayUtils.contains(processMentions(activity.getTitle()), mentioner)) {
       return false;
     }
@@ -769,7 +771,7 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
    * @param owner
    * @param activity
    */
-  private void mention(Identity owner, Activity activity, String [] mentions) {
+  private void mention(Identity owner, ActivityEntity activity, String [] mentions) {
     for (String mentioner : mentions) {
       Identity identity = identityStorage.findIdentityById(mentioner);
       if(identity != null) {

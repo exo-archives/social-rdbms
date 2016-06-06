@@ -24,7 +24,7 @@ public class StreamItem {
 
   @OneToOne
   @JoinColumn(name = "ACTIVITY_ID", nullable = false)
-  private Activity activity;
+  private ActivityEntity activity;
 
   @Column(name = "ACTIVITY_ID", insertable=false, updatable=false)
   private Long activityId;
@@ -58,11 +58,11 @@ public class StreamItem {
     this.id = id;
   }
 
-  public Activity getActivity() {
+  public ActivityEntity getActivity() {
     return activity;
   }
 
-  public void setActivity(Activity activity) {
+  public void setActivity(ActivityEntity activity) {
     this.activity = activity;
   }
 
