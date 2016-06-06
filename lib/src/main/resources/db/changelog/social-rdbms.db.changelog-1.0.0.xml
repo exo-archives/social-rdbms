@@ -313,7 +313,7 @@
       <column name="VISITED" type="BIT"/>
     </createTable>    
     <modifySql dbms="mysql">
-      <append value=" ENGINE=INNODB CHARSET=UTF8 COLLATE utf8_general_ci"/>
+      <append value=" ENGINE=INNODB CHARSET=UTF8 COLLATE utf8_bin"/>
     </modifySql>    
   </changeSet>
 
@@ -413,6 +413,14 @@
     <addUniqueConstraint columnNames="SPACE_ID, APP_ID"
                          constraintName="UK_SPACE_APP_01"
                          tableName="SOC_APPS"/>
+
+    <!--
+     I have to add sql here because liquibase does not support to set the COLLATE
+     And seem the problem is happened on MySQL only
+    -->
+    <sql dbms="mysql">
+      ALTER TABLE SOC_SPACES_MEMBERS MODIFY USER_ID varchar(100) CHARACTER SET utf8 NOT NULL COLLATE utf8_bin;
+    </sql>
     <addUniqueConstraint columnNames="SPACE_ID, USER_ID, STATUS"
                          constraintName="UK_SPACE_USER_STATUS_01"
                          tableName="SOC_SPACES_MEMBERS"/>                         
