@@ -164,6 +164,12 @@ public class RDBMSMigrationManager implements Startable {
               }
             }
 
+            // cleanup spaces
+            if (!MigrationContext.isDone() && MigrationContext.isSpaceDone() && !MigrationContext.isSpaceCleanupDone()) {
+              getSpaceMigrationService().doRemove();
+              updateSettingValue(MigrationContext.SOC_RDBMS_SPACE_CLEANUP_KEY, Boolean.TRUE);
+            }
+
             // cleanup Connections
             if (!MigrationContext.isDone() && MigrationContext.isConnectionDone() && !MigrationContext.isConnectionCleanupDone()) {
               try {
@@ -184,15 +190,11 @@ public class RDBMSMigrationManager implements Startable {
               getActivityMigrationService().doRemove();
               updateSettingValue(MigrationContext.SOC_RDBMS_ACTIVITY_CLEANUP_KEY, Boolean.TRUE);
             }
-            
-            // cleanup spaces
-            if (!MigrationContext.isDone() && MigrationContext.isSpaceDone() && !MigrationContext.isSpaceCleanupDone()) {
-              getSpaceMigrationService().doRemove();
-              updateSettingValue(MigrationContext.SOC_RDBMS_SPACE_CLEANUP_KEY, Boolean.TRUE);
-            }
 
             // Cleanup identity
-            if (!MigrationContext.isDone() && MigrationContext.isIdentityDone() && !MigrationContext.isIdentityCleanupDone()) {
+            if (!MigrationContext.isDone()
+                    && MigrationContext.isIdentityDone() && MigrationContext.isConnectionDone() && MigrationContext.isActivityDone()
+                    && !MigrationContext.isIdentityCleanupDone()) {
               getIdentityMigrationService().doRemove();
               updateSettingValue(MigrationContext.SOC_RDBMS_IDENTITY_CLEANUP_KEY, Boolean.TRUE);
               updateSettingValue(MigrationContext.SOC_RDBMS_MIGRATION_STATUS_KEY, Boolean.TRUE);
