@@ -77,7 +77,7 @@ public class ProfileEntity {
   private String avatarMimeType;
 
   @Lob
-  @Column(name = "AVATAR_IMAGE", length = 5 * 1024 * 1024)
+  @Column(name = "AVATAR_IMAGE")
   private byte[] avatarImage;
 
   @ElementCollection(fetch = FetchType.EAGER)

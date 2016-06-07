@@ -20,10 +20,10 @@ public class AppEntity implements Serializable {
 
   private static final Log  LOG              = ExoLogger.getLogger(AppEntity.class);
 
-  @Column(name = "APP_ID", length = 50, nullable = false)
+  @Column(name = "APP_ID", nullable = false)
   private String            appId;
 
-  @Column(name = "APP_NAME", length = 50, nullable = false)
+  @Column(name = "APP_NAME", nullable = false)
   private String            appName;
 
   @Column(name = "REMOVABLE", nullable = false)

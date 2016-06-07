@@ -37,10 +37,10 @@ public class SpaceMemberEntity implements Serializable {
   @JoinColumn(name = "SPACE_ID", nullable = false)
   private SpaceEntity       space;
 
-  @Column(name = "USER_ID", length = 100, nullable = false)
+  @Column(name = "USER_ID", nullable = false)
   private String            userId;
 
-  @Column(name = "STATUS", length = 36, nullable = false)
+  @Column(name = "STATUS", nullable = false)
   private Status            status;
 
   @Column(name = "LAST_ACCESS")

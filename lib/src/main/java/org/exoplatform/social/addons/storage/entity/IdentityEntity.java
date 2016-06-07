@@ -42,7 +42,7 @@ import java.util.List;
  */
 @Entity(name = "SocIdentityEntity")
 @ExoEntity
-@Table(name = "SOC_IDENTITY")
+@Table(name = "SOC_IDENTITIES")
 @NamedQueries({
         @NamedQuery(
                 name = "SocIdentity.findByProviderAndRemoteId",

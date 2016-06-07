@@ -14,10 +14,10 @@
             <column name="ACTIVITY_ID" type="BIGINT" autoIncrement="${autoIncrement}" startWith="1">
               <constraints nullable="false" primaryKey="true" primaryKeyName="PK_SOC_ACTIVITIES"/>
             </column>
-            <column name="APP_ID" type="NVARCHAR(36)"/>
+            <column name="APP_ID" type="NVARCHAR(200)"/>
             <column name="BODY" type="LONGTEXT"/>
-            <column name="EXTERNAL_ID" type="NVARCHAR(36)"/>
-            <column name="PROVIDER_ID" type="NVARCHAR(36)"/>
+            <column name="EXTERNAL_ID" type="NVARCHAR(200)"/>
+            <column name="PROVIDER_ID" type="NVARCHAR(200)"/>
             <column name="HIDDEN" type="BOOLEAN">
               <constraints nullable="false"/>
             </column>
@@ -27,14 +27,14 @@
             <column name="LOCKED" type="BOOLEAN">
               <constraints nullable="false"/>
             </column>
-            <column name="OWNER_ID" type="NVARCHAR(36)">
+            <column name="OWNER_ID" type="NVARCHAR(200)">
               <constraints nullable="false"/>
             </column>
-            <column name="PERMALINK" type="NVARCHAR(255)"/>
+            <column name="PERMALINK" type="NVARCHAR(500)"/>
             <column name="POSTED" type="BIGINT">
               <constraints nullable="false"/>
             </column>
-            <column name="POSTER_ID" type="NVARCHAR(36)">
+            <column name="POSTER_ID" type="NVARCHAR(200)">
               <constraints nullable="false"/>
             </column>
             <column name="TITLE" type="LONGTEXT">
@@ -67,7 +67,7 @@
             <column name="ACTIVITY_ID" type="BIGINT"> 
                 <constraints nullable="false"/>
             </column>
-            <column name="LIKER_ID" type="NVARCHAR(36)">
+            <column name="LIKER_ID" type="NVARCHAR(200)">
             	<constraints nullable="false"/>
             </column>
         </createTable>
@@ -84,7 +84,7 @@
             <column name="ACTIVITY_ID" type="BIGINT">
                 <constraints nullable="false"/>
             </column>
-            <column name="MENTIONER_ID" type="NVARCHAR(36)">
+            <column name="MENTIONER_ID" type="NVARCHAR(200)">
                 <constraints nullable="false"/>
             </column>
         </createTable>
@@ -114,9 +114,9 @@
             <column name="COMMENT_ID" type="BIGINT" autoIncrement="${autoIncrement}" startWith="1">
               <constraints nullable="false" primaryKey="true" primaryKeyName="PK_SOC_COMMENTS"/>
             </column>
-            <column name="APP_ID" type="NVARCHAR(36)"/>
+            <column name="APP_ID" type="NVARCHAR(200)"/>
             <column name="BODY" type="LONGTEXT"/>
-            <column name="EXTERNAL_ID" type="NVARCHAR(36)"/>
+            <column name="EXTERNAL_ID" type="NVARCHAR(200)"/>
             <column name="HIDDEN" type="BOOLEAN">
               <constraints nullable="false"/>
             </column>
@@ -126,12 +126,12 @@
             <column name="LOCKED" type="BOOLEAN">
               <constraints nullable="false"/>
             </column>
-            <column name="OWNER_ID" type="NVARCHAR(36)"/>
-            <column name="PERMALINK" type="NVARCHAR(255)"/>
+            <column name="OWNER_ID" type="NVARCHAR(200)"/>
+            <column name="PERMALINK" type="NVARCHAR(500)"/>
             <column name="POSTED" type="BIGINT">
               <constraints nullable="false"/>
             </column>
-            <column name="POSTER_ID" type="NVARCHAR(36)">
+            <column name="POSTER_ID" type="NVARCHAR(200)">
               <constraints nullable="false"/>
             </column>
             <column name="PRIORITY" type="FLOAT(12)"/>
@@ -176,7 +176,7 @@
             <column name="STREAM_ITEM_ID" type="BIGINT" autoIncrement="${autoIncrement}" startWith="1">
               <constraints nullable="false" primaryKey="true" primaryKeyName="PK_SOC_STREAM_ITEMS"/>
             </column>
-            <column name="OWNER_ID" type="NVARCHAR(36)">
+            <column name="OWNER_ID" type="NVARCHAR(200)">
               <constraints nullable="false"/>
             </column>
             <column name="STREAM_TYPE" type="INT">
@@ -277,7 +277,7 @@
         <column name="APP_ID" type="NVARCHAR(200)">
  	      <constraints nullable="false"/>        	
         </column>
-        <column name="APP_NAME" type="NVARCHAR(200)">
+        <column name="APP_NAME" type="NVARCHAR(550)">
           <constraints nullable="false"/>
         </column>
         <column name="REMOVABLE" type="BOOLEAN">
@@ -299,10 +299,10 @@
       <column name="SPACE_ID" type="BIGINT">
         <constraints foreignKeyName="FK_SOC_MEM_SPACE_01" references="SOC_SPACES(SPACE_ID)" nullable="false"/>
       </column>
-      <column name="USER_ID" type="NVARCHAR(100)">
+      <column name="USER_ID" type="NVARCHAR(200)">
       	<constraints nullable="false"/>
       </column>
-      <column name="STATUS" type="NVARCHAR(36)">
+      <column name="STATUS" type="INT">
       	<constraints nullable="false"/>
       </column>
       <column name="LAST_ACCESS" type="BIGINT"/>
@@ -314,14 +314,14 @@
   </changeSet>
 
   <changeSet author="social" id="1.0.0-26">
-    <createTable tableName="SOC_IDENTITY">
+    <createTable tableName="SOC_IDENTITIES">
       <column name="IDENTITY_ID" type="BIGINT" autoIncrement="${autoIncrement}" startWith="1">
         <constraints nullable="false" primaryKey="true" primaryKeyName="PK_SOC_IDENTITIES"/>
       </column>
-      <column name="PROVIDER_ID" type="NVARCHAR(50)">
+      <column name="PROVIDER_ID" type="NVARCHAR(200)">
         <constraints nullable="false"/>
       </column>
-      <column name="REMOTE_ID" type="NVARCHAR(100)">
+      <column name="REMOTE_ID" type="NVARCHAR(200)">
         <constraints nullable="false"/>
       </column>
       <column name="ENABLED"  type="BOOLEAN" defaultValue="1">
@@ -338,7 +338,7 @@
   <changeSet author="social" id="1.0.0-27">
     <addUniqueConstraint columnNames="PROVIDER_ID, REMOTE_ID"
                          constraintName="UK_PROVIDER_ID_REMOTE_ID_01"
-                         tableName="SOC_IDENTITY"/>
+                         tableName="SOC_IDENTITIES"/>
   </changeSet>
   <changeSet author="social" id="1.0.0-28" dbms="oracle,postgresql">
     <createSequence sequenceName="SEQ_SOC_IDENTITY_ID" startValue="1"/>
@@ -350,10 +350,10 @@
         <constraints nullable="false" primaryKey="true" primaryKeyName="PK_SOC_PROFILES"/>
       </column>
       <column name="IDENTITY_ID" type="BIGINT">
-        <constraints foreignKeyName="FK_SOC_IDENTITY_PROFILE" references="SOC_IDENTITY(IDENTITY_ID)" nullable="false"/>
+        <constraints foreignKeyName="FK_SOC_IDENTITY_PROFILE" references="SOC_IDENTITIES(IDENTITY_ID)" nullable="false"/>
       </column>
-      <column name="URL" type="NVARCHAR(250)"/>
-      <column name="AVATAR_URL" type="NVARCHAR(250)"/>
+      <column name="URL" type="NVARCHAR(500)"/>
+      <column name="AVATAR_URL" type="NVARCHAR(500)"/>
       <column name="AVATAR_MIMETYPE" type="NVARCHAR(250)"/>
       <column name="AVATAR_IMAGE" type="MEDIUMBLOB"/>
       <column name="CREATED_DATE" type="TIMESTAMP">
@@ -378,7 +378,7 @@
       <column name="PROFILE_ID" type="BIGINT">
         <constraints foreignKeyName="FK_SOC_PROFILE_PROPERTIES" references="SOC_PROFILES(PROFILE_ID)" nullable="false"/>
       </column>
-      <column name="NAME" type="NVARCHAR(250)">
+      <column name="NAME" type="NVARCHAR(200)">
         <constraints nullable="false"/>
       </column>
       <column name="VALUE" type="NVARCHAR(2000)"/>
@@ -429,10 +429,10 @@
         <constraints nullable="false" primaryKey="true" primaryKeyName="PK_SOC_CONNECTIONS"/>
       </column>
       <column name="SENDER_ID" type="BIGINT">
-        <constraints foreignKeyName="FK_SOC_CONNECTION_SENDER" references="SOC_IDENTITY(IDENTITY_ID)" nullable="false"/>
+        <constraints foreignKeyName="FK_SOC_CONNECTION_SENDER" references="SOC_IDENTITIES(IDENTITY_ID)" nullable="false"/>
       </column>
       <column name="RECEIVER_ID" type="BIGINT">
-        <constraints foreignKeyName="FK_SOC_CONNECTION_RECEIVER" references="SOC_IDENTITY(IDENTITY_ID)" nullable="false"/>
+        <constraints foreignKeyName="FK_SOC_CONNECTION_RECEIVER" references="SOC_IDENTITIES(IDENTITY_ID)" nullable="false"/>
       </column>
       <column name="STATUS" type="INT">
         <constraints nullable="false"/>

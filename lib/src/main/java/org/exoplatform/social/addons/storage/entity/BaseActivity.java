@@ -16,7 +16,7 @@ import javax.persistence.MappedSuperclass;
 public abstract class BaseActivity implements Serializable {
   
   /** */
-  @Column(name="TITLE", length = 2000, nullable = false)
+  @Column(name="TITLE", nullable = false)
   private String title;
   
   /** */
@@ -24,7 +24,7 @@ public abstract class BaseActivity implements Serializable {
   private String type;
   
   /** */
-  @Column(name="TITLE_ID", length = 36)
+  @Column(name="TITLE_ID")
   private String titleId;
   
   /** */
@@ -36,23 +36,23 @@ public abstract class BaseActivity implements Serializable {
   private Long lastUpdated;
   
   /** */
-  @Column(name="POSTER_ID", length = 36)
+  @Column(name="POSTER_ID")
   private String posterId;// creator
   
   /** */
-  @Column(name="OWNER_ID", length = 36)
+  @Column(name="OWNER_ID")
   private String ownerId;// owner of stream
   
   /** */
-  @Column(name="PERMALINK", length = 255)
+  @Column(name="PERMALINK")
   private String permaLink;
   
   /** */
-  @Column(name="APP_ID", length = 36)
+  @Column(name="APP_ID")
   private String appId;
   
   /** */
-  @Column(name="EXTERNAL_ID", length = 36)
+  @Column(name="EXTERNAL_ID")
   private String externalId;
   
   /** */

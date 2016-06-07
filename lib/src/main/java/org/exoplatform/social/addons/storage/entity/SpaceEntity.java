@@ -79,16 +79,16 @@ public class SpaceEntity implements Serializable {
   @CollectionTable(name = "SOC_APPS", joinColumns = @JoinColumn(name = "SPACE_ID") )
   private Set<AppEntity>    app              = new HashSet<>();
 
-  @Column(name = "PRETTY_NAME", length = 200)
+  @Column(name = "PRETTY_NAME")
   private String            prettyName;
 
-  @Column(name = "DISPLAY_NAME", length = 200)
+  @Column(name = "DISPLAY_NAME")
   private String            displayName;
 
   @Column(name = "REGISTRATION")
   private REGISTRATION            registration;
 
-  @Column(name = "DESCRIPTION", length = 2000)
+  @Column(name = "DESCRIPTION")
   private String            description;
 
   @Column(name = "AVATAR_LAST_UPDATED")
@@ -100,10 +100,10 @@ public class SpaceEntity implements Serializable {
   @Column(name = "PRIORITY")
   public PRIORITY           priority;
 
-  @Column(name = "GROUP_ID", length = 200)
+  @Column(name = "GROUP_ID")
   public String             groupId;
 
-  @Column(name = "URL", length = 500)
+  @Column(name = "URL")
   public String             url;
 
   @Temporal(TemporalType.TIMESTAMP)

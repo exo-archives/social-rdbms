@@ -34,7 +34,7 @@ public class StreamItemEntity {
   /**
    * This is id's Identity owner of ActivityStream or SpaceStream
    */
-  @Column(name="OWNER_ID", length = 36, nullable = false)
+  @Column(name="OWNER_ID", nullable = false)
   private String ownerId;
   
   /** */

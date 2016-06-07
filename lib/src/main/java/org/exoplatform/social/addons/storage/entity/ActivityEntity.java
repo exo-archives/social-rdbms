@@ -46,7 +46,7 @@ public class ActivityEntity extends BaseActivity {
     joinColumns=@JoinColumn(name = "ACTIVITY_ID")
   )
   @MapKeyColumn(name="TEMPLATE_PARAM_KEY")
-  @Column(name="TEMPLATE_PARAM_VALUE", length = 1024)
+  @Column(name="TEMPLATE_PARAM_VALUE")
   private Map<String, String> templateParams = new LinkedHashMap<String, String>();
 
   @OneToMany(cascade=CascadeType.ALL, orphanRemoval=true, mappedBy="activity", fetch=FetchType.LAZY)
@@ -56,7 +56,7 @@ public class ActivityEntity extends BaseActivity {
   private Set<MentionEntity> mentions;
 
   /** */
-  @Column(name="PROVIDER_ID", length = 36)
+  @Column(name="PROVIDER_ID")
   private String providerId;
   
   /** */

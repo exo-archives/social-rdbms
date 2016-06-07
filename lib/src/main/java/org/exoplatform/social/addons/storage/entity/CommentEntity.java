@@ -32,7 +32,7 @@ public class CommentEntity extends BaseActivity {
     joinColumns=@JoinColumn(name = "COMMENT_ID")
   )
   @MapKeyColumn(name="TEMPLATE_PARAM_KEY")
-  @Column(name="TEMPLATE_PARAM_VALUE", length = 1024)
+  @Column(name="TEMPLATE_PARAM_VALUE")
   private Map<String, String> templateParams;
 
   @ManyToOne(fetch=FetchType.LAZY)
