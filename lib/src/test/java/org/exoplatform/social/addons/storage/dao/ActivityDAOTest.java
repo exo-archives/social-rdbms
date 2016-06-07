@@ -188,6 +188,7 @@ public class ActivityDAOTest extends BaseCoreTest {
     ActivityEntity activity = new ActivityEntity();
     activity.setTitle(activityTitle);
     activity.setOwnerId(userId);
+    activity.setPosterId(userId);
     activity = activityDao.create(activity);
     //
     activity = activityDao.find(activity.getId());
@@ -219,6 +220,7 @@ public class ActivityDAOTest extends BaseCoreTest {
     CommentEntity comment = new CommentEntity();
     comment.setTitle(commentTitle);
     comment.setOwnerId(demoIdentity.getId());
+    comment.setPosterId(demoIdentity.getId());
     activity.addComment(comment);
     commentDao.create(comment);
     
@@ -250,6 +252,7 @@ public class ActivityDAOTest extends BaseCoreTest {
     CommentEntity comment = new CommentEntity();
     comment.setTitle("demo comment");
     comment.setOwnerId(demoIdentity.getId());
+    comment.setPosterId(demoIdentity.getId());
     //
     demoActivity = activityDao.find(demoActivity.getId());
     //
@@ -280,6 +283,7 @@ public class ActivityDAOTest extends BaseCoreTest {
     CommentEntity comment = new CommentEntity();
     comment.setTitle("demo comment");
     comment.setOwnerId(demoIdentity.getId());
+    comment.setPosterId(demoIdentity.getId());
     //
     demoActivity.addComment(comment);
     comment = commentDao.create(comment);
@@ -316,6 +320,7 @@ public class ActivityDAOTest extends BaseCoreTest {
     for (int i = 0; i < total; i ++) {
       CommentEntity maryComment = new CommentEntity();
       maryComment.setOwnerId(maryIdentity.getId());
+      maryComment.setPosterId(maryIdentity.getId());
       maryComment.setTitle("mary comment");
       demoActivity.addComment(maryComment);
       commentDao.create(maryComment);
@@ -345,6 +350,7 @@ public class ActivityDAOTest extends BaseCoreTest {
     CommentEntity maryComment = new CommentEntity();
     maryComment.setTitle("mary comment");
     maryComment.setOwnerId(maryIdentity.getId());
+    maryComment.setPosterId(maryIdentity.getId());
     demoActivity.addComment(maryComment);
     commentDao.create(maryComment);
     activityDao.update(demoActivity);

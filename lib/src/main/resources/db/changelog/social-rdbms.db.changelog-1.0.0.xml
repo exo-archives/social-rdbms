@@ -261,7 +261,7 @@
           <constraints nullable="false"/>
         </column>
         <column name="URL" type="NVARCHAR(500)"/>
-        <column name="CREATED_TIME" type="BIGINT">
+        <column name="CREATED_DATE" type="TIMESTAMP">
           <constraints nullable="false"/>
         </column>
     </createTable>

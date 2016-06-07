@@ -97,6 +97,7 @@ public class SpaceActivityMySqlPublisherTest extends AbstractCoreTest {
     space.setGroupId("/platform/users");
     space.setVisibility(Space.PRIVATE);
     space.setType(DefaultSpaceApplicationHandler.NAME);
+    space.setRegistration(Space.OPEN);
     String[] managers = new String[] {"root"};
     String[] members = new String[] {"root"};
     space.setManagers(managers);
@@ -150,6 +151,7 @@ public class SpaceActivityMySqlPublisherTest extends AbstractCoreTest {
    space.setPrettyName(space.getDisplayName());
    space.setGroupId("/platform/users");
    space.setVisibility(Space.PRIVATE);
+   space.setRegistration(Space.OPEN);
    space.setType(DefaultSpaceApplicationHandler.NAME);
    String[] managers = new String[] {"root"};
    String[] members = new String[] {"root"};
@@ -269,6 +271,7 @@ public class SpaceActivityMySqlPublisherTest extends AbstractCoreTest {
    space.setPrettyName(space.getDisplayName());
    space.setGroupId("/platform/users");
    space.setVisibility(Space.HIDDEN);
+   space.setRegistration(Space.OPEN);
    String[] managers = new String[] {"root"};
    String[] members = new String[] {"root"};
    space.setManagers(managers);

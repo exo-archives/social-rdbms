@@ -22,7 +22,7 @@ public class StreamItemEntity {
   @Column(name = "STREAM_ITEM_ID")
   private Long id;
 
-  @OneToOne
+  @ManyToOne
   @JoinColumn(name = "ACTIVITY_ID", nullable = false)
   private ActivityEntity activity;
 

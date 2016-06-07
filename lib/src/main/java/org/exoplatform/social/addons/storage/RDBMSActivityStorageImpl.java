@@ -31,6 +31,7 @@ import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import javax.persistence.FlushModeType;
 import javax.persistence.LockModeType;
 
 import org.apache.commons.lang.ArrayUtils;
@@ -384,15 +385,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
     }
 
   }
-  
-  private void updateLastUpdatedForStreamItem(ActivityEntity activity) {
-    List<StreamItemEntity> items = streamItemDAO.findStreamItemByActivityId(activity.getId());
-    for (StreamItemEntity item : items) {
-      item.setLastUpdated(activity.getLastUpdated());
-      streamItemDAO.update(item);
-    }
-  }
-  
+
   /**
    * Creates the StreamItem for commenter
    * @param commenter
@@ -404,7 +397,15 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
       createStreamItem(StreamType.COMMENTER, activityEntity, commenter.getId());
     }
   }
-  
+
+  private void updateLastUpdatedForStreamItem(ActivityEntity activity) {
+    List<StreamItemEntity> items = streamItemDAO.findStreamItemByActivityId(activity.getId());
+    for (StreamItemEntity item : items) {
+      item.setLastUpdated(activity.getLastUpdated());
+      streamItemDAO.update(item);
+    }
+  }
+
   private Set<String> processMentionOfComment(ActivityEntity activityEntity, CommentEntity commentEntity, String[] activityMentioners, String[] commentMentioners, boolean isAdded) {
     Set<String> mentioners = new HashSet<String>(Arrays.asList(activityMentioners));
     if (commentMentioners.length == 0) return mentioners;

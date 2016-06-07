@@ -65,9 +65,6 @@ public abstract class BaseActivity implements Serializable {
   
   @Column(name="BODY", length = 2000)
   private String body;
- 
-  @Column(name="PRIORITY")
-  private float priority;
 
   public String getTitle() {
     return title;
@@ -146,11 +143,5 @@ public abstract class BaseActivity implements Serializable {
   }
   public void setBody(String body) {
     this.body = body;
-  }
-  public float getPriority() {
-    return priority;
-  }
-  public void setPriority(float priority) {
-    this.priority = priority;
   }
 }
