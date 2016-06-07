@@ -19,6 +19,7 @@ package org.exoplatform.social.addons.storage.dao.jpa.query;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Date;
 import java.util.List;
 
 import javax.persistence.EntityManager;
@@ -163,13 +164,13 @@ public final class AStreamQueryBuilder {
     CriteriaQuery<Tuple> criteria = cb.createTupleQuery();
     Root<StreamItemEntity> streamItem = criteria.from(StreamItemEntity.class);
 
-    criteria.multiselect(streamItem.get(StreamItemEntity_.activityId).alias(StreamItemEntity_.activityId.getName()), streamItem.get(StreamItemEntity_.lastUpdated)).distinct(true);
+    criteria.multiselect(streamItem.get(StreamItemEntity_.activityId).alias(StreamItemEntity_.activityId.getName()), streamItem.get(StreamItemEntity_.updatedDate)).distinct(true);
     List<Predicate> predicates = getPredicateForIdsStream(streamItem, cb, criteria.subquery(String.class));
     criteria.where(cb.or(predicates.toArray(new Predicate[predicates.size()])));
     if (this.descOrder) {
-      criteria.orderBy(cb.desc(streamItem.<Long> get(StreamItemEntity_.lastUpdated)));
+      criteria.orderBy(cb.desc(streamItem.<Date> get(StreamItemEntity_.updatedDate)));
     } else {
-      criteria.orderBy(cb.asc(streamItem.<Long> get(StreamItemEntity_.lastUpdated)));
+      criteria.orderBy(cb.asc(streamItem.<Date> get(StreamItemEntity_.updatedDate)));
     }
 
     TypedQuery<Tuple> typedQuery = em.createQuery(criteria);
@@ -314,18 +315,18 @@ public final class AStreamQueryBuilder {
     if (this.sinceTime > 0) {
       if (isNewer) {
         if (predicate != null) {
-          predicate = cb.and(predicate, cb.greaterThan(stream.<Long> get(StreamItemEntity_.lastUpdated),
-                                                       this.sinceTime));
+          predicate = cb.and(predicate, cb.greaterThan(stream.<Date> get(StreamItemEntity_.updatedDate),
+                                                       new Date(this.sinceTime)));
         } else {
-          predicate = cb.greaterThan(stream.<Long> get(StreamItemEntity_.lastUpdated), this.sinceTime);
+          predicate = cb.greaterThan(stream.<Date> get(StreamItemEntity_.updatedDate), new Date(this.sinceTime));
         }
 
       } else {
         if (predicate != null) {
           predicate = cb.and(predicate,
-                             cb.lessThan(stream.<Long> get(StreamItemEntity_.lastUpdated), this.sinceTime));
+                             cb.lessThan(stream.<Date> get(StreamItemEntity_.updatedDate), new Date(this.sinceTime)));
         } else {
-          predicate = cb.lessThan(stream.<Long> get(StreamItemEntity_.lastUpdated), this.sinceTime);
+          predicate = cb.lessThan(stream.<Date> get(StreamItemEntity_.updatedDate), new Date(this.sinceTime));
         }
       }
     }

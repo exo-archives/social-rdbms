@@ -18,6 +18,7 @@ package org.exoplatform.social.addons.storage;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -31,10 +32,10 @@ import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import javax.persistence.FlushModeType;
 import javax.persistence.LockModeType;
 
 import org.apache.commons.lang.ArrayUtils;
+
 import org.exoplatform.commons.api.persistence.ExoTransactional;
 import org.exoplatform.commons.persistence.impl.EntityManagerHolder;
 import org.exoplatform.commons.utils.PropertyManager;
@@ -401,7 +402,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
   private void updateLastUpdatedForStreamItem(ActivityEntity activity) {
     List<StreamItemEntity> items = streamItemDAO.findStreamItemByActivityId(activity.getId());
     for (StreamItemEntity item : items) {
-      item.setLastUpdated(activity.getLastUpdated());
+      item.setUpdatedDate(new Date(activity.getLastUpdated()));
       streamItemDAO.update(item);
     }
   }
@@ -510,7 +511,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
   private void createStreamItem(StreamType streamType, ActivityEntity activity, String ownerId){
     StreamItemEntity streamItem = new StreamItemEntity(streamType);
     streamItem.setOwnerId(ownerId);
-    streamItem.setLastUpdated(activity.getLastUpdated());
+    streamItem.setUpdatedDate(new Date(activity.getLastUpdated()));
     boolean isExist = false;
     if (activity.getId() != null) {
       //TODO need to improve it

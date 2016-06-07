@@ -2,6 +2,8 @@ package org.exoplatform.social.addons.storage.entity;
 
 import org.exoplatform.commons.api.persistence.ExoEntity;
 
+import java.util.Date;
+
 import javax.persistence.*;
 
 /**
@@ -36,8 +38,9 @@ public class StreamItemEntity {
   private String ownerId;
   
   /** */
-  @Column(name="LAST_UPDATED", nullable = false)
-  private Long lastUpdated;
+  @Temporal(TemporalType.TIMESTAMP)
+  @Column(name="UPDATED_DATE", nullable = false)
+  private Date updatedDate;
 
   @Enumerated
   @Column(name="STREAM_TYPE", nullable = false)
@@ -81,13 +84,13 @@ public class StreamItemEntity {
   public void setStreamType(StreamType streamType) {
     this.streamType = streamType;
   }
-  
-  public Long getLastUpdated() {
-    return lastUpdated;
+
+  public Date getUpdatedDate() {
+    return updatedDate;
   }
-  
-  public void setLastUpdated(Long lastUpdated) {
-    this.lastUpdated = lastUpdated;
+
+  public void setUpdatedDate(Date updatedDate) {
+    this.updatedDate = updatedDate;
   }
 
   public Long getActivityId() {
