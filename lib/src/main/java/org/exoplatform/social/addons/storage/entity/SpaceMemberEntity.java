@@ -45,7 +45,7 @@ public class SpaceMemberEntity implements Serializable {
   private Status            status;
 
   @Column(name = "LAST_ACCESS")
-  private Date              lastAccess;
+  private Date              lastAccess = new Date(0L);
 
   @Column(name = "VISITED")
   private boolean           visited;
