@@ -388,6 +388,9 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
                 comment.setUserId(getNewIdentityId(comment.getUserId()));
                 comment.setPosterId(getNewIdentityId(comment.getPosterId()));
 
+                if (comment.getTitle() == null) {
+                  comment.setTitle("");
+                }
                 activityStorage.saveComment(activity, comment);
                 //
                 doBroadcastListener(comment, oldCommentId);
