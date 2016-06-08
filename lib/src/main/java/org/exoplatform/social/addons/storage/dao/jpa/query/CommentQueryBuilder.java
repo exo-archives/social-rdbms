@@ -17,6 +17,7 @@
 package org.exoplatform.social.addons.storage.dao.jpa.query;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 import javax.persistence.EntityManager;
@@ -120,9 +121,9 @@ public final class CommentQueryBuilder {
     //newer or older
     if (this.sinceTime > 0) {
       if (isNewer) {
-        predicates.add(cb.greaterThan(comment.<Long>get(CommentEntity_.lastUpdated), this.sinceTime));
+        predicates.add(cb.greaterThan(comment.<Date>get(CommentEntity_.updatedDate), new Date(this.sinceTime)));
       } else {
-        predicates.add(cb.lessThan(comment.<Long>get(CommentEntity_.lastUpdated), this.sinceTime));
+        predicates.add(cb.lessThan(comment.<Date>get(CommentEntity_.updatedDate), new Date(this.sinceTime)));
       }
     }
     
@@ -132,9 +133,9 @@ public final class CommentQueryBuilder {
     CriteriaQuery<CommentEntity> select = criteria.select(comment);
     select.where(predicates.toArray(new Predicate[0]));
     if (this.descOrder) {
-      select.orderBy(cb.desc(comment.<Long> get(ActivityEntity_.lastUpdated)));
+      select.orderBy(cb.desc(comment.<Date> get(ActivityEntity_.updatedDate)));
     } else {
-      select.orderBy(cb.asc(comment.<Long> get(ActivityEntity_.lastUpdated)));
+      select.orderBy(cb.asc(comment.<Date> get(ActivityEntity_.updatedDate)));
     }
 
     TypedQuery<CommentEntity> typedQuery = em.createQuery(select);
@@ -167,9 +168,9 @@ public final class CommentQueryBuilder {
     //newer or older
     if (this.sinceTime > 0) {
       if (isNewer) {
-        predicates.add(cb.greaterThan(comment.<Long>get(CommentEntity_.lastUpdated), this.sinceTime));
+        predicates.add(cb.greaterThan(comment.<Date>get(CommentEntity_.updatedDate), new Date(this.sinceTime)));
       } else {
-        predicates.add(cb.lessThan(comment.<Long>get(CommentEntity_.lastUpdated), this.sinceTime));
+        predicates.add(cb.lessThan(comment.<Date>get(CommentEntity_.updatedDate), new Date(this.sinceTime)));
       }
     }
     

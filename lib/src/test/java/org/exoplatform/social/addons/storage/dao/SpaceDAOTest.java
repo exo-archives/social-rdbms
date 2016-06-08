@@ -16,6 +16,7 @@
  */
 package org.exoplatform.social.addons.storage.dao;
 
+import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -91,7 +92,7 @@ public class SpaceDAOTest extends BaseCoreTest {
   private SpaceEntity createSpace() {
     SpaceEntity spaceEntity = new SpaceEntity();    
     spaceEntity.setApp(createApp());
-    spaceEntity.setAvatarLastUpdated(1L);
+    spaceEntity.setAvatarLastUpdated(new Date());
     spaceEntity.setDescription("testDesc");
     spaceEntity.setDisplayName("testDisplayName");
     spaceEntity.setGroupId("testGroupId");
@@ -100,7 +101,7 @@ public class SpaceDAOTest extends BaseCoreTest {
     spaceEntity.setRegistration(SpaceEntity.REGISTRATION.OPEN);
     spaceEntity.setUrl("testUrl");
     spaceEntity.setVisibility(SpaceEntity.VISIBILITY.PRIVATE);
-    spaceEntity.setAvatarLastUpdated(1L);
+    spaceEntity.setAvatarLastUpdated(new Date());
 
     SpaceMemberEntity mem = new SpaceMemberEntity();
     mem.setSpace(spaceEntity);

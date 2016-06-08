@@ -19,6 +19,7 @@ package org.exoplatform.social.addons.storage;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -45,7 +46,6 @@ import org.exoplatform.social.core.profile.ProfileFilter;
 import org.exoplatform.social.core.relationship.model.Relationship;
 import org.exoplatform.social.core.relationship.model.Relationship.Type;
 import org.exoplatform.social.core.storage.RelationshipStorageException;
-import org.exoplatform.social.core.storage.api.RelationshipStorage;
 import org.exoplatform.social.core.storage.impl.RelationshipStorageImpl;
 
 /**
@@ -84,7 +84,7 @@ public class RDBMSRelationshipStorageImpl extends RelationshipStorageImpl {
       entity.setReceiver(identityDAO.find(Long.valueOf(relationship.getReceiver().getId())));
       entity.setSender(identityDAO.find(Long.valueOf(relationship.getSender().getId())));
       entity.setStatus(relationship.getStatus());
-      entity.setLastUpdated(System.currentTimeMillis());
+      entity.setUpdatedDate(new Date());
       //
       connectionDAO.create(entity);
       relationship.setId(Long.toString(entity.getId()));
@@ -92,7 +92,7 @@ public class RDBMSRelationshipStorageImpl extends RelationshipStorageImpl {
     } else {//update an relationship
       ConnectionEntity entity = connectionDAO.getConnection(relationship.getSender(), relationship.getReceiver());
       entity.setStatus(relationship.getStatus());
-      entity.setLastUpdated(System.currentTimeMillis());
+      entity.setUpdatedDate(new Date());
       connectionDAO.update(entity);
     }
     //

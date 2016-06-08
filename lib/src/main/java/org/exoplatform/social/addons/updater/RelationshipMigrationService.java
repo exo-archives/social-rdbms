@@ -1,11 +1,12 @@
 package org.exoplatform.social.addons.updater;
 
-import java.util.Collection;
-import java.util.Iterator;
-
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import javax.jcr.RepositoryException;
+
+import java.util.Collection;
+import java.util.Date;
+import java.util.Iterator;
 
 import org.exoplatform.addons.es.index.IndexingService;
 import org.exoplatform.commons.api.event.EventManager;
@@ -190,7 +191,7 @@ public class RelationshipMigrationService extends AbstractMigrationService<Relat
         if (exist == null) {
           ConnectionEntity entity = new ConnectionEntity(sender, receiver);
           entity.setStatus(status);
-          entity.setLastUpdated(lastUpdated);
+          entity.setUpdatedDate(new Date(lastUpdated));
           //
           connectionDAO.create(entity);
           ++doneConnectionNo;

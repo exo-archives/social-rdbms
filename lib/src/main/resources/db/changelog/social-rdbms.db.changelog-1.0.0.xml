@@ -21,7 +21,7 @@
             <column name="HIDDEN" type="BOOLEAN">
               <constraints nullable="false"/>
             </column>
-            <column name="LAST_UPDATED" type="BIGINT">
+            <column name="UPDATED_DATE" type="TIMESTAMP">
               <constraints nullable="false"/>
             </column>
             <column name="LOCKED" type="BOOLEAN">
@@ -49,7 +49,7 @@
     </changeSet>
     <changeSet author="social" id="1.0.0-1.1">
         <createIndex tableName="SOC_ACTIVITIES" indexName="IDX_SOC_ACTIVITIES_01">
-            <column name="LAST_UPDATED" descending="true"/>
+            <column name="UPDATED_DATE" descending="true"/>
         </createIndex>
         <createIndex tableName="SOC_ACTIVITIES" indexName="IDX_SOC_ACTIVITIES_02">
             <column name="POSTER_ID"/>
@@ -120,7 +120,7 @@
             <column name="HIDDEN" type="BOOLEAN">
               <constraints nullable="false"/>
             </column>
-            <column name="LAST_UPDATED" type="BIGINT">
+            <column name="UPDATED_DATE" type="TIMESTAMP">
               <constraints nullable="false"/>
             </column>
             <column name="LOCKED" type="BOOLEAN">
@@ -150,7 +150,7 @@
     </changeSet>
     <changeSet author="social" id="1.0.0-5.1">
         <createIndex tableName="SOC_COMMENTS" indexName="IDX_SOC_COMMENTS_01">
-            <column name="LAST_UPDATED" descending="true"/>
+            <column name="UPDATED_DATE" descending="true"/>
         </createIndex>
         <createIndex tableName="SOC_COMMENTS" indexName="IDX_SOC_COMMENTS_02">
             <column name="POSTER_ID"/>
@@ -252,7 +252,7 @@
           <constraints nullable="false"/>
         </column>
         <column name="DESCRIPTION" type="LONGTEXT"/>
-        <column name="AVATAR_LAST_UPDATED" type="BIGINT"/>
+        <column name="AVATAR_LAST_UPDATED" type="TIMESTAMP"/>
         <column name="VISIBILITY" type="TINYINT">
           <constraints nullable="false"/>
         </column>
@@ -305,7 +305,7 @@
       <column name="STATUS" type="INT">
       	<constraints nullable="false"/>
       </column>
-      <column name="LAST_ACCESS" type="BIGINT"/>
+      <column name="LAST_ACCESS" type="TIMESTAMP"/>
       <column name="VISITED" type="BOOLEAN"/>
     </createTable>    
     <modifySql dbms="mysql">
@@ -437,7 +437,7 @@
       <column name="STATUS" type="INT">
         <constraints nullable="false"/>
       </column>
-      <column name="LAST_UPDATED" type="BIGINT">
+      <column name="UPDATED_DATE" type="TIMESTAMP">
         <constraints nullable="false"/>
       </column>
     </createTable>
@@ -448,7 +448,7 @@
       <column name="SENDER_ID"/>
     </createIndex>
     <createIndex tableName="SOC_CONNECTIONS" indexName="IDX_SOC_CONNECTIONS_03">
-      <column name="LAST_UPDATED" descending="true"/>
+      <column name="UPDATED_DATE" descending="true"/>
     </createIndex>
     <createIndex tableName="SOC_CONNECTIONS" indexName="IDX_SOC_CONNECTIONS_04">
       <column name="STATUS"/>

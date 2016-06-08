@@ -143,9 +143,9 @@ public final class AStreamQueryBuilder {
     select = criteria.select(activity).distinct(true);
     select.where(getPredicateForStream(activity, streamItem, cb, criteria.subquery(ActivityEntity.class), criteria.subquery(ActivityEntity.class), criteria.subquery(String.class)));
     if (this.descOrder) {
-      select.orderBy(cb.desc(activity.<Long> get(ActivityEntity_.lastUpdated)));
+      select.orderBy(cb.desc(activity.<Date> get(ActivityEntity_.updatedDate)));
     } else {
-      select.orderBy(cb.asc(activity.<Long> get(ActivityEntity_.lastUpdated)));
+      select.orderBy(cb.asc(activity.<Date> get(ActivityEntity_.updatedDate)));
     }
 
     TypedQuery<ActivityEntity> typedQuery = em.createQuery(select);
@@ -248,16 +248,16 @@ public final class AStreamQueryBuilder {
     if (this.sinceTime > 0) {
       if (isNewer) {
         if (predicate != null) {
-          predicate = cb.and(predicate, cb.greaterThan(activity.<Long>get(ActivityEntity_.lastUpdated), this.sinceTime));
+          predicate = cb.and(predicate, cb.greaterThan(activity.<Date>get(ActivityEntity_.updatedDate), new Date(this.sinceTime)));
         } else {
-          predicate = cb.greaterThan(activity.<Long>get(ActivityEntity_.lastUpdated), this.sinceTime);
+          predicate = cb.greaterThan(activity.<Date>get(ActivityEntity_.updatedDate), new Date(this.sinceTime));
         }
 
       } else {
         if (predicate != null) {
-          predicate = cb.and(predicate, cb.lessThan(activity.<Long>get(ActivityEntity_.lastUpdated), this.sinceTime));
+          predicate = cb.and(predicate, cb.lessThan(activity.<Date>get(ActivityEntity_.updatedDate), new Date(this.sinceTime)));
         } else {
-          predicate = cb.lessThan(activity.<Long>get(ActivityEntity_.lastUpdated), this.sinceTime);
+          predicate = cb.lessThan(activity.<Date>get(ActivityEntity_.updatedDate), new Date(this.sinceTime));
         }
       }
     }
@@ -366,7 +366,7 @@ public final class AStreamQueryBuilder {
     //
     CriteriaQuery<ActivityEntity> select = criteria.select(activity).distinct(true);
     select.where(predicate);
-    select.orderBy(cb.desc(activity.<Long> get(ActivityEntity_.lastUpdated)));
+    select.orderBy(cb.desc(activity.<Date> get(ActivityEntity_.updatedDate)));
 
     TypedQuery<ActivityEntity> typedQuery = em.createQuery(select);
     if (this.limit > 0) {

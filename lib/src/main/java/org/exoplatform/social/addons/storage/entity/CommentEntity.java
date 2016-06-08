@@ -41,7 +41,7 @@ public class CommentEntity extends BaseActivity {
 
   public CommentEntity() {
     setPosted(new Date().getTime());
-    setLastUpdated(new Date().getTime());
+    setUpdatedDate(new Date());
   }
 
   public Long getId() {

@@ -3,9 +3,12 @@ package org.exoplatform.social.addons.storage.entity;
 import org.exoplatform.commons.api.persistence.ExoEntity;
 
 import java.io.Serializable;
+import java.util.Date;
 
 import javax.persistence.Column;
 import javax.persistence.MappedSuperclass;
+import javax.persistence.Temporal;
+import javax.persistence.TemporalType;
 
 /**
  * Created by bdechateauvieux on 3/25/15.
@@ -32,8 +35,9 @@ public abstract class BaseActivity implements Serializable {
   protected Long posted;
   
   /** */
-  @Column(name="LAST_UPDATED", nullable = false)
-  private Long lastUpdated;
+  @Temporal(TemporalType.TIMESTAMP)
+  @Column(name="UPDATED_DATE", nullable = false)
+  private Date updatedDate;
   
   /** */
   @Column(name="POSTER_ID")
@@ -89,12 +93,12 @@ public abstract class BaseActivity implements Serializable {
   }
   public void setPosted(Long posted) {
     this.posted = posted;
+  } 
+  public Date getUpdatedDate() {
+      return updatedDate;
   }
-  public Long getLastUpdated() {
-    return lastUpdated;
-  }
-  public void setLastUpdated(Long lastUpdated) {
-    this.lastUpdated = lastUpdated;
+  public void setUpdatedDate(Date updatedDate) {
+      this.updatedDate = updatedDate;
   }
   public String getPosterId() {
     return posterId;

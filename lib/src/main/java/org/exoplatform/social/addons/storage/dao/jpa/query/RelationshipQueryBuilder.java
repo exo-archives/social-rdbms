@@ -19,6 +19,7 @@ package org.exoplatform.social.addons.storage.dao.jpa.query;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Date;
 import java.util.List;
 
 import javax.persistence.EntityManager;
@@ -235,7 +236,7 @@ public final class RelationshipQueryBuilder {
     
     CriteriaQuery<ConnectionEntity> select = criteria.select(connection).distinct(true);
     select.where(predicate);
-    select.orderBy(cb.desc(connection.<Long> get(ConnectionEntity_.lastUpdated)));
+    select.orderBy(cb.desc(connection.<Date> get(ConnectionEntity_.updatedDate)));
 
     TypedQuery<ConnectionEntity> typedQuery = em.createQuery(select);
     if (this.limit > 0) {

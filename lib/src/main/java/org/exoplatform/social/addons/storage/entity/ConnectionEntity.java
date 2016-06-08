@@ -5,6 +5,8 @@ import org.exoplatform.social.core.relationship.model.Relationship.Type;
 
 import javax.persistence.*;
 
+import java.util.Date;
+
 @Entity(name = "SocConnection")
 @ExoEntity
 @Table(name = "SOC_CONNECTIONS",
@@ -40,8 +42,9 @@ public class ConnectionEntity {
   private Type status;
   
   /** */
-  @Column(name="LAST_UPDATED", nullable = false)
-  private Long lastUpdated = System.currentTimeMillis();
+  @Temporal(TemporalType.TIMESTAMP)
+  @Column(name="UPDATED_DATE", nullable = false)
+  private Date updatedDate = new Date();
 
   public ConnectionEntity() {
   }
@@ -86,11 +89,12 @@ public class ConnectionEntity {
     this.status = status;
   }
 
-  public Long getLastUpdated() {
-    return lastUpdated;
+  public Date getUpdatedDate() {
+    return updatedDate;
   }
 
-  public void setLastUpdated(Long lastUpdated) {
-    this.lastUpdated = lastUpdated;
+  public void setUpdatedDate(Date updatedDate) {
+    this.updatedDate = updatedDate;
   }
+
 }

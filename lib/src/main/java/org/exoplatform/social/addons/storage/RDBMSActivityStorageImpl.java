@@ -147,7 +147,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
     activity.isHidden(activityEntity.getHidden());
     activity.setTitleId(activityEntity.getTitleId());
     activity.setPostedTime(activityEntity.getPosted());
-    activity.setUpdated(activityEntity.getLastUpdated());
+    activity.setUpdated(activityEntity.getUpdatedDate().getTime());
     //
     List<String> commentIds = new ArrayList<String>();
     List<String> replyToIds = new ArrayList<String>();
@@ -209,7 +209,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
     activityEntity.setPosted(activity.getPostedTime());
     activityEntity.setLocked(activity.isLocked());
     activityEntity.setHidden(activity.isHidden());
-    activityEntity.setLastUpdated(activity.getUpdated().getTime());
+    activityEntity.setUpdatedDate(activity.getUpdated());
     activityEntity.setMentionerIds(new HashSet<String>(Arrays.asList(processMentions(activity.getTitle()))));
     //
     return activityEntity;
@@ -238,12 +238,12 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
     //
     exoComment.isLocked(comment.getLocked().booleanValue());
     exoComment.isHidden(comment.getHidden().booleanValue());
-    exoComment.setUpdated(comment.getLastUpdated());
+    exoComment.setUpdated(comment.getUpdatedDate().getTime());
     //
     exoComment.setParentId(comment.getActivity().getId() + "");
     //
     exoComment.setPostedTime(comment.getPosted());
-    exoComment.setUpdated(comment.getLastUpdated());
+    exoComment.setUpdated(comment.getUpdatedDate().getTime());
     //
     processActivity(exoComment);
     
@@ -278,7 +278,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
     //
     long commentMillis = (comment.getPostedTime() != null ? comment.getPostedTime() : System.currentTimeMillis());
     commentEntity.setPosted(commentMillis);
-    commentEntity.setLastUpdated(commentMillis);
+    commentEntity.setUpdatedDate(new Date(commentMillis));
     //
     return commentEntity;
   }
@@ -375,7 +375,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
       eXoComment.setId(getExoCommentID(commentEntity.getId()));
       //
       activityEntity.setMentionerIds(processMentionOfComment(activityEntity, commentEntity, activity.getMentionedIds(), processMentions(eXoComment.getTitle()), true));
-      activityEntity.setLastUpdated(System.currentTimeMillis());
+      activityEntity.setUpdatedDate(new Date(System.currentTimeMillis()));
       activityDAO.update(activityEntity);
       //
       updateLastUpdatedForStreamItem(activityEntity);
@@ -402,7 +402,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
   private void updateLastUpdatedForStreamItem(ActivityEntity activity) {
     List<StreamItemEntity> items = streamItemDAO.findStreamItemByActivityId(activity.getId());
     for (StreamItemEntity item : items) {
-      item.setUpdatedDate(new Date(activity.getLastUpdated()));
+      item.setUpdatedDate(activity.getUpdatedDate());
       streamItemDAO.update(item);
     }
   }
@@ -511,7 +511,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
   private void createStreamItem(StreamType streamType, ActivityEntity activity, String ownerId){
     StreamItemEntity streamItem = new StreamItemEntity(streamType);
     streamItem.setOwnerId(ownerId);
-    streamItem.setUpdatedDate(new Date(activity.getLastUpdated()));
+    streamItem.setUpdatedDate(activity.getUpdatedDate());
     boolean isExist = false;
     if (activity.getId() != null) {
       //TODO need to improve it

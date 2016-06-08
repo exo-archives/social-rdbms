@@ -1,6 +1,7 @@
 package org.exoplatform.social.addons.storage.entity;
 
 import java.io.Serializable;
+import java.util.Date;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -44,7 +45,7 @@ public class SpaceMemberEntity implements Serializable {
   private Status            status;
 
   @Column(name = "LAST_ACCESS")
-  private long              lastAccess;
+  private Date              lastAccess;
 
   @Column(name = "VISITED")
   private boolean           visited;
@@ -91,11 +92,11 @@ public class SpaceMemberEntity implements Serializable {
     this.status = status;
   }
 
-  public long getLastAccess() {
+  public Date getLastAccess() {
     return lastAccess;
   }
 
-  public void setLastAccess(long lastAccess) {
+  public void setLastAccess(Date lastAccess) {
     this.lastAccess = lastAccess;
   }
 

@@ -91,8 +91,9 @@ public class SpaceEntity implements Serializable {
   @Column(name = "DESCRIPTION")
   private String            description;
 
+  @Temporal(TemporalType.TIMESTAMP)
   @Column(name = "AVATAR_LAST_UPDATED")
-  private Long              avatarLastUpdated;
+  private Date              avatarLastUpdated;
 
   @Column(name = "VISIBILITY")
   public VISIBILITY         visibility;
@@ -158,11 +159,11 @@ public class SpaceEntity implements Serializable {
     this.description = description;
   }
 
-  public Long getAvatarLastUpdated() {
+  public Date getAvatarLastUpdated() {
     return avatarLastUpdated;
   }
 
-  public void setAvatarLastUpdated(Long avatarLastUpdated) {
+  public void setAvatarLastUpdated(Date avatarLastUpdated) {
     this.avatarLastUpdated = avatarLastUpdated;
   }
 
@@ -212,7 +213,9 @@ public class SpaceEntity implements Serializable {
 
   public SpaceEntity buildFrom(Space space) {
     this.setApp(AppEntity.parse(space.getApp()));
-    this.setAvatarLastUpdated(space.getAvatarLastUpdated());      
+    if (space.getAvatarLastUpdated() != null) {
+      this.setAvatarLastUpdated(new Date(space.getAvatarLastUpdated()));      
+    }
     this.setCreatedDate(new Date(space.getCreatedTime()));
     this.setDescription(space.getDescription());
     this.setDisplayName(space.getDisplayName());

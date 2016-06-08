@@ -1,6 +1,7 @@
 package org.exoplatform.social.addons.storage;
 
 import java.util.Arrays;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -464,10 +465,10 @@ public class RDBMSSpaceStorageImpl extends AbstractStorage implements SpaceStora
   public void updateSpaceAccessed(String remoteId, Space space) throws SpaceStorageException {
     SpaceMemberEntity member = spaceMemberDAO.getMember(remoteId, Long.parseLong(space.getId()));
     if (member != null) {
-      member.setLastAccess(System.currentTimeMillis());
+      member.setLastAccess(new Date());
       // consider visited if access after create time more than 2s
       if (!member.isVisited()) {
-        member.setVisited((member.getLastAccess() - member.getSpace().getCreatedDate().getTime()) >= 2000);
+        member.setVisited((member.getLastAccess().getTime() - member.getSpace().getCreatedDate().getTime()) >= 2000);
       }
     }
     spaceMemberDAO.update(member);
@@ -615,7 +616,9 @@ public class RDBMSSpaceStorageImpl extends AbstractStorage implements SpaceStora
         LOG.warn("Failed to build avatar url: " + e.getMessage());
       }
     }
-    space.setAvatarLastUpdated(entity.getAvatarLastUpdated());
+    if (entity.getAvatarLastUpdated() != null) {
+      space.setAvatarLastUpdated(entity.getAvatarLastUpdated().getTime());
+    }      
     return space;
   }
 
