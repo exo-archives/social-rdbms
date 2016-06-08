@@ -68,6 +68,7 @@ public class ProfileEntity {
   @JoinColumn(name = "IDENTITY_ID")
   private IdentityEntity identity;
 
+  @Column(name = "URL")
   private String url;
 
   @Column(name = "AVATAR_URL")

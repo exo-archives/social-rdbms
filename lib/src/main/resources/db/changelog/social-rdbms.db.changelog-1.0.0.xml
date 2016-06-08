@@ -70,6 +70,9 @@
             <column name="LIKER_ID" type="NVARCHAR(200)">
             	<constraints nullable="false"/>
             </column>
+            <column name="CREATED_DATE" type="TIMESTAMP">
+	          <constraints nullable="false"/>
+	        </column>
         </createTable>
         <addPrimaryKey columnNames="ACTIVITY_ID, LIKER_ID" constraintName="PK_SOC_ACTIVITY_LIKER_01" tableName="SOC_ACTIVITY_LIKERS"/>
         <createIndex tableName="SOC_ACTIVITY_LIKERS" indexName="IDX_SOC_ACTIVITY_LIKERS_01">

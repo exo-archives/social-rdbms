@@ -37,8 +37,7 @@ public class ActivityEntity extends BaseActivity {
     name = "SOC_ACTIVITY_LIKERS",
     joinColumns=@JoinColumn(name = "ACTIVITY_ID")
   )
-  @Column(name="LIKER_ID", nullable = false)
-  private Set<String> likerIds = new HashSet<String>();
+  private Set<LikerEntity> likers = new HashSet<LikerEntity>();
 
   @ElementCollection
   @JoinTable(
@@ -74,15 +73,41 @@ public class ActivityEntity extends BaseActivity {
   }
 
   public void addLiker(String likerId) {
-    this.likerIds.add(likerId);
+    LikerEntity liker = new LikerEntity(likerId);
+    if (!this.likers.contains(liker)) {
+      this.likers.add(liker);
+    }
+  }
+
+  public Set<LikerEntity> getLikers() {
+    return likers;
   }
 
   public Set<String> getLikerIds() {
-    return likerIds;
+    Set<String> ids = new HashSet<String>();
+    for (LikerEntity liker : likers) {
+      ids.add(liker.getLikerId());      
+    }
+    return ids;
   }
 
   public void setLikerIds(Set<String> likerIds) {
-    this.likerIds = likerIds;
+    if (likerIds == null || likerIds.isEmpty()) {
+      this.likers.clear();
+    } else {
+      //clean
+      Iterator<LikerEntity> itor = likers.iterator();
+      while (itor.hasNext()) {
+        LikerEntity liker = itor.next();
+        if (!likerIds.contains(liker.getLikerId())) {
+          itor.remove();
+        }
+      }
+      //add new
+      for (String id : likerIds) {        
+        addLiker(id);
+      }
+    }
   }
 
   public Set<String> getMentionerIds() {
