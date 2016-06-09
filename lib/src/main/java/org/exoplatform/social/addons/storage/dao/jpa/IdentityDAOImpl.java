@@ -25,9 +25,10 @@ import org.exoplatform.social.addons.search.ExtendProfileFilter;
 import org.exoplatform.social.addons.storage.dao.IdentityDAO;
 import org.exoplatform.social.addons.storage.dao.jpa.query.ProfileQueryBuilder;
 import org.exoplatform.social.addons.storage.entity.IdentityEntity;
-import org.exoplatform.social.core.profile.ProfileFilter;
+import org.exoplatform.social.addons.storage.entity.ProfileEntity;
 
 import javax.persistence.EntityExistsException;
+import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
 import javax.persistence.TypedQuery;
 import java.lang.reflect.Array;
@@ -84,6 +85,20 @@ public class IdentityDAOImpl extends GenericDAOJPAImpl<IdentityEntity, Long> imp
     TypedQuery[] queries = qb.build(getEntityManager());
 
     return new JPAListAccess<>(IdentityEntity.class, queries[0], queries[1]);
+  }
+  
+  @Override
+  public ProfileEntity findByIdentityId(long identityId) {
+    IdentityEntity entity = find(identityId);
+    if (entity != null) {
+      ProfileEntity profile = entity.getProfile();
+      if (profile != null) {
+        profile.setIdentity(entity);
+      }
+      return profile;
+    } else {
+      return null;
+    }
   }
 
   public static class JPAListAccess<T> implements ListAccess<T> {

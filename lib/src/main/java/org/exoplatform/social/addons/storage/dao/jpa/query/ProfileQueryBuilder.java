@@ -85,7 +85,8 @@ public class ProfileQueryBuilder {
 
     if (filter != null) {
       if (filter.isForceLoadProfile()) {
-        Fetch<IdentityEntity,ProfileEntity> fetch = identity.fetch(IdentityEntity_.profile, JoinType.INNER);
+        //TODO: profile is now always EAGER load
+//        Fetch<IdentityEntity,ProfileEntity> fetch = identity.fetch(IdentityEntity_.profile, JoinType.INNER);
       }
 
       if (filter.isExcludeDeleted()) {

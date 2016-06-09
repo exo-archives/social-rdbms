@@ -19,10 +19,11 @@
 
 package org.exoplatform.social.addons.storage.entity;
 
-import org.exoplatform.commons.api.persistence.ExoEntity;
+import java.util.List;
 
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
+import javax.persistence.Embedded;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
@@ -31,11 +32,10 @@ import javax.persistence.Id;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
-import javax.persistence.OneToOne;
 import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
-import java.util.ArrayList;
-import java.util.List;
+
+import org.exoplatform.commons.api.persistence.ExoEntity;
 
 /**
  * @author <a href="mailto:tuyennt@exoplatform.com">Tuyen Nguyen The</a>.
@@ -77,7 +77,7 @@ public class IdentityEntity {
   @Column(name = "DELETED", nullable = false)
   private boolean deleted = false;
 
-  @OneToOne(mappedBy = "identity", fetch = FetchType.LAZY, orphanRemoval = true)
+  @Embedded
   private ProfileEntity profile;
 
   @OneToMany(mappedBy = "receiver", fetch = FetchType.LAZY, cascade = {CascadeType.REMOVE}, orphanRemoval = true)
@@ -131,6 +131,9 @@ public class IdentityEntity {
   }
 
   public ProfileEntity getProfile() {
+    if (profile != null) {
+      profile.setIdentity(this);
+    }
     return profile;
   }
 

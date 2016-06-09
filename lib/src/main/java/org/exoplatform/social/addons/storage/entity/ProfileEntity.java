@@ -19,54 +19,29 @@
 
 package org.exoplatform.social.addons.storage.entity;
 
-import org.exoplatform.commons.api.persistence.ExoEntity;
-
-import javax.persistence.CollectionTable;
-import javax.persistence.Column;
-import javax.persistence.ElementCollection;
-import javax.persistence.Entity;
-import javax.persistence.FetchType;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.Lob;
-import javax.persistence.MapKeyColumn;
-import javax.persistence.NamedQueries;
-import javax.persistence.NamedQuery;
-import javax.persistence.OneToOne;
-import javax.persistence.SequenceGenerator;
-import javax.persistence.Table;
-import javax.persistence.Temporal;
-import javax.persistence.TemporalType;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import javax.persistence.CollectionTable;
+import javax.persistence.Column;
+import javax.persistence.ElementCollection;
+import javax.persistence.Embeddable;
+import javax.persistence.FetchType;
+import javax.persistence.JoinColumn;
+import javax.persistence.Lob;
+import javax.persistence.MapKeyColumn;
+import javax.persistence.Temporal;
+import javax.persistence.TemporalType;
+import javax.persistence.Transient;
+
 /**
  * @author <a href="mailto:tuyennt@exoplatform.com">Tuyen Nguyen The</a>.
  */
-@Entity(name = "SocProfileEntity")
-@ExoEntity
-@Table(name = "SOC_PROFILES")
-@NamedQueries({
-        @NamedQuery(
-                name = "SocProfile.findByIdentity",
-                query = "SELECT p FROM SocProfileEntity p WHERE p.identity.id = :identityId"
-        )
-})
-public class ProfileEntity {
-  @Id
-  @SequenceGenerator(name="SEQ_SOC_PROFILE_ID", sequenceName="SEQ_SOC_PROFILE_ID")
-  @GeneratedValue(strategy= GenerationType.AUTO, generator="SEQ_SOC_PROFILE_ID")
-  @Column(name="PROFILE_ID")
-  private long id;
-
-  @OneToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "IDENTITY_ID")
-  private IdentityEntity identity;
+@Embeddable
+public class ProfileEntity {  
 
   @Column(name = "URL")
   private String url;
@@ -84,32 +59,19 @@ public class ProfileEntity {
   @ElementCollection(fetch = FetchType.EAGER)
   @MapKeyColumn(name = "NAME")
   @Column(name = "VALUE")
-  @CollectionTable(name = "SOC_PROFILE_PROPERTIES", joinColumns = {@JoinColumn(name = "PROFILE_ID")})
+  @CollectionTable(name = "SOC_PROFILE_PROPERTIES", joinColumns = {@JoinColumn(name = "IDENTITY_ID")})
   private Map<String, String> properties = new HashMap<String, String>();
 
   @ElementCollection(fetch = FetchType.LAZY)
-  @CollectionTable(name = "SOC_PROFILE_EXPERIENCES", joinColumns = {@JoinColumn(name = "PROFILE_ID")})
+  @CollectionTable(name = "SOC_PROFILE_EXPERIENCES", joinColumns = {@JoinColumn(name = "IDENTITY_ID")})
   private List<ProfileExperienceEntity> experiences = new ArrayList<>();
 
   @Temporal(TemporalType.TIMESTAMP)
-  @Column(name = "CREATED_DATE", nullable = false)
+  @Column(name = "CREATED_DATE")
   private Date createdDate = new Date();
-
-  public long getId() {
-    return id;
-  }
-
-  public void setId(long id) {
-    this.id = id;
-  }
-
-  public IdentityEntity getIdentity() {
-    return identity;
-  }
-
-  public void setIdentity(IdentityEntity identity) {
-    this.identity = identity;
-  }
+  
+  @Transient
+  private IdentityEntity identity;
 
   public String getUrl() {
     return url;
@@ -165,5 +127,14 @@ public class ProfileEntity {
 
   public void setCreatedDate(Date createdTime) {
     this.createdDate = createdTime;
+  }
+
+  public IdentityEntity getIdentity() {
+    return identity;
+  }
+
+  public void setIdentity(IdentityEntity identity) {
+    this.identity = identity;
+    identity.setProfile(this);
   }
 }

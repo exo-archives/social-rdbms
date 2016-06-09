@@ -120,10 +120,6 @@
     <key>org.exoplatform.social.addons.storage.dao.IdentityDAO</key>
     <type>org.exoplatform.social.addons.storage.dao.jpa.IdentityDAOImpl</type>
   </component>
-  <component>
-    <key>org.exoplatform.social.addons.storage.dao.ProfileDAO</key>
-    <type>org.exoplatform.social.addons.storage.dao.jpa.ProfileDAOImpl</type>
-  </component>
   
   <component>
     <key>org.exoplatform.commons.api.persistence.DataInitializer</key>
@@ -158,11 +154,6 @@
   <component>
     <key>org.exoplatform.social.addons.storage.dao.IdentityDAO</key>
     <type>org.exoplatform.social.addons.storage.dao.jpa.IdentityDAOImpl</type>
-  </component>
-
-  <component>
-    <key>org.exoplatform.social.addons.storage.dao.ProfileDAO</key>
-    <type>org.exoplatform.social.addons.storage.dao.jpa.ProfileDAOImpl</type>
   </component>
   
 	<component>

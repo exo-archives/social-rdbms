@@ -44,7 +44,6 @@ import org.exoplatform.social.addons.search.ExtendProfileFilter;
 import org.exoplatform.social.addons.search.ProfileSearchConnector;
 import org.exoplatform.social.addons.storage.dao.ActivityDAO;
 import org.exoplatform.social.addons.storage.dao.IdentityDAO;
-import org.exoplatform.social.addons.storage.dao.ProfileDAO;
 import org.exoplatform.social.addons.storage.dao.SpaceDAO;
 import org.exoplatform.social.addons.storage.entity.ActivityEntity;
 import org.exoplatform.social.addons.storage.entity.IdentityEntity;
@@ -85,7 +84,6 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
 
   private final ActivityDAO activityDAO;
   private final IdentityDAO identityDAO;
-  private final ProfileDAO profileDAO;
   private final SpaceDAO spaceDAO;
 
   private final OrganizationService orgService;
@@ -98,12 +96,11 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
   private boolean isDataInitialized = false;
 
   public RDBMSIdentityStorageImpl(DataInitializer dataInitializer,
-                                  IdentityDAO identityDAO, ProfileDAO profileDAO,
+                                  IdentityDAO identityDAO,                                   
                                   SpaceDAO spaceDAO, ActivityDAO activityDAO,
                                   ProfileSearchConnector profileSearchConnector, OrganizationService orgService) {
     this.dataInitializer = dataInitializer;
     this.identityDAO = identityDAO;
-    this.profileDAO = profileDAO;
     this.spaceDAO = spaceDAO;
     this.activityDAO = activityDAO;
     this.profileSearchConnector = profileSearchConnector;
@@ -150,7 +147,7 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
   }
   private Profile convertToProfile(ProfileEntity entity, Identity identity) {
     Profile p = new Profile(identity);
-    p.setId(String.valueOf(entity.getId()));
+    p.setId(String.valueOf(identity.getId()));
     mapToProfile(entity, p);
     if (OrganizationIdentityProvider.NAME.equals(identity.getProviderId()) && p.getProperty(Profile.USERNAME) == null) {
       p.getProperties().put(Profile.USERNAME, identity.getRemoteId());
@@ -233,23 +230,11 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
     p.setLastLoaded(System.currentTimeMillis());
   }
 
-  private IdentityEntity convertToEntity(Identity identity) {
-    IdentityEntity entity = new IdentityEntity();
-    entity.setId(parseId(identity.getId()));
-    mapToEntity(identity, entity);
-    return entity;
-  }
   private void mapToEntity(Identity identity, IdentityEntity entity) {
     entity.setProviderId(identity.getProviderId());
     entity.setRemoteId(identity.getRemoteId());
     entity.setEnabled(identity.isEnable());
     entity.setDeleted(identity.isDeleted());
-  }
-  private ProfileEntity convertToProfileEntity(Profile profile) {
-    ProfileEntity entity = new ProfileEntity();
-    entity.setId(parseId(profile.getId()));
-    mapToProfileEntity(profile, entity);
-    return entity;
   }
 
   private void mapToProfileEntity(Profile profile, ProfileEntity entity) {
@@ -435,12 +420,11 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
     String provider = identity.getProviderId();
 
     IdentityEntity entity = getIdentityDAO().find(id);
-    ProfileEntity profileEntity = profileDAO.findByIdentityId(id);
-    if (profileEntity != null) {
-      profileEntity.getProperties().put(Profile.DELETED, "true");
-      profileDAO.update(profileEntity);
-    }
     if (entity != null) {
+      ProfileEntity profileEntity = entity.getProfile();
+      if (profileEntity != null) {
+        profileEntity.getProperties().put(Profile.DELETED, "true");
+      }      
       entity.setDeleted(true);
       getIdentityDAO().update(entity);
     }
@@ -469,18 +453,18 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
    */
   @ExoTransactional
   public Profile loadProfile(Profile profile) throws IdentityStorageException {
-    long identityId = parseId(profile.getIdentity().getId());
-    ProfileEntity entity = profileDAO.findByIdentityId(identityId);
+    long identityId = parseId(profile.getIdentity().getId());    
+    ProfileEntity entity = identityDAO.findByIdentityId(identityId);
 
     if (entity == null) {
       createProfile(profile);
-      entity = profileDAO.findByIdentityId(identityId);
+      entity = identityDAO.findByIdentityId(identityId);
     }
 
     if (entity == null) {
       return null;
     } else {
-      profile.setId(String.valueOf(entity.getId()));
+      profile.setId(String.valueOf(entity.getIdentity().getId()));
       mapToProfile(entity, profile);
       profile.clearHasChanged();
       return profile;
@@ -520,12 +504,12 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
    */
   public void saveProfile(final Profile profile) throws IdentityStorageException {
     long id = parseId(profile.getId());
-    ProfileEntity entity = (id == 0 ? null : profileDAO.find(id));
+    ProfileEntity entity = (id == 0 ? null : identityDAO.findByIdentityId(id));
     if (entity == null) {
       createProfile(profile);
     } else {
       mapToProfileEntity(profile, entity);
-      profileDAO.update(entity);
+      identityDAO.update(entity.getIdentity());
     }
     profile.clearHasChanged();
   }
@@ -543,7 +527,7 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
     }
 
     // Find by identity to avoid create 2 profile map to 1 identity (exception will be throw because the unique constraint)
-    ProfileEntity entity = profileDAO.findByIdentityId(identityId);
+    ProfileEntity entity = identityDAO.findByIdentityId(identityId);
     if (entity == null) {
       entity = new ProfileEntity();
       entity.setIdentity(identityEntity);
@@ -553,12 +537,8 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
 
     entity.setCreatedDate(new Date());
 
-    if (entity.getId() > 0) {
-      profileDAO.update(entity);
-    } else {
-      entity = profileDAO.create(entity);
-    }
-    profile.setId(String.valueOf(entity.getId()));
+    identityDAO.update(identityEntity);
+    profile.setId(String.valueOf(identityId));
   }
 
   /**
@@ -573,12 +553,12 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
       createProfile(profile);
     } else {
       long id = parseId(profile.getId());
-      ProfileEntity entity = profileDAO.find(id);
+      ProfileEntity entity = identityDAO.findByIdentityId(id);
       if (entity == null) {
         throw new IdentityStorageException(IdentityStorageException.Type.FAIL_TO_UPDATE_PROFILE, "Profile does not exist on RDBMS");
       } else {
         mapToProfileEntity(profile, entity);
-        profileDAO.update(entity);
+        identityDAO.update(entity.getIdentity());
       }
     }
   }
@@ -865,7 +845,6 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
     String provider = identity.getProviderId();
 
     IdentityEntity entity = getIdentityDAO().find(id);
-    ProfileEntity profileEntity = profileDAO.findByIdentityId(id);
 
     EntityManager em = CommonsUtils.getService(EntityManagerService.class).getEntityManager();
     Query query;
@@ -882,9 +861,6 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
       query.executeUpdate();
     }
 
-    if (profileEntity != null) {
-      profileDAO.delete(profileEntity);
-    }
     if (entity != null) {
       getIdentityDAO().delete(entity);
     }

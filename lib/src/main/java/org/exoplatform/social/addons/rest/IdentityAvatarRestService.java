@@ -25,7 +25,6 @@ import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 import org.exoplatform.services.rest.resource.ResourceContainer;
 import org.exoplatform.social.addons.storage.dao.IdentityDAO;
-import org.exoplatform.social.addons.storage.dao.ProfileDAO;
 import org.exoplatform.social.addons.storage.entity.IdentityEntity;
 import org.exoplatform.social.addons.storage.entity.ProfileEntity;
 
@@ -55,7 +54,6 @@ public class IdentityAvatarRestService implements ResourceContainer {
   static final String BASE_URL = "/social/identity";
 
   private IdentityDAO identityDAO = null;
-  private ProfileDAO profileDAO = null;
 
   private final CacheControl cc;
 
@@ -78,7 +76,7 @@ public class IdentityAvatarRestService implements ResourceContainer {
       return Response.status(Response.Status.NOT_ACCEPTABLE).build();
     }
 
-    ProfileEntity profileEntity = getProfileDAO().findByIdentityId(entity.getId());
+    ProfileEntity profileEntity = getIdentityDAO().findByIdentityId(entity.getId());
     if (profileEntity == null) {
       return Response.status(Response.Status.NOT_FOUND).build();
     }
@@ -108,12 +106,6 @@ public class IdentityAvatarRestService implements ResourceContainer {
     }
   }
 
-  private ProfileDAO getProfileDAO() {
-    if (profileDAO == null) {
-      profileDAO = getService(ProfileDAO.class);
-    }
-    return profileDAO;
-  }
   private IdentityDAO getIdentityDAO() {
     if (identityDAO == null) {
       identityDAO = getService(IdentityDAO.class);
