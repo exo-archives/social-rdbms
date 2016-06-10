@@ -19,21 +19,31 @@
 
 package org.exoplatform.social.addons.storage.entity;
 
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.persistence.CascadeType;
+import javax.persistence.CollectionTable;
 import javax.persistence.Column;
-import javax.persistence.Embedded;
+import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.Lob;
+import javax.persistence.MapKeyColumn;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
 import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
+import javax.persistence.Temporal;
+import javax.persistence.TemporalType;
 
 import org.exoplatform.commons.api.persistence.ExoEntity;
 
@@ -77,8 +87,34 @@ public class IdentityEntity {
   @Column(name = "DELETED", nullable = false)
   private boolean deleted = false;
 
-  @Embedded
-  private ProfileEntity profile;
+  //PROFILE
+  @Column(name = "URL")
+  private String url;
+
+  @Column(name = "AVATAR_URL")
+  private String avatarURL;
+
+  @Column(name = "AVATAR_MIMETYPE")
+  private String avatarMimeType;
+
+  @Lob
+  @Column(name = "AVATAR_IMAGE")
+  private byte[] avatarImage;
+
+  @ElementCollection(fetch = FetchType.EAGER)
+  @MapKeyColumn(name = "NAME")
+  @Column(name = "VALUE")
+  @CollectionTable(name = "SOC_PROFILE_PROPERTIES", joinColumns = {@JoinColumn(name = "IDENTITY_ID")})
+  private Map<String, String> properties = new HashMap<String, String>();
+
+  @ElementCollection(fetch = FetchType.LAZY)
+  @CollectionTable(name = "SOC_PROFILE_EXPERIENCES", joinColumns = {@JoinColumn(name = "IDENTITY_ID")})
+  private List<ProfileExperienceEntity> experiences = new ArrayList<>();
+  //END_OF_PROFILE
+
+  @Temporal(TemporalType.TIMESTAMP)
+  @Column(name = "CREATED_DATE")
+  private Date createdDate = new Date();
 
   @OneToMany(mappedBy = "receiver", fetch = FetchType.LAZY, cascade = {CascadeType.REMOVE}, orphanRemoval = true)
   private List<ConnectionEntity> incomingConnections;
@@ -130,14 +166,59 @@ public class IdentityEntity {
     this.deleted = deleted;
   }
 
-  public ProfileEntity getProfile() {
-    if (profile != null) {
-      profile.setIdentity(this);
-    }
-    return profile;
+  public String getUrl() {
+    return url;
   }
 
-  public void setProfile(ProfileEntity profile) {
-    this.profile = profile;
+  public void setUrl(String url) {
+    this.url = url;
+  }
+
+  public String getAvatarURL() {
+    return avatarURL;
+  }
+
+  public void setAvatarURL(String avatarURL) {
+    this.avatarURL = avatarURL;
+  }
+
+  public String getAvatarMimeType() {
+    return avatarMimeType;
+  }
+
+  public void setAvatarMimeType(String avatarMimeType) {
+    this.avatarMimeType = avatarMimeType;
+  }
+
+  public byte[] getAvatarImage() {
+    return avatarImage;
+  }
+
+  public void setAvatarImage(byte[] avatarImage) {
+    this.avatarImage = avatarImage;
+  }
+
+  public Map<String, String> getProperties() {
+    return properties;
+  }
+
+  public void setProperties(Map<String, String> properties) {
+    this.properties = properties;
+  }
+
+  public List<ProfileExperienceEntity> getExperiences() {
+    return experiences;
+  }
+
+  public void setExperiences(List<ProfileExperienceEntity> experiences) {
+    this.experiences = experiences;
+  }
+
+  public Date getCreatedDate() {
+    return createdDate;
+  }
+
+  public void setCreatedDate(Date createdTime) {
+    this.createdDate = createdTime;
   }
 }

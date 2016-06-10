@@ -19,15 +19,6 @@
 
 package org.exoplatform.social.addons.rest;
 
-import org.apache.commons.codec.binary.Hex;
-import org.exoplatform.container.PortalContainer;
-import org.exoplatform.services.log.ExoLogger;
-import org.exoplatform.services.log.Log;
-import org.exoplatform.services.rest.resource.ResourceContainer;
-import org.exoplatform.social.addons.storage.dao.IdentityDAO;
-import org.exoplatform.social.addons.storage.entity.IdentityEntity;
-import org.exoplatform.social.addons.storage.entity.ProfileEntity;
-
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -37,12 +28,21 @@ import javax.ws.rs.core.EntityTag;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Request;
 import javax.ws.rs.core.Response;
+
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+
+import org.apache.commons.codec.binary.Hex;
+import org.exoplatform.container.PortalContainer;
+import org.exoplatform.services.log.ExoLogger;
+import org.exoplatform.services.log.Log;
+import org.exoplatform.services.rest.resource.ResourceContainer;
+import org.exoplatform.social.addons.storage.dao.IdentityDAO;
+import org.exoplatform.social.addons.storage.entity.IdentityEntity;
 
 /**
  * @author <a href="mailto:tuyennt@exoplatform.com">Tuyen Nguyen The</a>.
@@ -76,7 +76,7 @@ public class IdentityAvatarRestService implements ResourceContainer {
       return Response.status(Response.Status.NOT_ACCEPTABLE).build();
     }
 
-    ProfileEntity profileEntity = getIdentityDAO().findByIdentityId(entity.getId());
+    IdentityEntity profileEntity = getIdentityDAO().find(entity.getId());
     if (profileEntity == null) {
       return Response.status(Response.Status.NOT_FOUND).build();
     }

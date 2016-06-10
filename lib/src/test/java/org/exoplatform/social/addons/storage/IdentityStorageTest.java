@@ -603,6 +603,7 @@ public class IdentityStorageTest extends AbstractCoreTest {
       Identity identity = new Identity(OrganizationIdentityProvider.NAME, "user" + i);
       identityStorage.saveIdentity(identity);
       identities.add(identity);
+      tearDownIdentityList.add(identity);
     }
     assertEquals(10, identityStorage.getIdentitiesCount(OrganizationIdentityProvider.NAME));
     // disable users

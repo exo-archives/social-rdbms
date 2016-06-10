@@ -19,15 +19,14 @@
 
 package org.exoplatform.social.addons.storage.dao;
 
-import org.exoplatform.social.addons.storage.entity.IdentityEntity;
-import org.exoplatform.social.addons.storage.entity.ProfileEntity;
-import org.exoplatform.social.addons.storage.entity.ProfileExperienceEntity;
-import org.exoplatform.social.addons.test.BaseCoreTest;
-import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvider;
-
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+
+import org.exoplatform.social.addons.storage.entity.IdentityEntity;
+import org.exoplatform.social.addons.storage.entity.ProfileExperienceEntity;
+import org.exoplatform.social.addons.test.BaseCoreTest;
+import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvider;
 
 /**
  * @author <a href="mailto:tuyennt@exoplatform.com">Tuyen Nguyen The</a>.
@@ -60,10 +59,10 @@ public class ProfileDAOTest extends BaseCoreTest {
   }
 
   public void testCreateProfile() {
-    ProfileEntity profile = createProfile();
+    IdentityEntity profile = createProfile();
     identityDAO.update(identity);
 
-    profile = identityDAO.findByIdentityId(profile.getIdentity().getId());
+    profile = identityDAO.find(profile.getId());
     assertNotNull(profile);
     assertEquals(1, profile.getExperiences().size());
     assertEquals(2, profile.getAvatarImage().length);
@@ -71,10 +70,10 @@ public class ProfileDAOTest extends BaseCoreTest {
   }
 
   public void testUpdateProfile() {
-    ProfileEntity profile = createProfile();
+    IdentityEntity profile = createProfile();
     identityDAO.update(identity);
 
-    profile = identityDAO.findByIdentityId(profile.getIdentity().getId());
+    profile = identityDAO.find(profile.getId());
     assertNotNull(profile);
     assertEquals("/profile/root", profile.getUrl());
 
@@ -83,16 +82,15 @@ public class ProfileDAOTest extends BaseCoreTest {
 
     identityDAO.update(identity);
 
-    profile = identityDAO.findByIdentityId(profile.getIdentity().getId());
+    profile = identityDAO.find(profile.getId());
 
     assertNotNull(profile);
     assertEquals(0, profile.getExperiences().size());
     assertEquals("/profile/root_updated", profile.getUrl());
   }
 
-  private ProfileEntity createProfile() {
-    ProfileEntity profile = new ProfileEntity();
-    profile.setIdentity(identity);
+  private IdentityEntity createProfile() {
+    IdentityEntity profile = new IdentityEntity();
     profile.setCreatedDate(new Date());
     profile.setUrl("/profile/root");
     profile.setAvatarURL("/profile/root/avatar.png");

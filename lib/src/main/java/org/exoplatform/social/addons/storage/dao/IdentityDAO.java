@@ -19,14 +19,12 @@
 
 package org.exoplatform.social.addons.storage.dao;
 
+import java.util.List;
+
 import org.exoplatform.commons.api.persistence.GenericDAO;
 import org.exoplatform.commons.utils.ListAccess;
 import org.exoplatform.social.addons.search.ExtendProfileFilter;
 import org.exoplatform.social.addons.storage.entity.IdentityEntity;
-import org.exoplatform.social.addons.storage.entity.ProfileEntity;
-import org.exoplatform.social.core.profile.ProfileFilter;
-
-import java.util.List;
 
 /**
  * @author <a href="mailto:tuyennt@exoplatform.com">Tuyen Nguyen The</a>.
@@ -37,7 +35,5 @@ public interface IdentityDAO extends GenericDAO<IdentityEntity, Long> {
 
   ListAccess<IdentityEntity> findIdentities(ExtendProfileFilter filter);
 
-  List<Long> getAllIds(int offset, int limit);
-  
-  public ProfileEntity findByIdentityId(long identityId);
+  List<Long> getAllIds(int offset, int limit);  
 }

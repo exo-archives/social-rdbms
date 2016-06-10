@@ -19,35 +19,31 @@
 
 package org.exoplatform.social.addons.storage.dao.jpa.query;
 
+import javax.persistence.EntityManager;
+import javax.persistence.TypedQuery;
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Join;
+import javax.persistence.criteria.JoinType;
+import javax.persistence.criteria.ListJoin;
+import javax.persistence.criteria.MapJoin;
+import javax.persistence.criteria.Predicate;
+import javax.persistence.criteria.Root;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 import org.exoplatform.social.addons.search.ExtendProfileFilter;
 import org.exoplatform.social.addons.storage.entity.ConnectionEntity;
 import org.exoplatform.social.addons.storage.entity.ConnectionEntity_;
 import org.exoplatform.social.addons.storage.entity.IdentityEntity;
 import org.exoplatform.social.addons.storage.entity.IdentityEntity_;
-import org.exoplatform.social.addons.storage.entity.ProfileEntity;
-import org.exoplatform.social.addons.storage.entity.ProfileEntity_;
 import org.exoplatform.social.addons.storage.entity.ProfileExperienceEntity;
 import org.exoplatform.social.addons.storage.entity.ProfileExperienceEntity_;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.identity.model.Profile;
 import org.exoplatform.social.core.relationship.model.Relationship;
-
-import javax.persistence.EntityManager;
-import javax.persistence.TypedQuery;
-import javax.persistence.criteria.CriteriaBuilder;
-import javax.persistence.criteria.CriteriaQuery;
-import javax.persistence.criteria.Fetch;
-import javax.persistence.criteria.Join;
-import javax.persistence.criteria.JoinType;
-import javax.persistence.criteria.ListJoin;
-import javax.persistence.criteria.MapJoin;
-import javax.persistence.criteria.Path;
-import javax.persistence.criteria.Predicate;
-import javax.persistence.criteria.Root;
-import javax.persistence.criteria.Subquery;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 
 /**
  * @author <a href="mailto:tuyennt@exoplatform.com">Tuyen Nguyen The</a>.
@@ -79,7 +75,6 @@ public class ProfileQueryBuilder {
     CriteriaQuery query = cb.createQuery(IdentityEntity.class);
 
     Root<IdentityEntity> identity = query.from(IdentityEntity.class);
-    Join<IdentityEntity, ProfileEntity> profile = identity.join(IdentityEntity_.profile, JoinType.INNER);;
 
     List<Predicate> predicates = new ArrayList<>();
 
@@ -136,7 +131,7 @@ public class ProfileQueryBuilder {
         }
       }
 
-      ListJoin<ProfileEntity, ProfileExperienceEntity> experience = profile.join(ProfileEntity_.experiences, JoinType.LEFT);
+      ListJoin<IdentityEntity, ProfileExperienceEntity> experience = identity.join(IdentityEntity_.experiences, JoinType.LEFT);
 
       List<Identity> excludes = filter.getExcludedIdentityList();
       if (excludes != null && excludes.size() > 0) {
@@ -150,7 +145,7 @@ public class ProfileQueryBuilder {
       String name = filter.getName();
       if (name != null && !name.isEmpty()) {
         name = processLikeString(name);
-        MapJoin<ProfileEntity, String, String> properties = profile.join(ProfileEntity_.properties, JoinType.LEFT);
+        MapJoin<IdentityEntity, String, String> properties = identity.join(IdentityEntity_.properties, JoinType.LEFT);
         predicates.add(cb.and(cb.like(properties.value(), name), properties.key().in(Arrays.asList(Profile.FIRST_NAME, Profile.LAST_NAME, Profile.FULL_NAME))));
       }
 
@@ -158,7 +153,7 @@ public class ProfileQueryBuilder {
       if (val != null && !val.isEmpty()) {
         val = processLikeString(val);
         Predicate[] p = new Predicate[2];
-        MapJoin<ProfileEntity, String, String> properties = profile.join(ProfileEntity_.properties, JoinType.LEFT);
+        MapJoin<IdentityEntity, String, String> properties = identity.join(IdentityEntity_.properties, JoinType.LEFT);
         p[1] = cb.and(cb.like(properties.value(), val), cb.equal(properties.key(), Profile.POSITION));
         p[0] = cb.like(experience.get(ProfileExperienceEntity_.position), val);
 
@@ -180,7 +175,7 @@ public class ProfileQueryBuilder {
       char c = filter.getFirstCharacterOfName();
       if (c != '\u0000') {
         val = c + "%";
-        MapJoin<ProfileEntity, String, String> properties = profile.join(ProfileEntity_.properties, JoinType.LEFT);
+        MapJoin<IdentityEntity, String, String> properties = identity.join(IdentityEntity_.properties, JoinType.LEFT);
         predicates.add(cb.and(cb.equal(properties.key(), Profile.LAST_NAME), cb.like(properties.value(), val)));
       }
 
@@ -188,7 +183,7 @@ public class ProfileQueryBuilder {
       if (all != null && !all.trim().isEmpty()) {
         all = processLikeString(all).toLowerCase();
         Predicate[] p = new Predicate[5];
-        MapJoin<ProfileEntity, String, String> properties = profile.join(ProfileEntity_.properties, JoinType.LEFT);
+        MapJoin<IdentityEntity, String, String> properties = identity.join(IdentityEntity_.properties, JoinType.LEFT);
         p[0] = cb.and(cb.like(properties.value(), name), properties.key().in(Arrays.asList(Profile.FIRST_NAME, Profile.LAST_NAME, Profile.FULL_NAME)));
 
         p[1] = cb.like(cb.lower(experience.get(ProfileExperienceEntity_.position)), all);

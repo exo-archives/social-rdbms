@@ -16,6 +16,9 @@
  */
 package org.exoplatform.social.addons.storage;
 
+import javax.persistence.EntityManager;
+import javax.persistence.Query;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -47,7 +50,6 @@ import org.exoplatform.social.addons.storage.dao.IdentityDAO;
 import org.exoplatform.social.addons.storage.dao.SpaceDAO;
 import org.exoplatform.social.addons.storage.entity.ActivityEntity;
 import org.exoplatform.social.addons.storage.entity.IdentityEntity;
-import org.exoplatform.social.addons.storage.entity.ProfileEntity;
 import org.exoplatform.social.addons.storage.entity.ProfileExperienceEntity;
 import org.exoplatform.social.addons.storage.entity.SpaceEntity;
 import org.exoplatform.social.core.identity.SpaceMemberFilterListAccess;
@@ -58,7 +60,6 @@ import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvide
 import org.exoplatform.social.core.identity.provider.SpaceIdentityProvider;
 import org.exoplatform.social.core.model.AvatarAttachment;
 import org.exoplatform.social.core.profile.ProfileFilter;
-import org.exoplatform.social.core.profile.ProfileLoader;
 import org.exoplatform.social.core.service.LinkProvider;
 import org.exoplatform.social.core.space.SpaceUtils;
 import org.exoplatform.social.core.space.model.Space;
@@ -68,9 +69,6 @@ import org.exoplatform.social.core.storage.impl.StorageUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-
-import javax.persistence.EntityManager;
-import javax.persistence.Query;
 
 /**
  * Created by The eXo Platform SAS
@@ -136,16 +134,11 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
   private void mapToIdentity(IdentityEntity entity, Identity identity) {
     identity.setProviderId(entity.getProviderId());
     identity.setRemoteId(entity.getRemoteId());
-    if (entity.getProfile() != null) {
-      identity.setProfile(convertToProfile(entity.getProfile(), identity));
-    } else {
-      identity.setProfile(null);
-      identity.setProfileLoader(new RDBMSProfileLoader(this, identity));
-    }
+    identity.setProfile(convertToProfile(entity, identity));
     identity.setEnable(entity.isEnabled());
     identity.setDeleted(entity.isDeleted());
   }
-  private Profile convertToProfile(ProfileEntity entity, Identity identity) {
+  private Profile convertToProfile(IdentityEntity entity, Identity identity) {
     Profile p = new Profile(identity);
     p.setId(String.valueOf(identity.getId()));
     mapToProfile(entity, p);
@@ -154,14 +147,14 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
     }
     return p;
   }
-  private void mapToProfile(ProfileEntity entity, Profile p) {
+  private void mapToProfile(IdentityEntity entity, Profile p) {
     Map<String, Object> props = p.getProperties();
-    String providerId = entity.getIdentity().getProviderId();
+    String providerId = entity.getProviderId();
     if (!OrganizationIdentityProvider.NAME.equals(providerId) && !SpaceIdentityProvider.NAME.equals(providerId)) {
       p.setUrl(entity.getUrl());
       p.setAvatarUrl(entity.getAvatarURL());
     } else {
-      String remoteId = entity.getIdentity().getRemoteId();
+      String remoteId = entity.getRemoteId();
       if (OrganizationIdentityProvider.NAME.equals(providerId)) {
         p.setUrl(LinkProvider.getUserProfileUri(remoteId));
 
@@ -237,7 +230,7 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
     entity.setDeleted(identity.isDeleted());
   }
 
-  private void mapToProfileEntity(Profile profile, ProfileEntity entity) {
+  private void mapToProfileEntity(Profile profile, IdentityEntity entity) {
     String providerId = profile.getIdentity().getProviderId();
     if (!OrganizationIdentityProvider.NAME.equals(providerId) && !SpaceIdentityProvider.NAME.equals(providerId)) {
       entity.setUrl(profile.getUrl());
@@ -336,6 +329,11 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
     } else {
       entity = getIdentityDAO().create(entity);
     }
+    Profile profile = convertToProfile(entity, identity);
+    if (id <= 0) {
+      profile.setId(null);      
+    }
+    identity.setProfile(profile);
     identity.setId(entity.getStringId());
   }
 
@@ -421,10 +419,6 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
 
     IdentityEntity entity = getIdentityDAO().find(id);
     if (entity != null) {
-      ProfileEntity profileEntity = entity.getProfile();
-      if (profileEntity != null) {
-        profileEntity.getProperties().put(Profile.DELETED, "true");
-      }      
       entity.setDeleted(true);
       getIdentityDAO().update(entity);
     }
@@ -454,17 +448,12 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
   @ExoTransactional
   public Profile loadProfile(Profile profile) throws IdentityStorageException {
     long identityId = parseId(profile.getIdentity().getId());    
-    ProfileEntity entity = identityDAO.findByIdentityId(identityId);
-
-    if (entity == null) {
-      createProfile(profile);
-      entity = identityDAO.findByIdentityId(identityId);
-    }
+    IdentityEntity entity = identityDAO.find(identityId);
 
     if (entity == null) {
       return null;
     } else {
-      profile.setId(String.valueOf(entity.getIdentity().getId()));
+      profile.setId(String.valueOf(entity.getId()));
       mapToProfile(entity, profile);
       profile.clearHasChanged();
       return profile;
@@ -503,44 +492,18 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
    * @throws IdentityStorageException
    */
   public void saveProfile(final Profile profile) throws IdentityStorageException {
-    long id = parseId(profile.getId());
-    ProfileEntity entity = (id == 0 ? null : identityDAO.findByIdentityId(id));
+    long id = parseId(profile.getIdentity().getId());
+    IdentityEntity entity = (id == 0 ? null : identityDAO.find(id));
     if (entity == null) {
-      createProfile(profile);
+      throw new IdentityStorageException(IdentityStorageException.Type.FAIL_TO_UPDATE_PROFILE, "Profile does not exist on RDBMS");
     } else {
       mapToProfileEntity(profile, entity);
-      identityDAO.update(entity.getIdentity());
+      identityDAO.update(entity);
     }
+    profile.setId(entity.getStringId());
     profile.clearHasChanged();
   }
-
-  private void createProfile(final Profile profile) {
-    // Create profile for identity
-    if (profile.getIdentity().getId() == null) {
-      throw new IllegalArgumentException();
-    }
-    long identityId = parseId(profile.getIdentity().getId());
-
-    IdentityEntity identityEntity = getIdentityDAO().find(identityId);
-    if (identityEntity == null) {
-      throw new IdentityStorageException(IdentityStorageException.Type.FAIL_TO_FIND_IDENTITY);
-    }
-
-    // Find by identity to avoid create 2 profile map to 1 identity (exception will be throw because the unique constraint)
-    ProfileEntity entity = identityDAO.findByIdentityId(identityId);
-    if (entity == null) {
-      entity = new ProfileEntity();
-      entity.setIdentity(identityEntity);
-    }
-
-    mapToProfileEntity(profile, entity);
-
-    entity.setCreatedDate(new Date());
-
-    identityDAO.update(identityEntity);
-    profile.setId(String.valueOf(identityId));
-  }
-
+  
   /**
    * Updates profile.
    *
@@ -549,18 +512,14 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
    * @since 1.2.0-GA
    */
   public void updateProfile(final Profile profile) throws IdentityStorageException {
-    if (profile.getId() == null) {
-      createProfile(profile);
+    long id = parseId(profile.getIdentity().getId());
+    IdentityEntity entity = identityDAO.find(id);
+    if (entity == null) {
+      throw new IdentityStorageException(IdentityStorageException.Type.FAIL_TO_UPDATE_PROFILE, "Profile does not exist on RDBMS");
     } else {
-      long id = parseId(profile.getId());
-      ProfileEntity entity = identityDAO.findByIdentityId(id);
-      if (entity == null) {
-        throw new IdentityStorageException(IdentityStorageException.Type.FAIL_TO_UPDATE_PROFILE, "Profile does not exist on RDBMS");
-      } else {
-        mapToProfileEntity(profile, entity);
-        identityDAO.update(entity.getIdentity());
-      }
-    }
+      mapToProfileEntity(profile, entity);
+      identityDAO.update(entity);
+    }    
   }
 
   /**
@@ -887,21 +846,5 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
       }
     }
     return result;
-  }
-
-  public static class RDBMSProfileLoader implements ProfileLoader {
-    final RDBMSIdentityStorageImpl storage;
-    final Identity identity;
-
-    public RDBMSProfileLoader(RDBMSIdentityStorageImpl storage, Identity identity) {
-      this.storage = storage;
-      this.identity = identity;
-    }
-
-    @Override
-    public Profile load() throws IdentityStorageException {
-      Profile p = new Profile(identity);
-      return storage.loadProfile(p);
-    }
   }
 }
