@@ -335,11 +335,12 @@
       </column>
       
       <!-- profile -->
-      <column name="URL" type="NVARCHAR(500)"/>
       <column name="AVATAR_URL" type="NVARCHAR(500)"/>
       <column name="AVATAR_MIMETYPE" type="NVARCHAR(250)"/>
       <column name="AVATAR_IMAGE" type="MEDIUMBLOB"/>
-      <column name="CREATED_DATE" type="TIMESTAMP"/>
+      <column name="CREATED_DATE" type="TIMESTAMP">
+        <constraints nullable="false"/>
+      </column>
     </createTable>
     <modifySql dbms="mysql">
       <append value=" ENGINE=INNODB CHARSET=UTF8 COLLATE utf8_general_ci"/>
@@ -355,9 +356,9 @@
   </changeSet>
 
   <changeSet author="social" id="1.0.0-31">
-    <createTable tableName="SOC_PROFILE_PROPERTIES">
+    <createTable tableName="SOC_IDENTITY_PROPERTIES">
       <column name="IDENTITY_ID" type="BIGINT">
-        <constraints foreignKeyName="FK_SOC_PROFILE_PROPERTIES" references="SOC_IDENTITIES(IDENTITY_ID)" nullable="false"/>
+        <constraints foreignKeyName="FK_SOC_IDENTITY_PROPERTIES" references="SOC_IDENTITIES(IDENTITY_ID)" nullable="false"/>
       </column>
       <column name="NAME" type="NVARCHAR(200)">
         <constraints nullable="false"/>
@@ -370,9 +371,9 @@
   </changeSet>
 
   <changeSet author="social" id="1.0.0-32">
-    <createTable tableName="SOC_PROFILE_EXPERIENCES">
+    <createTable tableName="SOC_IDENTITY_EXPERIENCES">
       <column name="IDENTITY_ID" type="BIGINT">
-        <constraints foreignKeyName="FK_SOC_PROFILE_EXPERIENCES" references="SOC_IDENTITIES(IDENTITY_ID)" nullable="false"/>
+        <constraints foreignKeyName="FK_SOC_IDENTITY_EXPERIENCES" references="SOC_IDENTITIES(IDENTITY_ID)" nullable="false"/>
       </column>
       <column name="COMPANY" type="NVARCHAR(250)"/>
       <column name="POSITION" type="NVARCHAR(500)"/>
@@ -401,7 +402,7 @@
     <addUniqueConstraint columnNames="SPACE_ID, USER_ID, STATUS"
                          constraintName="UK_SPACE_USER_STATUS_01"
                          tableName="SOC_SPACES_MEMBERS"/>                         
-    <addPrimaryKey columnNames="IDENTITY_ID, NAME" constraintName="PK_SOC_PROFILE_PROPERTIES_01" tableName="SOC_PROFILE_PROPERTIES"/>                                                    
+    <addPrimaryKey columnNames="IDENTITY_ID, NAME" constraintName="PK_SOC_IDENTITY_PROPERTIES_01" tableName="SOC_IDENTITY_PROPERTIES"/>                                                    
   </changeSet>
 
   <changeSet author="social" id="1.0.0-34">

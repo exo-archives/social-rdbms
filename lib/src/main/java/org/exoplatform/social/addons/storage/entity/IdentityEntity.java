@@ -25,6 +25,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import javax.persistence.Basic;
 import javax.persistence.CascadeType;
 import javax.persistence.CollectionTable;
 import javax.persistence.Column;
@@ -88,9 +89,6 @@ public class IdentityEntity {
   private boolean deleted = false;
 
   //PROFILE
-  @Column(name = "URL")
-  private String url;
-
   @Column(name = "AVATAR_URL")
   private String avatarURL;
 
@@ -99,16 +97,17 @@ public class IdentityEntity {
 
   @Lob
   @Column(name = "AVATAR_IMAGE")
+  @Basic(fetch = FetchType.LAZY)
   private byte[] avatarImage;
 
   @ElementCollection(fetch = FetchType.EAGER)
   @MapKeyColumn(name = "NAME")
   @Column(name = "VALUE")
-  @CollectionTable(name = "SOC_PROFILE_PROPERTIES", joinColumns = {@JoinColumn(name = "IDENTITY_ID")})
+  @CollectionTable(name = "SOC_IDENTITY_PROPERTIES", joinColumns = {@JoinColumn(name = "IDENTITY_ID")})
   private Map<String, String> properties = new HashMap<String, String>();
 
   @ElementCollection(fetch = FetchType.LAZY)
-  @CollectionTable(name = "SOC_PROFILE_EXPERIENCES", joinColumns = {@JoinColumn(name = "IDENTITY_ID")})
+  @CollectionTable(name = "SOC_IDENTITY_EXPERIENCES", joinColumns = {@JoinColumn(name = "IDENTITY_ID")})
   private List<ProfileExperienceEntity> experiences = new ArrayList<>();
   //END_OF_PROFILE
 
@@ -164,14 +163,6 @@ public class IdentityEntity {
 
   public void setDeleted(boolean deleted) {
     this.deleted = deleted;
-  }
-
-  public String getUrl() {
-    return url;
-  }
-
-  public void setUrl(String url) {
-    this.url = url;
   }
 
   public String getAvatarURL() {

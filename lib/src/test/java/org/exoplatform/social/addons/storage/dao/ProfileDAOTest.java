@@ -21,11 +21,14 @@ package org.exoplatform.social.addons.storage.dao;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.exoplatform.social.addons.storage.entity.IdentityEntity;
 import org.exoplatform.social.addons.storage.entity.ProfileExperienceEntity;
 import org.exoplatform.social.addons.test.BaseCoreTest;
+import org.exoplatform.social.core.identity.model.Profile;
 import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvider;
 
 /**
@@ -75,9 +78,9 @@ public class ProfileDAOTest extends BaseCoreTest {
 
     profile = identityDAO.find(profile.getId());
     assertNotNull(profile);
-    assertEquals("/profile/root", profile.getUrl());
-
-    profile.setUrl("/profile/root_updated");
+    assertEquals("/profile/root", profile.getProperties().get(Profile.URL));
+    
+    profile.getProperties().put(Profile.URL, "/profile/root_updated");
     profile.setExperiences(new ArrayList<ProfileExperienceEntity>());
 
     identityDAO.update(identity);
@@ -86,13 +89,12 @@ public class ProfileDAOTest extends BaseCoreTest {
 
     assertNotNull(profile);
     assertEquals(0, profile.getExperiences().size());
-    assertEquals("/profile/root_updated", profile.getUrl());
+    assertEquals("/profile/root_updated", profile.getProperties().get(Profile.URL));
   }
 
   private IdentityEntity createProfile() {
     IdentityEntity profile = new IdentityEntity();
     profile.setCreatedDate(new Date());
-    profile.setUrl("/profile/root");
     profile.setAvatarURL("/profile/root/avatar.png");
 
     profile.setAvatarImage(new byte[]{0x01, 0x02});
@@ -105,6 +107,10 @@ public class ProfileDAOTest extends BaseCoreTest {
     List<ProfileExperienceEntity> exps = new ArrayList<>();
     exps.add(exp);
     profile.setExperiences(exps);
+    
+    Map<String, String> props = new HashMap<String, String>();
+    props.put(Profile.URL, "/profile/root");
+    profile.setProperties(props);
 
     return profile;
   }

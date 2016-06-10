@@ -148,10 +148,12 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
     return p;
   }
   private void mapToProfile(IdentityEntity entity, Profile p) {
+    Map<String, String> properties = entity.getProperties();
+    
     Map<String, Object> props = p.getProperties();
     String providerId = entity.getProviderId();
     if (!OrganizationIdentityProvider.NAME.equals(providerId) && !SpaceIdentityProvider.NAME.equals(providerId)) {
-      p.setUrl(entity.getUrl());
+      p.setUrl(properties.get(Profile.URL));
       p.setAvatarUrl(entity.getAvatarURL());
     } else {
       String remoteId = entity.getRemoteId();
@@ -186,8 +188,7 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
       }
       props.put(Profile.EXPERIENCES, xpData);
     }
-
-    Map<String, String> properties = entity.getProperties();
+    
     if (properties != null && properties.size() > 0) {
       for (Map.Entry<String, String> entry : properties.entrySet()) {
         String key = entry.getKey();
@@ -213,7 +214,7 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
 
           props.put(key, list);
 
-        } else {
+        } else if (!Profile.URL.equals(key)) {
           props.put(key, value);
         }
       }
@@ -231,15 +232,15 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
   }
 
   private void mapToProfileEntity(Profile profile, IdentityEntity entity) {
-    String providerId = profile.getIdentity().getProviderId();
-    if (!OrganizationIdentityProvider.NAME.equals(providerId) && !SpaceIdentityProvider.NAME.equals(providerId)) {
-      entity.setUrl(profile.getUrl());
-      entity.setAvatarURL(profile.getAvatarUrl());
-    }
-
     Map<String, String> entityProperties = entity.getProperties();
     if (entityProperties == null) {
       entityProperties = new HashMap<>();
+    }
+
+    String providerId = profile.getIdentity().getProviderId();
+    if (!OrganizationIdentityProvider.NAME.equals(providerId) && !SpaceIdentityProvider.NAME.equals(providerId)) {
+      entityProperties.put(Profile.URL, profile.getUrl());
+      entity.setAvatarURL(profile.getAvatarUrl());
     }
 
     Map<String, Object> properties = profile.getProperties();
