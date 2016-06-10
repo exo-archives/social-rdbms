@@ -64,7 +64,7 @@ public class ActivityEntity extends BaseActivity {
 
   /** */
   public ActivityEntity() {
-    setPosted(new Date().getTime());
+    setPosted(new Date());
     setUpdatedDate(new Date());
   }
 

@@ -38,9 +38,8 @@ public class StreamItemEntity {
   private String ownerId;
   
   /** */
-  @Temporal(TemporalType.TIMESTAMP)
   @Column(name="UPDATED_DATE", nullable = false)
-  private Date updatedDate;
+  private Long updatedDate;
 
   @Enumerated
   @Column(name="STREAM_TYPE", nullable = false)
@@ -86,11 +85,11 @@ public class StreamItemEntity {
   }
 
   public Date getUpdatedDate() {
-    return updatedDate;
+    return updatedDate != null && updatedDate > 0 ? new Date(updatedDate) : null;
   }
 
   public void setUpdatedDate(Date updatedDate) {
-    this.updatedDate = updatedDate;
+    this.updatedDate = updatedDate != null ? updatedDate.getTime() : 0;
   }
 
   public Long getActivityId() {

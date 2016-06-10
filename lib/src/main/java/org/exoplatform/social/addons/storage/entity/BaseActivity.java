@@ -35,9 +35,8 @@ public abstract class BaseActivity implements Serializable {
   protected Long posted;
   
   /** */
-  @Temporal(TemporalType.TIMESTAMP)
   @Column(name="UPDATED_DATE", nullable = false)
-  private Date updatedDate;
+  private Long updatedDate;
   
   /** */
   @Column(name="POSTER_ID")
@@ -88,17 +87,17 @@ public abstract class BaseActivity implements Serializable {
   public void setTitleId(String titleId) {
     this.titleId = titleId;
   }
-  public Long getPosted() {
-    return posted;
+  public Date getPosted() {
+    return (posted != null && posted > 0) ? new Date(posted) : null;
   }
-  public void setPosted(Long posted) {
-    this.posted = posted;
+  public void setPosted(Date posted) {
+    this.posted = (posted != null ? posted.getTime() : 0);
   } 
   public Date getUpdatedDate() {
-      return updatedDate;
+      return updatedDate != null && updatedDate > 0 ? new Date(updatedDate) : null;
   }
   public void setUpdatedDate(Date updatedDate) {
-      this.updatedDate = updatedDate;
+      this.updatedDate = (updatedDate != null ? updatedDate.getTime() : 0);
   }
   public String getPosterId() {
     return posterId;

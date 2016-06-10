@@ -143,9 +143,9 @@ public final class AStreamQueryBuilder {
     select = criteria.select(activity).distinct(true);
     select.where(getPredicateForStream(activity, streamItem, cb, criteria.subquery(ActivityEntity.class), criteria.subquery(ActivityEntity.class), criteria.subquery(String.class)));
     if (this.descOrder) {
-      select.orderBy(cb.desc(activity.<Date> get(ActivityEntity_.updatedDate)));
+      select.orderBy(cb.desc(activity.get(ActivityEntity_.updatedDate)));
     } else {
-      select.orderBy(cb.asc(activity.<Date> get(ActivityEntity_.updatedDate)));
+      select.orderBy(cb.asc(activity.get(ActivityEntity_.updatedDate)));
     }
 
     TypedQuery<ActivityEntity> typedQuery = em.createQuery(select);
@@ -168,9 +168,9 @@ public final class AStreamQueryBuilder {
     List<Predicate> predicates = getPredicateForIdsStream(streamItem, cb, criteria.subquery(String.class));
     criteria.where(cb.or(predicates.toArray(new Predicate[predicates.size()])));
     if (this.descOrder) {
-      criteria.orderBy(cb.desc(streamItem.<Date> get(StreamItemEntity_.updatedDate)));
+      criteria.orderBy(cb.desc(streamItem.get(StreamItemEntity_.updatedDate)));
     } else {
-      criteria.orderBy(cb.asc(streamItem.<Date> get(StreamItemEntity_.updatedDate)));
+      criteria.orderBy(cb.asc(streamItem.get(StreamItemEntity_.updatedDate)));
     }
 
     TypedQuery<Tuple> typedQuery = em.createQuery(criteria);
@@ -248,16 +248,16 @@ public final class AStreamQueryBuilder {
     if (this.sinceTime > 0) {
       if (isNewer) {
         if (predicate != null) {
-          predicate = cb.and(predicate, cb.greaterThan(activity.<Date>get(ActivityEntity_.updatedDate), new Date(this.sinceTime)));
+          predicate = cb.and(predicate, cb.greaterThan(activity.get(ActivityEntity_.updatedDate), this.sinceTime));
         } else {
-          predicate = cb.greaterThan(activity.<Date>get(ActivityEntity_.updatedDate), new Date(this.sinceTime));
+          predicate = cb.greaterThan(activity.get(ActivityEntity_.updatedDate), this.sinceTime);
         }
 
       } else {
         if (predicate != null) {
-          predicate = cb.and(predicate, cb.lessThan(activity.<Date>get(ActivityEntity_.updatedDate), new Date(this.sinceTime)));
+          predicate = cb.and(predicate, cb.lessThan(activity.get(ActivityEntity_.updatedDate), this.sinceTime));
         } else {
-          predicate = cb.lessThan(activity.<Date>get(ActivityEntity_.updatedDate), new Date(this.sinceTime));
+          predicate = cb.lessThan(activity.get(ActivityEntity_.updatedDate), this.sinceTime);
         }
       }
     }
@@ -315,18 +315,17 @@ public final class AStreamQueryBuilder {
     if (this.sinceTime > 0) {
       if (isNewer) {
         if (predicate != null) {
-          predicate = cb.and(predicate, cb.greaterThan(stream.<Date> get(StreamItemEntity_.updatedDate),
-                                                       new Date(this.sinceTime)));
+          predicate = cb.and(predicate, cb.greaterThan(stream.get(StreamItemEntity_.updatedDate), this.sinceTime));
         } else {
-          predicate = cb.greaterThan(stream.<Date> get(StreamItemEntity_.updatedDate), new Date(this.sinceTime));
+          predicate = cb.greaterThan(stream.get(StreamItemEntity_.updatedDate), this.sinceTime);
         }
 
       } else {
         if (predicate != null) {
           predicate = cb.and(predicate,
-                             cb.lessThan(stream.<Date> get(StreamItemEntity_.updatedDate), new Date(this.sinceTime)));
+                             cb.lessThan(stream.get(StreamItemEntity_.updatedDate), this.sinceTime));
         } else {
-          predicate = cb.lessThan(stream.<Date> get(StreamItemEntity_.updatedDate), new Date(this.sinceTime));
+          predicate = cb.lessThan(stream.get(StreamItemEntity_.updatedDate), this.sinceTime);
         }
       }
     }
@@ -366,7 +365,7 @@ public final class AStreamQueryBuilder {
     //
     CriteriaQuery<ActivityEntity> select = criteria.select(activity).distinct(true);
     select.where(predicate);
-    select.orderBy(cb.desc(activity.<Date> get(ActivityEntity_.updatedDate)));
+    select.orderBy(cb.desc(activity.get(ActivityEntity_.updatedDate)));
 
     TypedQuery<ActivityEntity> typedQuery = em.createQuery(select);
     if (this.limit > 0) {

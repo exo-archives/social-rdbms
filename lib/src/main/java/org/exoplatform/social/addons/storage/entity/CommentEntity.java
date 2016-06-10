@@ -40,7 +40,7 @@ public class CommentEntity extends BaseActivity {
   private ActivityEntity activity;
 
   public CommentEntity() {
-    setPosted(new Date().getTime());
+    setPosted(new Date());
     setUpdatedDate(new Date());
   }
 

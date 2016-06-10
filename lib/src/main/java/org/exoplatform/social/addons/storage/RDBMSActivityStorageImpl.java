@@ -146,7 +146,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
     activity.isLocked(activityEntity.getLocked());
     activity.isHidden(activityEntity.getHidden());
     activity.setTitleId(activityEntity.getTitleId());
-    activity.setPostedTime(activityEntity.getPosted());
+    activity.setPostedTime(activityEntity.getPosted() != null ? activityEntity.getPosted().getTime() : 0);
     activity.setUpdated(activityEntity.getUpdatedDate().getTime());
     //
     List<String> commentIds = new ArrayList<String>();
@@ -206,7 +206,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
     if (activity.getPostedTime() == null || activity.getPostedTime() <= 0) {
       activity.setPostedTime(System.currentTimeMillis());
     }
-    activityEntity.setPosted(activity.getPostedTime());
+    activityEntity.setPosted(new Date(activity.getPostedTime()));
     activityEntity.setLocked(activity.isLocked());
     activityEntity.setHidden(activity.isHidden());
     activityEntity.setUpdatedDate(activity.getUpdated());
@@ -242,7 +242,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
     //
     exoComment.setParentId(comment.getActivity().getId() + "");
     //
-    exoComment.setPostedTime(comment.getPosted());
+    exoComment.setPostedTime(comment.getPosted() != null ? comment.getPosted().getTime() : 0);
     exoComment.setUpdated(comment.getUpdatedDate().getTime());
     //
     processActivity(exoComment);
@@ -276,9 +276,9 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
     commentEntity.setLocked(comment.isLocked());
     commentEntity.setHidden(comment.isHidden());
     //
-    long commentMillis = (comment.getPostedTime() != null ? comment.getPostedTime() : System.currentTimeMillis());
-    commentEntity.setPosted(commentMillis);
-    commentEntity.setUpdatedDate(new Date(commentMillis));
+    Date commentTime = (comment.getPostedTime() != null ? new Date(comment.getPostedTime()) : new Date());
+    commentEntity.setPosted(commentTime);
+    commentEntity.setUpdatedDate(commentTime);
     //
     return commentEntity;
   }
