@@ -78,7 +78,7 @@ public class RDBMSSpaceStorageTest extends SpaceStorageTest {
     assertEquals(2, result.size());
     assertEquals(space0.getId(), result.get(0).getId());
 
-    Thread.sleep(500);
+    Thread.sleep(1000);
     spaceStorage.updateSpaceAccessed("ghost", space1);    
 
     result = spaceStorage.getLastAccessedSpace(filter, 0, -1); 

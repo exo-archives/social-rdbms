@@ -14,6 +14,8 @@ import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
+import javax.persistence.Temporal;
+import javax.persistence.TemporalType;
 
 import org.exoplatform.commons.api.persistence.ExoEntity;
 
@@ -44,8 +46,17 @@ public class SpaceMemberEntity implements Serializable {
   @Column(name = "STATUS", nullable = false)
   private Status            status;
 
+  /**
+   * We can not set default lastAccess is Date(0L)
+   * because some rdbms does not allow to store date as '1970-01-01 01:00:00 UTC' (e.g MySQL)
+   * We can not set default value is null because the sort with null value is different between rdbms
+   * and we can not control it in JPA Query
+   *
+   * Use the default date is '1970-01-02 01:00:00 UTC' is valid for both rdbms and requirement
+   */
+  @Temporal(TemporalType.TIMESTAMP)
   @Column(name = "LAST_ACCESS")
-  private Date              lastAccess = new Date(0L);
+  private Date              lastAccess = new Date(86400000L);
 
   @Column(name = "VISITED")
   private boolean           visited;

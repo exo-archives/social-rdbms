@@ -481,7 +481,7 @@ public class RDBMSActivityStorageImplTest extends AbstractCoreTest {
     assertEquals(4, activityStorage.getOlderOnUserSpacesActivities(demoIdentity, baseActivity, 10).size());
     assertEquals(4, activityStorage.getNumberOfOlderOnUserSpacesActivities(demoIdentity, baseActivity));
   }
-  @MaxQueryNumber(180)
+  @MaxQueryNumber(188)
   public void testGetNewerComments() {
     int totalNumber = 10;
     

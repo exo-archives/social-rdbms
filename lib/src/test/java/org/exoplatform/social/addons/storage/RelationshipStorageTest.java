@@ -104,7 +104,7 @@ public class RelationshipStorageTest extends AbstractCoreTest {
    *
    * @throws RelationshipStorageException
    */
-  @MaxQueryNumber(146)
+  @MaxQueryNumber(196)
   public void testSaveRelationship() throws RelationshipStorageException {
     Relationship rootToJohnRelationship = new Relationship(rootIdentity, johnIdentity, Type.PENDING);
     rootToJohnRelationship = relationshipStorage.saveRelationship(rootToJohnRelationship);
@@ -115,7 +115,7 @@ public class RelationshipStorageTest extends AbstractCoreTest {
   /**
    * Test for {@link org.exoplatform.social.core.storage.api.RelationshipStorage#removeRelationship(Relationship)}
    */
-  @MaxQueryNumber(170)
+  @MaxQueryNumber(204)
   public void testRemoveRelationship() {
     Relationship rootToJohnRelationship = new Relationship(rootIdentity, johnIdentity, Type.PENDING);
     try {
@@ -134,7 +134,7 @@ public class RelationshipStorageTest extends AbstractCoreTest {
    * Test for {@link org.exoplatform.social.core.storage.api.RelationshipStorage#getRelationship(String)}
    * @throws RelationshipStorageException
    */
-  @MaxQueryNumber(164)
+  @MaxQueryNumber(200)
   public void testGetRelationship() throws RelationshipStorageException {
     Relationship rootToJohnRelationship = new Relationship(rootIdentity, johnIdentity, Type.PENDING);
     rootToJohnRelationship = relationshipStorage.saveRelationship(rootToJohnRelationship);
@@ -165,7 +165,7 @@ public class RelationshipStorageTest extends AbstractCoreTest {
    * @throws Exception
    * @since 1.2.0-Beta3
    */
-  @MaxQueryNumber(170)
+  @MaxQueryNumber(244)
   public void testGetConnections() throws Exception {
     Relationship rootToJohnRelationship = new Relationship(rootIdentity, johnIdentity, Type.CONFIRMED);
     rootToJohnRelationship = relationshipStorage.saveRelationship(rootToJohnRelationship);
@@ -217,7 +217,7 @@ public class RelationshipStorageTest extends AbstractCoreTest {
    * @throws Exception
    * @since 1.2.0-Beta3
    */
-  @MaxQueryNumber(162)
+  @MaxQueryNumber(228)
   public void testGetConnectionsCount() throws Exception {
     Relationship rootToJohnRelationship = new Relationship(rootIdentity, johnIdentity, Type.CONFIRMED);
     rootToJohnRelationship = relationshipStorage.saveRelationship(rootToJohnRelationship);
@@ -249,7 +249,7 @@ public class RelationshipStorageTest extends AbstractCoreTest {
    * @throws Exception
    * @since 1.2.0-Beta3
    */
-  @MaxQueryNumber(160)
+  @MaxQueryNumber(224)
   public void testGetRelationshipsWithListCheck() throws Exception {
     Relationship rootToJohnRelationship = new Relationship(rootIdentity, johnIdentity, Type.CONFIRMED);
     rootToJohnRelationship = relationshipStorage.saveRelationship(rootToJohnRelationship);
@@ -299,7 +299,7 @@ public class RelationshipStorageTest extends AbstractCoreTest {
    *
    * @throws RelationshipStorageException
    */
-  @MaxQueryNumber(164)
+  @MaxQueryNumber(216)
   public void testGetSenderRelationshipsByIdentityAndType() throws RelationshipStorageException {
     Relationship rootToJohnRelationship = new Relationship(rootIdentity, johnIdentity, Type.PENDING);
     Relationship rootToDemoRelationship = new Relationship(rootIdentity, demoIdentity, Type.PENDING);
@@ -332,7 +332,7 @@ public class RelationshipStorageTest extends AbstractCoreTest {
    * @throws Exception
    * @since 1.2.0-Beta3
    */
-  @MaxQueryNumber(156)
+  @MaxQueryNumber(216)
   public void testGetSenderRelationships() throws Exception {
     String rootId = rootIdentity.getId();
 
@@ -367,7 +367,7 @@ public class RelationshipStorageTest extends AbstractCoreTest {
    * @throws Exception
    * @since 1.2.0-Beta3
    */
-  @MaxQueryNumber(164)
+  @MaxQueryNumber(232)
   public void testGetRelationships() throws Exception {
     Relationship rootToJohnRelationship = new Relationship(rootIdentity, johnIdentity, Type.PENDING);
     rootToJohnRelationship = relationshipStorage.saveRelationship(rootToJohnRelationship);
@@ -396,7 +396,7 @@ public class RelationshipStorageTest extends AbstractCoreTest {
    * @throws Exception
    * @since 1.2.0-Beta3
    */
-  @MaxQueryNumber(152)
+  @MaxQueryNumber(208)
   public void testGetRelationshipsCount() throws Exception {
     Relationship rootToJohnRelationship = new Relationship(rootIdentity, johnIdentity, Type.PENDING);
     rootToJohnRelationship = relationshipStorage.saveRelationship(rootToJohnRelationship);
@@ -424,7 +424,7 @@ public class RelationshipStorageTest extends AbstractCoreTest {
    * @throws Exception
    * @since 1.2.0-Beta3
    */
-  @MaxQueryNumber(170)
+  @MaxQueryNumber(244)
   public void testGetIncomingRelationships() throws Exception {
     Relationship rootToJohnRelationship = new Relationship(rootIdentity, johnIdentity, Type.PENDING);
     rootToJohnRelationship = relationshipStorage.saveRelationship(rootToJohnRelationship);
@@ -477,7 +477,7 @@ public class RelationshipStorageTest extends AbstractCoreTest {
    * @throws Exception
    * @since 1.2.0-Beta3
    */
-  @MaxQueryNumber(162)
+  @MaxQueryNumber(228)
   public void testGetIncomingRelationshipsCount() throws Exception {
     Relationship rootToJohnRelationship = new Relationship(rootIdentity, johnIdentity, Type.PENDING);
     rootToJohnRelationship = relationshipStorage.saveRelationship(rootToJohnRelationship);
@@ -509,7 +509,7 @@ public class RelationshipStorageTest extends AbstractCoreTest {
    * @throws Exception
    * @since 1.2.0-Beta3
    */
-  @MaxQueryNumber(182)
+  @MaxQueryNumber(268)
   public void testGetOutgoingRelationships() throws Exception {
     Relationship rootToJohnRelationship = new Relationship(rootIdentity, johnIdentity, Type.PENDING);
     rootToJohnRelationship = relationshipStorage.saveRelationship(rootToJohnRelationship);
@@ -567,7 +567,7 @@ public class RelationshipStorageTest extends AbstractCoreTest {
    * @throws Exception
    * @since 1.2.0-Beta3
    */
-  @MaxQueryNumber(162)
+  @MaxQueryNumber(228)
   public void testGetOutgoingRelationshipsCount() throws Exception {
     Relationship rootToJohnRelationship = new Relationship(rootIdentity, johnIdentity, Type.PENDING);
     rootToJohnRelationship = relationshipStorage.saveRelationship(rootToJohnRelationship);

@@ -37,20 +37,26 @@ import org.exoplatform.social.addons.updater.ActivityMigrationService;
 import org.exoplatform.social.addons.updater.IdentityMigrationService;
 import org.exoplatform.social.addons.updater.RDBMSMigrationManager;
 import org.exoplatform.social.addons.updater.RelationshipMigrationService;
+import org.exoplatform.social.addons.updater.SpaceMigrationService;
 import org.exoplatform.social.core.activity.model.ExoSocialActivity;
+import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.identity.model.Profile;
 import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvider;
+import org.exoplatform.social.core.identity.provider.SpaceIdentityProvider;
 import org.exoplatform.social.core.manager.ActivityManager;
 import org.exoplatform.social.core.manager.IdentityManager;
 import org.exoplatform.social.core.manager.IdentityManagerImpl;
 import org.exoplatform.social.core.manager.RelationshipManager;
 import org.exoplatform.social.core.model.AvatarAttachment;
+import org.exoplatform.social.core.space.impl.DefaultSpaceApplicationHandler;
+import org.exoplatform.social.core.space.model.Space;
 import org.exoplatform.social.core.space.spi.SpaceService;
 import org.exoplatform.social.core.storage.api.ActivityStorage;
 import org.exoplatform.social.core.storage.api.SpaceStorage;
 import org.exoplatform.social.core.storage.impl.ActivityStorageImpl;
 import org.exoplatform.social.core.storage.impl.IdentityStorageImpl;
 import org.exoplatform.social.core.storage.impl.RelationshipStorageImpl;
+import org.exoplatform.social.core.storage.impl.SpaceStorageImpl;
 import org.jboss.byteman.contrib.bmunit.BMUnit;
 
 import java.io.InputStream;
@@ -77,6 +83,7 @@ public class MigrationTest extends BaseCoreTest {
   private ActivityStorageImpl activityJCRStorage;
   private IdentityStorageImpl identityJCRStorage;
   private RelationshipStorageImpl relationshipJCRStorage;
+  private SpaceStorageImpl spaceJCRStorage;
 
   private RDBMSIdentityStorageImpl identityJPAStorage;
 
@@ -87,6 +94,7 @@ public class MigrationTest extends BaseCoreTest {
   private ActivityMigrationService activityMigration;
   private RelationshipMigrationService relationshipMigration;
   private RDBMSMigrationManager rdbmsMigrationManager;
+  private SpaceMigrationService spaceMigrationService;
 
   private List<ExoSocialActivity> activitiesToDelete = new ArrayList<>();
 
@@ -109,6 +117,7 @@ public class MigrationTest extends BaseCoreTest {
     identityJCRStorage = getService(IdentityStorageImpl.class);
     activityJCRStorage = getService(ActivityStorageImpl.class);
     relationshipJCRStorage = getService(RelationshipStorageImpl.class);
+    spaceJCRStorage = getService(SpaceStorageImpl.class);
 
 
     identityManager = getService(IdentityManager.class);
@@ -125,6 +134,7 @@ public class MigrationTest extends BaseCoreTest {
     identityMigrationService = getService(IdentityMigrationService.class);
     activityMigration = getService(ActivityMigrationService.class);
     relationshipMigration = getService(RelationshipMigrationService.class);
+    spaceMigrationService = getService(SpaceMigrationService.class);
 
     activitiesToDelete = new ArrayList<>();
   }
@@ -209,6 +219,48 @@ public class MigrationTest extends BaseCoreTest {
     activitiesToDelete.add(migrated);
     assertNotNull(migrated);
     assertEquals(2, migrated.getMentionedIds().length);
+  }
+
+  public void testMigrateSpace() throws Exception {
+    Space space = new Space();
+    space.setApp("app1:appName1:true:active,app2:appName2:false:deactive");
+    space.setDisplayName("my space");
+    space.setPrettyName("my_space");
+    space.setRegistration(Space.OPEN);
+    space.setDescription("add new space");
+    space.setType(DefaultSpaceApplicationHandler.NAME);
+    space.setVisibility(Space.PUBLIC);
+    space.setPriority(Space.INTERMEDIATE_PRIORITY);
+    space.setGroupId("/spaces/space1");
+    String[] managers = new String[] { "demo"};
+    String[] members = new String[] {};
+    String[] invitedUsers = new String[] {};
+    String[] pendingUsers = new String[] {};
+    space.setInvitedUsers(invitedUsers);
+    space.setPendingUsers(pendingUsers);
+    space.setManagers(managers);
+    space.setMembers(members);
+    space.setUrl(space.getPrettyName());
+
+    identityManager.getOrCreateIdentity(OrganizationIdentityProvider.NAME, "demo", true).getProfile();
+
+    spaceJCRStorage.saveSpace(space, true);
+
+    Identity spaceIdentity = new Identity(SpaceIdentityProvider.NAME, space.getPrettyName());
+    identityJCRStorage.saveIdentity(spaceIdentity);
+    Profile spaceProfile = new Profile(spaceIdentity);
+    identityJCRStorage.saveProfile(spaceProfile);
+
+    end();
+    begin();
+    spaceMigrationService.start();
+    switchToUseJPAStorage();
+
+    Space s1 = spaceStorage.getSpaceByPrettyName(space.getPrettyName());
+    assertNotNull(s1);
+
+    identityJCRStorage.deleteIdentity(spaceIdentity);
+    spaceStorage.deleteSpace(s1.getId());
   }
 
   protected void switchToUseJPAStorage() {

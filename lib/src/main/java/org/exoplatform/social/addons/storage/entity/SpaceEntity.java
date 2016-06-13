@@ -214,9 +214,9 @@ public class SpaceEntity implements Serializable {
   public SpaceEntity buildFrom(Space space) {
     this.setApp(AppEntity.parse(space.getApp()));
     if (space.getAvatarLastUpdated() != null) {
-      this.setAvatarLastUpdated(new Date(space.getAvatarLastUpdated()));      
+      this.setAvatarLastUpdated(space.getAvatarLastUpdated() > 0 ? new Date(space.getAvatarLastUpdated()) : null);
     }
-    this.setCreatedDate(new Date(space.getCreatedTime()));
+    this.setCreatedDate(space.getCreatedTime() > 0 ? new Date(space.getCreatedTime()) : new Date());
     this.setDescription(space.getDescription());
     this.setDisplayName(space.getDisplayName());
     this.setGroupId(space.getGroupId());
