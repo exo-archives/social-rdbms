@@ -649,11 +649,21 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
       comment.isComment(activityEntity.isComment());
       comment.setType(activityEntity.getType());
       //
-      String posterId = activityEntity.getPosterIdentity().getId();
+      IdentityEntity poster = activityEntity.getPosterIdentity();
+      if (poster == null) {
+        LOG.warn("Failed to fill comment from entity: poster is null");
+        return null;
+      }
+      String posterId = poster.getId();
       comment.setUserId(posterId);
       comment.setPosterId(posterId);
+
       //
-      comment.setParentId(activityEntity.getParentActivity().getId());
+      ActivityEntity parent = activityEntity.getParentActivity();
+      if (parent == null) {
+        LOG.warn("Failed to fill comment from entity: parent activity is null");
+      }
+      comment.setParentId(parent.getId());
 
       String[] mentioners = activityEntity.getMentioners();
       if (mentioners != null) {
@@ -684,7 +694,7 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
     try {
       return activityEntity.getLastUpdated();
     } catch (Exception e) {
-      return postTime;
+      return postTime != null ? postTime.longValue() : System.currentTimeMillis();
     }
   }
 
