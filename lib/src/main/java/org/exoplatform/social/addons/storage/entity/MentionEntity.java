@@ -54,4 +54,23 @@ public class MentionEntity {
   public void setMentionId(String mentionId) {
     this.mentionId = mentionId;
   }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+
+    MentionEntity that = (MentionEntity) o;
+
+    if (!activity.equals(that.activity)) return false;
+    return mentionId.equals(that.mentionId);
+
+  }
+
+  @Override
+  public int hashCode() {
+    int result = activity.hashCode();
+    result = 31 * result + mentionId.hashCode();
+    return result;
+  }
 }

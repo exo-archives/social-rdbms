@@ -264,6 +264,10 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
   private void migrationByIdentity(String userName, IdentityEntity identityEntity) throws Exception {
     boolean begunTx = false;
     long numberActivitiesFailed = 0;
+    long t = System.currentTimeMillis();
+    int count = 0;
+    String providerId = "";
+    String remoteId = "";
 
     try {
       begunTx = startTx();
@@ -278,9 +282,10 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
         }
       }
 
+      providerId = identityEntity.getProviderId();
+      remoteId = identityEntity.getRemoteId();
       Identity jpaIdentity = identityJPAStorage.findIdentity(identityEntity.getProviderId(), identityEntity.getRemoteId());
 
-      String providerId = identityEntity.getProviderId();
       String type = (OrganizationIdentityProvider.NAME.equals(providerId)) ? "user" : "space";
       LOG.info(String.format("    Migration activities for %s: %s", type, identityEntity.getRemoteId()));
       //
@@ -292,9 +297,6 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
         //Only goto last on first users
         lastActivity = null;
       }
-
-      long t = System.currentTimeMillis();
-      int count = 0;
 
       while (activityIterator.hasNext()) {
         String activityId = activityIterator.next().getId();
@@ -404,7 +406,12 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
           ++count;
           //
           if(count % LIMIT_ACTIVITY_SAVE_THRESHOLD == 0) {
-            endTx(begunTx);
+            try {
+              endTx(begunTx);
+            } catch (Exception ex) {
+              LOG.error("Exception while commit the transaction", ex);
+              numberActivitiesFailed += LIMIT_ACTIVITY_SAVE_THRESHOLD;
+            }
             entityManagerService.endRequest(PortalContainer.getInstance());
             entityManagerService.startRequest(PortalContainer.getInstance());
             begunTx = startTx();
@@ -416,16 +423,19 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
         }
       }
 
-      if (numberActivitiesFailed > 0) {
-        LOG.error(String.format("    Failed migration for %s activitie(s)", numberActivitiesFailed));
-      }
-      LOG.info(String.format("    Done migration %s activitie(s) for %s consumed %s(ms) ", count, identityEntity.getRemoteId(), System.currentTimeMillis() - t));
-      if (numberActivitiesFailed > 0) {
-        throw new Exception("Migration is failed for " + numberActivitiesFailed + " activities");
-      }
-
     } finally {
-      endTx(begunTx);
+      try {
+        endTx(begunTx);
+      } catch (Exception ex) {
+        LOG.error("Exception while commit the transaction", ex);
+        numberActivitiesFailed += LIMIT_ACTIVITY_SAVE_THRESHOLD;
+      }
+    }
+
+    LOG.info(String.format("    Done migration %s activitie(s) for %s consumed %s(ms) ", count, providerId + "/" +remoteId, System.currentTimeMillis() - t));
+    if (numberActivitiesFailed > 0) {
+      LOG.error(String.format("    Failed migration for %s activitie(s)", numberActivitiesFailed));
+      throw new Exception("Migration is failed for " + numberActivitiesFailed + " activities of identity " + providerId + "/" + remoteId);
     }
   }
 
