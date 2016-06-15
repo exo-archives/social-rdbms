@@ -17,10 +17,13 @@
 package org.exoplatform.social.addons.storage.dao.jpa;
 
 import java.util.Collections;
+import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 
+import javax.persistence.NoResultException;
 import javax.persistence.Tuple;
+import javax.persistence.TypedQuery;
 
 import org.exoplatform.commons.persistence.impl.GenericDAOJPAImpl;
 import org.exoplatform.social.addons.storage.dao.ActivityDAO;
@@ -494,4 +497,63 @@ public class ActivityDAOImpl extends GenericDAOJPAImpl<ActivityEntity, Long> imp
     return ids;
   }
 
+  @Override
+  public long getNumberOfComments(long activityId) {
+    TypedQuery<Long> query = getEntityManager().createNamedQuery("SocActivity.numberCommentsOfActivity", Long.class);
+    query.setParameter("activityId", activityId);
+    return query.getSingleResult();
+  }
+
+  @Override
+  public List<ActivityEntity> getComments(long activityId, int offset, int limit) {
+    TypedQuery<ActivityEntity> query = getEntityManager().createNamedQuery("SocActivity.findCommentsOfActivity", ActivityEntity.class);
+    query.setParameter("activityId", activityId);
+    if (limit > 0) {
+      query.setFirstResult(offset >= 0 ? offset : 0);
+      query.setMaxResults(limit);
+    }
+    return query.getResultList();
+  }
+
+  @Override
+  public List<ActivityEntity> getNewerComments(long activityId, Date sinceTime, int offset, int limit) {
+    TypedQuery<ActivityEntity> query = getEntityManager().createNamedQuery("SocActivity.findNewerCommentsOfActivity", ActivityEntity.class);
+    query.setParameter("activityId", activityId);
+    query.setParameter("sinceTime", sinceTime != null ? sinceTime.getTime() : 0);
+    if (limit > 0) {
+      query.setFirstResult(offset >= 0 ? offset : 0);
+      query.setMaxResults(limit);
+    }
+    return query.getResultList();
+  }
+
+  @Override
+  public List<ActivityEntity> getOlderComments(long activityId, Date sinceTime, int offset, int limit) {
+    TypedQuery<ActivityEntity> query = getEntityManager().createNamedQuery("SocActivity.findOlderCommentsOfActivity", ActivityEntity.class);
+    query.setParameter("activityId", activityId);
+    query.setParameter("sinceTime", sinceTime != null ? sinceTime.getTime() : 0);
+    if (limit > 0) {
+      query.setFirstResult(offset >= 0 ? offset : 0);
+      query.setMaxResults(limit);
+    }
+    return query.getResultList();
+  }
+
+  @Override
+  public ActivityEntity getParentActivity(long commentId) {
+    TypedQuery<ActivityEntity> query = getEntityManager().createNamedQuery("SocActivity.getParentActivity", ActivityEntity.class);
+    query.setParameter("commentId", commentId);
+    query.setMaxResults(1);
+    try {
+      return query.getSingleResult();
+    } catch (NoResultException ex) {
+      return null;
+    }
+  }
+
+  @Override
+  public List<ActivityEntity> getAllActivities() {
+    TypedQuery<ActivityEntity> query = getEntityManager().createNamedQuery("SocActivity.getAllActivities", ActivityEntity.class);
+    return query.getResultList();
+  }
 }

@@ -28,7 +28,7 @@
               <constraints nullable="false"/>
             </column>
             <column name="OWNER_ID" type="NVARCHAR(200)">
-              <constraints nullable="false"/>
+              <constraints nullable="true"/>
             </column>
             <column name="PERMALINK" type="NVARCHAR(500)"/>
             <column name="POSTED" type="BIGINT">
@@ -42,6 +42,12 @@
             </column>
             <column name="TITLE_ID" type="NVARCHAR(1024)"/>
             <column name="TYPE" type="NVARCHAR(255)"/>
+            <column name="IS_COMMENT" type="BOOLEAN">
+              <constraints nullable="false"/>
+            </column>
+            <column name="PARENT_ID" type="BIGINT">
+              <constraints foreignKeyName="FK_ACTIVITY_PARENT_ID" references="SOC_ACTIVITIES(ACTIVITY_ID)" nullable="true"/>
+            </column>
         </createTable>
         <modifySql dbms="mysql">
             <append value=" ENGINE=INNODB CHARSET=UTF8 COLLATE utf8_general_ci"/>
@@ -112,68 +118,6 @@
             <append value=" ENGINE=INNODB CHARSET=UTF8 COLLATE utf8_general_ci"/>
         </modifySql>
     </changeSet>
-    <changeSet author="social" id="1.0.0-5">
-        <createTable tableName="SOC_COMMENTS">
-            <column name="COMMENT_ID" type="BIGINT" autoIncrement="${autoIncrement}" startWith="1">
-              <constraints nullable="false" primaryKey="true" primaryKeyName="PK_SOC_COMMENTS"/>
-            </column>
-            <column name="APP_ID" type="NVARCHAR(200)"/>
-            <column name="BODY" type="LONGTEXT"/>
-            <column name="EXTERNAL_ID" type="NVARCHAR(200)"/>
-            <column name="HIDDEN" type="BOOLEAN">
-              <constraints nullable="false"/>
-            </column>
-            <column name="UPDATED_DATE" type="BIGINT">
-              <constraints nullable="false"/>
-            </column>
-            <column name="LOCKED" type="BOOLEAN">
-              <constraints nullable="false"/>
-            </column>
-            <column name="OWNER_ID" type="NVARCHAR(200)"/>
-            <column name="PERMALINK" type="NVARCHAR(500)"/>
-            <column name="POSTED" type="BIGINT">
-              <constraints nullable="false"/>
-            </column>
-            <column name="POSTER_ID" type="NVARCHAR(200)">
-              <constraints nullable="false"/>
-            </column>
-            <column name="PRIORITY" type="FLOAT(12)"/>
-            <column name="TITLE" type="LONGTEXT">
-              <constraints nullable="false"/>
-            </column>
-            <column name="TITLE_ID" type="NVARCHAR(1024)"/>
-            <column name="TYPE" type="NVARCHAR(255)"/>
-            <column name="ACTIVITY_ID" type="BIGINT">
-              <constraints nullable="false"/>
-            </column>
-        </createTable>
-        <modifySql dbms="mysql">
-            <append value=" ENGINE=INNODB CHARSET=UTF8 COLLATE utf8_general_ci"/>
-        </modifySql>
-    </changeSet>
-    <changeSet author="social" id="1.0.0-5.1">
-        <createIndex tableName="SOC_COMMENTS" indexName="IDX_SOC_COMMENTS_01">
-            <column name="UPDATED_DATE" descending="true"/>
-        </createIndex>
-        <createIndex tableName="SOC_COMMENTS" indexName="IDX_SOC_COMMENTS_02">
-            <column name="POSTER_ID"/>
-        </createIndex>
-    </changeSet>
-
-    <changeSet author="social" id="1.0.0-6">
-        <createTable tableName="SOC_COMMENT_TEMPLATE_PARAMS">
-            <column name="COMMENT_ID" type="BIGINT">
-                <constraints nullable="false"/>
-            </column>
-            <column name="TEMPLATE_PARAM_VALUE" type="NVARCHAR(1024)"/>
-            <column name="TEMPLATE_PARAM_KEY" type="NVARCHAR(255)">
-                <constraints nullable="false"/>
-            </column>
-        </createTable>
-        <modifySql dbms="mysql">
-            <append value=" ENGINE=INNODB CHARSET=UTF8 COLLATE utf8_general_ci"/>
-        </modifySql>
-    </changeSet>
     <changeSet author="social" id="1.0.0-8">
         <createTable tableName="SOC_STREAM_ITEMS">
             <column name="STREAM_ITEM_ID" type="BIGINT" autoIncrement="${autoIncrement}" startWith="1">
@@ -204,23 +148,14 @@
     <changeSet author="social" id="1.0.0-9">
         <addPrimaryKey columnNames="ACTIVITY_ID, TEMPLATE_PARAM_KEY" constraintName="PK_SOC_ACT_TEMPLATE_PARAMS_01" tableName="SOC_ACTIVITY_TEMPLATE_PARAMS"/>
     </changeSet>
-    <changeSet author="social" id="1.0.0-10">
-        <addPrimaryKey columnNames="COMMENT_ID, TEMPLATE_PARAM_KEY" constraintName="PK_SOC_CMT_TEMPLATE_PARAMS_01" tableName="SOC_COMMENT_TEMPLATE_PARAMS"/>
-    </changeSet>
     <changeSet author="social" id="1.0.0-11">
         <addForeignKeyConstraint baseColumnNames="ACTIVITY_ID" baseTableName="SOC_ACTIVITY_LIKERS" constraintName="FK_SOC_ACT_LIKERS_ACT_01" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="ACTIVITY_ID" referencedTableName="SOC_ACTIVITIES"/>
     </changeSet>
     <changeSet author="social" id="1.0.0-12">
         <addForeignKeyConstraint baseColumnNames="ACTIVITY_ID" baseTableName="SOC_MENTIONS" constraintName="FK_SOC_MENTIONS_ACT_01" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="ACTIVITY_ID" referencedTableName="SOC_ACTIVITIES"/>
     </changeSet>
-    <changeSet author="social" id="1.0.0-13">
-        <addForeignKeyConstraint baseColumnNames="ACTIVITY_ID" baseTableName="SOC_COMMENTS" constraintName="FK_SOC_CMT_ACT_01" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="ACTIVITY_ID" referencedTableName="SOC_ACTIVITIES"/>
-    </changeSet>
     <changeSet author="social" id="1.0.0-14">
         <addForeignKeyConstraint baseColumnNames="ACTIVITY_ID" baseTableName="SOC_ACTIVITY_TEMPLATE_PARAMS" constraintName="FK_SOC_ACT_TEMP_PAR_ACT_01" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="ACTIVITY_ID" referencedTableName="SOC_ACTIVITIES"/>
-    </changeSet>
-    <changeSet author="social" id="1.0.0-15">
-        <addForeignKeyConstraint baseColumnNames="COMMENT_ID" baseTableName="SOC_COMMENT_TEMPLATE_PARAMS" constraintName="FK_SOC_CMT_TEMP_PAR_CMT_01" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="COMMENT_ID" referencedTableName="SOC_COMMENTS"/>
     </changeSet>
 
     <changeSet author="social" id="1.0.0-17">
@@ -232,9 +167,6 @@
   </changeSet>
   <changeSet author="social" id="1.0.0-19" dbms="oracle,postgresql">
     <createSequence sequenceName="SEQ_SOC_MENTIONS_ID" startValue="1"/>
-  </changeSet>
-  <changeSet author="social" id="1.0.0-20" dbms="oracle,postgresql">
-    <createSequence sequenceName="SEQ_SOC_COMMENTS_ID" startValue="1"/>
   </changeSet>
   <changeSet author="social" id="1.0.0-22" dbms="oracle,postgresql">
     <createSequence sequenceName="SEQ_SOC_STREAM_ITEMS_ID" startValue="1"/>

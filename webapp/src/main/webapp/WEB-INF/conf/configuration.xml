@@ -32,11 +32,6 @@
     <type>org.exoplatform.social.addons.storage.dao.jpa.StreamItemDAOImpl</type>
   </component>
   
-  <component>
-    <key>org.exoplatform.social.addons.storage.dao.CommentDAO</key>
-    <type>org.exoplatform.social.addons.storage.dao.jpa.CommentDAOImpl</type>
-  </component>
-  
    <component>
     <key>org.exoplatform.social.addons.storage.dao.ConnectionDAO</key>
     <type>org.exoplatform.social.addons.storage.dao.jpa.ConnectionDAOImpl</type>

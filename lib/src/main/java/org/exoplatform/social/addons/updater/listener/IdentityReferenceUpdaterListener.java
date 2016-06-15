@@ -67,18 +67,6 @@ public class IdentityReferenceUpdaterListener extends Listener<Identity, String>
       query.setParameter("oldId", oldId);
       query.executeUpdate();
 
-      // Comment poster
-      query = em.createNamedQuery("SocComment.migratePosterId");
-      query.setParameter("newId", newId);
-      query.setParameter("oldId", oldId);
-      query.executeUpdate();
-
-      // Comment owner
-      query = em.createNamedQuery("SocComment.migrateOwnerId");
-      query.setParameter("newId", newId);
-      query.setParameter("oldId", oldId);
-      query.executeUpdate();
-
       //activity mention
       query = em.createNamedQuery("SocMention.migrateMentionId");
       query.setParameter("newId", newId);

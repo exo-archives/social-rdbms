@@ -25,7 +25,6 @@ import org.exoplatform.management.jmx.annotations.Property;
 import org.exoplatform.services.jcr.impl.core.NodeImpl;
 import org.exoplatform.social.addons.storage.RDBMSIdentityStorageImpl;
 import org.exoplatform.social.addons.storage.dao.ActivityDAO;
-import org.exoplatform.social.addons.storage.dao.CommentDAO;
 import org.exoplatform.social.addons.updater.utils.MigrationCounter;
 import org.exoplatform.social.addons.updater.utils.StringUtil;
 import org.exoplatform.social.core.activity.model.ExoSocialActivity;
@@ -62,7 +61,6 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
 
   protected final RDBMSIdentityStorageImpl identityJPAStorage;
 
-  private final CommentDAO commentDAO;
   private final ActivityDAO activityDAO;
 
   private String previousActivityId = null;
@@ -71,7 +69,6 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
   private boolean forceStop = false;
   
   public ActivityMigrationService(InitParams initParams,
-                                  CommentDAO commentDAO,
                                   ActivityDAO activityDAO,
                                   ActivityStorage activityStorage,
                                   ActivityStorageImpl activityJCRStorage,
@@ -82,7 +79,6 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
 
     super(initParams, identityStorage, eventManager, entityManagerService);
     this.identityJPAStorage = rdbmsIdentityStorage;
-    this.commentDAO = commentDAO;
     this.activityDAO = activityDAO;
     this.activityStorage = activityStorage;
     this.activityJCRStorage = activityJCRStorage;

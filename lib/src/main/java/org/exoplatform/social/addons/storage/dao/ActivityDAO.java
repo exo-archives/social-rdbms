@@ -16,6 +16,7 @@
  */
 package org.exoplatform.social.addons.storage.dao;
 
+import java.util.Date;
 import java.util.List;
 
 import org.exoplatform.commons.api.persistence.GenericDAO;
@@ -360,5 +361,16 @@ public interface ActivityDAO extends GenericDAO<ActivityEntity, Long> {
    * @return
    */
   int getNumberOfActivitiesByPoster(Identity posterIdentity, String... activityTypes);
-  
+
+  long getNumberOfComments(long activityId);
+
+  List<ActivityEntity> getComments(long activityId, int offset, int limit);
+
+  List<ActivityEntity> getNewerComments(long activityId, Date sinceTime, int offset, int limit);
+
+  List<ActivityEntity> getOlderComments(long activityId, Date sinceTime, int offset, int limit);
+
+  ActivityEntity getParentActivity(long commentId);
+
+  List<ActivityEntity> getAllActivities();
 }

@@ -134,7 +134,7 @@ public class AsynMigrationTest extends BaseCoreTest {
     begin();
     ActivityDAO dao = getService(ActivityDAO.class);
     //
-    List<ActivityEntity> items = dao.findAll();
+    List<ActivityEntity> items = dao.getAllActivities();
     for (ActivityEntity item : items) {
       dao.delete(item);
     }

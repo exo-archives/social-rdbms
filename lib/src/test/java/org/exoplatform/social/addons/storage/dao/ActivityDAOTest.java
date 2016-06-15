@@ -27,7 +27,6 @@ import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 import org.exoplatform.services.security.ConversationState;
 import org.exoplatform.social.addons.storage.entity.ActivityEntity;
-import org.exoplatform.social.addons.storage.entity.CommentEntity;
 import org.exoplatform.social.addons.test.BaseCoreTest;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvider;
@@ -50,13 +49,11 @@ public class ActivityDAOTest extends BaseCoreTest {
   private Identity paulIdentity;
   
   private ActivityDAO activityDao;
-  private CommentDAO commentDao;
 
   @Override
   public void setUp() throws Exception {
     super.setUp();
     activityDao = getService(ActivityDAO.class);
-    commentDao = getService(CommentDAO.class);
     //
     tearDownActivityList = new HashSet<ActivityEntity>();
     tearDownSpaceList = new ArrayList<Space>();
@@ -217,19 +214,19 @@ public class ActivityDAOTest extends BaseCoreTest {
     String commentTitle = "Comment title";
     
     //demo comments on john's activity
-    CommentEntity comment = new CommentEntity();
+    ActivityEntity comment = new ActivityEntity();
     comment.setTitle(commentTitle);
     comment.setOwnerId(demoIdentity.getId());
     comment.setPosterId(demoIdentity.getId());
     activity.addComment(comment);
-    commentDao.create(comment);
+    activityDao.create(comment);
     
     assertNotNull(comment.getId());
     activityDao.update(activity);
     //
     activity = activityDao.find(activity.getId());
     
-    List<CommentEntity> demoComments = commentDao.getComments(activity, 0, -1);
+    List<ActivityEntity> demoComments = activityDao.getComments(activity.getId(), 0, -1);
     assertNotNull(demoComments);
     assertEquals(1, demoComments.size());
     
@@ -249,7 +246,7 @@ public class ActivityDAOTest extends BaseCoreTest {
     demoActivity.setOwnerId(identityId);
     saveActivity(johnIdentity, demoActivity);
     // comment
-    CommentEntity comment = new CommentEntity();
+    ActivityEntity comment = new ActivityEntity();
     comment.setTitle("demo comment");
     comment.setOwnerId(demoIdentity.getId());
     comment.setPosterId(demoIdentity.getId());
@@ -257,14 +254,14 @@ public class ActivityDAOTest extends BaseCoreTest {
     demoActivity = activityDao.find(demoActivity.getId());
     //
     demoActivity.addComment(comment);
-    commentDao.create(comment);
+    activityDao.create(comment);
     activityDao.update(demoActivity);
     //
     demoActivity = activityDao.find(demoActivity.getId());
-    List<CommentEntity> demoComments = demoActivity.getComments();
+    List<ActivityEntity> demoComments = demoActivity.getComments();
     Long commentId = demoComments.get(0).getId();
     //
-    comment = commentDao.find(commentId);
+    comment = activityDao.find(commentId);
     assertEquals(1, demoActivity.getComments().size());
     assertEquals(demoIdentity.getId(), comment.getOwnerId());
   }
@@ -280,23 +277,23 @@ public class ActivityDAOTest extends BaseCoreTest {
     demoActivity.setOwnerId(identityId);
     saveActivity(johnIdentity, demoActivity);
     // comment
-    CommentEntity comment = new CommentEntity();
+    ActivityEntity comment = new ActivityEntity();
     comment.setTitle("demo comment");
     comment.setOwnerId(demoIdentity.getId());
     comment.setPosterId(demoIdentity.getId());
     //
     demoActivity.addComment(comment);
-    comment = commentDao.create(comment);
+    comment = activityDao.create(comment);
     activityDao.update(demoActivity);
     //
-    ActivityEntity activityAdded = commentDao.findActivity(comment.getId());
+    ActivityEntity activityAdded = activityDao.getParentActivity(comment.getId());
     assertEquals(demoActivity.getId(), activityAdded.getId());
     //
     final Long acId = demoActivity.getId(), cmId = comment.getId();
     executeAsync(new Runnable() {
       @Override
       public void run() {
-        ActivityEntity activityAdded = commentDao.findActivity(cmId);
+        ActivityEntity activityAdded = activityDao.getParentActivity(cmId);
         assertNotNull(activityAdded);
         assertEquals(acId, activityAdded.getId());
       }
@@ -318,17 +315,17 @@ public class ActivityDAOTest extends BaseCoreTest {
     int total = 10;
     
     for (int i = 0; i < total; i ++) {
-      CommentEntity maryComment = new CommentEntity();
+      ActivityEntity maryComment = new ActivityEntity();
       maryComment.setOwnerId(maryIdentity.getId());
       maryComment.setPosterId(maryIdentity.getId());
       maryComment.setTitle("mary comment");
       demoActivity.addComment(maryComment);
-      commentDao.create(maryComment);
+      activityDao.create(maryComment);
       activityDao.update(demoActivity);
     }
     
     demoActivity = activityDao.find(demoActivity.getId());
-    List<CommentEntity> maryComments = demoActivity.getComments();
+    List<ActivityEntity> maryComments = demoActivity.getComments();
     assertNotNull(maryComments);
     assertEquals(total, maryComments.size());
   }
@@ -347,21 +344,21 @@ public class ActivityDAOTest extends BaseCoreTest {
     saveActivity(demoIdentity, demoActivity);
     tearDownActivityList.add(demoActivity);
     
-    CommentEntity maryComment = new CommentEntity();
+    ActivityEntity maryComment = new ActivityEntity();
     maryComment.setTitle("mary comment");
     maryComment.setOwnerId(maryIdentity.getId());
     maryComment.setPosterId(maryIdentity.getId());
     demoActivity.addComment(maryComment);
-    commentDao.create(maryComment);
+    activityDao.create(maryComment);
     activityDao.update(demoActivity);
     //
-    maryComment = commentDao.find(maryComment.getId());
-    commentDao.delete(maryComment);
+    maryComment = activityDao.find(maryComment.getId());
+    activityDao.delete(maryComment);
     demoActivity = activityDao.find(demoActivity.getId());
     demoActivity.getComments().remove(maryComment);
     activityDao.update(demoActivity);
     //
-    assertNull(commentDao.find(maryComment.getId()));
+    assertNull(activityDao.find(maryComment.getId()));
     assertEquals(0, activityDao.find(demoActivity.getId()).getComments().size());
   }
 }
