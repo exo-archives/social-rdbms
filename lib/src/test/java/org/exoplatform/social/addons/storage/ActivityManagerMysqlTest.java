@@ -88,20 +88,16 @@ public class ActivityManagerMysqlTest extends AbstractCoreTest {
     
     //RealtimeListAccess<ExoSocialActivity> demoActivities = activityManager.getActivitiesOfUserSpacesWithListAccess(demoIdentity);
     //assertEquals(0, demoActivities.getSize());
+
+    for (Space space : spaceService.getAllSpaces()) {
+      spaceService.deleteSpace(space);
+    }
     
     identityManager.deleteIdentity(ghostIdentity);
     identityManager.deleteIdentity(jameIdentity);
     identityManager.deleteIdentity(raulIdentity);
     identityManager.deleteIdentity(paulIdentity);
-    
-    for (Space space : spaceService.getAllSpaces()) {
-      Identity spaceIdentity = identityManager.getOrCreateIdentity(SpaceIdentityProvider.NAME, space.getPrettyName(), false);
-      if (spaceIdentity != null) {
-        identityManager.deleteIdentity(spaceIdentity);
-      }
-      spaceService.deleteSpace(space);
-    }    
-    
+
     RDBMSIdentityStorageImpl identityStorage = (RDBMSIdentityStorageImpl) getService(IdentityStorage.class);
     identityStorage.setProfileSearchConnector(getService(ProfileSearchConnector.class));
     super.tearDown();

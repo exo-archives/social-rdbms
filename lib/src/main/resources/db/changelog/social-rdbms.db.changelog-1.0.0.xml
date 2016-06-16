@@ -178,7 +178,7 @@
           <constraints nullable="false" primaryKey="true" primaryKeyName="PK_SOC_SPACES"/>
         </column>
         <column name="PRETTY_NAME" type="NVARCHAR(200)">
-          <constraints nullable="false"/>
+          <constraints nullable="false" unique="true" uniqueConstraintName="UK_SOC_SPACE_PRETTY_NAME"/>
         </column>
         <column name="DISPLAY_NAME" type="NVARCHAR(200)">
           <constraints nullable="false"/>
