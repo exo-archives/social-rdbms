@@ -32,6 +32,7 @@ import org.exoplatform.management.annotations.Managed;
 import org.exoplatform.management.annotations.ManagedDescription;
 import org.exoplatform.management.jmx.annotations.NameTemplate;
 import org.exoplatform.management.jmx.annotations.Property;
+import org.exoplatform.services.jcr.impl.core.NodeImpl;
 import org.exoplatform.social.addons.search.ProfileIndexingServiceConnector;
 import org.exoplatform.social.addons.storage.RDBMSIdentityStorageImpl;
 import org.exoplatform.social.core.chromattic.entity.DisabledEntity;
@@ -45,6 +46,7 @@ import org.exoplatform.social.core.storage.impl.IdentityStorageImpl;
 
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
+import javax.jcr.PropertyIterator;
 import java.io.ByteArrayInputStream;
 
 /**
@@ -178,8 +180,9 @@ public class IdentityMigrationService extends AbstractMigrationService<Identity>
     long timePerIdentity = System.currentTimeMillis();
     RequestLifeCycle.begin(PortalContainer.getInstance());
     int offset = 0;
+    long failed = 0;
     try {
-      NodeIterator nodeIter  = getIdentityNodes(offset, LIMIT_THRESHOLD);
+      NodeIterator nodeIter  = getIdentityNodes(failed, LIMIT_THRESHOLD);
       if(nodeIter == null || nodeIter.getSize() == 0) {
         return;
       }
@@ -189,7 +192,12 @@ public class IdentityMigrationService extends AbstractMigrationService<Identity>
         LOG.info(String.format("|  \\ START::cleanup Identity number: %s (%s identity)", offset, node.getName()));
         offset++;
 
-        node.remove();
+        try {
+          node.remove();
+        } catch (Exception ex) {
+          LOG.error("Error when cleanup the identity: " + node.getName(), ex);
+          failed++;
+        }
 
         LOG.info(String.format("|  / END::cleanup (%s identity) consumed time %s(ms)", node.getName(), System.currentTimeMillis() - timePerIdentity));
 
@@ -198,13 +206,17 @@ public class IdentityMigrationService extends AbstractMigrationService<Identity>
           getSession().save();
           RequestLifeCycle.end();
           RequestLifeCycle.begin(PortalContainer.getInstance());
-          nodeIter = getIdentityNodes(offset, LIMIT_THRESHOLD);
+          nodeIter = getIdentityNodes(failed, LIMIT_THRESHOLD);
         }
       }
     } finally {
       getSession().save();
-      LOG.info(String.format("| / END::cleanup Identities migration for (%s) identity consumed %s(ms)", offset, System.currentTimeMillis() - t));
       RequestLifeCycle.end();
+    }
+
+    LOG.info(String.format("| / END::cleanup Identities migration for (%s) identity consumed %s(ms)", offset, System.currentTimeMillis() - t));
+    if (failed > 0) {
+      throw new Exception("Migrate failed for " + failed + " identities");
     }
   }
 
