@@ -473,13 +473,16 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
     LOG.info("Done to removed activities from JCR");
   }
 
-  private void removeActivity() {
+  private void removeActivity() throws Exception {
     long t = System.currentTimeMillis();
     long offset = 0;
     NodeIterator it = getIdentityNodes(offset, LIMIT_REMOVED_THRESHOLD);
     if(it == null || it.getSize() == 0) {
       return;
     }
+
+    long numberUserFailed = 0;
+
     Node node = null;
     boolean isDone = false;
     try {
@@ -488,6 +491,9 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
         node = (Node) it.next();
         LOG.info(String.format("|  \\ START::cleanup user number: %s (%s user)", offset, node.getName()));
         isDone = cleanupActivity(node);
+        if (!isDone) {
+          numberUserFailed++;
+        }
         offset++;
         LOG.info(String.format("|  / END::cleanup (%s user)", node.getName()));
         //
@@ -514,7 +520,8 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
     if(it == null || it.getSize() == 0) {
       return;
     }
-    
+
+    long numberSpaceFailed = 0;
     node = null;
     offset = 0;
     try {
@@ -523,6 +530,9 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
         node = (Node) it.next();
         LOG.info(String.format("|  \\ START::cleanup space number: %s (%s space)", offset, node.getName()));
         isDone = cleanupActivity(node);
+        if (!isDone) {
+          numberSpaceFailed++;
+        }
         offset++;
         LOG.info(String.format("|  / END::cleanup (%s space)", node.getName()));
         //
@@ -538,6 +548,17 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
       RequestLifeCycle.end();
       RequestLifeCycle.begin(PortalContainer.getInstance());
       LOG.info(String.format("| / END::cleanup Activity for (%s) space consumed %s(ms) -------------", offset, System.currentTimeMillis() - t));
+    }
+
+    if (numberSpaceFailed > 0 || numberUserFailed > 0) {
+      StringBuilder message = new StringBuilder("Migration failed for ");
+      if (numberSpaceFailed > 0) {
+        message.append(numberSpaceFailed).append(" spaces");
+      }
+      if (numberUserFailed > 0) {
+        message.append(numberSpaceFailed > 0 ? " and " : "").append(numberUserFailed).append(" users");
+      }
+      throw new Exception(message.toString());
     }
     
   }
@@ -581,7 +602,9 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
     long totalTime = System.currentTimeMillis();
     long offset = 0;
     long size = 0;
-    boolean isDone = true;
+
+    long failed = 0;
+
     try {
       StringBuffer sb = new StringBuffer().append("SELECT * FROM soc:activity WHERE ");
       try {
@@ -593,6 +616,7 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
 
       long t = System.currentTimeMillis();
       boolean reLoad = false;
+
       NodeIterator it = nodes(sb.toString());
       NodeImpl node = null;
       size = it.getSize();
@@ -602,19 +626,24 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
         node = (NodeImpl) it.next();
         path = node.getPath();
         if (node.getData() != null) {
-          if (cleanupSubNode(node, identityName)) {
+          try {
+            cleanupSubNode(node, identityName);
             node.remove();
             reLoad = true;
+          } catch (Exception ex) {
+            LOG.error("Failed while delete activity " + node.getUUID() + " of user " + identityNode.getName());
+            failed++;
           }
           offset++;
         }
+
         if (reLoad) {
           RequestLifeCycle.end();
           RequestLifeCycle.begin(PortalContainer.getInstance());
           it = nodes(sb.toString(), offset, size - offset);
           reLoad = false;
-          isDone = false;
         }
+
         if (offset % LIMIT_ACTIVITY_SAVE_THRESHOLD == 0) {
           getSession().save();
           LOG.info(String.format("|     - Persist deleted: %s activity consumed time %s(ms) ", LIMIT_ACTIVITY_SAVE_THRESHOLD, System.currentTimeMillis() - t));
@@ -628,7 +657,7 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
     } finally {
       LOG.info(String.format("|   / END::cleanup: %d (Activity) for %s identity consumed time %s(ms) ", size, identityName, System.currentTimeMillis() - totalTime));
     }
-    return isDone;
+    return failed == 0;
   }
 
   private ExoSocialActivity fillCommentFromEntity(ActivityEntity activityEntity) {
