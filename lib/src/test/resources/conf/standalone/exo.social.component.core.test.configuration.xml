@@ -902,4 +902,5 @@
     </component-plugin>
   </external-component-plugins>
 
+  <import>jar:conf/portal/files-configuration.xml</import>
 </configuration>

@@ -30,6 +30,7 @@ import javax.ws.rs.core.Request;
 import javax.ws.rs.core.Response;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
@@ -37,6 +38,9 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
 import org.apache.commons.codec.binary.Hex;
+import org.exoplatform.commons.file.model.FileInfo;
+import org.exoplatform.commons.file.model.FileItem;
+import org.exoplatform.commons.file.services.FileService;
 import org.exoplatform.container.PortalContainer;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
@@ -54,6 +58,7 @@ public class IdentityAvatarRestService implements ResourceContainer {
   static final String BASE_URL = "/social/identity";
 
   private IdentityDAO identityDAO = null;
+  private FileService fileService = null;
 
   private final CacheControl cc;
 
@@ -76,33 +81,27 @@ public class IdentityAvatarRestService implements ResourceContainer {
       return Response.status(Response.Status.NOT_ACCEPTABLE).build();
     }
 
-    IdentityEntity profileEntity = getIdentityDAO().find(entity.getId());
-    if (profileEntity == null) {
+    Long fileId = entity.getAvatarFileId();
+    if (fileId == null || fileId <= 0) {
       return Response.status(Response.Status.NOT_FOUND).build();
     }
 
-    byte[] image = profileEntity.getAvatarImage();
-    if (image == null || image.length == 0) {
-      return Response.status(Response.Status.NOT_FOUND).build();
-    }
-
-    String md5 = null;
     try {
-      md5 = new String(Hex.encodeHex(MessageDigest.getInstance("MD5").digest(image)));
-    } catch (NoSuchAlgorithmException ex) {
-      LOG.debug("Can not use ETag because MD5 algorithm does not exist");
-    }
+      FileItem file = getFileService().getFile(fileId);
+      FileInfo info = file.getFileInfo();
 
+      EntityTag eTag = new EntityTag(info.getChecksum());
+      Response.ResponseBuilder rb = (eTag == null ? null : req.evaluatePreconditions(eTag));
+      if (rb != null) {
+        return rb.cacheControl(cc).tag(eTag).build();
+      } else {
+        MediaType type = MediaType.valueOf(info.getMimetype());
+        return Response.ok(file.getStream(), type).tag(eTag).cacheControl(cc).build();
+      }
 
-    EntityTag eTag = (md5 == null ? null : new EntityTag(md5));
-    Response.ResponseBuilder rb = (eTag == null ? null : req.evaluatePreconditions(eTag));
-    if (rb != null) {
-      return rb.cacheControl(cc).tag(eTag).build();
-    } else {
-      MediaType type = MediaType.valueOf(profileEntity.getAvatarMimeType());
-
-      InputStream result = new ByteArrayInputStream(image);
-      return Response.ok(result, type).tag(eTag).cacheControl(cc).build();
+    } catch (IOException ex) {
+      LOG.warn("Can not load file ID: " + fileId);
+      return Response.status(Response.Status.NOT_FOUND).build();
     }
   }
 
@@ -111,6 +110,13 @@ public class IdentityAvatarRestService implements ResourceContainer {
       identityDAO = getService(IdentityDAO.class);
     }
     return identityDAO;
+  }
+
+  private FileService getFileService() {
+    if (fileService == null) {
+      fileService = getService(FileService.class);
+    }
+    return fileService;
   }
 
   private <T> T getService(Class<T> clazz) {
