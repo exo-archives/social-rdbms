@@ -476,10 +476,6 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
   private void removeActivity() throws Exception {
     long t = System.currentTimeMillis();
     long offset = 0;
-    NodeIterator it = getIdentityNodes(offset, LIMIT_REMOVED_THRESHOLD);
-    if(it == null || it.getSize() == 0) {
-      return;
-    }
 
     long numberUserFailed = 0;
 
@@ -487,7 +483,8 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
     boolean isDone = false;
     try {
       LOG.info("| \\ START::cleanup User Activity ---------------------------------");
-      while (it.hasNext()) {
+      NodeIterator it = getIdentityNodes(offset, LIMIT_REMOVED_THRESHOLD);
+      while (it != null && it.hasNext()) {
         node = (Node) it.next();
         LOG.info(String.format("|  \\ START::cleanup user number: %s (%s user)", offset, node.getName()));
         isDone = cleanupActivity(node);
@@ -503,9 +500,9 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
           it = getIdentityNodes(offset, LIMIT_REMOVED_THRESHOLD);
         }
       }
-      
     } catch (Exception e) {
       LOG.error("Failed to cleanup for Activity Reference.", e);
+      numberUserFailed++;
     } finally {
       RequestLifeCycle.end();
       RequestLifeCycle.begin(PortalContainer.getInstance());
@@ -515,18 +512,13 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
     //cleanup activity
     t = System.currentTimeMillis();
     offset = 0;
-    it = getSpaceIdentityNodes(offset, LIMIT_REMOVED_THRESHOLD);
-    //don't have any space.
-    if(it == null || it.getSize() == 0) {
-      return;
-    }
-
     long numberSpaceFailed = 0;
     node = null;
     offset = 0;
     try {
       LOG.info("| \\ START::cleanup Space Activity ---------------------------------");
-      while (it.hasNext()) {
+      NodeIterator it = getSpaceIdentityNodes(offset, LIMIT_REMOVED_THRESHOLD);
+      while (it != null && it.hasNext()) {
         node = (Node) it.next();
         LOG.info(String.format("|  \\ START::cleanup space number: %s (%s space)", offset, node.getName()));
         isDone = cleanupActivity(node);
@@ -544,6 +536,7 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
       }
     } catch (Exception e) {
       LOG.error("Failed to cleanup for user Activities.", e);
+      numberSpaceFailed++;
     } finally {
       RequestLifeCycle.end();
       RequestLifeCycle.begin(PortalContainer.getInstance());
@@ -551,7 +544,7 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
     }
 
     if (numberSpaceFailed > 0 || numberUserFailed > 0) {
-      StringBuilder message = new StringBuilder("Migration failed for ");
+      StringBuilder message = new StringBuilder("Cleanup failed for ");
       if (numberSpaceFailed > 0) {
         message.append(numberSpaceFailed).append(" spaces");
       }
@@ -565,7 +558,8 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
   
   /**
    * Cleanup ActivityRef for Identity
-   * @param identityNode
+   * @param activityNode
+   * @param userName
    */
   private boolean cleanupSubNode(Node activityNode, String userName) {
     long totalTime = System.currentTimeMillis();
@@ -598,64 +592,72 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
    * @param identityNode
    */
   private boolean cleanupActivity(Node identityNode) {
-    String identityName = "", path = "";
+    String identityName = "";
     long totalTime = System.currentTimeMillis();
-    long offset = 0;
-    long size = 0;
+    long size;
 
     long failed = 0;
 
     try {
+      identityName = identityNode.getName();
+      Node activitiesNode = identityNode.getNode("soc:activities");
+      size = activitiesNode.getProperty("soc:number").getLong();
+
       StringBuffer sb = new StringBuffer().append("SELECT * FROM soc:activity WHERE ");
       try {
         String nodeStreamsPath = XPathUtils.escapeIllegalSQLName(identityNode.getNode("soc:activities").getPath());
         sb.append(JCRProperties.path.getName()).append(" LIKE '").append(nodeStreamsPath + StorageUtils.SLASH_STR + StorageUtils.PERCENT_STR + "'");
+        sb.append(" AND soc:isComment = 'false'");
       } catch (RepositoryException e) {
         LOG.error(e.getMessage(), e);
       }
 
-      long t = System.currentTimeMillis();
-      boolean reLoad = false;
+      if (size > 0) {
+        long t = System.currentTimeMillis();
+        long offset = 0;
 
-      NodeIterator it = nodes(sb.toString());
-      NodeImpl node = null;
-      size = it.getSize();
-      identityName = identityNode.getName();
-      LOG.info(String.format("|   \\ START::cleanup: %d (Activity) for %s identity", size, identityName));
-      while (it.hasNext()) {
-        node = (NodeImpl) it.next();
-        path = node.getPath();
-        if (node.getData() != null) {
-          try {
-            cleanupSubNode(node, identityName);
-            node.remove();
-            reLoad = true;
-          } catch (Exception ex) {
-            LOG.error("Failed while delete activity " + node.getUUID() + " of user " + identityNode.getName());
-            failed++;
+        LOG.info(String.format("|   \\ START::cleanup: %d (Activity) for %s identity", size, identityName));
+        try {
+          NodeIterator it = nodes(sb.toString(), failed, LIMIT_ACTIVITY_SAVE_THRESHOLD);
+          while(it != null && it.hasNext()) {
+            offset++;
+            Node n = it.nextNode();
+            try {
+              cleanupSubNode(n, identityName);
+              n.remove();
+            } catch (Exception ex) {
+              LOG.error("Failed to cleanup activity ID: " + n.getUUID() + " path: " + n.getPath(), ex);
+              failed++;
+            }
+
+            if (offset % LIMIT_ACTIVITY_SAVE_THRESHOLD == 0) {
+              try {
+                getSession().save();
+                LOG.info(String.format("|     - Persist deleted: %s activity consumed time %s(ms) ", LIMIT_ACTIVITY_SAVE_THRESHOLD, System.currentTimeMillis() - t));
+              } catch (Exception ex) {
+                LOG.error("Failed, can not persist deleted activities", ex);
+                failed += LIMIT_ACTIVITY_SAVE_THRESHOLD;
+              }
+
+              t = System.currentTimeMillis();
+              it = nodes(sb.toString(), failed, LIMIT_ACTIVITY_SAVE_THRESHOLD);
+            }
           }
-          offset++;
-        }
 
-        if (reLoad) {
-          RequestLifeCycle.end();
-          RequestLifeCycle.begin(PortalContainer.getInstance());
-          it = nodes(sb.toString(), offset, size - offset);
-          reLoad = false;
-        }
-
-        if (offset % LIMIT_ACTIVITY_SAVE_THRESHOLD == 0) {
           getSession().save();
-          LOG.info(String.format("|     - Persist deleted: %s activity consumed time %s(ms) ", LIMIT_ACTIVITY_SAVE_THRESHOLD, System.currentTimeMillis() - t));
-          t = System.currentTimeMillis();
+          if (offset % LIMIT_ACTIVITY_SAVE_THRESHOLD != 0) {
+            LOG.info(String.format("|     - Persist deleted: %s activity consumed time %s(ms) ", offset % LIMIT_ACTIVITY_SAVE_THRESHOLD, System.currentTimeMillis() - t));
+          }
+        } finally {
+          LOG.info(String.format("|   / END::cleanup: %d (Activity) for %s identity consumed time %s(ms) ", size, identityName, System.currentTimeMillis() - totalTime));
         }
+      } else {
+        LOG.info("There is not any activity for identity: " + identityName);
       }
-      getSession().save();
+
     } catch (Exception e) {
-      LOG.error("Failed to cleanup for Activity: " + path, e);
+      LOG.error("Failed to cleanup activities for identity: " + identityName, e);
       return false;
-    } finally {
-      LOG.info(String.format("|   / END::cleanup: %d (Activity) for %s identity consumed time %s(ms) ", size, identityName, System.currentTimeMillis() - totalTime));
     }
     return failed == 0;
   }
