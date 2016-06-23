@@ -140,6 +140,7 @@
       <name>ProfileIndexingServiceConnector</name>
       <set-method>addConnector</set-method>
       <type>org.exoplatform.social.addons.search.ProfileIndexingServiceConnector</type>
+      <description>User Profile ElasticSearch Indexing Connector</description>
       <init-params>
         <properties-param>
           <name>constructor.params</name>
@@ -156,6 +157,7 @@
       <name>SpaceIndexingServiceConnector</name>
       <set-method>addConnector</set-method>
       <type>org.exoplatform.social.addons.search.SpaceIndexingServiceConnector</type>
+      <description>Space ElasticSearch Indexing Connector</description>
       <init-params>
         <properties-param>
           <name>constructor.params</name>
