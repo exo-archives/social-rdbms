@@ -565,7 +565,11 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
     long totalTime = System.currentTimeMillis();
     NodeImpl node = null;
     long offset = 0;
+    String nodeId = "";
+    String nodePath = "";
     try {
+      nodeId = activityNode.getUUID();
+      nodePath = activityNode.getPath();
       PropertyIterator pIt = activityNode.getReferences();
       while (pIt.hasNext()) {
         node = (NodeImpl) pIt.nextProperty().getParent();
@@ -579,7 +583,7 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
       }
       getSession().save();
     } catch (Exception e) {
-      LOG.error("Failed to cleanup sub node for Activity Reference.", e);
+      LOG.error("Failed to cleanup sub node for Activity Reference, activity id =" + nodeId + " path=" + nodePath, e);
       return false;
     } finally {
       LOG.info(String.format("|     - Done cleanup: %s ref(s) of (%s) consumed time %s(ms) ", offset, userName, System.currentTimeMillis() - totalTime));
@@ -623,8 +627,9 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
             offset++;
             Node n = it.nextNode();
             try {
-              cleanupSubNode(n, identityName);
-              n.remove();
+              //cleanupSubNode(n, identityName);
+              //n.remove();
+              activityJCRStorage.deleteActivity(n.getUUID());
             } catch (Exception ex) {
               LOG.error("Failed to cleanup activity ID: " + n.getUUID() + " path: " + n.getPath(), ex);
               failed++;
