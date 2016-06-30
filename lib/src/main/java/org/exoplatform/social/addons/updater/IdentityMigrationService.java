@@ -48,6 +48,10 @@ import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import javax.jcr.PropertyIterator;
 import java.io.ByteArrayInputStream;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:tuyennt@exoplatform.com">Tuyen Nguyen The</a>.
@@ -64,7 +68,9 @@ public class IdentityMigrationService extends AbstractMigrationService<Identity>
 
   private String identityQuery;
 
-  private long numberFailed = 0;
+  private long numberIdentities = 0;
+  private Set<String> identitiesMigrateFailed = new HashSet<>();
+  private Set<String> identitiesCleanupFailed = new HashSet<>();
 
   public IdentityMigrationService(InitParams initParams,
                                   RDBMSIdentityStorageImpl identityStorage,
@@ -79,7 +85,8 @@ public class IdentityMigrationService extends AbstractMigrationService<Identity>
   @Override
   protected void beforeMigration() throws Exception {
     MigrationContext.setIdentityDone(false);
-    numberFailed = 0;
+    identitiesMigrateFailed = new HashSet<>();
+    numberIdentities = 0;
   }
 
   @Override
@@ -97,6 +104,7 @@ public class IdentityMigrationService extends AbstractMigrationService<Identity>
     long offset = 0;
     boolean cont = true;
     boolean begunTx = false;
+    List<String> transactionList = new ArrayList<>();
 
     long numberSuccessful = 0;
     long batchSize = 0;
@@ -108,6 +116,7 @@ public class IdentityMigrationService extends AbstractMigrationService<Identity>
 
           RequestLifeCycle.begin(PortalContainer.getInstance());
           begunTx = startTx();
+          transactionList = new ArrayList<>();
           NodeIterator nodeIter = getIdentityNodes(offset, LIMIT_THRESHOLD);
           batchSize = nodeIter.getSize();
 
@@ -119,19 +128,26 @@ public class IdentityMigrationService extends AbstractMigrationService<Identity>
             while (nodeIter.hasNext() && !forkStop) {
               offset++;
               Node identityNode = nodeIter.nextNode();
+              String identityName = identityNode.getName();
+              transactionList.add(identityName);
 
-              LOG.info(String.format("|  \\ START::identity number: %s (%s identity)", offset, identityNode.getName()));
+              LOG.info(String.format("|  \\ START::identity number: %s (%s identity)", offset, identityName));
               long t1 = System.currentTimeMillis();
 
               String jcrid = identityNode.getUUID();
-              Identity identity = migrateIdentity(identityNode, jcrid);
+              try {
+                Identity identity = migrateIdentity(identityNode, jcrid);
 
-              if (identity != null) {
-                String newId = identity.getId();
-                identity.setId(jcrid);
-                broadcastListener(identity, newId);
+                if (identity != null) {
+                  String newId = identity.getId();
+                  identity.setId(jcrid);
+                  broadcastListener(identity, newId);
+                }
+                numberSuccessful++;
+              } catch (Exception ex) {
+                identitiesMigrateFailed.add(identityName);
+                LOG.error("Error while migrate identity " + identityName, ex);
               }
-              numberSuccessful++;
               LOG.info(String.format("|  / END::identity number %s (%s identity) consumed %s(ms)", offset, identityNode.getName(), System.currentTimeMillis() - t1));
             }
           }
@@ -141,19 +157,19 @@ public class IdentityMigrationService extends AbstractMigrationService<Identity>
             endTx(begunTx);
           } catch (Exception ex) {
             // If commit was failed, all identities are failed also
-            numberFailed += batchSize;
+            identitiesMigrateFailed.addAll(transactionList);
             numberSuccessful -= batchSize;
           }
           RequestLifeCycle.end();
         }
       } catch (Throwable ex) {
-        numberFailed ++;
         LOG.error(ex);
       }
     }
 
-    if (numberFailed > 0) {
-      LOG.info(String.format("| / END::Identity migration failed for (%s) identity(s)", numberFailed));
+    numberIdentities = offset;
+    if (identitiesMigrateFailed.size() > 0) {
+      LOG.info(String.format("| / END::Identity migration failed for (%s) identity(s)", identitiesMigrateFailed.size()));
     }
     LOG.info(String.format("|// END::Identity migration for (%s) identity(s) consumed %s(ms)", numberSuccessful, System.currentTimeMillis() - t));
 
@@ -167,57 +183,82 @@ public class IdentityMigrationService extends AbstractMigrationService<Identity>
 
   @Override
   protected void afterMigration() throws Exception {
-    if (forkStop || numberFailed > 0) {
-      return;
+    MigrationContext.setIdentitiesMigrateFailed(identitiesMigrateFailed);
+    if (!forkStop && identitiesMigrateFailed.isEmpty()) {
+      MigrationContext.setIdentityDone(true);
     }
-    MigrationContext.setIdentityDone(true);
   }
 
   @Override
   public void doRemove() throws Exception {
+    identitiesCleanupFailed = new HashSet<>();
+
     LOG.info("| \\ START::cleanup Identities ---------------------------------");
     long t = System.currentTimeMillis();
     long timePerIdentity = System.currentTimeMillis();
     RequestLifeCycle.begin(PortalContainer.getInstance());
     int offset = 0;
     long failed = 0;
+    List<String> transactionList = new ArrayList<>();
     try {
       NodeIterator nodeIter  = getIdentityNodes(failed, LIMIT_THRESHOLD);
       if(nodeIter == null || nodeIter.getSize() == 0) {
         return;
       }
 
+      transactionList = new ArrayList<>();
+
       while (nodeIter.hasNext()) {
         Node node = nodeIter.nextNode();
         LOG.info(String.format("|  \\ START::cleanup Identity number: %s (%s identity)", offset, node.getName()));
         offset++;
+
+        String name = node.getName();
+        if (!MigrationContext.isForceCleanup() && (MigrationContext.getIdentitiesCleanupConnectionFailed().contains(name)
+                || MigrationContext.getIdentitiesCleanupActivityFailed().contains(name))) {
+          identitiesCleanupFailed.add(name);
+          continue;
+        }
+
+        transactionList.add(name);
 
         try {
           node.remove();
         } catch (Exception ex) {
           LOG.error("Error when cleanup the identity: " + node.getName(), ex);
           failed++;
+          identitiesCleanupFailed.add(name);
         }
 
         LOG.info(String.format("|  / END::cleanup (%s identity) consumed time %s(ms)", node.getName(), System.currentTimeMillis() - timePerIdentity));
 
         timePerIdentity = System.currentTimeMillis();
         if(offset % LIMIT_THRESHOLD == 0) {
-          getSession().save();
+          try {
+            getSession().save();
+          } catch (Exception ex) {
+            identitiesCleanupFailed.addAll(transactionList);
+          }
           RequestLifeCycle.end();
           RequestLifeCycle.begin(PortalContainer.getInstance());
           nodeIter = getIdentityNodes(failed, LIMIT_THRESHOLD);
+          transactionList = new ArrayList<>();
         }
       }
     } finally {
-      getSession().save();
+      try {
+        getSession().save();
+      } catch (Exception ex) {
+        identitiesCleanupFailed.addAll(transactionList);
+      }
       RequestLifeCycle.end();
     }
 
-    LOG.info(String.format("| / END::cleanup Identities migration for (%s) identity consumed %s(ms)", offset, System.currentTimeMillis() - t));
-    if (failed > 0) {
-      throw new Exception("Migrate failed for " + failed + " identities");
+    if (identitiesCleanupFailed.size() > 0) {
+      LOG.warn("Cleanup failed for " + identitiesCleanupFailed.size() + " identities");
     }
+    LOG.info(String.format("| / END::cleanup Identities migration for (%s) identity consumed %s(ms)", offset, System.currentTimeMillis() - t));
+    MigrationContext.setIdentitiesCleanupFailed(identitiesCleanupFailed);
   }
 
   private Identity migrateIdentity(Node node, String jcrId) throws Exception {

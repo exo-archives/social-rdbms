@@ -88,6 +88,12 @@
   <component>
     <key>org.exoplatform.social.addons.updater.RDBMSMigrationManager</key>
     <type>org.exoplatform.social.addons.updater.RDBMSMigrationManager</type>
+    <init-params>
+      <value-param>
+        <name>forceDeleteJCRData</name>
+        <value>${exo.social.migration.forceJCRDeletion:false}</value>
+      </value-param>
+    </init-params>
   </component>
 
 	<component>

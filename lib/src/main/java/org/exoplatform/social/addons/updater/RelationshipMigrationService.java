@@ -4,9 +4,13 @@ import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import javax.jcr.RepositoryException;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
 
 import org.exoplatform.addons.es.index.IndexingService;
 import org.exoplatform.commons.api.event.EventManager;
@@ -38,6 +42,9 @@ public class RelationshipMigrationService extends AbstractMigrationService<Relat
   private final IdentityDAO identityDAO;
   private static final int LIMIT_REMOVED_THRESHOLD = 10;
 
+  private Set<String> identitiesMigrateFailed = new HashSet<>();
+  private Set<String> identitiesCleanupFailed = new HashSet<>();
+
   public RelationshipMigrationService(InitParams initParams,
                                       IdentityStorageImpl identityStorage,
                                       ConnectionDAO connectionDAO,
@@ -54,7 +61,7 @@ public class RelationshipMigrationService extends AbstractMigrationService<Relat
   @Override
   protected void beforeMigration() throws Exception {
     MigrationContext.setConnectionDone(false);
-    numberFailed = 0;
+    identitiesMigrateFailed = new HashSet<>();
   }
 
   @Override
@@ -71,6 +78,7 @@ public class RelationshipMigrationService extends AbstractMigrationService<Relat
     while(cont && !forkStop) {
       RequestLifeCycle.begin(PortalContainer.getInstance());
       boolean begunTx = startTx();
+      List<String> transactionList = new ArrayList<>();
 
       try {
         LOG.info("| \\ START::Relationships migration ---------------------------------");
@@ -88,6 +96,10 @@ public class RelationshipMigrationService extends AbstractMigrationService<Relat
             relationshipNo = 0;
             offset++;
             identityNode = nodeIter.nextNode();
+
+            String identityName = identityNode.getName();
+            transactionList.add(identityName);
+
             LOG.info(String.format("|  \\ START::user number: %s (%s user)", offset, identityNode.getName()));
             long t1 = System.currentTimeMillis();
 
@@ -126,11 +138,12 @@ public class RelationshipMigrationService extends AbstractMigrationService<Relat
               try {
                 endTx(begunTx);
               } catch (Exception ex) {
-                numberFailed += LIMIT_THRESHOLD;
+                identitiesMigrateFailed.addAll(transactionList);
               }
               RequestLifeCycle.end();
               RequestLifeCycle.begin(PortalContainer.getInstance());
               begunTx = startTx();
+              transactionList = new ArrayList<>();
               nodeIter = getIdentityNodes(offset, LIMIT_THRESHOLD);
             }
 
@@ -142,7 +155,7 @@ public class RelationshipMigrationService extends AbstractMigrationService<Relat
         try {
           endTx(begunTx);
         } catch (Exception ex) {
-          numberFailed += LIMIT_THRESHOLD;
+          identitiesMigrateFailed.addAll(transactionList);
         }
 
         RequestLifeCycle.end();
@@ -214,20 +227,24 @@ public class RelationshipMigrationService extends AbstractMigrationService<Relat
 
   @Override
   protected void afterMigration() throws Exception {
-    if(forkStop || numberFailed > 0) {
-      return;
+    MigrationContext.setIdentitiesMigrateConnectionFailed(identitiesMigrateFailed);
+    if(!forkStop && identitiesMigrateFailed.isEmpty()) {
+      MigrationContext.setConnectionDone(true);
     }
-    MigrationContext.setConnectionDone(true);
   }
 
   public void doRemove() throws Exception {
+    identitiesCleanupFailed = new HashSet<>();
+
     LOG.info("| \\ START::cleanup Relationships ---------------------------------");
     long t = System.currentTimeMillis();
     long timePerUser = System.currentTimeMillis();
     RequestLifeCycle.begin(PortalContainer.getInstance());
     int offset = 0;
+    List<String> transactionList = new ArrayList<>();
     try {
       NodeIterator nodeIter  = getIdentityNodes(offset, LIMIT_THRESHOLD);
+      transactionList = new ArrayList<>();
       if(nodeIter == null || nodeIter.getSize() == 0) {
         return;
       }
@@ -235,6 +252,16 @@ public class RelationshipMigrationService extends AbstractMigrationService<Relat
       
       while (nodeIter.hasNext()) {
         node = nodeIter.nextNode();
+        String name = node.getName();
+
+        // Do not cleanup if migrate failed
+        if (!MigrationContext.isForceCleanup() && MigrationContext.getIdentitiesMigrateConnectionFailed().contains(name)) {
+          identitiesCleanupFailed.add(name);
+          continue;
+        }
+
+        transactionList.add(node.getName());
+
         LOG.info(String.format("|  \\ START::cleanup Relationship of user number: %s (%s user)", offset, node.getName()));
         IdentityEntity identityEntity = _findById(IdentityEntity.class, node.getUUID());
         offset++;
@@ -252,14 +279,28 @@ public class RelationshipMigrationService extends AbstractMigrationService<Relat
         
         timePerUser = System.currentTimeMillis();
         if(offset % LIMIT_THRESHOLD == 0) {
+          try {
+            getSession().save();
+          } catch (Exception ex) {
+            LOG.error("Failed when commit the cleanup connections", ex);
+            identitiesCleanupFailed.addAll(transactionList);
+          }
           RequestLifeCycle.end();
           RequestLifeCycle.begin(PortalContainer.getInstance());
           nodeIter = getIdentityNodes(offset, LIMIT_THRESHOLD);
+          transactionList = new ArrayList<>();
         }
       }
       LOG.info(String.format("| / END::cleanup Relationships migration for (%s) user consumed %s(ms)", offset, System.currentTimeMillis() - t));
     } finally {
+      try {
+        getSession().save();
+      } catch (Exception ex) {
+        LOG.error("Failed when commit the cleanup connections", ex);
+        identitiesCleanupFailed.addAll(transactionList);
+      }
       RequestLifeCycle.end();
+      MigrationContext.setIdentitiesCleanupConnectionFailed(identitiesCleanupFailed);
     }
   }
   

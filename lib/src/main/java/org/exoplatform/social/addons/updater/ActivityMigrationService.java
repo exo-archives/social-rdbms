@@ -1,9 +1,11 @@
 package org.exoplatform.social.addons.updater;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 import javax.jcr.Node;
@@ -67,6 +69,9 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
   private ActivityEntity lastActivity = null;
   private String lastUserProcess = null;
   private boolean forceStop = false;
+
+  private Set<String> identitiesMigrateFailed = new HashSet<>();
+  private Set<String> identitiesCleanupFailed = new HashSet<>();
   
   public ActivityMigrationService(InitParams initParams,
                                   ActivityDAO activityDAO,
@@ -137,6 +142,7 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
               migrationByIdentity(null, identityEntity);
             } catch (Exception ex) {
               numberUserFailed++;
+              identitiesMigrateFailed.add(node.getName());
               LOG.error(String.format("Failed migrate user %s", owner.getRemoteId()), ex);
             }
             LOG.info(String.format("|  / END:: migrate activity of user %s consumed %s(ms) -------------", owner.getRemoteId(), counter.endBatchWatch()));
@@ -213,6 +219,7 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
               migrationByIdentity(null, spaceEntity);
             } catch (Exception ex) {
               numberSpaceFailed++;
+              identitiesMigrateFailed.add(node.getName());
               LOG.error(String.format("Failed migrate space %s", owner.getRemoteId()), ex);
             }
             LOG.info(String.format("|  / END:: migrate activity of space %s consumed %s(ms) -------------", owner.getRemoteId(), (System.currentTimeMillis() - t1)));
@@ -244,7 +251,7 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
   
   protected void beforeMigration() throws Exception {
     MigrationContext.setActivityDone(false);
-    numberFailed = 0;
+    identitiesMigrateFailed = new HashSet<>();
 
     LOG.info("Stating to migration activities from JCR to RDBMS........");
     NodeIterator iterator = nodes("SELECT * FROM soc:activityUpdater");
@@ -443,11 +450,12 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
   }
 
   protected void afterMigration() throws Exception {
-    if (forceStop || numberFailed > 0) {
-      return;
+    MigrationContext.setIdentitiesMigrateActivityFailed(identitiesMigrateFailed);
+
+    if (!forceStop && identitiesMigrateFailed.isEmpty()) {
+      MigrationContext.setActivityDone(true);
     }
 
-    MigrationContext.setActivityDone(true);
     LOG.info("Done to migration activities from JCR to RDBMS");
 
     if (previousActivityId != null) {
@@ -474,10 +482,10 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
   }
 
   private void removeActivity() throws Exception {
+    identitiesCleanupFailed = new HashSet<>();
+
     long t = System.currentTimeMillis();
     long offset = 0;
-
-    long numberUserFailed = 0;
 
     Node node = null;
     boolean isDone = false;
@@ -486,10 +494,17 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
       NodeIterator it = getIdentityNodes(offset, LIMIT_REMOVED_THRESHOLD);
       while (it != null && it.hasNext()) {
         node = (Node) it.next();
+        String name = node.getName();
+
+        if (!MigrationContext.isForceCleanup() && MigrationContext.getIdentitiesMigrateActivityFailed().contains(name)) {
+          identitiesCleanupFailed.add(name);
+          continue;
+        }
+
         LOG.info(String.format("|  \\ START::cleanup user number: %s (%s user)", offset, node.getName()));
         isDone = cleanupActivity(node);
         if (!isDone) {
-          numberUserFailed++;
+          identitiesCleanupFailed.add(name);
         }
         offset++;
         LOG.info(String.format("|  / END::cleanup (%s user)", node.getName()));
@@ -502,7 +517,6 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
       }
     } catch (Exception e) {
       LOG.error("Failed to cleanup for Activity Reference.", e);
-      numberUserFailed++;
     } finally {
       RequestLifeCycle.end();
       RequestLifeCycle.begin(PortalContainer.getInstance());
@@ -511,8 +525,6 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
     
     //cleanup activity
     t = System.currentTimeMillis();
-    offset = 0;
-    long numberSpaceFailed = 0;
     node = null;
     offset = 0;
     try {
@@ -520,10 +532,18 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
       NodeIterator it = getSpaceIdentityNodes(offset, LIMIT_REMOVED_THRESHOLD);
       while (it != null && it.hasNext()) {
         node = (Node) it.next();
+
+        String name = node.getName();
+
+        if (!MigrationContext.isForceCleanup() && MigrationContext.getIdentitiesMigrateActivityFailed().contains(name)) {
+          identitiesCleanupFailed.add(name);
+          continue;
+        }
+
         LOG.info(String.format("|  \\ START::cleanup space number: %s (%s space)", offset, node.getName()));
         isDone = cleanupActivity(node);
         if (!isDone) {
-          numberSpaceFailed++;
+          identitiesCleanupFailed.add(name);
         }
         offset++;
         LOG.info(String.format("|  / END::cleanup (%s space)", node.getName()));
@@ -536,24 +556,13 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
       }
     } catch (Exception e) {
       LOG.error("Failed to cleanup for user Activities.", e);
-      numberSpaceFailed++;
     } finally {
+      MigrationContext.setIdentitiesCleanupActivityFailed(identitiesCleanupFailed);
       RequestLifeCycle.end();
       RequestLifeCycle.begin(PortalContainer.getInstance());
       LOG.info(String.format("| / END::cleanup Activity for (%s) space consumed %s(ms) -------------", offset, System.currentTimeMillis() - t));
     }
 
-    if (numberSpaceFailed > 0 || numberUserFailed > 0) {
-      StringBuilder message = new StringBuilder("Cleanup failed for ");
-      if (numberSpaceFailed > 0) {
-        message.append(numberSpaceFailed).append(" spaces");
-      }
-      if (numberUserFailed > 0) {
-        message.append(numberSpaceFailed > 0 ? " and " : "").append(numberUserFailed).append(" users");
-      }
-      throw new Exception(message.toString());
-    }
-    
   }
   
   /**

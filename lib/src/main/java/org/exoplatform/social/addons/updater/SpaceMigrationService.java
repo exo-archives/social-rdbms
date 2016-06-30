@@ -1,8 +1,11 @@
 package org.exoplatform.social.addons.updater;
 
 import java.io.ByteArrayInputStream;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
@@ -40,6 +43,9 @@ public class SpaceMigrationService extends AbstractMigrationService<Space> {
   private String spaceQuery;
   private SpaceStorage spaceStorage;
 
+  private Set<String> spaceMigrateFailed = new HashSet<>();
+  private Set<String> spaceCleanupFailed = new HashSet<>();
+
   public SpaceMigrationService(InitParams initParams, SpaceStorage spaceStorage,
                                       IdentityStorageImpl identityStorage,
                                       EventManager<Space, String> eventManager,
@@ -53,7 +59,7 @@ public class SpaceMigrationService extends AbstractMigrationService<Space> {
   @Override
   protected void beforeMigration() throws Exception {
     MigrationContext.setSpaceDone(false);
-    numberFailed = 0;
+    spaceMigrateFailed = new HashSet<>();
   }
 
   @Override
@@ -73,6 +79,7 @@ public class SpaceMigrationService extends AbstractMigrationService<Space> {
       long batchSize = 0;
       RequestLifeCycle.begin(PortalContainer.getInstance());
       boolean begunTx = startTx();
+      List<String> spaceInTransaction = new ArrayList<>();
       try {
         NodeIterator nodeIter  = getSpaceNodes(offset, LIMIT_THRESHOLD);
         batchSize = nodeIter == null ? 0 : nodeIter.getSize();
@@ -88,26 +95,31 @@ public class SpaceMigrationService extends AbstractMigrationService<Space> {
 
             offset++;
             spaceNode = nodeIter.nextNode();
-            LOG.info(String.format("|  \\ START::space number: %s (%s space)", offset, spaceNode.getName()));
+            String spaceName = spaceNode.getName();
+
+            spaceInTransaction.add(spaceName);
+
+            LOG.info(String.format("|  \\ START::space number: %s (%s space)", offset, spaceName));
             long t1 = System.currentTimeMillis();
 
-            Space space = migrateSpace(spaceNode);
-            broadcastListener(space, space.getId());
-            numberSuccessful++;
+            try {
+              Space space = migrateSpace(spaceNode);
+              broadcastListener(space, space.getId());
+              numberSuccessful++;
+            } catch (Exception ex) {
+              LOG.error("Error while migrate the space " + spaceName, ex);
+              spaceMigrateFailed.add(spaceName);
+            }
             LOG.info(String.format("|  / END::space number %s (%s space) consumed %s(ms)", offset, spaceNode.getName(), System.currentTimeMillis() - t1));
           }
         }
-
-      } catch (Exception ex) {
-        LOG.error("Error while migrate the space", ex);
-        numberFailed++;
 
       } finally {
         try {
           endTx(begunTx);
         } catch (Exception ex) {
           // Commit transaction failed
-          numberFailed += batchSize;
+          spaceMigrateFailed.addAll(spaceInTransaction);
         }
         RequestLifeCycle.end();
       }
@@ -166,44 +178,72 @@ public class SpaceMigrationService extends AbstractMigrationService<Space> {
 
   @Override
   protected void afterMigration() throws Exception {
-    if(forkStop || numberFailed > 0) {
-      return;
+    MigrationContext.setSpaceMigrateFailed(spaceMigrateFailed);
+
+    if (!forkStop && spaceMigrateFailed.size() == 0) {
+      MigrationContext.setSpaceDone(true);
     }
-    MigrationContext.setSpaceDone(true);
   }
 
   public void doRemove() throws Exception {
+    //TODO: implement to track which space was cleanup failed
+    spaceCleanupFailed = new HashSet<>();
+
     LOG.info("| \\ START::cleanup Spaces ---------------------------------");
     long t = System.currentTimeMillis();
     long timePerSpace = System.currentTimeMillis();
     RequestLifeCycle.begin(PortalContainer.getInstance());
     int offset = 0;
+    List<String> transactionList = new ArrayList<>();
     try {
       NodeIterator nodeIter  = getSpaceNodes(offset, LIMIT_THRESHOLD);
+      transactionList = new ArrayList<>();
       if(nodeIter == null || nodeIter.getSize() == 0) {
         return;
       }
 
       while (nodeIter.hasNext()) {
         Node node = nodeIter.nextNode();
+        String name = node.getName();
+
+        if (!MigrationContext.isForceCleanup() &&  (MigrationContext.getSpaceMigrateFailed().contains(name)
+                || MigrationContext.getIdentitiesCleanupFailed().contains(name))) {
+          spaceCleanupFailed.add(name);
+          continue;
+        }
+        transactionList.add(name);
+
         LOG.info(String.format("|  \\ START::cleanup Space number: %s (%s space)", offset, node.getName()));
         offset++;
 
-        node.remove();
+        try {
+          node.remove();
+        } catch (Exception ex) {
+          transactionList.add(name);
+        }
 
         LOG.info(String.format("|  / END::cleanup (%s space) consumed time %s(ms)", node.getName(), System.currentTimeMillis() - timePerSpace));
         
         timePerSpace = System.currentTimeMillis();
         if(offset % LIMIT_THRESHOLD == 0) {
-          getSession().save();
+          try {
+            getSession().save();
+          } catch (Exception ex) {
+            spaceCleanupFailed.addAll(transactionList);
+          }
           RequestLifeCycle.end();
           RequestLifeCycle.begin(PortalContainer.getInstance());
           nodeIter = getSpaceNodes(offset, LIMIT_THRESHOLD);
+          transactionList = new ArrayList<>();
         }
       }
       LOG.info(String.format("| / END::cleanup Spaces migration for (%s) space consumed %s(ms)", offset, System.currentTimeMillis() - t));
     } finally {
-      getSession().save();
+      try {
+        getSession().save();
+      } catch (Exception ex) {
+        spaceCleanupFailed.addAll(transactionList);
+      }
       RequestLifeCycle.end();
     }
   }

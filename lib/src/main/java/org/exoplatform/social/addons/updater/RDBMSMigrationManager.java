@@ -3,6 +3,8 @@ package org.exoplatform.social.addons.updater;
 import java.lang.reflect.Field;
 import java.util.concurrent.CountDownLatch;
 
+import org.exoplatform.container.xml.InitParams;
+import org.exoplatform.container.xml.ValueParam;
 import org.exoplatform.social.addons.storage.RDBMSIdentityStorageImpl;
 import org.exoplatform.social.core.manager.IdentityManager;
 import org.exoplatform.social.core.manager.IdentityManagerImpl;
@@ -41,6 +43,8 @@ public class RDBMSMigrationManager implements Startable {
   
   private SettingService settingService;
 
+  private boolean forceRemoveJCR = false;
+
 //  public RDBMSMigrationManager(RelationshipMigrationService relationshipMigration,
 //                               ActivityMigrationService activityMigration, 
 //                               SettingService settingService) {
@@ -51,10 +55,16 @@ public class RDBMSMigrationManager implements Startable {
 //    //
 //  }
   
-  public RDBMSMigrationManager() {
+  public RDBMSMigrationManager(InitParams initParams) {
     CommonsUtils.getService(DataInitializer.class);
     migrater = new CountDownLatch(1);
     //
+    if (initParams != null) {
+      ValueParam param = initParams.getValueParam("forceDeleteJCRData");
+      if (param != null) {
+        forceRemoveJCR = "true".equalsIgnoreCase(param.getValue());
+      }
+    }
   }
   
   
@@ -87,32 +97,56 @@ public class RDBMSMigrationManager implements Startable {
     Runnable migrateTask = new Runnable() {
       @Override
       public void run() {
+
+        try {
+          // Check JCR data is existing or not
+          getRelationshipMigration().getProviderRoot();
+        } catch (Exception ex) {
+          LOG.debug("no JCR data, stopping JCR to RDBMS migration");
+
+          // Update and mark that migrate was done
+          updateSettingValue(MigrationContext.SOC_RDBMS_CONNECTION_MIGRATION_KEY, Boolean.TRUE);
+          updateSettingValue(MigrationContext.SOC_RDBMS_ACTIVITY_MIGRATION_KEY, Boolean.TRUE);
+          updateSettingValue(MigrationContext.SOC_RDBMS_SPACE_MIGRATION_KEY, Boolean.TRUE);
+          updateSettingValue(MigrationContext.SOC_RDBMS_IDENTITY_MIGRATION_KEY, Boolean.TRUE);
+
+          updateSettingValue(MigrationContext.SOC_RDBMS_CONNECTION_CLEANUP_KEY, Boolean.TRUE);
+          updateSettingValue(MigrationContext.SOC_RDBMS_ACTIVITY_CLEANUP_KEY, Boolean.TRUE);
+          updateSettingValue(MigrationContext.SOC_RDBMS_SPACE_CLEANUP_KEY, Boolean.TRUE);
+          updateSettingValue(MigrationContext.SOC_RDBMS_IDENTITY_CLEANUP_KEY, Boolean.TRUE);
+
+          updateSettingValue(MigrationContext.SOC_RDBMS_MIGRATION_STATUS_KEY, Boolean.TRUE);
+          MigrationContext.setDone(true);
+
+          return;
+        }
+
+
+        long timeToMigrateSpaces = 0;
+        long timeToMigrateIdentities = 0;
+        long timeToMigrateActivities = 0;
+        long timeToMigrateConnections = 0;
+
+        long totalCleanupTime = 0;
+        long timeToCleanupConnections = 0;
+        long timeToCleanupActivities = 0;
+        long timeToCleanupIdentities = 0;
+        long timeToCleanupSpaces = 0;
+
+        long startTime = System.currentTimeMillis();
+
         //
         Field field =  null;
         try {
+
+          // Set FORCE_USE_GET_NODES_LAZILY in JCR
+          field =  SessionImpl.class.getDeclaredField("FORCE_USE_GET_NODES_LAZILY");
+          if (field != null) {
+            field.setAccessible(true);
+            field.set(null, true);
+          }
+
           if (!MigrationContext.isDone()) {
-
-            try {
-              getRelationshipMigration().getProviderRoot();
-            } catch (Exception ex) {
-              LOG.debug("no JCR data, stopping JCR to RDBMS migration");
-
-              // Update and mark that migrate was done
-              updateSettingValue(MigrationContext.SOC_RDBMS_CONNECTION_MIGRATION_KEY, Boolean.TRUE);
-              updateSettingValue(MigrationContext.SOC_RDBMS_ACTIVITY_MIGRATION_KEY, Boolean.TRUE);
-              updateSettingValue(MigrationContext.SOC_RDBMS_SPACE_MIGRATION_KEY, Boolean.TRUE);
-              updateSettingValue(MigrationContext.SOC_RDBMS_IDENTITY_MIGRATION_KEY, Boolean.TRUE);
-
-              updateSettingValue(MigrationContext.SOC_RDBMS_CONNECTION_CLEANUP_KEY, Boolean.TRUE);
-              updateSettingValue(MigrationContext.SOC_RDBMS_ACTIVITY_CLEANUP_KEY, Boolean.TRUE);
-              updateSettingValue(MigrationContext.SOC_RDBMS_SPACE_CLEANUP_KEY, Boolean.TRUE);
-              updateSettingValue(MigrationContext.SOC_RDBMS_IDENTITY_CLEANUP_KEY, Boolean.TRUE);
-
-              updateSettingValue(MigrationContext.SOC_RDBMS_MIGRATION_STATUS_KEY, Boolean.TRUE);
-              MigrationContext.setDone(true);
-
-              return;
-            }
 
             boolean useMigrationIdentityStorage = false;
             IdentityManagerImpl identityManager = CommonsUtils.getService(IdentityManagerImpl.class);
@@ -125,89 +159,102 @@ public class RDBMSMigrationManager implements Startable {
               useMigrationIdentityStorage = true;
             }
 
-
-            field =  SessionImpl.class.getDeclaredField("FORCE_USE_GET_NODES_LAZILY");
-            if (field != null) {
-              field.setAccessible(true);
-              field.set(null, true);
-            }
             //
             LOG.info("START ASYNC MIGRATION---------------------------------------------------");
             //
             if (!MigrationContext.isDone()) {
-              //TODO: should migrate space first or identity first
               if (!MigrationContext.isDone() && !MigrationContext.isSpaceDone()) {
+                long t = System.currentTimeMillis();
                 getSpaceMigrationService().start();
                 updateSettingValue(MigrationContext.SOC_RDBMS_SPACE_MIGRATION_KEY, MigrationContext.isSpaceDone());
+                timeToMigrateSpaces = System.currentTimeMillis() - t;
               }
 
-              // Migrate identities
-              if (!MigrationContext.isDone() && MigrationContext.isSpaceDone()
-                      && !MigrationContext.isIdentityDone()) {
+              // We could start to migrate identities if there is some spaces migrated failure
+              if (!MigrationContext.isDone() && !MigrationContext.isIdentityDone()) {
+                long t = System.currentTimeMillis();
                 getIdentityMigrationService().start();
                 updateSettingValue(MigrationContext.SOC_RDBMS_IDENTITY_MIGRATION_KEY, MigrationContext.isIdentityDone());
 
                 if (useMigrationIdentityStorage && MigrationContext.isIdentityDone()) {
                   identityManager.setIdentityStorage(identityStorage);
                 }
+                timeToMigrateIdentities = System.currentTimeMillis() - t;
               }
 
+              // We could not start to migrate connections and activities if there are identities which migrated failure
               if (!MigrationContext.isDone() && MigrationContext.isIdentityDone() && !MigrationContext.isActivityDone()) {
+                long t = System.currentTimeMillis();
                 getActivityMigrationService().start();
                 updateSettingValue(MigrationContext.SOC_RDBMS_ACTIVITY_MIGRATION_KEY, MigrationContext.isActivityDone());
+                timeToMigrateActivities = System.currentTimeMillis() - t;
               }
 
               if (!MigrationContext.isDone() && MigrationContext.isIdentityDone() && !MigrationContext.isConnectionDone()) {
+                long t = System.currentTimeMillis();
                 relationshipMigration = CommonsUtils.getService(RelationshipMigrationService.class);
                 relationshipMigration.start();
                 updateSettingValue(MigrationContext.SOC_RDBMS_CONNECTION_MIGRATION_KEY, MigrationContext.isConnectionDone());
+                timeToMigrateConnections = System.currentTimeMillis() - t;
               }
             }
 
-            // cleanup Connections
-            if (!MigrationContext.isDone() && MigrationContext.isConnectionDone() && !MigrationContext.isConnectionCleanupDone()) {
-              try {
+            // We only try to start cleanup when all identities are migrated successfully
+            // Because if there is identity migrate failed, we could not start to migrate connection and activities
+            if (!MigrationContext.isDone() && MigrationContext.isIdentityDone()) {
+
+              // cleanup Connections
+              if (!MigrationContext.isConnectionCleanupDone()) {
+                long t = System.currentTimeMillis();
                 relationshipMigration.doRemove();
-                updateSettingValue(MigrationContext.SOC_RDBMS_CONNECTION_CLEANUP_KEY, Boolean.TRUE);
-                MigrationContext.setConnectionCleanupDone(true);
-              } catch(RuntimeException e) {
-                LOG.error("Failed to relationship cleanup", e);
-                if (!MigrationContext.isConnectionCleanupDone()) {
-                  LOG.info("Retry to relationship cleanup.");
-                  relationshipMigration.doRemove();
+
+                if (MigrationContext.getIdentitiesCleanupConnectionFailed().isEmpty()) {
                   updateSettingValue(MigrationContext.SOC_RDBMS_CONNECTION_CLEANUP_KEY, Boolean.TRUE);
                   MigrationContext.setConnectionCleanupDone(true);
                 }
+                timeToCleanupConnections = System.currentTimeMillis() - t;
               }
-            }
 
-            // cleanup activities
-            if (!MigrationContext.isDone() && MigrationContext.isActivityDone() && !MigrationContext.isActivityCleanupDone()) {
-              getActivityMigrationService().doRemove();
-              updateSettingValue(MigrationContext.SOC_RDBMS_ACTIVITY_CLEANUP_KEY, Boolean.TRUE);
-              MigrationContext.setActivityCleanupDone(true);
-            }
+              // cleanup activities
+              if (!MigrationContext.isActivityCleanupDone()) {
+                long t = System.currentTimeMillis();
+                getActivityMigrationService().doRemove();
 
-            // Cleanup identity
-            if (!MigrationContext.isDone()
-                    && MigrationContext.isIdentityDone() && MigrationContext.isConnectionDone() && MigrationContext.isActivityDone()
-                    && MigrationContext.isConnectionCleanupDone() && MigrationContext.isActivityCleanupDone()
-                    && !MigrationContext.isIdentityCleanupDone()) {
-              getIdentityMigrationService().doRemove();
-              updateSettingValue(MigrationContext.SOC_RDBMS_IDENTITY_CLEANUP_KEY, Boolean.TRUE);
-              MigrationContext.setIdentityCleanupDone(true);
-            }
+                if (MigrationContext.getIdentitiesCleanupActivityFailed().isEmpty()) {
+                  updateSettingValue(MigrationContext.SOC_RDBMS_ACTIVITY_CLEANUP_KEY, Boolean.TRUE);
+                  MigrationContext.setActivityCleanupDone(true);
+                }
+                timeToCleanupActivities = System.currentTimeMillis() - t;
+              }
 
+              // Cleanup identity
+              if (!MigrationContext.isIdentityCleanupDone()) {
+                long t = System.currentTimeMillis();
+                getIdentityMigrationService().doRemove();
 
-            // cleanup spaces
-            if (!MigrationContext.isDone() && MigrationContext.isSpaceDone()
-                    && MigrationContext.isIdentityCleanupDone() && !MigrationContext.isSpaceCleanupDone()) {
-              getSpaceMigrationService().doRemove();
-              updateSettingValue(MigrationContext.SOC_RDBMS_SPACE_CLEANUP_KEY, Boolean.TRUE);
-              MigrationContext.setSpaceCleanupDone(true);
+                if (MigrationContext.getIdentitiesCleanupFailed().isEmpty()) {
+                  updateSettingValue(MigrationContext.SOC_RDBMS_IDENTITY_CLEANUP_KEY, Boolean.TRUE);
+                  MigrationContext.setIdentityCleanupDone(true);
+                }
+                timeToCleanupIdentities = System.currentTimeMillis() - t;
+              }
 
-              updateSettingValue(MigrationContext.SOC_RDBMS_MIGRATION_STATUS_KEY, Boolean.TRUE);
-              MigrationContext.setDone(true);
+              // cleanup spaces
+              if (!MigrationContext.isSpaceCleanupDone()) {
+                long t = System.currentTimeMillis();
+                getSpaceMigrationService().doRemove();
+
+                if (MigrationContext.getSpaceCleanupFailed().isEmpty()) {
+                  updateSettingValue(MigrationContext.SOC_RDBMS_SPACE_CLEANUP_KEY, Boolean.TRUE);
+                  MigrationContext.setSpaceCleanupDone(true);
+                }
+                timeToCleanupSpaces = System.currentTimeMillis() - t;
+              }
+
+              if (MigrationContext.isIdentityCleanupDone()&& MigrationContext.isSpaceCleanupDone()) {
+                updateSettingValue(MigrationContext.SOC_RDBMS_MIGRATION_STATUS_KEY, Boolean.TRUE);
+                MigrationContext.setDone(true);
+              }
             }
             
             //
@@ -226,6 +273,63 @@ public class RDBMSMigrationManager implements Startable {
               LOG.warn(e.getMessage(), e);
             }
           }
+
+          LOG.info(String.format("Migration job has done, total time is %s (ms)", (System.currentTimeMillis() - startTime)));
+          LOG.info(String.format("Migration space in %s (ms)", timeToMigrateSpaces));
+          LOG.info(String.format("- Number space failed: %s", MigrationContext.getSpaceMigrateFailed().size()));
+          if (!MigrationContext.getSpaceMigrateFailed().isEmpty()) {
+            LOG.warn("- space failed: " + MigrationContext.getSpaceMigrateFailed());
+          }
+
+          LOG.info(String.format("Migration identities in %s (ms)", timeToMigrateIdentities));
+          LOG.info(String.format("- Number identities failed: %s", MigrationContext.getIdentitiesMigrateFailed().size()));
+          if (!MigrationContext.getIdentitiesMigrateFailed().isEmpty()) {
+            LOG.warn("- identities failed: " + MigrationContext.getIdentitiesMigrateFailed());
+          }
+
+          if (!MigrationContext.getIdentitiesMigrateFailed().isEmpty()) {
+            LOG.info("We could not continue migration job because the identities migration was failed");
+          } else {
+            LOG.info(String.format("Migration relationships in %s (ms)", timeToMigrateConnections));
+            LOG.info(String.format("- migrate failed for %s user(s)", MigrationContext.getIdentitiesMigrateConnectionFailed().size()));
+            if (!MigrationContext.getIdentitiesMigrateConnectionFailed().isEmpty()) {
+              LOG.warn("- identities failed: " + MigrationContext.getIdentitiesMigrateConnectionFailed());
+            }
+
+            LOG.info(String.format("Migration activities in %s (ms)", timeToMigrateActivities));
+            LOG.info(String.format("- migrate failed for %s user(s)", MigrationContext.getIdentitiesMigrateActivityFailed().size()));
+            if (!MigrationContext.getIdentitiesMigrateActivityFailed().isEmpty()) {
+              LOG.warn("- identities failed: " + MigrationContext.getIdentitiesMigrateActivityFailed());
+            }
+
+            // Cleanup
+            LOG.info(String.format("Cleanup relationship in %s (ms)", timeToCleanupConnections));
+            LOG.info(String.format("- cleanup connection failed for %s user(s)", MigrationContext.getIdentitiesCleanupConnectionFailed().size()));
+            if (!MigrationContext.getIdentitiesCleanupConnectionFailed().isEmpty()) {
+              LOG.warn("- identities cleanup failed: " + MigrationContext.getIdentitiesCleanupConnectionFailed());
+            }
+
+            LOG.info(String.format("Cleanup activities in %s (ms)", timeToCleanupActivities));
+            LOG.info(String.format("- cleanup activities failed for %s identity(s)", MigrationContext.getIdentitiesCleanupActivityFailed().size()));
+            if (!MigrationContext.getIdentitiesCleanupActivityFailed().isEmpty()) {
+              LOG.warn("- identities cleanup failed: " + MigrationContext.getIdentitiesCleanupActivityFailed());
+            }
+
+            LOG.info(String.format("Cleanup identities in %s (ms)", timeToCleanupIdentities));
+            LOG.info(String.format("- cleanup failed for %s identity(s)", MigrationContext.getIdentitiesCleanupFailed().size()));
+            if (!MigrationContext.getIdentitiesCleanupFailed().isEmpty()) {
+              LOG.warn("- identities cleanup failed: " + MigrationContext.getIdentitiesCleanupFailed());
+            }
+
+            LOG.info(String.format("Cleanup spaces in %s (ms)", timeToCleanupSpaces));
+            LOG.info(String.format("- cleanup failed for %s space(s)", MigrationContext.getSpaceCleanupFailed().size()));
+            if (!MigrationContext.getSpaceCleanupFailed().isEmpty()) {
+              LOG.warn("- space cleanup failed: " + MigrationContext.getSpaceCleanupFailed());
+            }
+          }
+
+
+
           migrater.countDown();
         }
       }
@@ -251,6 +355,8 @@ public class RDBMSMigrationManager implements Startable {
 
     MigrationContext.setIdentityDone(getOrCreateSettingValue(MigrationContext.SOC_RDBMS_IDENTITY_MIGRATION_KEY));
     MigrationContext.setIdentityCleanupDone(getOrCreateSettingValue(MigrationContext.SOC_RDBMS_IDENTITY_CLEANUP_KEY));
+
+    MigrationContext.setForceCleanup(forceRemoveJCR);
   }
 
   private boolean getOrCreateSettingValue(String key) {

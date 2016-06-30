@@ -16,6 +16,9 @@
  */
 package org.exoplatform.social.addons.updater;
 
+import java.util.HashSet;
+import java.util.Set;
+
 /**
  * Created by The eXo Platform SAS
  * Author : eXoPlatform
@@ -43,6 +46,19 @@ public final class MigrationContext {
   private static boolean isSpaceCleanupDone = false;
   private static boolean isIdentityDone = false;
   private static boolean isIdentityCleanupDone = false;
+
+  private static boolean forceCleanup = false;
+
+  private static Set<String> spaceMigrateFailed = new HashSet<>();
+  private static Set<String> identitiesMigrateFailed = new HashSet<>();
+  private static Set<String> identitiesMigrateConnectionFailed = new HashSet<>();
+  private static Set<String> identitiesMigrateActivityFailed = new HashSet<>();
+
+  private static Set<String> identitiesCleanupConnectionFailed = new HashSet<>();
+  private static Set<String> identitiesCleanupActivityFailed = new HashSet<>();
+  private static Set<String> identitiesCleanupFailed = new HashSet<>();
+  private static Set<String> spaceCleanupFailed = new HashSet<>();
+
 
   public static boolean isDone() {
     return isDone;
@@ -113,5 +129,77 @@ public final class MigrationContext {
 
   public static void setIdentityCleanupDone(boolean isIdentityCleanupDone) {
     MigrationContext.isIdentityCleanupDone = isIdentityCleanupDone;
+  }
+
+  public static Set<String> getSpaceMigrateFailed() {
+    return spaceMigrateFailed;
+  }
+
+  public static void setSpaceMigrateFailed(Set<String> spaceMigrateFailed) {
+    MigrationContext.spaceMigrateFailed = spaceMigrateFailed;
+  }
+
+  public static Set<String> getIdentitiesMigrateFailed() {
+    return identitiesMigrateFailed;
+  }
+
+  public static void setIdentitiesMigrateFailed(Set<String> identitiesMigrateFailed) {
+    MigrationContext.identitiesMigrateFailed = identitiesMigrateFailed;
+  }
+
+  public static Set<String> getIdentitiesMigrateConnectionFailed() {
+    return identitiesMigrateConnectionFailed;
+  }
+
+  public static void setIdentitiesMigrateConnectionFailed(Set<String> identitiesMigrateConnectionFailed) {
+    MigrationContext.identitiesMigrateConnectionFailed = identitiesMigrateConnectionFailed;
+  }
+
+  public static Set<String> getIdentitiesMigrateActivityFailed() {
+    return identitiesMigrateActivityFailed;
+  }
+
+  public static void setIdentitiesMigrateActivityFailed(Set<String> identitiesMigrateActivityFailed) {
+    MigrationContext.identitiesMigrateActivityFailed = identitiesMigrateActivityFailed;
+  }
+
+  public static Set<String> getIdentitiesCleanupConnectionFailed() {
+    return identitiesCleanupConnectionFailed;
+  }
+
+  public static void setIdentitiesCleanupConnectionFailed(Set<String> identitiesCleanupConnectionFailed) {
+    MigrationContext.identitiesCleanupConnectionFailed = identitiesCleanupConnectionFailed;
+  }
+
+  public static Set<String> getIdentitiesCleanupActivityFailed() {
+    return identitiesCleanupActivityFailed;
+  }
+
+  public static void setIdentitiesCleanupActivityFailed(Set<String> identitiesCleanupActivityFailed) {
+    MigrationContext.identitiesCleanupActivityFailed = identitiesCleanupActivityFailed;
+  }
+
+  public static Set<String> getIdentitiesCleanupFailed() {
+    return identitiesCleanupFailed;
+  }
+
+  public static void setIdentitiesCleanupFailed(Set<String> identitiesCleanupFailed) {
+    MigrationContext.identitiesCleanupFailed = identitiesCleanupFailed;
+  }
+
+  public static Set<String> getSpaceCleanupFailed() {
+    return spaceCleanupFailed;
+  }
+
+  public static void setSpaceCleanupFailed(Set<String> spaceCleanupFailed) {
+    MigrationContext.spaceCleanupFailed = spaceCleanupFailed;
+  }
+
+  public static boolean isForceCleanup() {
+    return forceCleanup;
+  }
+
+  public static void setForceCleanup(boolean forceCleanup) {
+    MigrationContext.forceCleanup = forceCleanup;
   }
 }

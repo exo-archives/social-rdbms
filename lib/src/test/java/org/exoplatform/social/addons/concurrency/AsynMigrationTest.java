@@ -125,7 +125,7 @@ public class AsynMigrationTest extends BaseCoreTest {
     activityMigration = getService(ActivityMigrationService.class);
     relationshipMigration = getService(RelationshipMigrationService.class);
     settingService = getService(SettingService.class);
-    rdbmsMigrationManager = new RDBMSMigrationManager();
+    rdbmsMigrationManager = new RDBMSMigrationManager(null);
   }
 
   @Override
