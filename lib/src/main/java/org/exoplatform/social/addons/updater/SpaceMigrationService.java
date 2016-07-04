@@ -9,6 +9,7 @@ import java.util.Set;
 
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
+import javax.jcr.PropertyIterator;
 import javax.jcr.Value;
 
 import org.chromattic.ext.ntdef.NTFile;
@@ -186,7 +187,6 @@ public class SpaceMigrationService extends AbstractMigrationService<Space> {
   }
 
   public void doRemove() throws Exception {
-    //TODO: implement to track which space was cleanup failed
     spaceCleanupFailed = new HashSet<>();
 
     LOG.info("| \\ START::cleanup Spaces ---------------------------------");
@@ -217,9 +217,20 @@ public class SpaceMigrationService extends AbstractMigrationService<Space> {
         offset++;
 
         try {
+
+          // Do remove all reference first
+          PropertyIterator pit = node.getReferences();
+          if (pit != null) {
+            while (pit.hasNext()) {
+              Node n = pit.nextProperty().getParent();
+              n.remove();
+            }
+          }
+
           node.remove();
         } catch (Exception ex) {
-          transactionList.add(name);
+          spaceCleanupFailed.add(name);
+          LOG.error("Error while remove the space " + name, ex);
         }
 
         LOG.info(String.format("|  / END::cleanup (%s space) consumed time %s(ms)", node.getName(), System.currentTimeMillis() - timePerSpace));
