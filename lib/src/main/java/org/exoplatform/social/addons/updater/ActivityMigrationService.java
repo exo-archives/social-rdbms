@@ -636,9 +636,12 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
             offset++;
             Node n = it.nextNode();
             try {
-              //cleanupSubNode(n, identityName);
-              //n.remove();
-              activityJCRStorage.deleteActivity(n.getUUID());
+              if (cleanupSubNode(n, identityName)) {
+                n.remove();
+              } else {
+                failed++;
+              }
+              //activityJCRStorage.deleteActivity(n.getUUID());
             } catch (Exception ex) {
               LOG.error("Failed to cleanup activity ID: " + n.getUUID() + " path: " + n.getPath(), ex);
               failed++;
