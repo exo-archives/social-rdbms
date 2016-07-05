@@ -371,7 +371,11 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
       eXoComment.setId(getExoCommentID(commentEntity.getId()));
       //
       activityEntity.setMentionerIds(processMentionOfComment(activityEntity, commentEntity, activity.getMentionedIds(), processMentions(eXoComment.getTitle()), true));
-      activityEntity.setUpdatedDate(new Date());
+      if (eXoComment.getUpdated() != null) {
+        activityEntity.setUpdatedDate(eXoComment.getUpdated());
+      } else {
+        activityEntity.setUpdatedDate(new Date());
+      }
       activityDAO.update(activityEntity);
       //
       updateLastUpdatedForStreamItem(activityEntity);
