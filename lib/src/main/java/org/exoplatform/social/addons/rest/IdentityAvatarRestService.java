@@ -96,10 +96,10 @@ public class IdentityAvatarRestService implements ResourceContainer {
         return rb.cacheControl(cc).tag(eTag).build();
       } else {
         MediaType type = MediaType.valueOf(info.getMimetype());
-        return Response.ok(file.getStream(), type).tag(eTag).cacheControl(cc).build();
+        return Response.ok(file.getAsStream(), type).tag(eTag).cacheControl(cc).build();
       }
 
-    } catch (IOException ex) {
+    } catch (Exception ex) {
       LOG.warn("Can not load file ID: " + fileId);
       return Response.status(Response.Status.NOT_FOUND).build();
     }

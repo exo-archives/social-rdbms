@@ -265,29 +265,26 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
         }
 
         Long avatarToDelete = null;
-        FileItem fileItem = new FileItem(null,
-                                         fileName,
-                                         attachment.getMimeType(),
-                                         bytes.length,
-                                         new Date(),
-                                         entity.getRemoteId(),
-                                         false,
-                                         new ByteArrayInputStream(bytes));
 
         try {
+          FileItem fileItem = new FileItem(null,
+                  fileName,
+                  attachment.getMimeType(),
+                  "avatar",
+                  bytes.length,
+                  new Date(),
+                  entity.getRemoteId(),
+                  false,
+                  new ByteArrayInputStream(bytes));
           fileItem = fileService.writeFile(fileItem);
           avatarToDelete = entity.getAvatarFileId();
           entity.setAvatarFileId(fileItem.getFileInfo().getId());
-        } catch (IOException ex) {
+        } catch (Exception ex) {
           LOG.warn("Can not store avatar for " + entity.getProviderId() + " " + entity.getRemoteId(), ex);
         }
 
         if (avatarToDelete != null && avatarToDelete > 0) {
-          try {
-            fileService.deleteFile(avatarToDelete);
-          } catch (Exception ex) {
-            LOG.warn("Failed to delete old avatar of " + entity.getProviderId() + " " + entity.getRemoteId(), ex);
-          }
+          fileService.deleteFile(avatarToDelete);
         }
 
       } else if (Profile.EXPERIENCES.equalsIgnoreCase(e.getKey())){
@@ -467,11 +464,7 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
     }
 
     if (entity.getAvatarFileId() != null && entity.getAvatarFileId() > 0) {
-      try {
-        fileService.deleteFile(entity.getAvatarFileId());
-      } catch (IOException ex) {
-        LOG.warn("Error while delete avatar of " + identity.getProviderId() + "/" + identity.getRemoteId(), ex);
-      }
+      fileService.deleteFile(entity.getAvatarFileId());
     }
 
     EntityManager em = CommonsUtils.getService(EntityManagerService.class).getEntityManager();

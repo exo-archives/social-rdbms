@@ -28,7 +28,6 @@
         <jta-data-source>exo-jpa_portal</jta-data-source>
 
         <class>org.exoplatform.addons.es.domain.IndexingOperation</class>
-        <class>org.exoplatform.commons.file.storage.FileInfoEntity</class>
 
         <properties>
             <property name="hibernate.show_sql" value="false"/>
@@ -36,6 +35,8 @@
             <property name="hibernate.connection.characterEncoding" value="utf8"/>
             <property name="hibernate.connection.useUnicode" value="true"/>
             <property name="hibernate.connection.charSet" value="UTF-8"/>
+
+            <property name="persistenceUnitName" value="exo-pu"></property>
         </properties>
     </persistence-unit>
 </persistence>
