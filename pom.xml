@@ -1,17 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
     Copyright (C) 2003-2014 eXo Platform SAS.
-    
+
     This is free software; you can redistribute it and/or modify it
     under the terms of the GNU Lesser General Public License as
     published by the Free Software Foundation; either version 2.1 of
     the License, or (at your option) any later version.
-    
+
     This software is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
     Lesser General Public License for more details.
-    
+
     You should have received a copy of the GNU Lesser General Public
     License along with this software; if not, write to the Free
     Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
@@ -28,7 +28,7 @@
   </parent>
   <groupId>org.exoplatform.addons.social</groupId>
   <artifactId>social-rdbms-addons</artifactId>
-  <version>1.0.x-SNAPSHOT</version>
+  <version>1.0.x-file-rdbms-SNAPSHOT</version>
   <packaging>pom</packaging>
   <name>Social RDBMS Addon</name>
   <description>Social RDBMS Addon</description>
@@ -41,7 +41,6 @@
   <properties>
     <!-- Platform Project Dependencies -->
     <exoplatform.version>4.4.x-file-rdbms-SNAPSHOT</exoplatform.version>
-     <!-- Issue with the PLF pom parent that trigger lucene 3.6.2 (Only working with elastic version < 0.20.6) -->
     <lucene.version>4.10.4</lucene.version>
     <elasticsearch.version>2.3.2</elasticsearch.version>
     <es.port.range.min>9215</es.port.range.min>
@@ -95,7 +94,7 @@
         <artifactId>commons-file-storage</artifactId>
         <version>${exoplatform.version}</version>
       </dependency>
-    
+
       <dependency>
         <groupId>com.fasterxml.jackson.core</groupId>
         <artifactId>jackson-databind</artifactId>
