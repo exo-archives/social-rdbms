@@ -141,7 +141,7 @@ public final class AStreamQueryBuilder {
 
     CriteriaQuery<ActivityEntity> select;
     select = criteria.select(activity).distinct(true);
-    select.where(getPredicateForStream(activity, streamItem, cb, criteria.subquery(ActivityEntity.class), criteria.subquery(ActivityEntity.class), criteria.subquery(String.class)));
+    select.where(getPredicateForStream(activity, streamItem, cb, criteria));
     if (this.descOrder) {
       select.orderBy(cb.desc(activity.get(ActivityEntity_.updatedDate)));
     } else {
@@ -165,7 +165,7 @@ public final class AStreamQueryBuilder {
     Root<StreamItemEntity> streamItem = criteria.from(StreamItemEntity.class);
 
     criteria.multiselect(streamItem.get(StreamItemEntity_.activityId).alias(StreamItemEntity_.activityId.getName()), streamItem.get(StreamItemEntity_.updatedDate)).distinct(true);
-    List<Predicate> predicates = getPredicateForIdsStream(streamItem, cb, criteria.subquery(String.class));
+    List<Predicate> predicates = getPredicateForIdsStream(streamItem, cb, criteria);
     criteria.where(cb.or(predicates.toArray(new Predicate[predicates.size()])));
     if (this.descOrder) {
       criteria.orderBy(cb.desc(streamItem.get(StreamItemEntity_.updatedDate)));
@@ -195,13 +195,12 @@ public final class AStreamQueryBuilder {
     Join<ActivityEntity, StreamItemEntity> streamItem = activity.join(ActivityEntity_.streamItems);
 
     CriteriaQuery<Long> select = criteria.select(cb.countDistinct(activity));
-    select.where(getPredicateForStream(activity, streamItem, cb, criteria.subquery(ActivityEntity.class), criteria.subquery(ActivityEntity.class), criteria.subquery(String.class)));
+    select.where(getPredicateForStream(activity, streamItem, cb, criteria));
 
     return em.createQuery(select);
   }
   
-  private Predicate getPredicateForStream(Root<ActivityEntity> activity, Join<ActivityEntity, StreamItemEntity> stream, CriteriaBuilder cb, Subquery<ActivityEntity> commentQuery,
-                                 Subquery<ActivityEntity> mentionQuery, Subquery<String> subQuery1) {
+  private Predicate getPredicateForStream(Root<ActivityEntity> activity, Join<ActivityEntity, StreamItemEntity> stream, CriteriaBuilder cb, CriteriaQuery criteria) {
 
     Predicate predicate = null;
     //owner
@@ -225,23 +224,44 @@ public final class AStreamQueryBuilder {
     
     if (this.myIdentity != null) {
       long identityId = Long.valueOf(this.myIdentity.getId());
-      Root<ConnectionEntity> subRoot1 = subQuery1.from(ConnectionEntity.class);
 
-      Path receiver = subRoot1.get(ConnectionEntity_.receiver).get(IdentityEntity_.id);
-      Path sender = subRoot1.get(ConnectionEntity_.sender).get(IdentityEntity_.id);
+      Path ownerId = stream.get(StreamItemEntity_.ownerId);
+      Path streamType = stream.get(StreamItemEntity_.streamType);
 
-      CriteriaBuilder.Case select = cb.selectCase();
-      select.when(cb.equal(receiver, identityId), sender).otherwise(receiver);
+      Subquery sub;
+      Root<ConnectionEntity> conn;
+      Path sender, receiver, status;
 
-      subQuery1.select(select.as(String.class));
-      subQuery1.where(cb.and(cb.or(cb.equal(sender, identityId), cb.equal(receiver, identityId)),
-              cb.equal(subRoot1.<Relationship.Type>get(ConnectionEntity_.status), Relationship.Type.CONFIRMED)));
+      Predicate[] ps = new Predicate[2];
 
-      Predicate posterConnection = cb.and(cb.in(stream.get(StreamItemEntity_.ownerId)).value(subQuery1), cb.equal(stream.get(StreamItemEntity_.streamType), StreamType.POSTER));
+      //
+      sub = criteria.subquery(Long.class);
+      conn = sub.from(ConnectionEntity.class);
+      receiver = conn.get(ConnectionEntity_.receiver);
+      sender = conn.get(ConnectionEntity_.sender);
+      status = conn.get(ConnectionEntity_.status);
+
+      sub.select(conn.get(ConnectionEntity_.id));
+      sub.where(cb.equal(receiver, ownerId), cb.equal(sender, identityId), cb.equal(status, Relationship.Type.CONFIRMED), cb.equal(streamType, StreamType.POSTER));
+
+      ps[0] = cb.exists(sub);
+
+      //
+      sub = criteria.subquery(Long.class);
+      conn = sub.from(ConnectionEntity.class);
+      receiver = conn.get(ConnectionEntity_.receiver);
+      sender = conn.get(ConnectionEntity_.sender);
+      status = conn.get(ConnectionEntity_.status);
+
+      sub.select(conn.get(ConnectionEntity_.id));
+      sub.where(cb.equal(sender, ownerId), cb.equal(receiver, identityId), cb.equal(status, Relationship.Type.CONFIRMED), cb.equal(streamType, StreamType.POSTER));
+
+      ps[1] = cb.exists(sub);
+
       if (predicate != null) {
-        predicate = cb.or(predicate, posterConnection);
+        predicate = cb.or(predicate, ps[0], ps[1]);
       } else {
-        predicate = posterConnection;
+        predicate = cb.or(ps);
       }
     }
     //newer or older
@@ -271,9 +291,8 @@ public final class AStreamQueryBuilder {
     return predicate;
   }
   
-  private List<Predicate> getPredicateForIdsStream(Root<StreamItemEntity> stream, 
-                                             CriteriaBuilder cb,
-                                             Subquery<String> subQuery1) {
+  private List<Predicate> getPredicateForIdsStream(Root<StreamItemEntity> stream,
+                                             CriteriaBuilder cb, CriteriaQuery criteria) {
 
     List<Predicate> predicates = new ArrayList<Predicate>();
     Predicate predicate = null;
@@ -297,19 +316,36 @@ public final class AStreamQueryBuilder {
     if (this.myIdentity != null) {
 
       long identityId = Long.valueOf(this.myIdentity.getId());
-      Root<ConnectionEntity> subRoot1 = subQuery1.from(ConnectionEntity.class);
+      Path ownerId = stream.get(StreamItemEntity_.ownerId);
+      Path streamType = stream.get(StreamItemEntity_.streamType);
 
-      Path receiver = subRoot1.get(ConnectionEntity_.receiver).get(IdentityEntity_.id);
-      Path sender = subRoot1.get(ConnectionEntity_.sender).get(IdentityEntity_.id);
+      Subquery sub;
+      Root<ConnectionEntity> conn;
+      Path sender, receiver, status;
 
-      CriteriaBuilder.Case select = cb.selectCase();
-      select.when(cb.equal(sender, identityId), receiver).otherwise(sender);
+      //
+      sub = criteria.subquery(Long.class);
+      conn = sub.from(ConnectionEntity.class);
+      receiver = conn.get(ConnectionEntity_.receiver);
+      sender = conn.get(ConnectionEntity_.sender);
+      status = conn.get(ConnectionEntity_.status);
 
-      subQuery1.select(select.as(String.class));
-      subQuery1.where(cb.and(cb.or(cb.equal(sender, identityId), cb.equal(receiver, identityId)),
-                             cb.equal(subRoot1.<Relationship.Type> get(ConnectionEntity_.status), Relationship.Type.CONFIRMED)));
-      
-      predicates.add(cb.and(cb.in(stream.get(StreamItemEntity_.ownerId)).value(subQuery1), cb.equal(stream.get(StreamItemEntity_.streamType), StreamType.POSTER)));
+      sub.select(conn.get(ConnectionEntity_.id));
+      sub.where(cb.equal(receiver, ownerId), cb.equal(sender, identityId), cb.equal(status, Relationship.Type.CONFIRMED), cb.equal(streamType, StreamType.POSTER));
+
+      predicates.add(cb.exists(sub));
+
+      //
+      sub = criteria.subquery(Long.class);
+      conn = sub.from(ConnectionEntity.class);
+      receiver = conn.get(ConnectionEntity_.receiver);
+      sender = conn.get(ConnectionEntity_.sender);
+      status = conn.get(ConnectionEntity_.status);
+
+      sub.select(conn.get(ConnectionEntity_.id));
+      sub.where(cb.equal(sender, ownerId), cb.equal(receiver, identityId), cb.equal(status, Relationship.Type.CONFIRMED), cb.equal(streamType, StreamType.POSTER));
+
+      predicates.add(cb.exists(sub));
     }
     // newer or older
     if (this.sinceTime > 0) {
