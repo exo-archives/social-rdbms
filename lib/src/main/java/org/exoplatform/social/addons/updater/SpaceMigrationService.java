@@ -41,6 +41,10 @@ import org.exoplatform.social.core.storage.impl.IdentityStorageImpl;
 @NameTemplate({@Property(key = "service", value = "social"), @Property(key = "view", value = "migration-spaces") })
 public class SpaceMigrationService extends AbstractMigrationService<Space> {
   public static final String EVENT_LISTENER_KEY = "SOC_SPACES_MIGRATION";
+
+  protected final static String REMOVE_LIMIT_THRESHOLD_KEY = "REMOVE_LIMIT_THRESHOLD";
+  private int REMOVE_LIMIT_THRESHOLD = 20;
+
   private String spaceQuery;
   private SpaceStorage spaceStorage;
 
@@ -54,6 +58,7 @@ public class SpaceMigrationService extends AbstractMigrationService<Space> {
 
     super(initParams, identityStorage, eventManager, entityManagerService);
     this.LIMIT_THRESHOLD = getInteger(initParams, LIMIT_THRESHOLD_KEY, 200);
+    this.REMOVE_LIMIT_THRESHOLD = getInteger(initParams, REMOVE_LIMIT_THRESHOLD_KEY, 20);
     this.spaceStorage = spaceStorage;
   }
 
@@ -194,9 +199,10 @@ public class SpaceMigrationService extends AbstractMigrationService<Space> {
     long timePerSpace = System.currentTimeMillis();
     RequestLifeCycle.begin(PortalContainer.getInstance());
     int offset = 0;
+    long failed = 0;
     List<String> transactionList = new ArrayList<>();
     try {
-      NodeIterator nodeIter  = getSpaceNodes(offset, LIMIT_THRESHOLD);
+      NodeIterator nodeIter  = getSpaceNodes(failed, REMOVE_LIMIT_THRESHOLD);
       transactionList = new ArrayList<>();
       if(nodeIter == null || nodeIter.getSize() == 0) {
         return;
@@ -220,11 +226,17 @@ public class SpaceMigrationService extends AbstractMigrationService<Space> {
 
           // Do remove all reference first
           PropertyIterator pit = node.getReferences();
-          if (pit != null) {
+          if (pit != null && pit.getSize() > 0) {
+            int num = 0;
             while (pit.hasNext()) {
               Node n = pit.nextProperty().getParent();
               n.remove();
+              num++;
+              if (num % REMOVE_LIMIT_THRESHOLD == 0) {
+                getSession().save();
+              }
             }
+            getSession().save();
           }
 
           node.remove();
@@ -236,7 +248,7 @@ public class SpaceMigrationService extends AbstractMigrationService<Space> {
         LOG.info(String.format("|  / END::cleanup (%s space) consumed time %s(ms)", node.getName(), System.currentTimeMillis() - timePerSpace));
         
         timePerSpace = System.currentTimeMillis();
-        if(offset % LIMIT_THRESHOLD == 0) {
+        if(offset % REMOVE_LIMIT_THRESHOLD == 0) {
           try {
             getSession().save();
           } catch (Exception ex) {
@@ -244,7 +256,8 @@ public class SpaceMigrationService extends AbstractMigrationService<Space> {
           }
           RequestLifeCycle.end();
           RequestLifeCycle.begin(PortalContainer.getInstance());
-          nodeIter = getSpaceNodes(offset, LIMIT_THRESHOLD);
+          failed = spaceCleanupFailed.size();
+          nodeIter = getSpaceNodes(failed, REMOVE_LIMIT_THRESHOLD);
           transactionList = new ArrayList<>();
         }
       }
@@ -256,6 +269,8 @@ public class SpaceMigrationService extends AbstractMigrationService<Space> {
         spaceCleanupFailed.addAll(transactionList);
       }
       RequestLifeCycle.end();
+
+      MigrationContext.setSpaceCleanupFailed(spaceCleanupFailed);
     }
   }
 

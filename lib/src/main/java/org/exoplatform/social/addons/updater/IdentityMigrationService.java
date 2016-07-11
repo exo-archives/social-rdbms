@@ -63,6 +63,10 @@ public class IdentityMigrationService extends AbstractMigrationService<Identity>
 
   public static final String EVENT_LISTENER_KEY = "SOC_IDENTITY_MIGRATION";
 
+  protected final static String REMOVE_LIMIT_THRESHOLD_KEY = "REMOVE_LIMIT_THRESHOLD";
+
+  private int REMOVE_LIMIT_THRESHOLD = 20;
+
   private final RDBMSIdentityStorageImpl identityStorage;
   private final IdentityStorageImpl jcrIdentityStorage;
 
@@ -78,6 +82,7 @@ public class IdentityMigrationService extends AbstractMigrationService<Identity>
                                   EventManager<Identity, String> eventManager, EntityManagerService entityManagerService) {
     super(initParams, identityStorage, eventManager, entityManagerService);
     this.LIMIT_THRESHOLD = getInteger(initParams, LIMIT_THRESHOLD_KEY, 200);
+    this.REMOVE_LIMIT_THRESHOLD = getInteger(initParams, REMOVE_LIMIT_THRESHOLD_KEY, 20);
     this.identityStorage = identityStorage;
     this.jcrIdentityStorage = jcrIdentityStorage;
   }
@@ -201,7 +206,7 @@ public class IdentityMigrationService extends AbstractMigrationService<Identity>
     long failed = 0;
     List<String> transactionList = new ArrayList<>();
     try {
-      NodeIterator nodeIter  = getIdentityNodes(failed, LIMIT_THRESHOLD);
+      NodeIterator nodeIter  = getIdentityNodes(failed, REMOVE_LIMIT_THRESHOLD);
       if(nodeIter == null || nodeIter.getSize() == 0) {
         return;
       }
@@ -226,14 +231,13 @@ public class IdentityMigrationService extends AbstractMigrationService<Identity>
           node.remove();
         } catch (Exception ex) {
           LOG.error("Error when cleanup the identity: " + node.getName(), ex);
-          failed++;
           identitiesCleanupFailed.add(name);
         }
 
         LOG.info(String.format("|  / END::cleanup (%s identity) consumed time %s(ms)", node.getName(), System.currentTimeMillis() - timePerIdentity));
 
         timePerIdentity = System.currentTimeMillis();
-        if(offset % LIMIT_THRESHOLD == 0) {
+        if(offset % REMOVE_LIMIT_THRESHOLD == 0) {
           try {
             getSession().save();
           } catch (Exception ex) {
@@ -241,6 +245,7 @@ public class IdentityMigrationService extends AbstractMigrationService<Identity>
           }
           RequestLifeCycle.end();
           RequestLifeCycle.begin(PortalContainer.getInstance());
+          failed = identitiesCleanupFailed.size();
           nodeIter = getIdentityNodes(failed, LIMIT_THRESHOLD);
           transactionList = new ArrayList<>();
         }
@@ -252,13 +257,13 @@ public class IdentityMigrationService extends AbstractMigrationService<Identity>
         identitiesCleanupFailed.addAll(transactionList);
       }
       RequestLifeCycle.end();
-    }
 
-    if (identitiesCleanupFailed.size() > 0) {
-      LOG.warn("Cleanup failed for " + identitiesCleanupFailed.size() + " identities");
+      MigrationContext.setIdentitiesCleanupFailed(identitiesCleanupFailed);
+      if (identitiesCleanupFailed.size() > 0) {
+        LOG.warn("Cleanup failed for " + identitiesCleanupFailed.size() + " identities");
+      }
+      LOG.info(String.format("| / END::cleanup Identities migration for (%s) identity consumed %s(ms)", offset, System.currentTimeMillis() - t));
     }
-    LOG.info(String.format("| / END::cleanup Identities migration for (%s) identity consumed %s(ms)", offset, System.currentTimeMillis() - t));
-    MigrationContext.setIdentitiesCleanupFailed(identitiesCleanupFailed);
   }
 
   private Identity migrateIdentity(Node node, String jcrId) throws Exception {

@@ -126,6 +126,11 @@
 				<description>The number limit of items migration each round</description>
 				<value>${exo.social.addons.SpaceMigrationService.limitThreshold:200}</value>
 			</value-param>
+      <value-param>
+        <name>REMOVE_LIMIT_THRESHOLD</name>
+        <description>The number limit of items to remove each round</description>
+        <value>${exo.social.addons.SpaceMigrationService.removeLimitThreshold:20}</value>
+      </value-param>
 		</init-params>
 	</component>
 
@@ -136,6 +141,11 @@
         <name>LIMIT_THRESHOLD</name>
         <description>The number limit of items migration each round</description>
         <value>${exo.social.addons.IdentityMigrationService.limitThreshold:200}</value>
+      </value-param>
+      <value-param>
+        <name>REMOVE_LIMIT_THRESHOLD</name>
+        <description>The number limit of items to remove each round</description>
+        <value>${exo.social.addons.IdentityMigrationService.removeLimitThreshold:20}</value>
       </value-param>
     </init-params>
   </component>
