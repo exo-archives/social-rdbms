@@ -47,6 +47,9 @@ public abstract class AbstractMigrationService<T>  extends AbstractStorage {
 
   protected long numberFailed = 0;
 
+  protected long numberUserIdentities = 0;
+  protected long numberSpaceIdentities = 0;
+
   public AbstractMigrationService(InitParams initParams,
                                   IdentityStorageImpl identityStorage,
                                   EventManager<T, String> eventManager,
@@ -185,6 +188,18 @@ public abstract class AbstractMigrationService<T>  extends AbstractStorage {
     return nodes(identityQuery, offset, limit);
   }
 
+  protected long getNumberUserIdentities() {
+    if (this.numberUserIdentities == 0) {
+      ProviderEntity providerEntity = getProviderRoot().getProviders().get(OrganizationIdentityProvider.NAME);
+      if (providerEntity == null) {
+        return 0;
+      }
+
+      this.numberUserIdentities = providerEntity.getIdentities().size();
+    }
+    return this.numberUserIdentities;
+  }
+
   /**
    * Gets the all of SPACE identity nodes with given offset and limit;
    * @param offset
@@ -204,6 +219,18 @@ public abstract class AbstractMigrationService<T>  extends AbstractStorage {
       }
     }
     return nodes(spaceIdentityQuery, offset, limit);
+  }
+
+  protected long getNumberSpaceIdentities() {
+    if (this.numberSpaceIdentities == 0) {
+      ProviderEntity providerEntity = getProviderRoot().getProviders().get(SpaceIdentityProvider.NAME);
+      if (providerEntity == null) {
+        return 0;
+      }
+
+      this.numberSpaceIdentities = providerEntity.getIdentities().size();
+    }
+    return this.numberSpaceIdentities;
   }
   
   /**

@@ -45,6 +45,8 @@ public class SpaceMigrationService extends AbstractMigrationService<Space> {
   protected final static String REMOVE_LIMIT_THRESHOLD_KEY = "REMOVE_LIMIT_THRESHOLD";
   private int REMOVE_LIMIT_THRESHOLD = 20;
 
+  private long spaceNumber = 0;
+
   private String spaceQuery;
   private SpaceStorage spaceStorage;
 
@@ -73,7 +75,7 @@ public class SpaceMigrationService extends AbstractMigrationService<Space> {
   @ManagedDescription("Manual to start run migration data of spaces from JCR to RDBMS.")
   public void doMigration() throws Exception {
     RequestLifeCycle.end();
-
+    long totalSpace = getNumberSpaces();
     LOG.info("| \\ START::Spaces migration ---------------------------------");
 
     long t = System.currentTimeMillis();
@@ -105,7 +107,7 @@ public class SpaceMigrationService extends AbstractMigrationService<Space> {
 
             spaceInTransaction.add(spaceName);
 
-            LOG.info(String.format("|  \\ START::space number: %s (%s space)", offset, spaceName));
+            LOG.info(String.format("|  \\ START::space number: %s/%s (%s space)", offset, totalSpace, spaceName));
             long t1 = System.currentTimeMillis();
 
             try {
@@ -193,6 +195,7 @@ public class SpaceMigrationService extends AbstractMigrationService<Space> {
 
   public void doRemove() throws Exception {
     spaceCleanupFailed = new HashSet<>();
+    long totalSpace = getNumberSpaces();
 
     LOG.info("| \\ START::cleanup Spaces ---------------------------------");
     long t = System.currentTimeMillis();
@@ -219,7 +222,7 @@ public class SpaceMigrationService extends AbstractMigrationService<Space> {
         }
         transactionList.add(name);
 
-        LOG.info(String.format("|  \\ START::cleanup Space number: %s (%s space)", offset, node.getName()));
+        LOG.info(String.format("|  \\ START::cleanup Space number: %s/%s (%s space)", offset, totalSpace, node.getName()));
         offset++;
 
         try {
@@ -308,11 +311,21 @@ public class SpaceMigrationService extends AbstractMigrationService<Space> {
 
   }
   
-  private NodeIterator getSpaceNodes(long offset, int lIMIT_THRESHOLD) {
+  private NodeIterator getSpaceNodes(long offset, int LIMIT_THRESHOLD) {
     if(spaceQuery == null) {
       spaceQuery = new StringBuffer().append("SELECT * FROM soc:spacedefinition").toString();
     }
     return nodes(spaceQuery, offset, LIMIT_THRESHOLD);
+  }
+
+  private long getNumberSpaces() {
+    if (spaceNumber <= 0) {
+      if (spaceQuery == null) {
+        spaceQuery = new StringBuffer().append("SELECT * FROM soc:spacedefinition").toString();
+      }
+      spaceNumber = nodes(spaceQuery).getSize();
+    }
+    return spaceNumber;
   }
   
   private String getProperty(Node spaceNode, String propName) throws Exception {

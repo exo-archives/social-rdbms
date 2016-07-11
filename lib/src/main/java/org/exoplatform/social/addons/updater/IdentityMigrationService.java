@@ -67,6 +67,8 @@ public class IdentityMigrationService extends AbstractMigrationService<Identity>
 
   private int REMOVE_LIMIT_THRESHOLD = 20;
 
+  private long totalNumberIdentites = 0;
+
   private final RDBMSIdentityStorageImpl identityStorage;
   private final IdentityStorageImpl jcrIdentityStorage;
 
@@ -99,6 +101,8 @@ public class IdentityMigrationService extends AbstractMigrationService<Identity>
   @ManagedDescription("Manual to start run migration data of identities from JCR to RDBMS.")
   public void doMigration() throws Exception {
     long t = System.currentTimeMillis();
+
+    long totalIdentities = getTotalNumberIdentities();
 
     //endTx(begunTx);
 
@@ -136,7 +140,7 @@ public class IdentityMigrationService extends AbstractMigrationService<Identity>
               String identityName = identityNode.getName();
               transactionList.add(identityName);
 
-              LOG.info(String.format("|  \\ START::identity number: %s (%s identity)", offset, identityName));
+              LOG.info(String.format("|  \\ START::identity number: %s/%s (%s identity)", offset, totalIdentities, identityName));
               long t1 = System.currentTimeMillis();
 
               String jcrid = identityNode.getUUID();
@@ -198,6 +202,8 @@ public class IdentityMigrationService extends AbstractMigrationService<Identity>
   public void doRemove() throws Exception {
     identitiesCleanupFailed = new HashSet<>();
 
+    long totalIdentities = getTotalNumberIdentities();
+
     LOG.info("| \\ START::cleanup Identities ---------------------------------");
     long t = System.currentTimeMillis();
     long timePerIdentity = System.currentTimeMillis();
@@ -215,7 +221,7 @@ public class IdentityMigrationService extends AbstractMigrationService<Identity>
 
       while (nodeIter.hasNext()) {
         Node node = nodeIter.nextNode();
-        LOG.info(String.format("|  \\ START::cleanup Identity number: %s (%s identity)", offset, node.getName()));
+        LOG.info(String.format("|  \\ START::cleanup Identity number: %s/%s (%s identity)", offset, totalIdentities, node.getName()));
         offset++;
 
         String name = node.getName();
@@ -395,6 +401,17 @@ public class IdentityMigrationService extends AbstractMigrationService<Identity>
     }
     return nodes(identityQuery, offset, limit);
   }
+
+  private long getTotalNumberIdentities() {
+    if (this.totalNumberIdentites == 0) {
+      if(identityQuery == null) {
+        identityQuery = new StringBuilder().append("SELECT * FROM soc:identitydefinition").toString();
+      }
+      this.totalNumberIdentites = nodes(identityQuery).getSize();
+    }
+    return this.totalNumberIdentites;
+  }
+
 
   @Override
   @Managed

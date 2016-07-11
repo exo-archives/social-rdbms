@@ -105,6 +105,8 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
   private long migrateUserActivities() throws Exception {
     LOG.info("| \\ Start:: migrate activity of users -------------");
 
+    long totalUsers = getNumberUserIdentities();
+
     MigrationCounter counter = MigrationCounter.builder().threshold(LIMIT_THRESHOLD).build();
     counter.newTotalAndWatch();
 
@@ -136,7 +138,7 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
             counter.newBatchAndWatch();
             counter.getAndIncrementTotal();
 
-            LOG.info(String.format("|  \\ START::user number: %s (%s user)", counter.getTotal(), owner.getRemoteId()));
+            LOG.info(String.format("|  \\ START::user number: %s/%s (%s user)", counter.getTotal(), totalUsers, owner.getRemoteId()));
             IdentityEntity identityEntity = _findById(IdentityEntity.class, owner.getId());
             try {
               migrationByIdentity(null, identityEntity);
@@ -173,6 +175,7 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
   private long migrateSpaceActivities() throws Exception {
     LOG.info("Start to migration space activities from JCR to RDBMS");
     long t = System.currentTimeMillis();
+    long totalSpaces = getNumberSpaceIdentities();
 
     boolean isSkip = (lastUserProcess != null);
 
@@ -214,7 +217,7 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
             long t1 = System.currentTimeMillis();
             //
             IdentityEntity spaceEntity = _findById(IdentityEntity.class, node.getUUID());
-            LOG.info(String.format("|  \\ START::space number: %s (%s space)", offset, owner.getRemoteId()));
+            LOG.info(String.format("|  \\ START::space number: %s/%s (%s space)", offset, totalSpaces, owner.getRemoteId()));
             try {
               migrationByIdentity(null, spaceEntity);
             } catch (Exception ex) {
@@ -487,6 +490,9 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
     long t = System.currentTimeMillis();
     long offset = 0;
 
+    long totalUsers = getNumberUserIdentities();
+    long totalSpaces = getNumberSpaceIdentities();
+
     Node node = null;
     boolean isDone = false;
     try {
@@ -500,13 +506,12 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
           identitiesCleanupFailed.add(name);
           continue;
         }
-
-        LOG.info(String.format("|  \\ START::cleanup user number: %s (%s user)", offset, node.getName()));
+        offset++;
+        LOG.info(String.format("|  \\ START::cleanup user number: %s/%s (%s user)", offset, totalUsers, node.getName()));
         isDone = cleanupActivity(node);
         if (!isDone) {
           identitiesCleanupFailed.add(name);
         }
-        offset++;
         LOG.info(String.format("|  / END::cleanup (%s user)", node.getName()));
         //
         if (offset % LIMIT_REMOVED_THRESHOLD == 0 || isDone == false) {
@@ -540,7 +545,7 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
           continue;
         }
 
-        LOG.info(String.format("|  \\ START::cleanup space number: %s (%s space)", offset, node.getName()));
+        LOG.info(String.format("|  \\ START::cleanup space number: %s/%s (%s space)", offset, totalSpaces, node.getName()));
         isDone = cleanupActivity(node);
         if (!isDone) {
           identitiesCleanupFailed.add(name);

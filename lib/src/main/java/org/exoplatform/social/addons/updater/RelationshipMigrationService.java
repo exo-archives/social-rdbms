@@ -70,6 +70,8 @@ public class RelationshipMigrationService extends AbstractMigrationService<Relat
   public void doMigration() throws Exception {
     RequestLifeCycle.end();
 
+    long totalIdentities = getNumberUserIdentities();
+
     boolean cont = true;
     long offset = 0;
     int total = 0;
@@ -100,7 +102,7 @@ public class RelationshipMigrationService extends AbstractMigrationService<Relat
             String identityName = identityNode.getName();
             transactionList.add(identityName);
 
-            LOG.info(String.format("|  \\ START::user number: %s (%s user)", offset, identityNode.getName()));
+            LOG.info(String.format("|  \\ START::user number: %s/%s (%s user)", offset, totalIdentities, identityNode.getName()));
             long t1 = System.currentTimeMillis();
 
             Node relationshipNode = identityNode.getNode("soc:relationship");
@@ -236,6 +238,8 @@ public class RelationshipMigrationService extends AbstractMigrationService<Relat
   public void doRemove() throws Exception {
     identitiesCleanupFailed = new HashSet<>();
 
+    long totalIdentities = getNumberUserIdentities();
+
     LOG.info("| \\ START::cleanup Relationships ---------------------------------");
     long t = System.currentTimeMillis();
     long timePerUser = System.currentTimeMillis();
@@ -261,10 +265,10 @@ public class RelationshipMigrationService extends AbstractMigrationService<Relat
         }
 
         transactionList.add(node.getName());
-
-        LOG.info(String.format("|  \\ START::cleanup Relationship of user number: %s (%s user)", offset, node.getName()));
-        IdentityEntity identityEntity = _findById(IdentityEntity.class, node.getUUID());
         offset++;
+
+        LOG.info(String.format("|  \\ START::cleanup Relationship of user number: %s/%s (%s user)", offset, totalIdentities, node.getName()));
+        IdentityEntity identityEntity = _findById(IdentityEntity.class, node.getUUID());
         
         Collection<RelationshipEntity> entities = identityEntity.getRelationship().getRelationships().values();
         removeRelationshipEntity(entities);
