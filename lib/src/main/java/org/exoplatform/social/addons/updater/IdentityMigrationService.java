@@ -220,20 +220,33 @@ public class IdentityMigrationService extends AbstractMigrationService<Identity>
       transactionList = new ArrayList<>();
 
       while (nodeIter.hasNext()) {
+        offset++;
         Node node = nodeIter.nextNode();
         LOG.info(String.format("|  \\ START::cleanup Identity number: %s/%s (%s identity)", offset, totalIdentities, node.getName()));
-        offset++;
 
         String name = node.getName();
         if (!MigrationContext.isForceCleanup() && (MigrationContext.getIdentitiesCleanupConnectionFailed().contains(name)
                 || MigrationContext.getIdentitiesCleanupActivityFailed().contains(name))) {
           identitiesCleanupFailed.add(name);
+          LOG.warn("Will not remove this identity because the cleanup connection or activities were failed for it");
           continue;
         }
 
         transactionList.add(name);
 
         try {
+          PropertyIterator pit = node.getReferences();
+          if (pit != null && pit.getSize() > 0) {
+            int num = 0;
+            while(pit.hasNext()) {
+              num++;
+              pit.nextProperty().remove();
+              if (num % REMOVE_LIMIT_THRESHOLD == 0) {
+                getSession().save();
+              }
+            }
+            getSession().save();
+          }
           node.remove();
         } catch (Exception ex) {
           LOG.error("Error when cleanup the identity: " + node.getName(), ex);

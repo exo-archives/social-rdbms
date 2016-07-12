@@ -212,18 +212,19 @@ public class SpaceMigrationService extends AbstractMigrationService<Space> {
       }
 
       while (nodeIter.hasNext()) {
+        offset++;
         Node node = nodeIter.nextNode();
         String name = node.getName();
 
         if (!MigrationContext.isForceCleanup() &&  (MigrationContext.getSpaceMigrateFailed().contains(name)
                 || MigrationContext.getIdentitiesCleanupFailed().contains(name))) {
           spaceCleanupFailed.add(name);
+          LOG.warn("Will not remove this space because the migration or cleanup identity failed");
           continue;
         }
         transactionList.add(name);
 
         LOG.info(String.format("|  \\ START::cleanup Space number: %s/%s (%s space)", offset, totalSpace, node.getName()));
-        offset++;
 
         try {
 
@@ -232,8 +233,7 @@ public class SpaceMigrationService extends AbstractMigrationService<Space> {
           if (pit != null && pit.getSize() > 0) {
             int num = 0;
             while (pit.hasNext()) {
-              Node n = pit.nextProperty().getParent();
-              n.remove();
+              pit.nextProperty().remove();
               num++;
               if (num % REMOVE_LIMIT_THRESHOLD == 0) {
                 getSession().save();
