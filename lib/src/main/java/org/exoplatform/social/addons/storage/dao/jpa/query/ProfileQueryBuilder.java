@@ -67,8 +67,8 @@ public class ProfileQueryBuilder {
 
   /**
    *
-   * @param em
-   * @return
+   * @param em the EntityManager
+   * @return the JPA TypedQuery
    */
   public TypedQuery[] build(EntityManager em) {
     CriteriaBuilder cb = em.getCriteriaBuilder();

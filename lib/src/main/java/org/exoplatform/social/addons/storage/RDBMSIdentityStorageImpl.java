@@ -308,7 +308,7 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
    * Saves identity.
    *
    * @param identity the identity
-   * @throws IdentityStorageException
+   * @throws IdentityStorageException if has any error
    */
   public void saveIdentity(final Identity identity) throws IdentityStorageException {
     long id = parseId(identity.getId());
@@ -343,7 +343,7 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
    *
    * @param identity the identity to be updated.
    * @return the updated identity.
-   * @throws IdentityStorageException
+   * @throws IdentityStorageException if has any error
    * @since  1.2.0-GA
    */
   public Identity updateIdentity(final Identity identity) throws IdentityStorageException {
@@ -368,8 +368,7 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
    * Updates existing identity's membership in OrganizationService.
    *
    * @param remoteId the remoteId to be updated membership.
-   * @return the updated identity.
-   * @throws IdentityStorageException
+   * @throws IdentityStorageException if has any error
    * @since  4.0.0
    */
   public void updateIdentityMembership(final String remoteId) throws IdentityStorageException {
@@ -382,7 +381,7 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
    *
    * @param nodeId the id of identity
    * @return the identity
-   * @throws IdentityStorageException
+   * @throws IdentityStorageException if has any error
    */
   @ExoTransactional
   public Identity findIdentityById(final String nodeId) throws IdentityStorageException {
@@ -399,8 +398,8 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
   /**
    * Deletes an identity from JCR
    *
-   * @param identity
-   * @throws IdentityStorageException
+   * @param identity the Identity to be deleted
+   * @throws IdentityStorageException if has any error
    */
   public void deleteIdentity(final Identity identity) throws IdentityStorageException {
     this.hardDeleteIdentity(identity);
@@ -409,8 +408,8 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
   /**
    * Hard delete an identity from JCR
    *
-   * @param identity
-   * @throws IdentityStorageException
+   * @param identity the identity to be deleted
+   * @throws IdentityStorageException if has any error
    */
   @ExoTransactional
   public void hardDeleteIdentity(final Identity identity) throws IdentityStorageException {
@@ -444,7 +443,7 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
    * Load profile.
    *
    * @param profile the profile
-   * @throws IdentityStorageException
+   * @throws IdentityStorageException if has any error
    */
   @ExoTransactional
   public Profile loadProfile(Profile profile) throws IdentityStorageException {
@@ -468,7 +467,7 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
    * @param providerId the identity provider
    * @param remoteId   the id
    * @return the identity by remote id
-   * @throws IdentityStorageException
+   * @throws IdentityStorageException if has any error
    */
   @ExoTransactional
   public Identity findIdentity(final String providerId, final String remoteId) throws IdentityStorageException {
@@ -490,7 +489,7 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
    * Saves profile.
    *
    * @param profile the profile
-   * @throws IdentityStorageException
+   * @throws IdentityStorageException if has any error
    */
   public void saveProfile(final Profile profile) throws IdentityStorageException {
     long id = parseId(profile.getIdentity().getId());
@@ -509,7 +508,7 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
    * Updates profile.
    *
    * @param profile the profile
-   * @throws IdentityStorageException
+   * @throws IdentityStorageException if has any error
    * @since 1.2.0-GA
    */
   public void updateProfile(final Profile profile) throws IdentityStorageException {
@@ -525,7 +524,7 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
 
   /**
    * Gets total number of identities in storage depend on providerId.
-   * @throws IdentityStorageException
+   * @throws IdentityStorageException if has any error
    */
   public int getIdentitiesCount (final String providerId) throws IdentityStorageException {
     return (int)getIdentityDAO().countIdentityByProvider(providerId);
@@ -537,7 +536,7 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
    * @param nodetype the nodetype
    * @param property the property
    * @return the type
-   * @throws IdentityStorageException
+   * @throws IdentityStorageException if has any error
    */
   public String getType(final String nodetype, final String property) {
     // This is not JCR implementation, so nodetype does not exist.
@@ -549,8 +548,8 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
    * contains only the property that you want to add or modify. NOTE: The method will
    * not delete the properties on old profile when the param profile have not those keys.
    *
-   * @param profile
-   * @throws IdentityStorageException
+   * @param profile the profile
+   * @throws IdentityStorageException if has any error
    */
   public void addOrModifyProfileProperties(final Profile profile) throws IdentityStorageException {
     updateProfile(profile);
@@ -561,8 +560,8 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
   /**
    * Updates profile activity id by type.
    *
-   * @param identity
-   * @param activityId
+   * @param identity the identity
+   * @param activityId the activity id
    * @param type Type of activity id to get.
    * @since 4.0.0.Alpha1
    */
@@ -573,7 +572,7 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
   /**
    * Gets profile activity id by type.
    *
-   * @param profile
+   * @param profile the Profile
    * @param type Type of activity id to get.
    * @return Profile activity id.
    * @since 4.0.0.Alpha1
@@ -598,8 +597,8 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
    * 1. N days who last login less than N days.
    * 2. UserGroup who belongs to this group.
    *
-   * @param filter
-   * @return
+   * @param filter the filter
+   * @return set of identity ids
    * @since 4.1.0
    */
   public Set<String> getActiveUsers(ActiveIdentityFilter filter) {
@@ -796,7 +795,7 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
   /**
    * This method is introduced to clean totally identity from database
    * It's used in unit test
-   * @param identity
+   * @param identity the Identity
    */
   @ExoTransactional
   public void removeIdentity(Identity identity) {

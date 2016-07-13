@@ -185,7 +185,7 @@ public final class AStreamQueryBuilder {
   /**
    * Build count statement for FEED stream to get the number of the activity base on given conditions
    *
-   * @return TypedQuery<Long> instance 
+   * @return instance the TypedQuery
    */
   public TypedQuery<Long> buildCount() {
     EntityManager em = EntityManagerHolder.get();

@@ -94,7 +94,7 @@ public final class RelationshipQueryBuilder {
   
   /**
    * Builds the Typed Query
-   * @return
+   * @return the JPA typed query
    */
   public TypedQuery<ConnectionEntity> buildSingleRelationship() {
     EntityManager em = EntityManagerHolder.get();
@@ -117,7 +117,7 @@ public final class RelationshipQueryBuilder {
   
   /**
    * Builds the Typed Query
-   * @return
+   * @return JPA query object
    */
   public TypedQuery<ConnectionEntity> build() {
     EntityManager em = EntityManagerHolder.get();
@@ -172,7 +172,7 @@ public final class RelationshipQueryBuilder {
   
   /**
    * Builds the Typed Query
-   * @return
+   * @return JPA query object
    */
   public TypedQuery<Long> buildCount() {
     EntityManager em = EntityManagerHolder.get();
@@ -207,6 +207,10 @@ public final class RelationshipQueryBuilder {
     return em.createQuery(select);
   }
 
+  /**
+   *
+   * @return JPA query object
+   */
   public TypedQuery<ConnectionEntity> buildLastConnections() {
     EntityManager em = EntityManagerHolder.get();
     CriteriaBuilder cb = em.getCriteriaBuilder();
@@ -247,6 +251,10 @@ public final class RelationshipQueryBuilder {
     return typedQuery;
   }
 
+  /**
+   *
+   * @return JPA query object
+   */
   public TypedQuery<ConnectionEntity> buildFilter() {
     EntityManager em = EntityManagerHolder.get();
     CriteriaBuilder cb = em.getCriteriaBuilder();
@@ -265,6 +273,10 @@ public final class RelationshipQueryBuilder {
     return typedQuery;
   }
 
+  /**
+   *
+   * @return JPA query object
+   */
   public TypedQuery<Long> buildFilterCount() {
     EntityManager em = EntityManagerHolder.get();
     CriteriaBuilder cb = em.getCriteriaBuilder();

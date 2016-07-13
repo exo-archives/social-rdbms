@@ -70,10 +70,10 @@ public class ProfileSearchConnector {
   /**
    * TODO it will be remove to use "_count" query
    * 
-   * @param identity
-   * @param filter
-   * @param type
-   * @return
+   * @param identity the Identity
+   * @param filter the filter
+   * @param type type type
+   * @return number of identities
    */
   public int count(Identity identity,
                                ProfileFilter filter,

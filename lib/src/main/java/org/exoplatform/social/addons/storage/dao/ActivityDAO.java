@@ -34,11 +34,11 @@ public interface ActivityDAO extends GenericDAO<ActivityEntity, Long> {
   
   /**
    * 
-   * @param owner
-   * @param offset
-   * @param limit
-   * @return
-   * @throws ActivityStorageException
+   * @param owner the identity
+   * @param offset the offset index
+   * @param limit the maximum number of ActivityEntity to load
+   * @return the activity entities
+   * @throws ActivityStorageException if has any error
    */
   List<ActivityEntity> getUserActivities(Identity owner, long offset, long limit) throws ActivityStorageException;
   
@@ -46,331 +46,380 @@ public interface ActivityDAO extends GenericDAO<ActivityEntity, Long> {
   /**
    * Gets Ids for User stream
    * 
-   * @param owner
-   * @param offset
-   * @param limit
-   * @return
-   * @throws ActivityStorageException
+   * @param owner the Identity
+   * @param offset the offset index
+   * @param limit maximum number item to load
+   * @return the list of activity id
+   * @throws ActivityStorageException if has any error
    */
   List<String> getUserIdsActivities(Identity owner, long offset, long limit) throws ActivityStorageException;
   
   
   /**
    * 
-   * @param ownerIdentity
-   * @return
+   * @param ownerIdentity the Identity
+   * @return the number of activities
    */
   int getNumberOfUserActivities(Identity ownerIdentity);
   
   /**
    * 
-   * @param ownerIdentity
-   * @param sinceTime
-   * @param limit
-   * @return
+   * @param ownerIdentity the Identity
+   * @param sinceTime the beginning time
+   * @param limit the number of entities to load
+   * @return list of activity entities
    */
   List<ActivityEntity> getNewerOnUserActivities(Identity ownerIdentity, long sinceTime, int limit);
   
   /**
    * 
-   * @param ownerIdentity
-   * @param sinceTime
-   * @return
+   * @param ownerIdentity the Identity
+   * @param sinceTime the beginning time
+   * @return number of activities
    */
   int getNumberOfNewerOnUserActivities(Identity ownerIdentity, long sinceTime);
   
   /**
    * 
-   * @param ownerIdentity
-   * @param sinceTime
-   * @param limit
-   * @return
+   * @param ownerIdentity the Identity
+   * @param sinceTime the ending time
+   * @param limit the number of entities to load
+   * @return list of activity entities
    */
   List<ActivityEntity> getOlderOnUserActivities(Identity ownerIdentity, long sinceTime, int limit);
   
   /**
    * 
-   * @param ownerIdentity
-   * @param sinceTime
-   * @return
+   * @param ownerIdentity the Identity
+   * @param sinceTime the end time
+   * @return number of activities
    */
   int getNumberOfOlderOnUserActivities(Identity ownerIdentity, long sinceTime);
   
   /**
    * 
-   * @param owner
-   * @param offset
-   * @param limit
-   * @return
-   * @throws ActivityStorageException
+   * @param owner the Identity
+   * @param offset the start index
+   * @param limit number of activity entities to load
+   * @return list of activity entities
+   * @throws ActivityStorageException if has any error
    */
   List<ActivityEntity> getSpaceActivities(Identity owner, long offset, long limit) throws ActivityStorageException;
   
   /**
    * 
-   * @param owner
-   * @param offset
-   * @param limit
-   * @return
-   * @throws ActivityStorageException
+   * @param owner the Identity
+   * @param offset the start index
+   * @param limit max number activity Id to load
+   * @return list of activity Ids
+   * @throws ActivityStorageException if has any error
    */
   List<String> getSpaceActivityIds(Identity owner, long offset, long limit) throws ActivityStorageException;
   
   /**
    * 
-   * @param spaceIdentity
-   * @return
+   * @param spaceIdentity the space Identity
+   * @return number of activities
    */
   int getNumberOfSpaceActivities(Identity spaceIdentity);
   
   /**
    * 
-   * @param spaceIdentity
-   * @param sinceTime
-   * @param limit
-   * @return
+   * @param spaceIdentity the space Identity
+   * @param sinceTime the beginning time
+   * @param limit max number of entities to load
+   * @return list of activity entities
    */
   List<ActivityEntity> getNewerOnSpaceActivities(Identity spaceIdentity, long sinceTime, int limit);
   
   /**
    * 
-   * @param spaceIdentity
-   * @param sinceTime
-   * @return
+   * @param spaceIdentity the space Identity
+   * @param sinceTime the beginning time
+   * @return number of activities
    */
   int getNumberOfNewerOnSpaceActivities(Identity spaceIdentity, long sinceTime);
   
   /**
    * 
-   * @param spaceIdentity
-   * @param sinceTime
-   * @param limit
-   * @return
+   * @param spaceIdentity the space Identity
+   * @param sinceTime the beginning time
+   * @param limit max number of entities to load
+   * @return list of activity entities
    */
   List<ActivityEntity> getOlderOnSpaceActivities(Identity spaceIdentity, long sinceTime, int limit);
   
   /**
    * 
-   * @param spaceIdentity
-   * @param sinceTime
-   * @return
+   * @param spaceIdentity the space Identity
+   * @param sinceTime the beginning time
+   * @return number of activities
    */
   int getNumberOfOlderOnSpaceActivities(Identity spaceIdentity, long sinceTime);
   
   /**
    * 
-   * @param owner
-   * @param viewer
-   * @param offset
-   * @param limit
-   * @return
-   * @throws ActivityStorageException
+   * @param owner the Identity
+   * @param viewer the viewer Identity
+   * @param offset the start index
+   * @param limit max number of entities to load
+   * @return list of activity entities
+   * @throws ActivityStorageException if has any error
    */
   List<ActivityEntity> getActivities(Identity owner, Identity viewer, long offset, long limit) throws ActivityStorageException;
 
   /**
    * 
-   * @param ownerIdentity
-   * @param offset
-   * @param limit
-   * @return
+   * @param ownerIdentity the Identity
+   * @param offset the start index
+   * @param limit max number of entities to load
+   * @param spaceIds list of space ids
+   * @return list of activity entities
    */
   List<ActivityEntity> getActivityFeed(Identity ownerIdentity, int offset, int limit, List<String> spaceIds);
   
   /**
    * 
-   * @param ownerIdentity
-   * @param offset
-   * @param limit
-   * @return
+   * @param ownerIdentity the Identity
+   * @param offset the start index
+   * @param limit max number of ids to load
+   * @param spaceIds list of space ids
+   * @return list of activity ids
    */
   List<String> getActivityIdsFeed(Identity ownerIdentity, int offset, int limit, List<String> spaceIds);
   
   /**
    * 
-   * @param ownerIdentity
-   * @return
+   * @param ownerIdentity the Identity
+   * @param spaceIds list of space ids
+   * @return number of activities
    */
   int getNumberOfActivitesOnActivityFeed(Identity ownerIdentity, List<String> spaceIds);
   
   /**
    * 
-   * @param ownerIdentity
-   * @param sinceTime
-   * @param limit
-   * @return
+   * @param ownerIdentity the Identity
+   * @param sinceTime the beginning time
+   * @param limit max number of entities to load
+   * @param spaceIds list of space ids
+   * @return list of activity entities
    */
   List<ActivityEntity> getNewerOnActivityFeed(Identity ownerIdentity, long sinceTime, int limit, List<String> spaceIds);
   
   /**
    * 
-   * @param ownerIdentity
-   * @param sinceTime
-   * @return
+   * @param ownerIdentity the Identity
+   * @param sinceTime the beginning time
+   * @param spaceIds list of space ids
+   * @return number of actvitites
    */
   int getNumberOfNewerOnActivityFeed(Identity ownerIdentity, long sinceTime, List<String> spaceIds);
   
   /**
    * 
-   * @param ownerIdentity
-   * @param sinceTime
-   * @param limit
-   * @return
+   * @param ownerIdentity the Identity
+   * @param sinceTime the end time
+   * @param limit max number entities to load
+   * @param spaceIds list of space ids
+   * @return list of activity entities
    */
   List<ActivityEntity> getOlderOnActivityFeed(Identity ownerIdentity, long sinceTime, int limit, List<String> spaceIds);
   
   /**
    * 
-   * @param ownerIdentity
-   * @param sinceTime
-   * @return
+   * @param ownerIdentity the Identity
+   * @param sinceTime the end time
+   * @param spaceIds list of space ids
+   * @return number of activities
    */
   int getNumberOfOlderOnActivityFeed(Identity ownerIdentity, long sinceTime, List<String> spaceIds);
   
   /**
    * 
-   * @param ownerIdentity
-   * @param offset
-   * @param limit
-   * @return
+   * @param ownerIdentity the Identity
+   * @param offset the start index
+   * @param limit max number of entities to load
+   * @param spaceIds list of space ids
+   * @return lsit of activity entities
    */
   List<ActivityEntity> getUserSpacesActivities(Identity ownerIdentity, int offset, int limit, List<String> spaceIds);
   
   /**
    * 
-   * @param ownerIdentity
-   * @param offset
-   * @param limit
-   * @return
+   * @param ownerIdentity the Identity
+   * @param offset the start index
+   * @param limit max number ids to load
+   * @param spaceIds list of space ids
+   * @return list of activity ids
    */
   List<String> getUserSpacesActivityIds(Identity ownerIdentity, int offset, int limit, List<String> spaceIds);
   
   
   /**
    * 
-   * @param ownerIdentity
-   * @return
+   * @param ownerIdentity the Identity
+   * @param spaceIds list of space ids
+   * @return the number of activities
    */
   int getNumberOfUserSpacesActivities(Identity ownerIdentity, List<String> spaceIds);
   
   /**
    * 
-   * @param ownerIdentity
-   * @param sinceTime
-   * @param limit
-   * @return
+   * @param ownerIdentity the Identity
+   * @param sinceTime the beginning time
+   * @param limit max number item to load
+   * @param spaceIds list of space ids
+   * @return list of activity entities
    */
   List<ActivityEntity> getNewerOnUserSpacesActivities(Identity ownerIdentity, long sinceTime, int limit, List<String> spaceIds);
   
   /**
    * 
-   * @param ownerIdentity
-   * @param sinceTime
-   * @return
+   * @param ownerIdentity the Identity
+   * @param sinceTime the beginning time
+   * @param spaceIds list of space ids
+   * @return number of activities
    */
   int getNumberOfNewerOnUserSpacesActivities(Identity ownerIdentity, long sinceTime, List<String> spaceIds);
   
   /**
    * 
-   * @param ownerIdentity
-   * @param sinceTime
-   * @param limit
-   * @return
+   * @param ownerIdentity the Identity
+   * @param sinceTime the end time
+   * @param limit max number items to load
+   * @param spaceIds list of space ids
+   * @return list of activity entities
    */
   List<ActivityEntity> getOlderOnUserSpacesActivities(Identity ownerIdentity, long sinceTime, int limit, List<String> spaceIds);
   
   /**
    * 
-   * @param ownerIdentity
-   * @param sinceTime
-   * @return
+   * @param ownerIdentity the Identity
+   * @param sinceTime the end time
+   * @param spaceIds list of space ids
+   * @return number of activities
    */
   int getNumberOfOlderOnUserSpacesActivities(Identity ownerIdentity, long sinceTime, List<String> spaceIds);
   
   /**
    * 
-   * @param ownerIdentity
-   * @param offset
-   * @param limit
-   * @return
+   * @param ownerIdentity the Identity
+   * @param offset the start index
+   * @param limit max number of items to load
+   * @return list of activity entities
    */
   List<ActivityEntity> getActivitiesOfConnections(Identity ownerIdentity, int offset, int limit);
   
   /**
    * 
-   * @param ownerIdentity
-   * @param offset
-   * @param limit
-   * @return
+   * @param ownerIdentity the Identity
+   * @param offset the start index
+   * @param limit max number items to load
+   * @return list of activity Ids
    */
   List<String> getActivityIdsOfConnections(Identity ownerIdentity, int offset, int limit);
   
   /**
    * 
-   * @param ownerIdentity
-   * @return
+   * @param ownerIdentity the Identity
+   * @return number of activities
    */
   int getNumberOfActivitiesOfConnections(Identity ownerIdentity);
   
   /**
    * 
-   * @param ownerIdentity
-   * @param sinceTime
-   * @param limit
-   * @return
+   * @param ownerIdentity  the Identity
+   * @param sinceTime the beginning time
+   * @param limit max number items to load
+   * @return list of activity entities
    */
   List<ActivityEntity> getNewerOnActivitiesOfConnections(Identity ownerIdentity, long sinceTime, long limit);
   
   /**
    * 
-   * @param ownerIdentity
-   * @param sinceTime
-   * @return
+   * @param ownerIdentity  the Identity
+   * @param sinceTime the start time
+   * @return number of activities
    */
   int getNumberOfNewerOnActivitiesOfConnections(Identity ownerIdentity, long sinceTime);
   
   /**
    * 
-   * @param ownerIdentity
-   * @param sinceTime
-   * @param limit
-   * @return
+   * @param ownerIdentity the Identity
+   * @param sinceTime the end time
+   * @param limit max items to load
+   * @return list of activity entities
    */
   List<ActivityEntity> getOlderOnActivitiesOfConnections(Identity ownerIdentity, long sinceTime, int limit);
   
   /**
    * 
-   * @param ownerIdentity
-   * @param sinceTime
-   * @return
+   * @param ownerIdentity the Identity
+   * @param sinceTime the end time
+   * @return number of activities
    */
   int getNumberOfOlderOnActivitiesOfConnections(Identity ownerIdentity, long sinceTime);
 
   /**
-   * @param posterIdentity
-   * @param offset
-   * @param limit
-   * @param activityTypes
+   * @param posterIdentity the Identity
+   * @param offset the start index
+   * @param limit max number items to load
+   * @param activityTypes the activity Type
    * @return
    */
   List<ActivityEntity> getActivitiesByPoster(Identity posterIdentity, int offset, int limit, String... activityTypes);
 
   /**
-   * @param posterIdentity
-   * @param activityTypes
-   * @return
+   * @param posterIdentity the Identity
+   * @param activityTypes the activity Type
+   * @return number of activities
    */
   int getNumberOfActivitiesByPoster(Identity posterIdentity, String... activityTypes);
 
+  /**
+   * @param activityId the Id of activity
+   * @return number of comments
+   */
   long getNumberOfComments(long activityId);
 
+  /**
+   *
+   * @param activityId the Id of activity
+   * @param offset the start index
+   * @param limit max comments to load
+   * @return list of activity entities represent comment
+   */
   List<ActivityEntity> getComments(long activityId, int offset, int limit);
 
+  /**
+   *
+   * @param activityId the id of activity
+   * @param sinceTime the start time
+   * @param offset the start index
+   * @param limit max items to load
+   * @return list of activity entities
+   */
   List<ActivityEntity> getNewerComments(long activityId, Date sinceTime, int offset, int limit);
 
+  /**
+   *
+   * @param activityId the Id of activity
+   * @param sinceTime the end time
+   * @param offset the start index
+   * @param limit max items to load
+   * @return list of activity entities
+   */
   List<ActivityEntity> getOlderComments(long activityId, Date sinceTime, int offset, int limit);
 
+  /**
+   * Get Activity of comment
+   * @param commentId the comment Id
+   * @return activity entity
+   */
   ActivityEntity getParentActivity(long commentId);
 
+  /**
+   * @return all activities
+   */
   List<ActivityEntity> getAllActivities();
 }

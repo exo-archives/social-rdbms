@@ -36,51 +36,80 @@ public interface ConnectionDAO extends GenericDAO<ConnectionEntity, Long> {
   /**
    * Has the connections
    * 
-   * @param identity
-   * @param status
-   * @return TRUE/FALSE
+   * @param identity the Identity
+   * @param status the status of connection
+   * @return number of connection
    */
   long count(Identity identity, Relationship.Type status);
 
   /**
    * Get connection of 2 users
    * 
-   * @param identity1
-   * @param identity2
-   * @return
+   * @param identity1 The first Identity
+   * @param identity2 the second Identity
+   * @return the connection entity
    */
   ConnectionEntity getConnection(Identity identity1, Identity identity2);
 
+  /**
+   *
+   * @param sender the id of sender Identity
+   * @param receiver the id of receiver Identity
+   * @return the connection entity
+   */
   ConnectionEntity getConnection(Long sender, Long receiver);
 
   
   /**
-   * @param identity
-   * @param type
-   * @param offset
-   * @param limit
-   * @return
+   * @param identity the Identity
+   * @param type type of connection
+   * @param offset the start index
+   * @param limit the max items to load
+   * @return list of connection entities
    */
   List<ConnectionEntity> getConnections(Identity identity, Type type, long offset, long limit);
 
+  /**
+   *
+   * @param sender the sender Identity
+   * @param receiver the receiver Identity
+   * @param status the connection status
+   * @return list of connection entities
+   */
   List<ConnectionEntity> getConnections(Identity sender, Identity receiver, Type status);
 
   /**
-   * @param identity
-   * @param type
-   * @return
+   * @param identity the Identity
+   * @param type the connection type
+   * @return number of connections
    */
   int getConnectionsCount(Identity identity, Type type);
 
   /**
-   * @param identity
-   * @param limit
-   * @return
+   * @param identity the Identity
+   * @param limit max item to load
+   * @return list of connection entities
    */
   List<ConnectionEntity> getLastConnections(Identity identity, int limit);
 
+  /**
+   *
+   * @param existingIdentity the Identity
+   * @param profileFilter the ProfileFilter
+   * @param type connection type
+   * @param offset the start index
+   * @param limit max items to load
+   * @return list of connection entities
+   */
   List<ConnectionEntity> getConnectionsByFilter(Identity existingIdentity, ProfileFilter profileFilter, Type type, long offset, long limit);
 
+  /**
+   *
+   * @param identity the Identity
+   * @param profileFilter the profile filter
+   * @param type connection type
+   * @return number of connections
+   */
   int getConnectionsByFilterCount(Identity identity, ProfileFilter profileFilter, Type type);
 
 }
