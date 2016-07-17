@@ -395,4 +395,13 @@
   <changeSet author="social" id="1.0.0-36" dbms="oracle,postgresql">
     <createSequence sequenceName="SEQ_SOC_CONNECTIONS_ID" startValue="1"/>
   </changeSet>
+  <changeSet author="social" id="1.0.0-37" dbms="oracle,postgresql">
+    <createSequence sequenceName="SEQ_SOC_SPACES_ID" startValue="1"/>
+  </changeSet>
+  <changeSet author="social" id="1.0.0-38" dbms="oracle,postgresql">
+    <createSequence sequenceName="SEQ_SOC_SPACE_MEMBER_ID" startValue="1"/>
+  </changeSet>
+  <changeSet author="social" id="1.0.0-39" dbms="oracle,postgresql">
+    <createSequence sequenceName="SEQ_SOC_STREAM_ITEMS_ID" startValue="1"/>
+  </changeSet>
 </databaseChangeLog>
