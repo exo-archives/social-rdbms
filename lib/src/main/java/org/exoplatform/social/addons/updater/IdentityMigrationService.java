@@ -207,76 +207,74 @@ public class IdentityMigrationService extends AbstractMigrationService<Identity>
     LOG.info("| \\ START::cleanup Identities ---------------------------------");
     long t = System.currentTimeMillis();
     long timePerIdentity = System.currentTimeMillis();
-    RequestLifeCycle.begin(PortalContainer.getInstance());
     int offset = 0;
     long failed = 0;
     List<String> transactionList = new ArrayList<>();
+
     try {
-      NodeIterator nodeIter  = getIdentityNodes(failed, REMOVE_LIMIT_THRESHOLD);
-      if(nodeIter == null || nodeIter.getSize() == 0) {
-        return;
-      }
-
-      transactionList = new ArrayList<>();
-
-      while (nodeIter.hasNext()) {
-        offset++;
-        Node node = nodeIter.nextNode();
-        LOG.info(String.format("|  \\ START::cleanup Identity number: %s/%s (%s identity)", offset, totalIdentities, node.getName()));
-
-        String name = node.getName();
-        if (!MigrationContext.isForceCleanup() && (MigrationContext.getIdentitiesCleanupConnectionFailed().contains(name)
-                || MigrationContext.getIdentitiesCleanupActivityFailed().contains(name))) {
-          identitiesCleanupFailed.add(name);
-          LOG.warn("Will not remove this identity because the cleanup connection or activities were failed for it");
-          continue;
-        }
-
-        transactionList.add(name);
-
+      boolean cont = true;
+      while (cont) {
         try {
-          PropertyIterator pit = node.getReferences();
-          if (pit != null && pit.getSize() > 0) {
-            int num = 0;
-            while(pit.hasNext()) {
-              num++;
-              pit.nextProperty().remove();
-              if (num % REMOVE_LIMIT_THRESHOLD == 0) {
-                getSession().save();
+
+          RequestLifeCycle.begin(PortalContainer.getInstance());
+          failed = identitiesCleanupFailed.size();
+          transactionList = new ArrayList<>();
+
+          NodeIterator nodeIter  = getIdentityNodes(failed, REMOVE_LIMIT_THRESHOLD);
+          if(nodeIter == null || nodeIter.getSize() == 0) {
+            cont = false;
+
+          } else {
+
+            while (nodeIter.hasNext()) {
+              offset++;
+              Node node = nodeIter.nextNode();
+              LOG.info(String.format("|  \\ START::cleanup Identity number: %s/%s (%s identity)", offset, totalIdentities, node.getName()));
+
+              String name = node.getName();
+              if (!MigrationContext.isForceCleanup() && (MigrationContext.getIdentitiesCleanupConnectionFailed().contains(name)
+                      || MigrationContext.getIdentitiesCleanupActivityFailed().contains(name))) {
+                identitiesCleanupFailed.add(name);
+                LOG.warn("Will not remove this identity because the cleanup connection or activities were failed for it");
+                continue;
               }
+
+              transactionList.add(name);
+
+              try {
+                PropertyIterator pit = node.getReferences();
+                if (pit != null && pit.getSize() > 0) {
+                  int num = 0;
+                  while (pit.hasNext()) {
+                    num++;
+                    pit.nextProperty().remove();
+                    if (num % REMOVE_LIMIT_THRESHOLD == 0) {
+                      getSession().save();
+                    }
+                  }
+                  getSession().save();
+                }
+                node.remove();
+              } catch (Exception ex) {
+                LOG.error("Error when cleanup the identity: " + node.getName(), ex);
+                identitiesCleanupFailed.add(name);
+              }
+
+              LOG.info(String.format("|  / END::cleanup (%s identity) consumed time %s(ms)", node.getName(), System.currentTimeMillis() - timePerIdentity));
             }
-            getSession().save();
           }
-          node.remove();
-        } catch (Exception ex) {
-          LOG.error("Error when cleanup the identity: " + node.getName(), ex);
-          identitiesCleanupFailed.add(name);
-        }
 
-        LOG.info(String.format("|  / END::cleanup (%s identity) consumed time %s(ms)", node.getName(), System.currentTimeMillis() - timePerIdentity));
-
-        timePerIdentity = System.currentTimeMillis();
-        if(offset % REMOVE_LIMIT_THRESHOLD == 0) {
+        } finally {
           try {
             getSession().save();
           } catch (Exception ex) {
             identitiesCleanupFailed.addAll(transactionList);
           }
           RequestLifeCycle.end();
-          RequestLifeCycle.begin(PortalContainer.getInstance());
-          failed = identitiesCleanupFailed.size();
-          nodeIter = getIdentityNodes(failed, LIMIT_THRESHOLD);
-          transactionList = new ArrayList<>();
         }
       }
-    } finally {
-      try {
-        getSession().save();
-      } catch (Exception ex) {
-        identitiesCleanupFailed.addAll(transactionList);
-      }
-      RequestLifeCycle.end();
 
+    } finally {
       MigrationContext.setIdentitiesCleanupFailed(identitiesCleanupFailed);
       if (identitiesCleanupFailed.size() > 0) {
         LOG.warn("Cleanup failed for " + identitiesCleanupFailed.size() + " identities");
