@@ -328,6 +328,9 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
     if (entity.getId() > 0) {
       getIdentityDAO().update(entity);
     } else {
+      if (identity.getProfile() != null) {
+        mapToProfileEntity(identity.getProfile(), entity);
+      }
       entity = getIdentityDAO().create(entity);
     }
     Profile profile = convertToProfile(entity, identity);
