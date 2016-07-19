@@ -206,6 +206,7 @@ public final class SpaceQueryBuilder {
     
     if (spaceFilter.isLastAccess()) {
       orders.add(cb.desc(join.get(SpaceMemberEntity_.lastAccess)));
+      orders.add(cb.asc(spaceEntity.get(SpaceEntity_.id)));
     } else if (spaceFilter.isVisited()) {
       orders.add(cb.desc(join.get(SpaceMemberEntity_.visited)));
       orders.add(cb.asc(spaceEntity.get(SpaceEntity_.prettyName)));

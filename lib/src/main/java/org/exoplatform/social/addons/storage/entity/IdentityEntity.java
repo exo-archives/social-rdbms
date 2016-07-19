@@ -95,7 +95,6 @@ public class IdentityEntity {
   @Column(name = "AVATAR_MIMETYPE")
   private String avatarMimeType;
 
-  @Lob
   @Column(name = "AVATAR_IMAGE")
   @Basic(fetch = FetchType.LAZY)
   private byte[] avatarImage;

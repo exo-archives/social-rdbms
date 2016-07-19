@@ -94,10 +94,10 @@ public class IdentityReferenceUpdaterListener extends Listener<Identity, String>
       query.executeUpdate();
 
       // Stream Item
-      query = em.createNamedQuery("SocStreamItem.migrateOwner");
+      /*query = em.createNamedQuery("SocStreamItem.migrateOwner");
       query.setParameter("newId", newId);
       query.setParameter("oldId", oldId);
-      query.executeUpdate();
+      query.executeUpdate();*/
     } finally {
       if (startTx) {
         em.getTransaction().commit();

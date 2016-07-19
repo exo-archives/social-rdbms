@@ -58,9 +58,8 @@
     </dependency>
     <!-- elastic searching dependencies -->
     <dependency>
-      <groupId>org.exoplatform.addons.es</groupId>
-      <artifactId>exo-es-search-service</artifactId>
-      <scope>provided</scope>
+      <groupId>org.exoplatform.commons</groupId>
+      <artifactId>commons-search</artifactId>
     </dependency>
     
     <!-- These dependency is required to compile but reported as useless 

@@ -215,10 +215,14 @@ public final class AStreamQueryBuilder {
     
     // space members
     if (this.memberOfSpaceIds != null && memberOfSpaceIds.size() > 0) {
+      List<Long> ids = new ArrayList<>();
+      for (String id : memberOfSpaceIds) {
+        ids.add(Long.parseLong(id));
+      }
       if (predicate != null) {
-        predicate = cb.or(predicate, addInClause(cb, stream.get(StreamItemEntity_.ownerId), memberOfSpaceIds));
+        predicate = cb.or(predicate, addInClause(cb, stream.get(StreamItemEntity_.ownerId), ids));
       } else {
-        predicate = addInClause(cb, stream.get(StreamItemEntity_.ownerId), memberOfSpaceIds);
+        predicate = addInClause(cb, stream.get(StreamItemEntity_.ownerId), ids);
       }
     }
     
@@ -310,7 +314,11 @@ public final class AStreamQueryBuilder {
     
     // space members
     if (this.memberOfSpaceIds != null && memberOfSpaceIds.size() > 0) {
-      predicates.add(addInClause(cb, stream.get(StreamItemEntity_.ownerId), memberOfSpaceIds));
+      List<Long> ids = new ArrayList<>();
+      for (String id : memberOfSpaceIds) {
+        ids.add(Long.parseLong(id));
+      }
+      predicates.add(addInClause(cb, stream.get(StreamItemEntity_.ownerId), ids));
     }
 
     if (this.myIdentity != null) {
@@ -377,11 +385,11 @@ public final class AStreamQueryBuilder {
   
 
   private <T> Predicate addInClause(CriteriaBuilder cb,
-                                    Path<String> pathColumn,
-                                    Collection<String> values) {
+                                    Path<T> pathColumn,
+                                    Collection<T> values) {
 
-    In<String> in = cb.in(pathColumn);
-    for (String value : values) {
+    In<T> in = cb.in(pathColumn);
+    for (T value : values) {
       in.value(value);
     }
     return in;

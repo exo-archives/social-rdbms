@@ -52,7 +52,7 @@ public class StreamItemEntity {
    * This is id's Identity owner of ActivityStream or SpaceStream
    */
   @Column(name="OWNER_ID", nullable = false)
-  private String ownerId;
+  private Long ownerId;
   
   /** */
   @Column(name="UPDATED_DATE", nullable = false)
@@ -85,11 +85,11 @@ public class StreamItemEntity {
     this.activity = activity;
   }
 
-  public String getOwnerId() {
+  public Long getOwnerId() {
     return ownerId;
   }
 
-  public void setOwnerId(String ownerId) {
+  public void setOwnerId(Long ownerId) {
     this.ownerId = ownerId;
   }
 

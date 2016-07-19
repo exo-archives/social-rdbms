@@ -396,7 +396,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
   private void saveStreamItemForCommenter(Identity commenter, ActivityEntity activityEntity) {
     Identity ownerActivity = identityStorage.findIdentityById(activityEntity.getOwnerId());
     if (! SpaceIdentityProvider.NAME.equals(ownerActivity.getProviderId())) {
-      createStreamItem(StreamType.COMMENTER, activityEntity, commenter.getId());
+      createStreamItem(StreamType.COMMENTER, activityEntity, Long.parseLong(commenter.getId()));
     }
   }
 
@@ -421,7 +421,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
           mentioners.remove(mentioner);
           //remove stream item
           StreamItemEntity item = new StreamItemEntity(StreamType.MENTIONER);
-          item.setOwnerId(mentioner);
+          item.setOwnerId(Long.parseLong(mentioner));
           activityEntity.removeStreamItem(item);
         }
       }
@@ -463,8 +463,8 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
    * @param activity
    */
   private void spaceMembers(Identity spaceOwner, ActivityEntity activity) {
-    createStreamItem(StreamType.SPACE, activity, spaceOwner.getId());
-    createStreamItem(StreamType.SPACE, activity, activity.getPosterId());
+    createStreamItem(StreamType.SPACE, activity, Long.parseLong(spaceOwner.getId()));
+    createStreamItem(StreamType.SPACE, activity, Long.parseLong(activity.getPosterId()));
   }
   
   private void saveStreamItem(Identity owner, ActivityEntity activity) {
@@ -487,10 +487,10 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
    * @param activity
    */
   private void poster(Identity owner, ActivityEntity activity) {
-    createStreamItem(StreamType.POSTER, activity, activity.getPosterId());
+    createStreamItem(StreamType.POSTER, activity, Long.parseLong(activity.getPosterId()));
     //User A posts a new activity on user B stream (A connected B)
     if (!owner.getId().equals(activity.getPosterId())) {
-      createStreamItem(StreamType.POSTER, activity, owner.getId());
+      createStreamItem(StreamType.POSTER, activity, Long.parseLong(owner.getId()));
     }
   }
   
@@ -504,12 +504,12 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
     for (String mentioner : mentions) {
       Identity identity = identityStorage.findIdentityById(mentioner);
       if(identity != null) {
-        createStreamItem(StreamType.MENTIONER, activity, identity.getId());
+        createStreamItem(StreamType.MENTIONER, activity, Long.parseLong(identity.getId()));
       }
     }
   }
   
-  private void createStreamItem(StreamType streamType, ActivityEntity activity, String ownerId){
+  private void createStreamItem(StreamType streamType, ActivityEntity activity, Long ownerId){
     StreamItemEntity streamItem = new StreamItemEntity(streamType);
     streamItem.setOwnerId(ownerId);
     streamItem.setUpdatedDate(activity.getUpdatedDate());
@@ -590,7 +590,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
     //
     if (!hasOtherComment(activity, comment.getPosterId())) {
       StreamItemEntity item = new StreamItemEntity(StreamType.COMMENTER);
-      item.setOwnerId(comment.getPosterId());
+      item.setOwnerId(Long.parseLong(comment.getPosterId()));
       activity.removeStreamItem(item);
     }
     //
@@ -886,7 +886,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
   private void processLikerActivity(Set<String> newLikerList, Set<String> oldLikerList, ActivityEntity activity) {
     for (String id : newLikerList) {
       if (!oldLikerList.contains(id)) {//new like ==> create stream item
-        createStreamItem(StreamType.LIKER, activity, id);
+        createStreamItem(StreamType.LIKER, activity, Long.parseLong(id));
       } else {
         oldLikerList.remove(id);
       }
@@ -894,7 +894,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
     if (oldLikerList.size() > 0) {//unlike ==> remove stream item
       for (String id : oldLikerList) {
         StreamItemEntity item = new StreamItemEntity(StreamType.LIKER);
-        item.setOwnerId(id);
+        item.setOwnerId(Long.parseLong(id));
         activity.removeStreamItem(item);
       }
     }
