@@ -272,6 +272,7 @@ public class SpaceMigrationService extends AbstractMigrationService<Space> {
           try {
             getSession().save();
           } catch (Exception ex) {
+            LOG.error("Exception while cleanup spaces", ex);
             spaceCleanupFailed.addAll(transactionList);
           }
           RequestLifeCycle.end();
@@ -286,6 +287,7 @@ public class SpaceMigrationService extends AbstractMigrationService<Space> {
       try {
         getSession().save();
       } catch (Exception ex) {
+        LOG.error("Exception while cleanup spaces", ex);
         spaceCleanupFailed.addAll(transactionList);
       }
       RequestLifeCycle.end();

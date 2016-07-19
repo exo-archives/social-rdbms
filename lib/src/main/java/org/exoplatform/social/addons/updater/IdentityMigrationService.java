@@ -268,6 +268,7 @@ public class IdentityMigrationService extends AbstractMigrationService<Identity>
           try {
             getSession().save();
           } catch (Exception ex) {
+            LOG.error("Error while cleanup identities", ex);
             identitiesCleanupFailed.addAll(transactionList);
           }
           RequestLifeCycle.end();
