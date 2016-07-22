@@ -31,7 +31,6 @@ import org.exoplatform.addons.es.index.impl.ElasticIndexingServiceConnector;
 import org.exoplatform.container.xml.InitParams;
 import org.exoplatform.social.addons.storage.dao.ConnectionDAO;
 import org.exoplatform.social.addons.storage.dao.IdentityDAO;
-import org.exoplatform.social.addons.storage.entity.ConnectionEntity;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.identity.model.Profile;
 import org.exoplatform.social.core.manager.IdentityManager;
@@ -79,46 +78,68 @@ public class ProfileIndexingServiceConnector extends ElasticIndexingServiceConne
     fields.put("email", profile.getEmail());
     Date createdDate = new Date(profile.getCreatedTime());
     //confirmed connections
-    List<ConnectionEntity> connections = connectionDAO.getConnections(identity, Relationship.Type.CONFIRMED, 0, -1);
-    String connectionsStr = buildConnectionsToStr(identity, connections);
+    String connectionsStr = buildConnectionString(identity, Relationship.Type.CONFIRMED);
     if (connectionsStr.length() > 0) {
       fields.put("connections", connectionsStr);
     }
     
     //outgoing connections
-    connections = connectionDAO.getConnections(identity, Relationship.Type.OUTGOING, 0, -1);
-    connectionsStr = buildConnectionsToStr(identity, connections);
+    connectionsStr = buildConnectionString(identity, Relationship.Type.OUTGOING);
     if (connectionsStr.length() > 0) {
       fields.put("outgoings", connectionsStr);
     }
     //incoming connections
-    connections = connectionDAO.getConnections(identity, Relationship.Type.INCOMING, 0, -1);
-    connectionsStr = buildConnectionsToStr(identity, connections);
+    connectionsStr = buildConnectionString(identity, Relationship.Type.INCOMING);
     if (connectionsStr.length() > 0) {
       fields.put("incomings", connectionsStr);
     }
     return new Document(TYPE, id, null, createdDate, (Set<String>)null, fields);
   }
-  /**
-   * Gets the identityId from connection list
-   * @param identity
-   * @param connections
-   * @return
-   */
-  private String buildConnectionsToStr(Identity identity, List<ConnectionEntity> connections) {
+
+  private String buildConnectionString(Identity identity, Relationship.Type type) {
     StringBuilder sb = new StringBuilder();
-    String identityId = identity.getId();
-    for(ConnectionEntity con : connections) {
-      if (identityId.equals(con.getSender().getStringId())) {
-        sb.append(con.getReceiver().getStringId()).append(",");
-      } else {
-        sb.append(con.getSender().getStringId()).append(",");
-      }
+
+    final int limit = 200;
+    int offset = 0;
+    List<Long> list = null;
+    long id = Long.parseLong(identity.getId());
+
+    boolean inSender = true, inReceiver = true;
+
+    if (type == Relationship.Type.OUTGOING) {
+      inSender = false;
+      type = Relationship.Type.PENDING;
+
+    } else if (type == Relationship.Type.INCOMING) {
+      inReceiver = false;
+      type = Relationship.Type.PENDING;
     }
+
+
+    if (inSender) {
+      do {
+        list = connectionDAO.getSenderIds(id, type, offset, limit);
+        for (int i = 0; i < list.size(); i++) {
+          sb.append(list.get(i)).append(",");
+        }
+      } while (list.size() >= limit);
+    }
+
+    if (inReceiver) {
+      do {
+        list = connectionDAO.getReceiverIds(id, type, offset, limit);
+        for (int i = 0; i < list.size(); i++) {
+          sb.append(list.get(i)).append(",");
+        }
+        offset += limit;
+      } while (list.size() >= limit);
+    }
+
     //Remove the last ","
     if (sb.length()>0) {
       sb.deleteCharAt(sb.length()-1);
     }
+
     return sb.toString();
   }
 
@@ -141,20 +162,17 @@ public class ProfileIndexingServiceConnector extends ElasticIndexingServiceConne
     fields.put("email", profile.getEmail());
     Date createdDate = new Date(profile.getCreatedTime());
     //confirmed connections
-    List<ConnectionEntity> connections = connectionDAO.getConnections(identity, Relationship.Type.CONFIRMED, 0, -1);
-    String connectionsStr = buildConnectionsToStr(identity, connections);
+    String connectionsStr = buildConnectionString(identity, Relationship.Type.CONFIRMED);
     if (connectionsStr.length() > 0) {
       fields.put("connections", connectionsStr);
     }
     //outgoing connections
-    connections = connectionDAO.getConnections(identity, Relationship.Type.OUTGOING, 0, -1);
-    connectionsStr = buildConnectionsToStr(identity, connections);
+    connectionsStr = buildConnectionString(identity, Relationship.Type.OUTGOING);
     if (connectionsStr.length() > 0) {     
       fields.put("outgoings", connectionsStr);
     }
     //incoming connections
-    connections = connectionDAO.getConnections(identity, Relationship.Type.INCOMING, 0, -1);
-    connectionsStr = buildConnectionsToStr(identity, connections);
+    connectionsStr = buildConnectionString(identity, Relationship.Type.INCOMING);
     
     if (connectionsStr.length() > 0) {     
       fields.put("incomings", connectionsStr);

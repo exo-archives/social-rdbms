@@ -112,4 +112,7 @@ public interface ConnectionDAO extends GenericDAO<ConnectionEntity, Long> {
    */
   int getConnectionsByFilterCount(Identity identity, ProfileFilter profileFilter, Type type);
 
+
+  List<Long> getSenderIds(long receiverId, Type status, int offset, int limit);
+  List<Long> getReceiverIds(long receiverId, Type status, int offset, int limit);
 }

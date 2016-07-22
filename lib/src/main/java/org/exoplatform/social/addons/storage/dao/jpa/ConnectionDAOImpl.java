@@ -18,6 +18,7 @@ package org.exoplatform.social.addons.storage.dao.jpa;
 
 import java.util.List;
 
+import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
 import javax.persistence.NonUniqueResultException;
 import javax.persistence.TypedQuery;
@@ -142,5 +143,38 @@ public class ConnectionDAOImpl extends GenericDAOJPAImpl<ConnectionEntity, Long>
                                    .getSingleResult()
                                    .intValue();
   }
- 
+
+  @Override
+  public List<Long> getSenderIds(long receiverId, Type status, int offset, int limit) {
+    EntityManager em = getEntityManager();
+    TypedQuery<Long> query = em.createNamedQuery("SocConnection.getSenderByReceiverAndStatus", Long.class);
+    query.setParameter("receiverId", receiverId);
+    query.setParameter("status", status);
+
+    if (offset > 0) {
+      query.setFirstResult(offset);
+    }
+    if (limit > 0) {
+      query.setMaxResults(limit);
+    }
+
+    return query.getResultList();
+  }
+
+  @Override
+  public List<Long> getReceiverIds(long receiverId, Type status, int offset, int limit) {
+    EntityManager em = getEntityManager();
+    TypedQuery<Long> query = em.createNamedQuery("SocConnection.getReceiverBySenderAndStatus", Long.class);
+    query.setParameter("senderId", receiverId);
+    query.setParameter("status", status);
+
+    if (offset > 0) {
+      query.setFirstResult(offset);
+    }
+    if (limit > 0) {
+      query.setMaxResults(limit);
+    }
+
+    return query.getResultList();
+  }
 }
