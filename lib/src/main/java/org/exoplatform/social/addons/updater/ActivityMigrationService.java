@@ -615,6 +615,11 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
       getSession().save();
     } catch (Exception e) {
       LOG.error("Failed to cleanup sub node for Activity Reference, activity id =" + nodeId + " path=" + nodePath, e);
+      try {
+        getSession().getJCRSession().refresh(false);
+      } catch (RepositoryException ex) {
+        LOG.error("RepositoryException", ex);
+      }
       return false;
     } finally {
       LOG.info(String.format("|     - Done cleanup: %s ref(s) of (%s) consumed time %s(ms) ", offset, userName, System.currentTimeMillis() - totalTime));
@@ -675,6 +680,7 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
                 LOG.info(String.format("|     - Persist deleted: %s activity consumed time %s(ms) ", LIMIT_ACTIVITY_SAVE_THRESHOLD, System.currentTimeMillis() - t));
               } catch (Exception ex) {
                 LOG.error("Failed, can not persist deleted activities", ex);
+                getSession().getJCRSession().refresh(false);
                 failed += LIMIT_ACTIVITY_SAVE_THRESHOLD;
               }
 
@@ -696,6 +702,11 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
 
     } catch (Exception e) {
       LOG.error("Failed to cleanup activities for identity: " + identityName, e);
+      try {
+        getSession().getJCRSession().refresh(false);
+      } catch (RepositoryException ex) {
+        LOG.error("Repository exception", e);
+      }
       return false;
     }
     return failed == 0;

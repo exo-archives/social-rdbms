@@ -239,7 +239,7 @@ public class IdentityMigrationService extends AbstractMigrationService<Identity>
                 continue;
               }
 
-              transactionList.add(name);
+              //transactionList.add(name);
 
               try {
                 PropertyIterator pit = node.getReferences();
@@ -255,9 +255,12 @@ public class IdentityMigrationService extends AbstractMigrationService<Identity>
                   getSession().save();
                 }
                 node.remove();
+                getSession().save();
               } catch (Exception ex) {
-                LOG.error("Error when cleanup the identity: " + node.getName(), ex);
+                LOG.error("Error when cleanup the identity: " + name, ex);
                 identitiesCleanupFailed.add(name);
+                // Discard all change if there is any error
+                getSession().getJCRSession().refresh(false);
               }
 
               LOG.info(String.format("|  / END::cleanup (%s identity) consumed time %s(ms)", node.getName(), System.currentTimeMillis() - timePerIdentity));
@@ -265,12 +268,6 @@ public class IdentityMigrationService extends AbstractMigrationService<Identity>
           }
 
         } finally {
-          try {
-            getSession().save();
-          } catch (Exception ex) {
-            LOG.error("Error while cleanup identities", ex);
-            identitiesCleanupFailed.addAll(transactionList);
-          }
           RequestLifeCycle.end();
         }
       }
