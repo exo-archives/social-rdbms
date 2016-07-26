@@ -24,6 +24,8 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.commons.lang.StringUtils;
+import org.exoplatform.services.log.ExoLogger;
+import org.exoplatform.services.log.Log;
 import org.json.simple.JSONObject;
 
 import org.exoplatform.addons.es.domain.Document;
@@ -61,39 +63,12 @@ public class ProfileIndexingServiceConnector extends ElasticIndexingServiceConne
 
   @Override
   public Document create(String id) {
-    if (StringUtils.isBlank(id)) {
-      throw new IllegalArgumentException("Id is null");
-    }
-    Identity identity = identityManager.getIdentity(id, true);
-    Profile profile = identity.getProfile();
-    
-    Map<String, String> fields = new HashMap<>();
-    fields.put("name", profile.getFullName());
-    fields.put("firstName", (String) profile.getProperty(Profile.FIRST_NAME));
-    fields.put("lastName", (String) profile.getProperty(Profile.LAST_NAME));
-    fields.put("position", profile.getPosition());
-    fields.put("skills", (String)profile.getProperty(Profile.EXPERIENCES_SKILLS));
-    fields.put("avatarUrl", profile.getAvatarUrl());
-    fields.put("userName", identity.getRemoteId());
-    fields.put("email", profile.getEmail());
-    Date createdDate = new Date(profile.getCreatedTime());
-    //confirmed connections
-    String connectionsStr = buildConnectionString(identity, Relationship.Type.CONFIRMED);
-    if (connectionsStr.length() > 0) {
-      fields.put("connections", connectionsStr);
-    }
-    
-    //outgoing connections
-    connectionsStr = buildConnectionString(identity, Relationship.Type.OUTGOING);
-    if (connectionsStr.length() > 0) {
-      fields.put("outgoings", connectionsStr);
-    }
-    //incoming connections
-    connectionsStr = buildConnectionString(identity, Relationship.Type.INCOMING);
-    if (connectionsStr.length() > 0) {
-      fields.put("incomings", connectionsStr);
-    }
-    return new Document(TYPE, id, null, createdDate, (Set<String>)null, fields);
+    return getDocument(id);
+  }
+
+  @Override
+  public Document update(String id) {
+    return getDocument(id);
   }
 
   private String buildConnectionString(Identity identity, Relationship.Type type) {
@@ -144,43 +119,6 @@ public class ProfileIndexingServiceConnector extends ElasticIndexingServiceConne
   }
 
   @Override
-  public Document update(String id) {
-    if (StringUtils.isBlank(id)) {
-      throw new IllegalArgumentException("Id is null");
-    }
-    Identity identity = identityManager.getIdentity(id, true);
-    Profile profile = identity.getProfile();
-    
-    Map<String, String> fields = new HashMap<String, String>();  
-    fields.put("name", profile.getFullName());
-    fields.put("firstName", (String) profile.getProperty(Profile.FIRST_NAME));
-    fields.put("lastName", (String) profile.getProperty(Profile.LAST_NAME));
-    fields.put("position", profile.getPosition());
-    fields.put("skills", (String)profile.getProperty(Profile.EXPERIENCES_SKILLS));
-    fields.put("avatarUrl", profile.getAvatarUrl());
-    fields.put("userName", identity.getRemoteId());
-    fields.put("email", profile.getEmail());
-    Date createdDate = new Date(profile.getCreatedTime());
-    //confirmed connections
-    String connectionsStr = buildConnectionString(identity, Relationship.Type.CONFIRMED);
-    if (connectionsStr.length() > 0) {
-      fields.put("connections", connectionsStr);
-    }
-    //outgoing connections
-    connectionsStr = buildConnectionString(identity, Relationship.Type.OUTGOING);
-    if (connectionsStr.length() > 0) {     
-      fields.put("outgoings", connectionsStr);
-    }
-    //incoming connections
-    connectionsStr = buildConnectionString(identity, Relationship.Type.INCOMING);
-    
-    if (connectionsStr.length() > 0) {     
-      fields.put("incomings", connectionsStr);
-    }
-    return new Document(TYPE, id, null, createdDate, (Set<String>)null, fields);
-  }
-
-  @Override
   public List<String> getAllIds(int offset, int limit) {
     List<Long> ids = identityDAO.getAllIds(offset, limit);
 
@@ -226,4 +164,41 @@ public class ProfileIndexingServiceConnector extends ElasticIndexingServiceConne
     return mappingJSON.toJSONString();
   }
 
+  private Document getDocument(String id) {
+    if (StringUtils.isBlank(id)) {
+      throw new IllegalArgumentException("id is mandatory");
+    }
+
+    Identity identity = identityManager.getIdentity(id, true);
+    Profile profile = identity.getProfile();
+
+    Map<String, String> fields = new HashMap<String, String>();
+    fields.put("name", profile.getFullName());
+    fields.put("firstName", (String) profile.getProperty(Profile.FIRST_NAME));
+    fields.put("lastName", (String) profile.getProperty(Profile.LAST_NAME));
+    fields.put("position", profile.getPosition());
+    fields.put("skills", (String)profile.getProperty(Profile.EXPERIENCES_SKILLS));
+    fields.put("avatarUrl", profile.getAvatarUrl());
+    fields.put("userName", identity.getRemoteId());
+    fields.put("email", profile.getEmail());
+    Date createdDate = new Date(profile.getCreatedTime());
+
+    //confirmed connections
+    String connectionsStr = buildConnectionString(identity, Relationship.Type.CONFIRMED);
+    if (connectionsStr.length() > 0) {
+      fields.put("connections", connectionsStr);
+    }
+    //outgoing connections
+    connectionsStr = buildConnectionString(identity, Relationship.Type.OUTGOING);
+    if (connectionsStr.length() > 0) {
+      fields.put("outgoings", connectionsStr);
+    }
+    //incoming connections
+    connectionsStr = buildConnectionString(identity, Relationship.Type.INCOMING);
+    if (connectionsStr.length() > 0) {
+      fields.put("incomings", connectionsStr);
+    }
+
+    return new Document(TYPE, id, null, createdDate, (Set<String>)null, fields);
+  }
 }
