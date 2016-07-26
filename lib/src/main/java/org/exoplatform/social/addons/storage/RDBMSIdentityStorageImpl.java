@@ -264,27 +264,36 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
           fileName = entity.getRemoteId() + "_avatar";
         }
 
-        Long avatarToDelete = null;
-
         try {
-          FileItem fileItem = new FileItem(null,
-                  fileName,
-                  attachment.getMimeType(),
-                  "avatar",
-                  bytes.length,
-                  new Date(),
-                  entity.getRemoteId(),
-                  false,
-                  new ByteArrayInputStream(bytes));
-          fileItem = fileService.writeFile(fileItem);
-          avatarToDelete = entity.getAvatarFileId();
-          entity.setAvatarFileId(fileItem.getFileInfo().getId());
+          Long avatarId = entity.getAvatarFileId();
+          FileItem fileItem;
+          if(avatarId != null){//update avatar file
+            fileItem = new FileItem(avatarId,
+                    fileName,
+                    attachment.getMimeType(),
+                    "avatar",
+                    bytes.length,
+                    new Date(),
+                    entity.getRemoteId(),
+                    false,
+                    new ByteArrayInputStream(bytes));
+            fileService.updateFile(fileItem);
+          }
+          else{//create new  avatar file
+            fileItem = new FileItem(null,
+                    fileName,
+                    attachment.getMimeType(),
+                    "avatar",
+                    bytes.length,
+                    new Date(),
+                    entity.getRemoteId(),
+                    false,
+                    new ByteArrayInputStream(bytes));
+            fileItem = fileService.writeFile(fileItem);
+            entity.setAvatarFileId(fileItem.getFileInfo().getId());
+          }
         } catch (Exception ex) {
           LOG.warn("Can not store avatar for " + entity.getProviderId() + " " + entity.getRemoteId(), ex);
-        }
-
-        if (avatarToDelete != null && avatarToDelete > 0) {
-          fileService.deleteFile(avatarToDelete);
         }
 
       } else if (Profile.EXPERIENCES.equalsIgnoreCase(e.getKey())){
