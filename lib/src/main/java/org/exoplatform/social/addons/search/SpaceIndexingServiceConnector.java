@@ -57,8 +57,12 @@ public class SpaceIndexingServiceConnector extends ElasticIndexingServiceConnect
   @Override
   public Document create(String id) {
     if (StringUtils.isBlank(id)) {
-      throw new IllegalArgumentException("Id is null");
+      throw new IllegalArgumentException("id is mandatory");
     }
+
+    long ts = System.currentTimeMillis();
+    LOG.debug("get space document for space id={}", id);
+
     Space space = spaceService.getSpaceById(id);
     
     Map<String, String> fields = new HashMap<>();
@@ -67,7 +71,11 @@ public class SpaceIndexingServiceConnector extends ElasticIndexingServiceConnect
     fields.put("description", space.getDescription());
     
     Date createdDate = new Date(space.getCreatedTime());
-    return new Document(TYPE, id, null, createdDate, new HashSet<String>(Arrays.asList(space.getMembers())), fields);
+
+    Document document = new Document(TYPE, id, null, createdDate, new HashSet<String>(Arrays.asList(space.getMembers())), fields);
+    LOG.info("space document generated for id={} name={} duration_ms={}", id, space.getPrettyName(), System.currentTimeMillis() - ts);
+
+    return document;
   }
   
   @Override

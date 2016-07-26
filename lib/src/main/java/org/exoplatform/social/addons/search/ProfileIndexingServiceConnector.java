@@ -42,8 +42,9 @@ import org.exoplatform.social.core.relationship.model.Relationship;
  * Created by The eXo Platform SAS Author : eXoPlatform exo@exoplatform.com Sep
  * 29, 2015
  */
-public class ProfileIndexingServiceConnector extends ElasticIndexingServiceConnector {
-  public final static String TYPE = "profile"; 
+  public class ProfileIndexingServiceConnector extends ElasticIndexingServiceConnector {
+  private static final Log LOG = ExoLogger.getLogger(ProfileIndexingServiceConnector.class);
+  public final static String TYPE = "profile";
   /** */
   private final IdentityManager identityManager;
   /** */
@@ -169,6 +170,9 @@ public class ProfileIndexingServiceConnector extends ElasticIndexingServiceConne
       throw new IllegalArgumentException("id is mandatory");
     }
 
+    long ts = System.currentTimeMillis();
+    LOG.debug("get profile document for identity id={}", id);
+
     Identity identity = identityManager.getIdentity(id, true);
     Profile profile = identity.getProfile();
 
@@ -199,6 +203,9 @@ public class ProfileIndexingServiceConnector extends ElasticIndexingServiceConne
       fields.put("incomings", connectionsStr);
     }
 
-    return new Document(TYPE, id, null, createdDate, (Set<String>)null, fields);
+    Document document = new Document(TYPE, id, null, createdDate, (Set<String>)null, fields);
+    LOG.info("profile document generated for identity id={} remote_id={} duration_ms={}", id, identity.getRemoteId(), System.currentTimeMillis() - ts);
+
+    return document;
   }
 }
