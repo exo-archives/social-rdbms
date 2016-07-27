@@ -229,6 +229,7 @@ public class IdentityMigrationService extends AbstractMigrationService<Identity>
             while (nodeIter.hasNext()) {
               offset++;
               Node node = nodeIter.nextNode();
+              timePerIdentity = System.currentTimeMillis();
               LOG.info(String.format("|  \\ START::cleanup Identity number: %s/%s (%s identity)", offset, totalIdentities, node.getName()));
 
               String name = node.getName();
