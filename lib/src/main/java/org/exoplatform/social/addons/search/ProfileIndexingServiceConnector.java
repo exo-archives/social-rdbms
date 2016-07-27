@@ -96,7 +96,7 @@ import org.exoplatform.social.core.relationship.model.Relationship;
       do {
         list = connectionDAO.getSenderIds(id, type, offset, limit);
         for (int i = 0; i < list.size(); i++) {
-          sb.append(list.get(i)).append(",");
+          sb = append(sb, list.get(i));
         }
       } while (list.size() >= limit);
     }
@@ -105,7 +105,7 @@ import org.exoplatform.social.core.relationship.model.Relationship;
       do {
         list = connectionDAO.getReceiverIds(id, type, offset, limit);
         for (int i = 0; i < list.size(); i++) {
-          sb.append(list.get(i)).append(",");
+          sb = append(sb, list.get(i));
         }
         offset += limit;
       } while (list.size() >= limit);
@@ -117,6 +117,18 @@ import org.exoplatform.social.core.relationship.model.Relationship;
     }
 
     return sb.toString();
+  }
+
+  private StringBuilder append(StringBuilder sb, Object obj) {
+    if (obj == null) {
+      return sb;
+    }
+    String s = String.valueOf(obj);
+    if (sb.capacity() - sb.length() < s.length() + 3) {
+      sb = new StringBuilder(sb.capacity() + 500).append(sb);
+    }
+    sb.append(s).append(",");
+    return sb;
   }
 
   @Override
