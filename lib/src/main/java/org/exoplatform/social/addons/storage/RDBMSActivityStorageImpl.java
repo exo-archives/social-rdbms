@@ -116,17 +116,23 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
     super.setInjectStreams(mustInject);
   }
 
-  private ExoSocialActivity convertActivityEntityToActivity(ActivityEntity activityEntity) {
-    if(activityEntity == null) return null;
-    //
-    ExoSocialActivity activity = new ExoSocialActivityImpl(activityEntity.getPosterId(), activityEntity.getType(),
-                                                           activityEntity.getTitle(), activityEntity.getBody(), false);
-    
+  private ExoSocialActivity fillActivityFromEntity(ActivityEntity activityEntity, ExoSocialActivity activity) {
+    if (activity == null) {
+      activity = new ExoSocialActivityImpl(activityEntity.getPosterId(), activityEntity.getType(),
+              activityEntity.getTitle(), activityEntity.getBody(), false);
+    } else {
+      activity.setPosterId(activityEntity.getPosterId());
+      activity.setType(activityEntity.getType());
+      activity.setTitle(activity.getTitle());
+      activity.setBody(activity.getBody());
+      activity.isComment(false);
+    }
+
     activity.setId(String.valueOf(activityEntity.getId()));
     activity.setLikeIdentityIds(activityEntity.getLikerIds().toArray(new String[]{}));
     activity.setTemplateParams(activityEntity.getTemplateParams() != null ? new LinkedHashMap<String, String>(activityEntity.getTemplateParams())
-                                                                         : new HashMap<String, String>());
-    
+            : new HashMap<String, String>());
+
     String ownerIdentityId = activityEntity.getOwnerId();
     ActivityStream stream = new ActivityStreamImpl();
     Identity owner = identityStorage.findIdentityById(ownerIdentityId);
@@ -156,6 +162,14 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
     activity.setCommentedIds(commentIds.toArray(new String[commentIds.size()]));
     activity.setReplyToId(replyToIds.toArray(new String[replyToIds.size()]));
     activity.setMentionedIds(activityEntity.getMentionerIds().toArray(new String[activityEntity.getMentionerIds().size()]));
+
+    return activity;
+  }
+
+  private ExoSocialActivity convertActivityEntityToActivity(ActivityEntity activityEntity) {
+    if(activityEntity == null) return null;
+    //
+    ExoSocialActivity activity = fillActivityFromEntity(activityEntity, null);
     //
     
     //
@@ -445,15 +459,20 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
   
   @Override
   public ExoSocialActivity saveActivity(Identity owner, ExoSocialActivity activity) throws ActivityStorageException {
+    boolean isNew = (activity.getId() == null);
     ActivityEntity entity = convertActivityToActivityEntity(activity, owner.getId());
     //
     entity.setOwnerId(owner.getId());
     entity.setProviderId(owner.getProviderId());
     saveStreamItem(owner, entity);
     //
-    activityDAO.create(entity);
+    entity = activityDAO.create(entity);
     activity.setId(Long.toString(entity.getId()));
     //
+
+    if (isNew) {
+      fillActivityFromEntity(entity, activity);
+    }
     
     return activity;
   }

@@ -140,6 +140,7 @@ public class RDBMSRelationshipStorageImpl extends RelationshipStorageImpl {
   }
   
   @Override
+  @ExoTransactional
   public int getConnectionsCount(Identity identity) throws RelationshipStorageException {
     return connectionDAO.getConnectionsCount(identity, Relationship.Type.CONFIRMED);
   }

@@ -88,16 +88,9 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
 
   private ProfileSearchConnector profileSearchConnector;
 
-  // TODO: This service is injected to be used to workaround issue COMMONS-478
-  // We should remove this when the issue is fixed
-  private final DataInitializer dataInitializer;
-  private boolean isDataInitialized = false;
-
-  public RDBMSIdentityStorageImpl(DataInitializer dataInitializer,
-                                  IdentityDAO identityDAO,                                   
+  public RDBMSIdentityStorageImpl(IdentityDAO identityDAO,
                                   SpaceDAO spaceDAO, ActivityDAO activityDAO,
                                   ProfileSearchConnector profileSearchConnector, OrganizationService orgService) {
-    this.dataInitializer = dataInitializer;
     this.identityDAO = identityDAO;
     this.spaceDAO = spaceDAO;
     this.activityDAO = activityDAO;
@@ -105,13 +98,7 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
     this.orgService = orgService;
   }
 
-  // TODO: This method is introduced to workaround for issue COMMONS-478
-  // We should remove it when this issue is fixed
   private IdentityDAO getIdentityDAO() {
-    if (!isDataInitialized) {
-      this.dataInitializer.initData();
-      this.isDataInitialized = true;
-    }
     return identityDAO;
   }
 
