@@ -76,7 +76,6 @@ import org.exoplatform.social.core.relationship.model.Relationship;
     StringBuilder sb = new StringBuilder();
 
     final int limit = 200;
-    int offset = 0;
     List<Long> list = null;
     long id = Long.parseLong(identity.getId());
 
@@ -93,41 +92,43 @@ import org.exoplatform.social.core.relationship.model.Relationship;
 
 
     if (inSender) {
+      int offset = 0;
       do {
         list = connectionDAO.getSenderIds(id, type, offset, limit);
-        for (int i = 0; i < list.size(); i++) {
-          sb = append(sb, list.get(i));
-        }
+        sb = append(sb, list);
+        offset += limit;
       } while (list.size() >= limit);
     }
 
     if (inReceiver) {
+      int offset = 0;
       do {
         list = connectionDAO.getReceiverIds(id, type, offset, limit);
-        for (int i = 0; i < list.size(); i++) {
-          sb = append(sb, list.get(i));
-        }
+        sb = append(sb, list);
         offset += limit;
       } while (list.size() >= limit);
     }
 
     //Remove the last ","
-    if (sb.length()>0) {
-      sb.deleteCharAt(sb.length()-1);
+    if (sb.length() > 0) {
+      sb.deleteCharAt(sb.length() - 1);
     }
 
     return sb.toString();
   }
 
-  private StringBuilder append(StringBuilder sb, Object obj) {
-    if (obj == null) {
+  private StringBuilder append(StringBuilder sb, List<Long> ids) {
+    if (ids == null || ids.isEmpty()) {
       return sb;
     }
-    String s = String.valueOf(obj);
-    if (sb.capacity() - sb.length() < s.length() + 3) {
-      sb = new StringBuilder(sb.capacity() + 500).append(sb);
+    int len = ids.size()*10;
+
+    if (sb.capacity() < sb.length() + len) {
+      sb = new StringBuilder(sb.capacity() + len).append(sb);
     }
-    sb.append(s).append(",");
+    for (Long id : ids) {
+      sb.append(id).append(",");
+    }
     return sb;
   }
 
