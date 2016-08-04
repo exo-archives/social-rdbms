@@ -205,7 +205,7 @@
         <column name="REGISTRATION" type="TINYINT">
           <constraints nullable="false"/>
         </column>
-        <column name="DESCRIPTION" type="LONGTEXT"/>
+        <column name="DESCRIPTION" type="NVARCHAR(1000)"/>
         <column name="AVATAR_LAST_UPDATED" type="TIMESTAMP"/>
         <column name="VISIBILITY" type="TINYINT">
           <constraints nullable="false"/>
