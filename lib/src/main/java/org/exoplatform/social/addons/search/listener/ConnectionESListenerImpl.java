@@ -18,6 +18,8 @@ package org.exoplatform.social.addons.search.listener;
 
 import org.exoplatform.addons.es.index.IndexingService;
 import org.exoplatform.commons.utils.CommonsUtils;
+import org.exoplatform.services.log.ExoLogger;
+import org.exoplatform.services.log.Log;
 import org.exoplatform.social.addons.search.ProfileIndexingServiceConnector;
 import org.exoplatform.social.core.relationship.RelationshipEvent;
 import org.exoplatform.social.core.relationship.RelationshipListenerPlugin;
@@ -30,36 +32,42 @@ import org.exoplatform.social.core.relationship.model.Relationship;
  * Sep 29, 2015  
  */
 public class ConnectionESListenerImpl extends RelationshipListenerPlugin {
+  private static final Log LOG = ExoLogger.getExoLogger(ConnectionESListenerImpl.class);
 
   @Override
   public void requested(RelationshipEvent event) {
-    reindexRelationship(event.getPayload());
+    reindexRelationship(event.getPayload(), "requested");
   }
 
   @Override
   public void denied(RelationshipEvent event) {
-    reindexRelationship(event.getPayload());
+    reindexRelationship(event.getPayload(), "denied");
   }
 
   @Override
   public void confirmed(RelationshipEvent event) {
-    reindexRelationship(event.getPayload());
+    reindexRelationship(event.getPayload(), "confirmed");
   }
 
   @Override
   public void ignored(RelationshipEvent event) {
-    reindexRelationship(event.getPayload());
+    reindexRelationship(event.getPayload(), "ignored");
   }
 
   @Override
   public void removed(RelationshipEvent event) {
-    reindexRelationship(event.getPayload());
+    reindexRelationship(event.getPayload(), "removed");
   }
   
-  private void reindexRelationship(Relationship relationship) {
+  private void reindexRelationship(Relationship relationship, String cause) {
     IndexingService indexingService  = CommonsUtils.getService(IndexingService.class);
-    indexingService.reindex(ProfileIndexingServiceConnector.TYPE, relationship.getReceiver().getId());
-    indexingService.reindex(ProfileIndexingServiceConnector.TYPE, relationship.getSender().getId());
+    String receiverId = relationship.getReceiver().getId();
+    String senderId = relationship.getSender().getId();
+
+    LOG.info("Notifying indexing service for connection {} sender_id={} receiver_id={}", cause, senderId, receiverId);
+
+    indexingService.reindex(ProfileIndexingServiceConnector.TYPE, receiverId);
+    indexingService.reindex(ProfileIndexingServiceConnector.TYPE, senderId);
   }
   
 }

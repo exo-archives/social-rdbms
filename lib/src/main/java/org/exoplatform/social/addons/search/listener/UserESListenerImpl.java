@@ -20,6 +20,8 @@ import org.exoplatform.addons.es.index.IndexingService;
 import org.exoplatform.commons.utils.CommonsUtils;
 import org.exoplatform.container.PortalContainer;
 import org.exoplatform.container.component.RequestLifeCycle;
+import org.exoplatform.services.log.ExoLogger;
+import org.exoplatform.services.log.Log;
 import org.exoplatform.services.organization.User;
 import org.exoplatform.services.organization.UserEventListener;
 import org.exoplatform.social.addons.search.ProfileIndexingServiceConnector;
@@ -34,13 +36,17 @@ import org.exoplatform.social.core.manager.IdentityManager;
  * Oct 1, 2015  
  */
 public class UserESListenerImpl extends UserEventListener {
-  
+  private static final Log LOG = ExoLogger.getLogger(UserESListenerImpl.class);
+
   @Override
   public void preDelete(final User user) throws Exception {
     RequestLifeCycle.begin(PortalContainer.getInstance());
     try{
       IdentityManager idm = CommonsUtils.getService(IdentityManager.class);
       Identity identity = idm.getOrCreateIdentity(OrganizationIdentityProvider.NAME, user.getUserName(), false);
+
+      LOG.info("Notifying indexing service for user deletion id={}", identity.getId());
+
       CommonsUtils.getService(IndexingService.class).unindex(ProfileIndexingServiceConnector.TYPE, identity.getId());
     } finally {
       RequestLifeCycle.end();
@@ -53,6 +59,9 @@ public class UserESListenerImpl extends UserEventListener {
     try {
       IdentityManager idm = CommonsUtils.getService(IdentityManager.class);
       Identity identity = idm.getOrCreateIdentity(OrganizationIdentityProvider.NAME, user.getUserName(), false);
+
+      LOG.info("Notifying indexing service for user enable status change id={}", identity.getId());
+
       if (! user.isEnabled()) {
         CommonsUtils.getService(IndexingService.class).unindex(ProfileIndexingServiceConnector.TYPE, identity.getId());
       } else {

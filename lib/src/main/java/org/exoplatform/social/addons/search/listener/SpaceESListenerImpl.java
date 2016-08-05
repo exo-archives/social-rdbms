@@ -15,32 +15,40 @@ public class SpaceESListenerImpl extends SpaceListenerPlugin {
   @Override
   public void spaceCreated(SpaceLifeCycleEvent event) {
     IndexingService indexingService = CommonsUtils.getService(IndexingService.class);
-    indexingService.index(SpaceIndexingServiceConnector.TYPE, event.getSpace().getId());
-    LOG.debug("Handled create index for newly created space!");
+    String id = event.getSpace().getId();
+
+    LOG.info("Notifying indexing service for space creation id={}", id);
+
+    indexingService.index(SpaceIndexingServiceConnector.TYPE, id);
   }
 
   @Override
   public void spaceDescriptionEdited(SpaceLifeCycleEvent event) {
-    reindex(event);
-    LOG.debug("Handle re-index for editing description of space !");
+    reindex(event, "space description");
   }
 
   @Override
   public void spaceRemoved(SpaceLifeCycleEvent event) {
     IndexingService indexingService = CommonsUtils.getService(IndexingService.class);
-    indexingService.unindex(SpaceIndexingServiceConnector.TYPE, event.getSpace().getId());
-    LOG.debug("Handle un-index for removing space !");
+    String id = event.getSpace().getId();
+
+    LOG.debug("Notifying indexing service for space removal id={}", id);
+
+    indexingService.unindex(SpaceIndexingServiceConnector.TYPE, id);
   }
 
   @Override
   public void spaceRenamed(SpaceLifeCycleEvent event) {
-    reindex(event);
-    LOG.debug("Handle re-index for renaming space !");
+    reindex(event, "space renaming");
   }
 
-  private void reindex(SpaceLifeCycleEvent event) {
+  private void reindex(SpaceLifeCycleEvent event, String cause) {
     IndexingService indexingService = CommonsUtils.getService(IndexingService.class);
-    indexingService.reindex(SpaceIndexingServiceConnector.TYPE, event.getSpace().getId());
+    String id = event.getSpace().getId();
+
+    LOG.info("Notifying indexing service for {} id={}", cause, id);
+
+    indexingService.reindex(SpaceIndexingServiceConnector.TYPE, id);
   }
 
   @Override
@@ -79,12 +87,12 @@ public class SpaceESListenerImpl extends SpaceListenerPlugin {
 
   @Override
   public void joined(SpaceLifeCycleEvent event) {
-    reindex(event);
+    reindex(event, "space joined");
   }
 
   @Override
   public void left(SpaceLifeCycleEvent event) {
-    reindex(event);
+    reindex(event, "space left");
   }
 
   @Override
