@@ -37,35 +37,49 @@ public class ProfileESListenerImpl extends ProfileListenerPlugin {
   @Override
   public void avatarUpdated(ProfileLifeCycleEvent event) {
     IndexingService indexingService = CommonsUtils.getService(IndexingService.class);
-    indexingService.reindex(ProfileIndexingServiceConnector.TYPE, event.getProfile().getIdentity().getId());
-    LOG.info("Handled the updated profile avatar!");
-    
+    String id = event.getProfile().getIdentity().getId();
+
+    LOG.info("Notifying indexing service for profile avatar update id={}", id);
+
+    indexingService.reindex(ProfileIndexingServiceConnector.TYPE, id);
   }
 
   @Override
   public void contactSectionUpdated(ProfileLifeCycleEvent event) {
     IndexingService indexingService = CommonsUtils.getService(IndexingService.class);
-    indexingService.reindex(ProfileIndexingServiceConnector.TYPE, event.getProfile().getIdentity().getId());
-    LOG.info("Handled the updated profile contact!");
+    String id = event.getProfile().getIdentity().getId();
+
+    LOG.info("Notifying indexing service for the profile contact update id={}", id);
+
+    indexingService.reindex(ProfileIndexingServiceConnector.TYPE, id);
   }
 
   @Override
   public void aboutMeUpdated(ProfileLifeCycleEvent event) {
-    CommonsUtils.getService(IndexingService.class).reindex(ProfileIndexingServiceConnector.TYPE, event.getProfile().getIdentity().getId());
-    LOG.info("Handled the updated profile aboutme!");
+    String id = event.getProfile().getIdentity().getId();
+
+    LOG.info("Notifying indexing service for the profile aboutme update id={}", id);
+
+    CommonsUtils.getService(IndexingService.class).reindex(ProfileIndexingServiceConnector.TYPE, id);
   }
 
   @Override
   public void experienceSectionUpdated(ProfileLifeCycleEvent event) {
-    CommonsUtils.getService(IndexingService.class).reindex(ProfileIndexingServiceConnector.TYPE, event.getProfile().getIdentity().getId());
-    LOG.info("Handled the updated profile experience!");
+    String id = event.getProfile().getIdentity().getId();
+
+    LOG.info("Notifying indexing service for the profile experience update id={}", id);
+
+    CommonsUtils.getService(IndexingService.class).reindex(ProfileIndexingServiceConnector.TYPE, id);
   }
 
   @Override
   public void createProfile(ProfileLifeCycleEvent event) {
     IndexingService indexingService = CommonsUtils.getService(IndexingService.class);
-    indexingService.index(ProfileIndexingServiceConnector.TYPE, event.getProfile().getIdentity().getId());
-    LOG.info("Handled the created profile!");
+    String id = event.getProfile().getIdentity().getId();
+
+    LOG.info("Notifying indexing service for the profile creation id={}", id);
+
+    indexingService.index(ProfileIndexingServiceConnector.TYPE, id);
   }
 
 }
