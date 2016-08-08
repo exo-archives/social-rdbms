@@ -112,7 +112,7 @@ public class AppEntity implements Serializable {
     StringBuilder builder = new StringBuilder(getAppId());
     builder.append(":").append(getAppName());
     builder.append(":").append(isRemovable());
-    builder.append(":").append(getStatus().name());
+    builder.append(":").append(getStatus().name().toLowerCase());
     return builder.toString();
   }
   
