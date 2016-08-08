@@ -84,6 +84,8 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
 
   private static final Log LOG = ExoLogger.getLogger(RDBMSIdentityStorageImpl.class);
 
+  private static final String socialNameSpace = "social";
+
   private final ActivityDAO activityDAO;
   private final IdentityDAO identityDAO;
   private final SpaceDAO spaceDAO;
@@ -271,7 +273,7 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
             fileItem = new FileItem(avatarId,
                     fileName,
                     attachment.getMimeType(),
-                    "avatar",
+                    socialNameSpace,
                     bytes.length,
                     new Date(),
                     entity.getRemoteId(),
@@ -283,7 +285,7 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
             fileItem = new FileItem(null,
                     fileName,
                     attachment.getMimeType(),
-                    "avatar",
+                    socialNameSpace,
                     bytes.length,
                     new Date(),
                     entity.getRemoteId(),
