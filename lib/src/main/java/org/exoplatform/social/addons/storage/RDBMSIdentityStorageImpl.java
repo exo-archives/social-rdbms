@@ -159,11 +159,19 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
       }
     }
 
+    StringBuilder skills = new StringBuilder();
+    StringBuilder positions = new StringBuilder();
     List<ProfileExperienceEntity> experiences = entity.getExperiences();
     if (experiences != null && experiences.size() > 0) {
       List<Map<String, Object>> xpData = new ArrayList<>();
       for (ProfileExperienceEntity exp : experiences){
         Map<String, Object> xpMap = new HashMap<String, Object>();
+        if (exp.getSkills() != null && !exp.getSkills().isEmpty()) {
+          skills.append(exp.getSkills()).append(",");
+        }
+        if (exp.getPosition() != null && !exp.getPosition().isEmpty()) {
+          positions.append(exp.getPosition()).append(",");
+        }
         xpMap.put(Profile.EXPERIENCES_SKILLS, exp.getSkills());
         xpMap.put(Profile.EXPERIENCES_POSITION, exp.getPosition());
         xpMap.put(Profile.EXPERIENCES_START_DATE, exp.getStartDate());
@@ -174,6 +182,14 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
         xpData.add(xpMap);
       }
       props.put(Profile.EXPERIENCES, xpData);
+    }
+    if (skills.length() > 0) {
+      skills.deleteCharAt(skills.length() - 1);
+      props.put(Profile.EXPERIENCES_SKILLS, skills.toString());
+    }
+    if (positions.length() > 0) {
+      positions.deleteCharAt(positions.length() - 1);
+      props.put(Profile.POSITION, positions.toString());
     }
     
     if (properties != null && properties.size() > 0) {
