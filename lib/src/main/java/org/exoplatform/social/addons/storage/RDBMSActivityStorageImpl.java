@@ -254,6 +254,11 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
     exoComment.setPostedTime(comment.getPosted() != null ? comment.getPosted().getTime() : 0);
     exoComment.setUpdated(comment.getUpdatedDate().getTime());
     //
+    Set<String> mentioned = comment.getMentionerIds();
+    if (mentioned != null && !mentioned.isEmpty()) {
+      exoComment.setMentionedIds(comment.getMentionerIds().toArray(new String[mentioned.size()]));
+    }
+
     processActivity(exoComment);
     
     return exoComment;
@@ -289,6 +294,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
     Date commentTime = (comment.getPostedTime() != null ? new Date(comment.getPostedTime()) : new Date());
     commentEntity.setPosted(commentTime);
     commentEntity.setUpdatedDate(commentTime);
+    commentEntity.setMentionerIds(new HashSet<>(Arrays.asList(processMentions(comment.getTitle()))));
     //
     return commentEntity;
   }
@@ -383,6 +389,10 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
       activityEntity.addComment(commentEntity);
       commentEntity = activityDAO.create(commentEntity);
       eXoComment.setId(getExoCommentID(commentEntity.getId()));
+      Set<String> mentioned = commentEntity.getMentionerIds();
+      if (mentioned != null && !mentioned.isEmpty()) {
+        eXoComment.setMentionedIds(mentioned.toArray(new String[mentioned.size()]));
+      }
       //
       activityEntity.setMentionerIds(processMentionOfComment(activityEntity, commentEntity, activity.getMentionedIds(), processMentions(eXoComment.getTitle()), true));
       if (eXoComment.getUpdated() != null) {
