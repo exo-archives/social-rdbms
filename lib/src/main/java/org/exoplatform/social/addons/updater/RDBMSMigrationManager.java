@@ -20,6 +20,7 @@ package org.exoplatform.social.addons.updater;
 import java.lang.reflect.Field;
 import java.util.concurrent.CountDownLatch;
 
+import org.exoplatform.commons.file.services.NameSpaceService;
 import org.exoplatform.container.xml.InitParams;
 import org.exoplatform.container.xml.ValueParam;
 import org.exoplatform.social.addons.storage.RDBMSIdentityStorageImpl;
@@ -72,7 +73,7 @@ public class RDBMSMigrationManager implements Startable {
 //    //
 //  }
   
-  public RDBMSMigrationManager(InitParams initParams) {
+  public RDBMSMigrationManager(InitParams initParams, NameSpaceService nameSpaceService) {
     CommonsUtils.getService(DataInitializer.class);
     migrater = new CountDownLatch(1);
     //
