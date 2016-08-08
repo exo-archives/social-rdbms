@@ -306,6 +306,7 @@ public class RDBMSSpaceStorageImpl extends AbstractStorage implements SpaceStora
   }
 
   @Override
+  @ExoTransactional
   public Space getSpaceById(String id) throws SpaceStorageException {
     Long spaceId;
     try {
