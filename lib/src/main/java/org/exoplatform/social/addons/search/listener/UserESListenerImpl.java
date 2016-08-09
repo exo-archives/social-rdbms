@@ -25,9 +25,14 @@ import org.exoplatform.services.log.Log;
 import org.exoplatform.services.organization.User;
 import org.exoplatform.services.organization.UserEventListener;
 import org.exoplatform.social.addons.search.ProfileIndexingServiceConnector;
+import org.exoplatform.social.addons.storage.dao.ConnectionDAO;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvider;
 import org.exoplatform.social.core.manager.IdentityManager;
+import org.exoplatform.social.core.relationship.model.Relationship;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created by The eXo Platform SAS
@@ -48,6 +53,7 @@ public class UserESListenerImpl extends UserEventListener {
       LOG.info("Notifying indexing service for user deletion id={}", identity.getId());
 
       CommonsUtils.getService(IndexingService.class).unindex(ProfileIndexingServiceConnector.TYPE, identity.getId());
+      reIndexAllConnector(identity);
     } finally {
       RequestLifeCycle.end();
     }
@@ -70,6 +76,35 @@ public class UserESListenerImpl extends UserEventListener {
     } finally {
       RequestLifeCycle.end();
     }
+  }
+
+  private void reIndexAllConnector(Identity identity) {
+    ConnectionDAO connectionDAO = CommonsUtils.getService(ConnectionDAO.class);
+    IndexingService indexingService = CommonsUtils.getService(IndexingService.class);
+    long identityId = Long.parseLong(identity.getId());
+
+    final int limit = 500;
+    List<Long> connections = null;
+
+    // Sender
+    int start = 0;
+    do {
+      connections = connectionDAO.getSenderIds(identityId, Relationship.Type.ALL, start, limit);
+      for (Long id : connections) {
+        indexingService.reindex(ProfileIndexingServiceConnector.TYPE, String.valueOf(id));
+      }
+      start += limit;
+    } while (connections.size() >= limit);
+
+    // Receiver
+    start = 0;
+    do {
+      connections = connectionDAO.getReceiverIds(identityId, Relationship.Type.ALL, start, limit);
+      for (Long id : connections) {
+        indexingService.reindex(ProfileIndexingServiceConnector.TYPE, String.valueOf(id));
+      }
+      start += limit;
+    } while (connections.size() >= limit);
   }
 
 }

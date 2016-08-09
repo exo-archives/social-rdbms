@@ -16,6 +16,8 @@
  */
 package org.exoplatform.social.addons.storage.dao.jpa;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import javax.persistence.EntityManager;
@@ -27,6 +29,7 @@ import org.exoplatform.commons.api.persistence.ExoTransactional;
 import org.exoplatform.commons.persistence.impl.GenericDAOJPAImpl;
 import org.exoplatform.social.addons.storage.dao.ConnectionDAO;
 import org.exoplatform.social.addons.storage.dao.jpa.query.RelationshipQueryBuilder;
+import org.exoplatform.social.addons.storage.entity.AppEntity;
 import org.exoplatform.social.addons.storage.entity.ConnectionEntity;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.profile.ProfileFilter;
@@ -149,7 +152,8 @@ public class ConnectionDAOImpl extends GenericDAOJPAImpl<ConnectionEntity, Long>
     EntityManager em = getEntityManager();
     TypedQuery<Long> query = em.createNamedQuery("SocConnection.getSenderByReceiverAndStatus", Long.class);
     query.setParameter("receiverId", receiverId);
-    query.setParameter("status", status);
+    List<Type> st = Arrays.asList(status == Type.ALL ? Type.values() : new Type[] {status});
+    query.setParameter("status", st);
 
     if (offset > 0) {
       query.setFirstResult(offset);
@@ -166,7 +170,8 @@ public class ConnectionDAOImpl extends GenericDAOJPAImpl<ConnectionEntity, Long>
     EntityManager em = getEntityManager();
     TypedQuery<Long> query = em.createNamedQuery("SocConnection.getReceiverBySenderAndStatus", Long.class);
     query.setParameter("senderId", receiverId);
-    query.setParameter("status", status);
+    List<Type> st = Arrays.asList(status == Type.ALL ? Type.values() : new Type[] {status});
+    query.setParameter("status", st);
 
     if (offset > 0) {
       query.setFirstResult(offset);
