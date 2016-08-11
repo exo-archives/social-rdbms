@@ -292,166 +292,154 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
     String providerId = "";
     String remoteId = "";
 
-    try {
-      begunTx = startTx();
+    if (identityEntity == null) {
+      Identity poster = identityStorage.findIdentity(OrganizationIdentityProvider.NAME, userName);
+      try {
+        identityEntity = _findById(IdentityEntity.class, poster.getId());
+      } catch (Exception e) {
+        LOG.warn("The user " + userName + " has not identity. Do not migration for this user.");
+        return;
+      }
+    }
 
-      if (identityEntity == null) {
-        Identity poster = identityStorage.findIdentity(OrganizationIdentityProvider.NAME, userName);
-        try {
-          identityEntity = _findById(IdentityEntity.class, poster.getId());
-        } catch (Exception e) {
-          LOG.warn("The user " + userName + " has not identity. Do not migration for this user.");
-          return;
+    providerId = identityEntity.getProviderId();
+    remoteId = identityEntity.getRemoteId();
+    Identity jpaIdentity = identityJPAStorage.findIdentity(identityEntity.getProviderId(), identityEntity.getRemoteId());
+
+    String type = (OrganizationIdentityProvider.NAME.equals(providerId)) ? "user" : "space";
+    LOG.info(String.format("    Migration activities for %s: %s", type, identityEntity.getRemoteId()));
+    //
+    ActivityListEntity activityListEntity = identityEntity.getActivityList();
+    ActivityIterator activityIterator = new ActivityIterator(activityListEntity);
+    //
+    if (lastActivity != null) {
+      activityIterator.moveTo(lastActivity);
+      //Only goto last on first users
+      lastActivity = null;
+    }
+
+    while (activityIterator.hasNext()) {
+      String activityId = activityIterator.next().getId();
+      //
+      try {
+        begunTx = startTx();
+
+        ExoSocialActivity activity = activityJCRStorage.getActivity(activityId);
+        Map<String, String> params = activity.getTemplateParams();
+
+        if (params != null && !params.isEmpty()) {
+
+          for(Map.Entry<String, String> entry: params.entrySet()) {
+
+            String value = entry.getValue();
+
+            if (value.length() >= 1024) {
+              LOG.info("===================== activity id " + activity.getId() + " new value length = " +  value.length());
+              params.put(entry.getKey(), "");
+            }
+
+            //Remove long UTF-8 char
+            params.put(entry.getKey(), StringUtil.removeLongUTF(entry.getValue()));
+          }
+
+          activity.setTemplateParams(params);
         }
-      }
-
-      providerId = identityEntity.getProviderId();
-      remoteId = identityEntity.getRemoteId();
-      Identity jpaIdentity = identityJPAStorage.findIdentity(identityEntity.getProviderId(), identityEntity.getRemoteId());
-
-      String type = (OrganizationIdentityProvider.NAME.equals(providerId)) ? "user" : "space";
-      LOG.info(String.format("    Migration activities for %s: %s", type, identityEntity.getRemoteId()));
-      //
-      ActivityListEntity activityListEntity = identityEntity.getActivityList();
-      ActivityIterator activityIterator = new ActivityIterator(activityListEntity);
-      //
-      if (lastActivity != null) {
-        activityIterator.moveTo(lastActivity);
-        //Only goto last on first users
-        lastActivity = null;
-      }
-
-      while (activityIterator.hasNext()) {
-        String activityId = activityIterator.next().getId();
         //
-        try {
-          ExoSocialActivity activity = activityJCRStorage.getActivity(activityId);
-          Map<String, String> params = activity.getTemplateParams();
+        //Identity owner = new Identity(identityEntity.getId());
+        //owner.setProviderId(providerId);
+        //
+        activity.setId(null);
+        activity.setTitle(StringUtil.removeLongUTF(activity.getTitle()));
+        activity.setBody(StringUtil.removeLongUTF(activity.getBody()));
 
-          if (params != null && !params.isEmpty()) {
-            
-            for(Map.Entry<String, String> entry: params.entrySet()) {
+        //
+        activity.setLikeIdentityIds(convertToNewIds(activity.getLikeIdentityIds()));
+        activity.setCommentedIds(convertToNewIds(activity.getCommentedIds()));
+        activity.setMentionedIds(convertToNewIds(activity.getMentionedIds()));
+        activity.setUserId(getNewIdentityId(activity.getUserId()));
+        activity.setPosterId(getNewIdentityId(activity.getPosterId()));
 
-              String value = entry.getValue();
+        activity = activityStorage.saveActivity(jpaIdentity, activity);
+        //
+        doBroadcastListener(activity, activityId);
 
-              if (value.length() >= 1024) {
-                LOG.info("===================== activity id " + activity.getId() + " new value length = " +  value.length());
-                params.put(entry.getKey(), "");
-              }
-
-              //Remove long UTF-8 char
-              params.put(entry.getKey(), StringUtil.removeLongUTF(entry.getValue()));
+        //
+        ActivityEntity activityEntity = getSession().findById(ActivityEntity.class, activityId);
+        _getMixin(activityEntity, ActivityUpdaterEntity.class, true);
+        //
+        if (previousActivityId != null) {
+          try {
+            ActivityEntity previousActivity = getSession().findById(ActivityEntity.class, previousActivityId);
+            if (previousActivity != null) {
+              _removeMixin(previousActivity, ActivityUpdaterEntity.class);
             }
-            
-            activity.setTemplateParams(params);
+          } catch (Exception e) {
+            LOG.error("Failed to remove mixin type," + e.getMessage(), e);
           }
-          //
-          //Identity owner = new Identity(identityEntity.getId());
-          //owner.setProviderId(providerId);
-          //
-          activity.setId(null);
-          activity.setTitle(StringUtil.removeLongUTF(activity.getTitle()));
-          activity.setBody(StringUtil.removeLongUTF(activity.getBody()));
+        }
 
-          //
-          activity.setLikeIdentityIds(convertToNewIds(activity.getLikeIdentityIds()));
-          activity.setCommentedIds(convertToNewIds(activity.getCommentedIds()));
-          activity.setMentionedIds(convertToNewIds(activity.getMentionedIds()));
-          activity.setUserId(getNewIdentityId(activity.getUserId()));
-          activity.setPosterId(getNewIdentityId(activity.getPosterId()));
+        endTx(begunTx);
+        begunTx = startTx();
 
-          activity = activityStorage.saveActivity(jpaIdentity, activity);
-          //
-          doBroadcastListener(activity, activityId);
-          
-          //
-          ActivityEntity activityEntity = getSession().findById(ActivityEntity.class, activityId);
-          _getMixin(activityEntity, ActivityUpdaterEntity.class, true);
-          //
-          if (previousActivityId != null) {
-            try {
-              ActivityEntity previousActivity = getSession().findById(ActivityEntity.class, previousActivityId);
-              if (previousActivity != null) {
-                _removeMixin(previousActivity, ActivityUpdaterEntity.class);
-              }
-            } catch (Exception e) {
-              LOG.error("Failed to remove mixin type," + e.getMessage(), e);
-            }
-          }
-          
-          List<ActivityEntity> commentEntities = activityEntity.getComments();
-          if (commentEntities != null) {
-            for (ActivityEntity commentEntity : commentEntities) {
-              ExoSocialActivity comment = fillCommentFromEntity(commentEntity);
-              if (comment != null) {
-                String oldCommentId = comment.getId();
-                comment.setId(null);
-                Map<String, String> commentParams = comment.getTemplateParams();
-                if (commentParams != null && !commentParams.isEmpty()) {
+        List<ActivityEntity> commentEntities = activityEntity.getComments();
+        if (commentEntities != null) {
+          for (ActivityEntity commentEntity : commentEntities) {
+            ExoSocialActivity comment = fillCommentFromEntity(commentEntity);
+            if (comment != null) {
+              String oldCommentId = comment.getId();
+              comment.setId(null);
+              Map<String, String> commentParams = comment.getTemplateParams();
+              if (commentParams != null && !commentParams.isEmpty()) {
 
-                  for (Map.Entry<String, String> entry : commentParams.entrySet()) {
+                for (Map.Entry<String, String> entry : commentParams.entrySet()) {
 
-                    String value = entry.getValue();
+                  String value = entry.getValue();
 
-                    if (value.length() >= 1024) {
-                      LOG.info("===================== comment id " + oldCommentId + " new value length = " + value.length());
-                      commentParams.put(entry.getKey(), "");
-                    }
-
-                    //remove long UTF-8 char
-                    commentParams.put(entry.getKey(), StringUtil.removeLongUTF(entry.getValue()));
-
+                  if (value.length() >= 1024) {
+                    LOG.info("===================== comment id " + oldCommentId + " new value length = " + value.length());
+                    commentParams.put(entry.getKey(), "");
                   }
 
-                  comment.setTemplateParams(commentParams);
-                }
-                activity.setTemplateParams(params);
+                  //remove long UTF-8 char
+                  commentParams.put(entry.getKey(), StringUtil.removeLongUTF(entry.getValue()));
 
-                comment.setLikeIdentityIds(convertToNewIds(comment.getLikeIdentityIds()));
-                comment.setCommentedIds(convertToNewIds(comment.getCommentedIds()));
-                comment.setMentionedIds(convertToNewIds(comment.getMentionedIds()));
-                comment.setUserId(getNewIdentityId(comment.getUserId()));
-                comment.setPosterId(getNewIdentityId(comment.getPosterId()));
-
-                if (comment.getTitle() == null) {
-                  comment.setTitle("");
                 }
-                activityStorage.saveComment(activity, comment);
-                //
-                doBroadcastListener(comment, oldCommentId);
-                commentParams = null;
-                params = null;
+
+                comment.setTemplateParams(commentParams);
               }
+              activity.setTemplateParams(params);
+
+              comment.setLikeIdentityIds(convertToNewIds(comment.getLikeIdentityIds()));
+              comment.setCommentedIds(convertToNewIds(comment.getCommentedIds()));
+              comment.setMentionedIds(convertToNewIds(comment.getMentionedIds()));
+              comment.setUserId(getNewIdentityId(comment.getUserId()));
+              comment.setPosterId(getNewIdentityId(comment.getPosterId()));
+
+              if (comment.getTitle() == null) {
+                comment.setTitle("");
+              }
+              activityStorage.saveComment(activity, comment);
+              //
+              doBroadcastListener(comment, oldCommentId);
+              commentParams = null;
+              params = null;
             }
           }
-          
-          previousActivityId = activityId;
-          ++count;
-          //
-          if(count % LIMIT_ACTIVITY_SAVE_THRESHOLD == 0) {
-            try {
-              endTx(begunTx);
-            } catch (Exception ex) {
-              LOG.error("Exception while commit the transaction", ex);
-              numberActivitiesFailed += LIMIT_ACTIVITY_SAVE_THRESHOLD;
-            }
-            entityManagerService.endRequest(PortalContainer.getInstance());
-            entityManagerService.startRequest(PortalContainer.getInstance());
-            begunTx = startTx();
-          }
-          
-        } catch (Exception e) {
-          LOG.error("Failed to migrate activity id : " + activityId, e);
+        }
+
+        previousActivityId = activityId;
+        ++count;
+
+      } catch (Exception e) {
+        LOG.error("Failed to migrate activity id : " + activityId, e);
+        numberActivitiesFailed++;
+      } finally {
+        try {
+          endTx(begunTx);
+        } catch (Exception ex) {
+          LOG.error("Failed to migrate activity id : " + activityId);
           numberActivitiesFailed++;
         }
-      }
-
-    } finally {
-      try {
-        endTx(begunTx);
-      } catch (Exception ex) {
-        LOG.error("Exception while commit the transaction", ex);
-        numberActivitiesFailed += LIMIT_ACTIVITY_SAVE_THRESHOLD;
       }
     }
 
