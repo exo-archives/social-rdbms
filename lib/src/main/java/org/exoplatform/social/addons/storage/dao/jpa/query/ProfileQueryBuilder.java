@@ -146,7 +146,7 @@ public class ProfileQueryBuilder {
       if (name != null && !name.isEmpty()) {
         name = processLikeString(name);
         MapJoin<IdentityEntity, String, String> properties = identity.join(IdentityEntity_.properties, JoinType.LEFT);
-        predicates.add(cb.and(cb.like(properties.value(), name), properties.key().in(Arrays.asList(Profile.FIRST_NAME, Profile.LAST_NAME, Profile.FULL_NAME))));
+        predicates.add(cb.and(cb.like(cb.lower(properties.value()), name), properties.key().in(Arrays.asList(Profile.FIRST_NAME, Profile.LAST_NAME, Profile.FULL_NAME))));
       }
 
       String val = filter.getPosition();
@@ -154,8 +154,8 @@ public class ProfileQueryBuilder {
         val = processLikeString(val);
         Predicate[] p = new Predicate[2];
         MapJoin<IdentityEntity, String, String> properties = identity.join(IdentityEntity_.properties, JoinType.LEFT);
-        p[1] = cb.and(cb.like(properties.value(), val), cb.equal(properties.key(), Profile.POSITION));
-        p[0] = cb.like(experience.get(ProfileExperienceEntity_.position), val);
+        p[1] = cb.and(cb.like(cb.lower(properties.value()), val), cb.equal(properties.key(), Profile.POSITION));
+        p[0] = cb.like(cb.lower(experience.get(ProfileExperienceEntity_.position)), val);
 
         predicates.add(cb.or(p));
       }
@@ -163,20 +163,20 @@ public class ProfileQueryBuilder {
       val = filter.getSkills();
       if (val != null && !val.isEmpty()) {
         val = processLikeString(val);
-        predicates.add(cb.like(experience.get(ProfileExperienceEntity_.skills), val));
+        predicates.add(cb.like(cb.lower(experience.get(ProfileExperienceEntity_.skills)), val));
       }
 
       val = filter.getCompany();
       if (val != null && !val.isEmpty()) {
         val = processLikeString(val);
-        predicates.add(cb.like(experience.get(ProfileExperienceEntity_.company), val));
+        predicates.add(cb.like(cb.lower(experience.get(ProfileExperienceEntity_.company)), val));
       }
 
       char c = filter.getFirstCharacterOfName();
       if (c != '\u0000') {
-        val = c + "%";
+        val = Character.toLowerCase(c) + "%";
         MapJoin<IdentityEntity, String, String> properties = identity.join(IdentityEntity_.properties, JoinType.LEFT);
-        predicates.add(cb.and(cb.equal(properties.key(), Profile.LAST_NAME), cb.like(properties.value(), val)));
+        predicates.add(cb.and(cb.equal(properties.key(), Profile.LAST_NAME), cb.like(cb.lower(properties.value()), val)));
       }
 
       String all = filter.getAll();
@@ -184,7 +184,7 @@ public class ProfileQueryBuilder {
         all = processLikeString(all).toLowerCase();
         Predicate[] p = new Predicate[5];
         MapJoin<IdentityEntity, String, String> properties = identity.join(IdentityEntity_.properties, JoinType.LEFT);
-        p[0] = cb.and(cb.like(properties.value(), name), properties.key().in(Arrays.asList(Profile.FIRST_NAME, Profile.LAST_NAME, Profile.FULL_NAME)));
+        p[0] = cb.and(cb.like(cb.lower(properties.value()), name), properties.key().in(Arrays.asList(Profile.FIRST_NAME, Profile.LAST_NAME, Profile.FULL_NAME)));
 
         p[1] = cb.like(cb.lower(experience.get(ProfileExperienceEntity_.position)), all);
         p[2] = cb.like(cb.lower(experience.get(ProfileExperienceEntity_.skills)), all);
@@ -208,6 +208,6 @@ public class ProfileQueryBuilder {
   }
 
   private String processLikeString(String s) {
-    return "%" + s + "%";
+    return "%" + s.toLowerCase() + "%";
   }
 }
