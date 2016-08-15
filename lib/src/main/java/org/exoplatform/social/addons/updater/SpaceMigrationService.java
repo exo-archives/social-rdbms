@@ -181,8 +181,12 @@ public class SpaceMigrationService extends AbstractMigrationService<Space> {
         space.setAvatarUrl(getSession().getPath(avatar));
       }
     }
-    
-    space.setCreatedTime(spaceNode.getProperty("soc:createdTime").getLong());
+
+    if (spaceNode.hasProperty("soc:createdTime")) {
+      space.setCreatedTime(spaceNode.getProperty("soc:createdTime").getLong());
+    } else {
+      space.setCreatedTime(System.currentTimeMillis());
+    }
     space.setDescription(this.getProperty(spaceNode, "soc:description"));
     space.setDisplayName(this.getProperty(spaceNode, "soc:displayName"));
     space.setGroupId(this.getProperty(spaceNode, "soc:groupId"));
