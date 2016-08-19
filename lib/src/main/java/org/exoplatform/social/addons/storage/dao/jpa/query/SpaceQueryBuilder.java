@@ -147,7 +147,7 @@ public final class SpaceQueryBuilder {
       
       List<Predicate> appCond = new LinkedList<>();
       for (String appId : app.split(",")) {
-        appCond.add(cb.like(appPath, buildSearchCondition(appId, true)));
+        appCond.add(cb.like(cb.lower(appPath), buildSearchCondition(appId, true)));
       }
       sub.where(cb.or(appCond.toArray(new Predicate[appCond.size()])));
       predicates.add(cb.in(root.get(SpaceEntity_.id)).value(sub));
