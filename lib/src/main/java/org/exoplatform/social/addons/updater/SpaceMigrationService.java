@@ -165,6 +165,12 @@ public class SpaceMigrationService extends AbstractMigrationService<Space> {
   }
   
   private Space migrateSpace(Node spaceNode) throws Exception {
+    String prettyName = this.getProperty(spaceNode, "soc:name");
+    Space existing = spaceStorage.getSpaceByPrettyName(prettyName);
+    if (existing != null) {
+      return existing;
+    }
+
     Space space = new Space();
     space.setApp(this.getProperty(spaceNode, "soc:app"));
 
