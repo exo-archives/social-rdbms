@@ -24,7 +24,7 @@
     <parent>
         <groupId>org.exoplatform.addons.social</groupId>
         <artifactId>social-rdbms-addons</artifactId>
-        <version>1.0.x-SNAPSHOT</version>
+        <version>1.0.x-file-rdbms-SNAPSHOT</version>
     </parent>
     <artifactId>social-rdbms-addons-webapp</artifactId>
     <packaging>war</packaging>

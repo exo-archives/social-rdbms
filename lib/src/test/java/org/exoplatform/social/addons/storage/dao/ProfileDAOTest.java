@@ -68,8 +68,6 @@ public class ProfileDAOTest extends BaseCoreTest {
     profile = identityDAO.find(profile.getId());
     assertNotNull(profile);
     assertEquals(1, profile.getExperiences().size());
-    assertEquals(2, profile.getAvatarImage().length);
-    assertEquals(0x01, profile.getAvatarImage()[0]);
   }
 
   public void testUpdateProfile() {
@@ -95,9 +93,6 @@ public class ProfileDAOTest extends BaseCoreTest {
   private IdentityEntity createProfile() {
     IdentityEntity profile = new IdentityEntity();
     profile.setCreatedDate(new Date());
-    profile.setAvatarURL("/profile/root/avatar.png");
-
-    profile.setAvatarImage(new byte[]{0x01, 0x02});
 
     ProfileExperienceEntity exp = new ProfileExperienceEntity();
     exp.setCompany("eXo Platform");
@@ -110,6 +105,7 @@ public class ProfileDAOTest extends BaseCoreTest {
     
     Map<String, String> props = new HashMap<String, String>();
     props.put(Profile.URL, "/profile/root");
+    props.put(Profile.AVATAR_URL, "/profile/root/avatar.png");
     profile.setProperties(props);
 
     return profile;

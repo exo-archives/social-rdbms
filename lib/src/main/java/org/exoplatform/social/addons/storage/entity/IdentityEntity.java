@@ -88,16 +88,8 @@ public class IdentityEntity {
   @Column(name = "DELETED", nullable = false)
   private boolean deleted = false;
 
-  //PROFILE
-  @Column(name = "AVATAR_URL")
-  private String avatarURL;
-
-  @Column(name = "AVATAR_MIMETYPE")
-  private String avatarMimeType;
-
-  @Column(name = "AVATAR_IMAGE")
-  @Basic(fetch = FetchType.LAZY)
-  private byte[] avatarImage;
+  @Column(name = "AVATAR_FILE_ID")
+  private Long avatarFileId;
 
   @ElementCollection(fetch = FetchType.EAGER)
   @MapKeyColumn(name = "NAME")
@@ -164,28 +156,12 @@ public class IdentityEntity {
     this.deleted = deleted;
   }
 
-  public String getAvatarURL() {
-    return avatarURL;
+  public Long getAvatarFileId() {
+    return avatarFileId;
   }
 
-  public void setAvatarURL(String avatarURL) {
-    this.avatarURL = avatarURL;
-  }
-
-  public String getAvatarMimeType() {
-    return avatarMimeType;
-  }
-
-  public void setAvatarMimeType(String avatarMimeType) {
-    this.avatarMimeType = avatarMimeType;
-  }
-
-  public byte[] getAvatarImage() {
-    return avatarImage;
-  }
-
-  public void setAvatarImage(byte[] avatarImage) {
-    this.avatarImage = avatarImage;
+  public void setAvatarFileId(Long avatarFileId) {
+    this.avatarFileId = avatarFileId;
   }
 
   public Map<String, String> getProperties() {

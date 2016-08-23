@@ -20,6 +20,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.exoplatform.commons.file.services.NameSpaceService;
 import org.exoplatform.services.jcr.RepositoryService;
 import org.exoplatform.social.core.chromattic.entity.ProviderEntity;
 import org.exoplatform.social.core.chromattic.entity.ProviderRootEntity;
@@ -94,6 +95,7 @@ public class AsynMigrationTest extends BaseCoreTest {
   private RDBMSMigrationManager rdbmsMigrationManager;
   private RDBMSIdentityStorageImpl identityJPAStorage;
   private SpaceStorage spaceStorage;
+  private NameSpaceService nameSpaceService;
 
   private RepositoryService repoService;
   
@@ -109,6 +111,7 @@ public class AsynMigrationTest extends BaseCoreTest {
     }
 
     repoService = getService(RepositoryService.class);
+    nameSpaceService = getService(NameSpaceService.class);
 
     spaceStorage = getService(SpaceStorage.class);
     identityJCRStorage = getService(IdentityStorageImpl.class);
@@ -125,7 +128,7 @@ public class AsynMigrationTest extends BaseCoreTest {
     activityMigration = getService(ActivityMigrationService.class);
     relationshipMigration = getService(RelationshipMigrationService.class);
     settingService = getService(SettingService.class);
-    rdbmsMigrationManager = new RDBMSMigrationManager(null);
+    rdbmsMigrationManager = new RDBMSMigrationManager(null, nameSpaceService);
   }
 
   @Override

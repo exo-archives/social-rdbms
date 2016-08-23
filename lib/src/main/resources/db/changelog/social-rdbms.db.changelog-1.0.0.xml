@@ -286,9 +286,9 @@
       </column>
       
       <!-- profile -->
-      <column name="AVATAR_URL" type="NVARCHAR(500)"/>
-      <column name="AVATAR_MIMETYPE" type="NVARCHAR(250)"/>
-      <column name="AVATAR_IMAGE" type="MEDIUMBLOB"/>
+      <column name="AVATAR_FILE_ID" type="BIGINT">
+        <constraints nullable="true"/>
+      </column>
       <column name="CREATED_DATE" type="TIMESTAMP">
         <constraints nullable="false"/>
       </column>

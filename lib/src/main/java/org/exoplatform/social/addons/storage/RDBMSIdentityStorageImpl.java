@@ -19,6 +19,8 @@ package org.exoplatform.social.addons.storage;
 import javax.persistence.EntityManager;
 import javax.persistence.Query;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -32,6 +34,8 @@ import java.util.StringTokenizer;
 
 import org.exoplatform.commons.api.persistence.DataInitializer;
 import org.exoplatform.commons.api.persistence.ExoTransactional;
+import org.exoplatform.commons.file.model.FileItem;
+import org.exoplatform.commons.file.services.FileService;
 import org.exoplatform.commons.persistence.impl.EntityManagerService;
 import org.exoplatform.commons.utils.CommonsUtils;
 import org.exoplatform.commons.utils.ListAccess;
@@ -80,9 +84,13 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
 
   private static final Log LOG = ExoLogger.getLogger(RDBMSIdentityStorageImpl.class);
 
+  private static final String socialNameSpace = "social";
+
   private final ActivityDAO activityDAO;
   private final IdentityDAO identityDAO;
   private final SpaceDAO spaceDAO;
+
+  private final FileService fileService;
 
   private final OrganizationService orgService;
 
@@ -90,12 +98,14 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
 
   public RDBMSIdentityStorageImpl(IdentityDAO identityDAO,
                                   SpaceDAO spaceDAO, ActivityDAO activityDAO,
+                                  FileService fileService,
                                   ProfileSearchConnector profileSearchConnector, OrganizationService orgService) {
     this.identityDAO = identityDAO;
     this.spaceDAO = spaceDAO;
     this.activityDAO = activityDAO;
     this.profileSearchConnector = profileSearchConnector;
     this.orgService = orgService;
+    this.fileService = fileService;
   }
 
   private IdentityDAO getIdentityDAO() {
@@ -141,7 +151,7 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
     String providerId = entity.getProviderId();
     if (!OrganizationIdentityProvider.NAME.equals(providerId) && !SpaceIdentityProvider.NAME.equals(providerId)) {
       p.setUrl(properties.get(Profile.URL));
-      p.setAvatarUrl(entity.getAvatarURL());
+      p.setAvatarUrl(properties.get(Profile.AVATAR_URL));
     } else {
       String remoteId = entity.getRemoteId();
       if (OrganizationIdentityProvider.NAME.equals(providerId)) {
@@ -153,7 +163,7 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
         }
       }
 
-      if (entity.getAvatarMimeType() != null && !entity.getAvatarMimeType().isEmpty() && entity.getAvatarImage() != null && entity.getAvatarImage().length > 0) {
+      if (entity.getAvatarFileId() != null && entity.getAvatarFileId() > 0) {
         Identity identity = p.getIdentity();
         p.setAvatarUrl(IdentityAvatarRestService.buildAvatarURL(identity.getProviderId(), identity.getRemoteId()));
       }
@@ -243,15 +253,50 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
     String providerId = profile.getIdentity().getProviderId();
     if (!OrganizationIdentityProvider.NAME.equals(providerId) && !SpaceIdentityProvider.NAME.equals(providerId)) {
       entityProperties.put(Profile.URL, profile.getUrl());
-      entity.setAvatarURL(profile.getAvatarUrl());
+      entityProperties.put(Profile.AVATAR_URL, profile.getAvatarUrl());
     }
 
     Map<String, Object> properties = profile.getProperties();
     for (Map.Entry<String, Object> e : properties.entrySet()) {
       if (Profile.AVATAR.equalsIgnoreCase(e.getKey())) {
         AvatarAttachment attachment = (AvatarAttachment) e.getValue();
-        entity.setAvatarImage(attachment.getImageBytes());
-        entity.setAvatarMimeType(attachment.getMimeType());
+        byte[] bytes = attachment.getImageBytes();
+        String fileName = attachment.getFileName();
+        if (fileName == null) {
+          fileName = entity.getRemoteId() + "_avatar";
+        }
+
+        try {
+          Long avatarId = entity.getAvatarFileId();
+          FileItem fileItem;
+          if(avatarId != null){//update avatar file
+            fileItem = new FileItem(avatarId,
+                    fileName,
+                    attachment.getMimeType(),
+                    socialNameSpace,
+                    bytes.length,
+                    new Date(),
+                    entity.getRemoteId(),
+                    false,
+                    new ByteArrayInputStream(bytes));
+            fileService.updateFile(fileItem);
+          }
+          else{//create new  avatar file
+            fileItem = new FileItem(null,
+                    fileName,
+                    attachment.getMimeType(),
+                    socialNameSpace,
+                    bytes.length,
+                    new Date(),
+                    entity.getRemoteId(),
+                    false,
+                    new ByteArrayInputStream(bytes));
+            fileItem = fileService.writeFile(fileItem);
+            entity.setAvatarFileId(fileItem.getFileInfo().getId());
+          }
+        } catch (Exception ex) {
+          LOG.warn("Can not store avatar for " + entity.getProviderId() + " " + entity.getRemoteId(), ex);
+        }
 
       } else if (Profile.EXPERIENCES.equalsIgnoreCase(e.getKey())){
 
@@ -427,6 +472,10 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
     if (entity != null) {
       entity.setDeleted(true);
       getIdentityDAO().update(entity);
+    }
+
+    if (entity.getAvatarFileId() != null && entity.getAvatarFileId() > 0) {
+      fileService.deleteFile(entity.getAvatarFileId());
     }
 
     EntityManager em = CommonsUtils.getService(EntityManagerService.class).getEntityManager();
