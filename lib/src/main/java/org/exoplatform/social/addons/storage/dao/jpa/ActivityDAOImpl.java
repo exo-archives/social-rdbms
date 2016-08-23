@@ -16,6 +16,8 @@
  */
 package org.exoplatform.social.addons.storage.dao.jpa;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.LinkedList;
@@ -30,7 +32,10 @@ import org.exoplatform.social.addons.storage.dao.ActivityDAO;
 import org.exoplatform.social.addons.storage.dao.jpa.query.AStreamQueryBuilder;
 import org.exoplatform.social.addons.storage.entity.ActivityEntity;
 import org.exoplatform.social.addons.storage.entity.StreamItemEntity_;
+import org.exoplatform.social.addons.storage.entity.StreamType;
 import org.exoplatform.social.core.identity.model.Identity;
+import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvider;
+import org.exoplatform.social.core.relationship.model.Relationship;
 import org.exoplatform.social.core.storage.ActivityStorageException;
 
 /**
@@ -42,13 +47,22 @@ import org.exoplatform.social.core.storage.ActivityStorageException;
 public class ActivityDAOImpl extends GenericDAOJPAImpl<ActivityEntity, Long> implements ActivityDAO {
   
   public List<ActivityEntity> getActivities(Identity owner, Identity viewer, long offset, long limit) throws ActivityStorageException {
-    return AStreamQueryBuilder.builder()
-                              .owner(owner)
-                              .viewer(viewer)
-                              .offset(offset)
-                              .limit(limit)
-                              .build()
-                              .getResultList();
+    TypedQuery<ActivityEntity> query;
+    if (viewer != null && !viewer.getId().equals(owner.getId())) {
+      query = getEntityManager().createNamedQuery("SocActivity.getActivityByOwnerAndProviderId", ActivityEntity.class);
+      query.setParameter("providerId", OrganizationIdentityProvider.NAME);
+    } else {
+      query = getEntityManager().createNamedQuery("SocActivity.getActivityByOwner", ActivityEntity.class);
+    }
+    List<Long> ids = new ArrayList<>();
+    ids.add(Long.parseLong(owner.getId()));
+    query.setParameter("owner", ids);
+    if (limit > 0) {
+      query.setFirstResult(offset > 0 ? (int)offset : 0);
+      query.setMaxResults((int)limit);
+    }
+
+    return query.getResultList();
   }
   
   @Override
@@ -62,14 +76,27 @@ public class ActivityDAOImpl extends GenericDAOJPAImpl<ActivityEntity, Long> imp
   }
 
   public List<ActivityEntity> getActivityFeed(Identity ownerIdentity, int offset, int limit, List<String> spaceIds) {
-    return AStreamQueryBuilder.builder()
-                              .owner(ownerIdentity)
-                              .myIdentity(ownerIdentity)
-                              .memberOfSpaceIds(spaceIds)
-                              .offset(offset)
-                              .limit(limit)
-                              .build()
-                              .getResultList();
+    long ownerId = Long.parseLong(ownerIdentity.getId());
+    List<Long> owners = new ArrayList<>();
+    owners.add(ownerId);
+    if (spaceIds != null && !spaceIds.isEmpty()) {
+      for (String id : spaceIds) {
+        owners.add(Long.parseLong(id));
+      }
+    }
+
+    TypedQuery<ActivityEntity> query = getEntityManager().createNamedQuery("SocActivity.getActivityFeed", ActivityEntity.class);
+    query.setParameter("owners", owners);
+    query.setParameter("ownerid", ownerId);
+    query.setParameter("connStatus", Relationship.Type.CONFIRMED);
+    query.setParameter("connStreamType", StreamType.POSTER);
+
+    if (limit > 0) {
+      query.setFirstResult(offset > 0 ? offset : 0);
+      query.setMaxResults(limit);
+    }
+
+    return query.getResultList();
   }
   
   @Override
@@ -99,16 +126,28 @@ public class ActivityDAOImpl extends GenericDAOJPAImpl<ActivityEntity, Long> imp
   
   @Override
   public List<ActivityEntity> getNewerOnActivityFeed(Identity ownerIdentity, long sinceTime, int limit, List<String> spaceIds) {
-    return AStreamQueryBuilder.builder()
-                              .owner(ownerIdentity)
-                              .myIdentity(ownerIdentity)
-                              .memberOfSpaceIds(spaceIds)
-                              .newer(sinceTime)
-                              .ascOrder()
-                              .offset(0)
-                              .limit(limit)
-                              .build()
-                              .getResultList();
+    long ownerId = Long.parseLong(ownerIdentity.getId());
+    List<Long> owners = new ArrayList<>();
+    owners.add(ownerId);
+    if (spaceIds != null && !spaceIds.isEmpty()) {
+      for (String id : spaceIds) {
+        owners.add(Long.parseLong(id));
+      }
+    }
+
+    TypedQuery<ActivityEntity> query = getEntityManager().createNamedQuery("SocActivity.getNewerActivityFeed", ActivityEntity.class);
+    query.setParameter("sinceTime", sinceTime);
+    query.setParameter("owners", owners);
+    query.setParameter("ownerid", ownerId);
+    query.setParameter("connStatus", Relationship.Type.CONFIRMED);
+    query.setParameter("connStreamType", StreamType.POSTER);
+
+    if (limit > 0) {
+      query.setFirstResult(0);
+      query.setMaxResults(limit);
+    }
+
+    return query.getResultList();
   }
 
   
@@ -126,15 +165,28 @@ public class ActivityDAOImpl extends GenericDAOJPAImpl<ActivityEntity, Long> imp
 
   @Override
   public List<ActivityEntity> getOlderOnActivityFeed(Identity ownerIdentity, long sinceTime,int limit, List<String> spaceIds) {
-    return AStreamQueryBuilder.builder()
-                              .owner(ownerIdentity)
-                              .myIdentity(ownerIdentity)
-                              .memberOfSpaceIds(spaceIds)
-                              .older(sinceTime)
-                              .offset(0)
-                              .limit(limit)
-                              .build()
-                              .getResultList();
+    long ownerId = Long.parseLong(ownerIdentity.getId());
+    List<Long> owners = new ArrayList<>();
+    owners.add(ownerId);
+    if (spaceIds != null && !spaceIds.isEmpty()) {
+      for (String id : spaceIds) {
+        owners.add(Long.parseLong(id));
+      }
+    }
+
+    TypedQuery<ActivityEntity> query = getEntityManager().createNamedQuery("SocActivity.getOlderActivityFeed", ActivityEntity.class);
+    query.setParameter("sinceTime", sinceTime);
+    query.setParameter("owners", owners);
+    query.setParameter("ownerid", ownerId);
+    query.setParameter("connStatus", Relationship.Type.CONFIRMED);
+    query.setParameter("connStreamType", StreamType.POSTER);
+
+    if (limit > 0) {
+      query.setFirstResult(0);
+      query.setMaxResults(limit);
+    }
+
+    return query.getResultList();
   }
 
   @Override
@@ -154,13 +206,7 @@ public class ActivityDAOImpl extends GenericDAOJPAImpl<ActivityEntity, Long> imp
                                           long offset,
                                           long limit) throws ActivityStorageException {
 
-    return AStreamQueryBuilder.builder()
-                              .owner(owner)
-                              .offset(offset)
-                              .limit(limit)
-                              .build()
-                              .getResultList();
-
+    return getOwnerActivities(Arrays.asList(owner.getId()), -1, -1, offset, limit);
   }
   
   @Override
@@ -174,14 +220,7 @@ public class ActivityDAOImpl extends GenericDAOJPAImpl<ActivityEntity, Long> imp
   
   @Override
   public List<ActivityEntity> getNewerOnUserActivities(Identity ownerIdentity, long sinceTime, int limit) {
-    return AStreamQueryBuilder.builder()
-                              .owner(ownerIdentity)
-                              .newer(sinceTime)
-                              .ascOrder()
-                              .offset(0)
-                              .limit(limit)
-                              .build()
-                              .getResultList();
+    return getOwnerActivities(Arrays.asList(ownerIdentity.getId()), sinceTime, -1, 0, limit);
 
   }
 
@@ -197,13 +236,7 @@ public class ActivityDAOImpl extends GenericDAOJPAImpl<ActivityEntity, Long> imp
 
   @Override
   public List<ActivityEntity> getOlderOnUserActivities(Identity ownerIdentity, long sinceTime, int limit) {
-    return AStreamQueryBuilder.builder()
-                              .owner(ownerIdentity)
-                              .older(sinceTime)
-                              .offset(0)
-                              .limit(limit)
-                              .build()
-                              .getResultList();
+    return getOwnerActivities(Arrays.asList(ownerIdentity.getId()), -1, sinceTime, 0, limit);
   }
 
   @Override
@@ -217,12 +250,7 @@ public class ActivityDAOImpl extends GenericDAOJPAImpl<ActivityEntity, Long> imp
   }
 
   public List<ActivityEntity> getSpaceActivities(Identity spaceOwner, long offset, long limit) throws ActivityStorageException {
-    return AStreamQueryBuilder.builder()
-                              .owner(spaceOwner)
-                              .offset(offset)
-                              .limit(limit)
-                              .build()
-                              .getResultList();
+    return getOwnerActivities(Arrays.asList(spaceOwner.getId()), -1, -1, offset, limit);
   }
   
   public List<String> getSpaceActivityIds(Identity spaceOwner, long offset, long limit) throws ActivityStorageException {
@@ -245,13 +273,7 @@ public class ActivityDAOImpl extends GenericDAOJPAImpl<ActivityEntity, Long> imp
   
   @Override
   public List<ActivityEntity> getNewerOnSpaceActivities(Identity spaceIdentity, long sinceTime, int limit) {
-    return AStreamQueryBuilder.builder()
-                              .owner(spaceIdentity)
-                              .ascOrder()
-                              .newer(sinceTime)
-                              .limit(limit)
-                              .build()
-                              .getResultList();
+    return getOwnerActivities(Arrays.asList(spaceIdentity.getId()), sinceTime, -1, 0, limit);
   }
 
   @Override
@@ -266,12 +288,7 @@ public class ActivityDAOImpl extends GenericDAOJPAImpl<ActivityEntity, Long> imp
 
   @Override
   public List<ActivityEntity> getOlderOnSpaceActivities(Identity spaceIdentity, long sinceTime, int limit) {
-    return AStreamQueryBuilder.builder()
-                              .owner(spaceIdentity)
-                              .older(sinceTime)
-                              .limit(limit)
-                              .build()
-                              .getResultList();
+    return getOwnerActivities(Arrays.asList(spaceIdentity.getId()), -1, sinceTime, 0, limit);
   }
 
   @Override
@@ -287,12 +304,7 @@ public class ActivityDAOImpl extends GenericDAOJPAImpl<ActivityEntity, Long> imp
   @Override
   public List<ActivityEntity> getUserSpacesActivities(Identity ownerIdentity, int offset, int limit, List<String> spaceIds) {
     if (spaceIds.size() > 0) {
-      return AStreamQueryBuilder.builder()
-                                .memberOfSpaceIds(spaceIds)
-                                .offset(offset)
-                                .limit(limit)
-                                .build()
-                                .getResultList();
+      return getOwnerActivities(spaceIds, -1, -1, offset, limit);
     } else {
       return Collections.emptyList();
     }
@@ -332,14 +344,7 @@ public class ActivityDAOImpl extends GenericDAOJPAImpl<ActivityEntity, Long> imp
                                                        long sinceTime,
                                                        int limit, List<String> spaceIds) {
     if (spaceIds.size() > 0) {
-      return AStreamQueryBuilder.builder()
-                                .memberOfSpaceIds(spaceIds)
-                                .newer(sinceTime)
-                                .ascOrder()
-                                .offset(0)
-                                .limit(limit)
-                                .build()
-                                .getResultList();
+      return getOwnerActivities(spaceIds, sinceTime, -1, 0, limit);
     } else {
       return Collections.emptyList();
     }
@@ -362,13 +367,7 @@ public class ActivityDAOImpl extends GenericDAOJPAImpl<ActivityEntity, Long> imp
   @Override
   public List<ActivityEntity> getOlderOnUserSpacesActivities(Identity ownerIdentity, long sinceTime, int limit, List<String> spaceIds) {
     if (spaceIds.size() > 0) {
-      return AStreamQueryBuilder.builder()
-                                .memberOfSpaceIds(spaceIds)
-                                .older(sinceTime)
-                                .offset(0)
-                                .limit(limit)
-                                .build()
-                                .getResultList();
+      return getOwnerActivities(spaceIds, -1, sinceTime, 0, limit);
     } else {
       return Collections.emptyList();
     }
@@ -391,12 +390,17 @@ public class ActivityDAOImpl extends GenericDAOJPAImpl<ActivityEntity, Long> imp
 
   @Override
   public List<ActivityEntity> getActivitiesOfConnections(Identity ownerIdentity, int offset, int limit) {
-    return AStreamQueryBuilder.builder()
-                              .myIdentity(ownerIdentity)
-                              .offset(offset)
-                              .limit(limit)
-                              .build()
-                              .getResultList();
+    TypedQuery<ActivityEntity> query = getEntityManager().createNamedQuery("SocActivity.getActivityOfConnection", ActivityEntity.class);
+    query.setParameter("ownerid", Long.parseLong(ownerIdentity.getId()));
+    query.setParameter("connStatus", Relationship.Type.CONFIRMED);
+    query.setParameter("connStreamType", StreamType.POSTER);
+
+    if (limit > 0) {
+      query.setFirstResult(offset > 0 ? offset : 0);
+      query.setMaxResults(limit);
+    }
+
+    return query.getResultList();
   }
   
   @Override
@@ -420,14 +424,18 @@ public class ActivityDAOImpl extends GenericDAOJPAImpl<ActivityEntity, Long> imp
 
   @Override
   public List<ActivityEntity> getNewerOnActivitiesOfConnections(Identity ownerIdentity, long sinceTime, long limit) {
-    return AStreamQueryBuilder.builder()
-                              .myIdentity(ownerIdentity)
-                              .newer(sinceTime)
-                              .ascOrder()
-                              .offset(0)
-                              .limit(limit)
-                              .build()
-                              .getResultList();
+    TypedQuery<ActivityEntity> query = getEntityManager().createNamedQuery("SocActivity.getNewerActivityOfConnection", ActivityEntity.class);
+    query.setParameter("sinceTime", sinceTime);
+    query.setParameter("ownerid", Long.parseLong(ownerIdentity.getId()));
+    query.setParameter("connStatus", Relationship.Type.CONFIRMED);
+    query.setParameter("connStreamType", StreamType.POSTER);
+
+    if (limit > 0) {
+      query.setFirstResult(0);
+      query.setMaxResults((int)limit);
+    }
+
+    return query.getResultList();
   }
 
   @Override
@@ -442,13 +450,18 @@ public class ActivityDAOImpl extends GenericDAOJPAImpl<ActivityEntity, Long> imp
 
   @Override
   public List<ActivityEntity> getOlderOnActivitiesOfConnections(Identity ownerIdentity, long sinceTime, int limit) {
-    return AStreamQueryBuilder.builder()
-                              .myIdentity(ownerIdentity)
-                              .older(sinceTime)
-                              .offset(0)
-                              .limit(limit)
-                              .build()
-                              .getResultList();
+    TypedQuery<ActivityEntity> query = getEntityManager().createNamedQuery("SocActivity.getOlderActivityOfConnection", ActivityEntity.class);
+    query.setParameter("sinceTime", sinceTime);
+    query.setParameter("ownerid", Long.parseLong(ownerIdentity.getId()));
+    query.setParameter("connStatus", Relationship.Type.CONFIRMED);
+    query.setParameter("connStreamType", StreamType.POSTER);
+
+    if (limit > 0) {
+      query.setFirstResult(0);
+      query.setMaxResults(limit);
+    }
+
+    return query.getResultList();
   }
 
   @Override
@@ -554,6 +567,35 @@ public class ActivityDAOImpl extends GenericDAOJPAImpl<ActivityEntity, Long> imp
   @Override
   public List<ActivityEntity> getAllActivities() {
     TypedQuery<ActivityEntity> query = getEntityManager().createNamedQuery("SocActivity.getAllActivities", ActivityEntity.class);
+    return query.getResultList();
+  }
+
+  public List<ActivityEntity> getOwnerActivities(List<String> owners, long newerTime, long olderTime,
+                                                long offset, long limit) throws ActivityStorageException {
+
+    TypedQuery<ActivityEntity> query;
+
+    if (newerTime > 0) {
+      query = getEntityManager().createNamedQuery("SocActivity.getNewerActivityByOwner", ActivityEntity.class);
+      query.setParameter("sinceTime", newerTime);
+    } else if (olderTime > 0) {
+      query = getEntityManager().createNamedQuery("SocActivity.getOlderActivityByOwner", ActivityEntity.class);
+      query.setParameter("sinceTime", olderTime);
+    } else {
+      query = getEntityManager().createNamedQuery("SocActivity.getActivityByOwner", ActivityEntity.class);
+    }
+
+    List<Long> ids = new ArrayList<>();
+    for (String id : owners) {
+      ids.add(Long.parseLong(id));
+    }
+
+    query.setParameter("owner", ids);
+    if (limit > 0) {
+      query.setFirstResult(offset > 0 ? (int)offset : 0);
+      query.setMaxResults((int)limit);
+    }
+
     return query.getResultList();
   }
 }

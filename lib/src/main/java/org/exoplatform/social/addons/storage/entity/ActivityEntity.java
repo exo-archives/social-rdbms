@@ -48,7 +48,51 @@ import org.exoplatform.commons.api.persistence.ExoEntity;
         @NamedQuery(name = "SocActivity.findOlderCommentsOfActivity",
                 query = "SELECT a FROM SocActivity a WHERE a.parent.id = :activityId AND a.updatedDate < :sinceTime ORDER BY a.updatedDate DESC"),
         @NamedQuery(name = "SocActivity.getParentActivity",
-                query = "SELECT a FROM SocActivity a INNER JOIN a.comments c WHERE c.id = :commentId")
+                query = "SELECT a FROM SocActivity a INNER JOIN a.comments c WHERE c.id = :commentId"),
+        @NamedQuery(name = "SocActivity.getActivityByOwner",
+                query = "SELECT a FROM SocActivity a WHERE a.hidden = false AND exists (SELECT item FROM a.streamItems item WHERE item.ownerId in (:owner)) ORDER BY a.updatedDate DESC"),
+        @NamedQuery(name = "SocActivity.getOlderActivityByOwner",
+                query = "SELECT a FROM SocActivity a WHERE a.hidden = false AND a.updatedDate < :sinceTime AND exists (SELECT item FROM a.streamItems item WHERE item.ownerId in (:owner)) ORDER BY a.updatedDate DESC"),
+        @NamedQuery(name = "SocActivity.getNewerActivityByOwner",
+                query = "SELECT a FROM SocActivity a WHERE a.hidden = false  AND a.updatedDate > :sinceTime AND exists (SELECT item FROM a.streamItems item WHERE item.ownerId in (:owner)) ORDER BY a.updatedDate ASC"),
+        @NamedQuery(name = "SocActivity.getActivityByOwnerAndProviderId",
+                query = "SELECT a FROM SocActivity a WHERE a.hidden = false AND a.providerId = :providerId AND exists (SELECT item FROM a.streamItems item WHERE item.ownerId in (:owner)) ORDER BY a.updatedDate DESC"),
+        @NamedQuery(name = "SocActivity.getActivityFeed",
+                query = "SELECT a FROM SocActivity a WHERE a.hidden = false AND exists (" +
+                        "   SELECT item FROM a.streamItems item WHERE item.ownerId in (:owners) " +
+                        "         OR exists (SELECT c.sender.id FROM SocConnection c WHERE c.receiver.id = :ownerid AND c.sender.id = item.ownerId AND c.status = :connStatus AND item.streamType = :connStreamType)" +
+                        "         OR exists (SELECT c.receiver.id FROM SocConnection c WHERE c.sender.id = :ownerid AND c.receiver.id = item.ownerId AND c.status = :connStatus AND item.streamType = :connStreamType)" +
+                        ") ORDER BY a.updatedDate DESC"),
+        @NamedQuery(name = "SocActivity.getNewerActivityFeed",
+                query = "SELECT a FROM SocActivity a WHERE a.hidden = false AND a.updatedDate > :sinceTime AND exists (" +
+                        "   SELECT item FROM a.streamItems item WHERE item.ownerId in (:owners) " +
+                        "         OR exists (SELECT c.sender.id FROM SocConnection c WHERE c.receiver.id = :ownerid AND c.sender.id = item.ownerId AND c.status = :connStatus AND item.streamType = :connStreamType)" +
+                        "         OR exists (SELECT c.receiver.id FROM SocConnection c WHERE c.sender.id = :ownerid AND c.receiver.id = item.ownerId AND c.status = :connStatus AND item.streamType = :connStreamType)" +
+                        ") ORDER BY a.updatedDate ASC"),
+        @NamedQuery(name = "SocActivity.getOlderActivityFeed",
+                query = "SELECT a FROM SocActivity a WHERE a.hidden = false AND a.updatedDate < :sinceTime AND exists (" +
+                        "   SELECT item FROM a.streamItems item WHERE item.ownerId in (:owners) " +
+                        "         OR exists (SELECT c.sender.id FROM SocConnection c WHERE c.receiver.id = :ownerid AND c.sender.id = item.ownerId AND c.status = :connStatus AND item.streamType = :connStreamType)" +
+                        "         OR exists (SELECT c.receiver.id FROM SocConnection c WHERE c.sender.id = :ownerid AND c.receiver.id = item.ownerId AND c.status = :connStatus AND item.streamType = :connStreamType)" +
+                        ") ORDER BY a.updatedDate DESC"),
+        @NamedQuery(name = "SocActivity.getActivityOfConnection",
+                query = "SELECT a FROM SocActivity a WHERE a.hidden = false AND exists (" +
+                        "   SELECT item FROM a.streamItems item WHERE " +
+                        "         exists (SELECT c.sender.id FROM SocConnection c WHERE c.receiver.id = :ownerid AND c.sender.id = item.ownerId AND c.status = :connStatus AND item.streamType = :connStreamType)" +
+                        "         OR exists (SELECT c.receiver.id FROM SocConnection c WHERE c.sender.id = :ownerid AND c.receiver.id = item.ownerId AND c.status = :connStatus AND item.streamType = :connStreamType)" +
+                        ") ORDER BY a.updatedDate DESC"),
+        @NamedQuery(name = "SocActivity.getNewerActivityOfConnection",
+                query = "SELECT a FROM SocActivity a WHERE a.hidden = false AND a.updatedDate > :sinceTime AND exists (" +
+                        "   SELECT item FROM a.streamItems item WHERE " +
+                        "         exists (SELECT c.sender.id FROM SocConnection c WHERE c.receiver.id = :ownerid AND c.sender.id = item.ownerId AND c.status = :connStatus AND item.streamType = :connStreamType)" +
+                        "         OR exists (SELECT c.receiver.id FROM SocConnection c WHERE c.sender.id = :ownerid AND c.receiver.id = item.ownerId AND c.status = :connStatus AND item.streamType = :connStreamType)" +
+                        ") ORDER BY a.updatedDate ASC"),
+        @NamedQuery(name = "SocActivity.getOlderActivityOfConnection",
+                query = "SELECT a FROM SocActivity a WHERE a.hidden = false AND a.updatedDate < :sinceTime AND exists (" +
+                        "   SELECT item FROM a.streamItems item WHERE " +
+                        "         exists (SELECT c.sender.id FROM SocConnection c WHERE c.receiver.id = :ownerid AND c.sender.id = item.ownerId AND c.status = :connStatus AND item.streamType = :connStreamType)" +
+                        "         OR exists (SELECT c.receiver.id FROM SocConnection c WHERE c.sender.id = :ownerid AND c.receiver.id = item.ownerId AND c.status = :connStatus AND item.streamType = :connStreamType)" +
+                        ") ORDER BY a.updatedDate DESC")
 })
 public class ActivityEntity implements Serializable {
 

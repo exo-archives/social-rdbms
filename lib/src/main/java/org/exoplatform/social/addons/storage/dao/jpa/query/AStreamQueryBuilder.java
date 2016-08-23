@@ -194,7 +194,7 @@ public final class AStreamQueryBuilder {
     Root<ActivityEntity> activity = criteria.from(ActivityEntity.class);
     Join<ActivityEntity, StreamItemEntity> streamItem = activity.join(ActivityEntity_.streamItems);
 
-    CriteriaQuery<Long> select = criteria.select(cb.countDistinct(activity));
+    CriteriaQuery<Long> select = criteria.select(cb.countDistinct(activity.get(ActivityEntity_.id)));
     select.where(getPredicateForStream(activity, streamItem, cb, criteria));
 
     return em.createQuery(select);
