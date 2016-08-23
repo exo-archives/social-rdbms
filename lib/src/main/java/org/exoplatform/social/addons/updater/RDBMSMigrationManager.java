@@ -209,8 +209,7 @@ public class RDBMSMigrationManager implements Startable {
 
               if (!MigrationContext.isDone() && MigrationContext.isIdentityDone() && !MigrationContext.isConnectionDone()) {
                 long t = System.currentTimeMillis();
-                relationshipMigration = CommonsUtils.getService(RelationshipMigrationService.class);
-                relationshipMigration.start();
+                getRelationshipMigration().start();
                 updateSettingValue(MigrationContext.SOC_RDBMS_CONNECTION_MIGRATION_KEY, MigrationContext.isConnectionDone());
                 timeToMigrateConnections = System.currentTimeMillis() - t;
               }
@@ -223,7 +222,7 @@ public class RDBMSMigrationManager implements Startable {
               // cleanup Connections
               if (!MigrationContext.isConnectionCleanupDone()) {
                 long t = System.currentTimeMillis();
-                relationshipMigration.doRemove();
+                getRelationshipMigration().doRemove();
 
                 if (MigrationContext.getIdentitiesCleanupConnectionFailed().isEmpty()) {
                   updateSettingValue(MigrationContext.SOC_RDBMS_CONNECTION_CLEANUP_KEY, Boolean.TRUE);
