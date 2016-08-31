@@ -89,6 +89,12 @@
         <artifactId>commons-search</artifactId>
         <version>${exoplatform.version}</version>
       </dependency>
+
+      <dependency>
+        <groupId>org.exoplatform.commons</groupId>
+        <artifactId>commons-file-storage</artifactId>
+        <version>${exoplatform.version}</version>
+      </dependency>
     
       <dependency>
         <groupId>com.fasterxml.jackson.core</groupId>

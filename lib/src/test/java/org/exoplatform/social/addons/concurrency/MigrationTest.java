@@ -79,7 +79,7 @@ import java.util.Map;
         @ConfigurationUnit(scope = ContainerScope.PORTAL, path = "conf/standalone/exo.social.component.migrate.test.configuration.xml")
 })
 public class MigrationTest extends BaseCoreTest {
-  protected final Log LOG = ExoLogger.getLogger(AsynMigrationTest.class);
+  protected final Log LOG = ExoLogger.getLogger(AbstractAsynMigrationTest.class);
   private ActivityStorageImpl activityJCRStorage;
   private IdentityStorageImpl identityJCRStorage;
   private RelationshipStorageImpl relationshipJCRStorage;

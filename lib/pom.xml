@@ -61,6 +61,11 @@
       <groupId>org.exoplatform.commons</groupId>
       <artifactId>commons-search</artifactId>
     </dependency>
+
+    <dependency>
+      <groupId>org.exoplatform.commons</groupId>
+      <artifactId>commons-file-storage</artifactId>
+    </dependency>
     
     <!-- These dependency is required to compile but reported as useless 
       by mvn dependency:analyze -->
@@ -281,7 +286,8 @@
             <configuration>
               <includes>
                 <include>**/InitContainerTestSuite.java</include>
-                <include>**/AsynMigrationTest.java</include>
+                <include>**/AsynMigrateEmptyDataTest.java</include>
+                <include>**/AsynMigrateActivitiesTest.java</include>
                 <include>**/MigrationTest.java</include>
               </includes>
               <excludes>

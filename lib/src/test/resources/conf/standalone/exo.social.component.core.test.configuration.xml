@@ -552,6 +552,21 @@
     <type>org.exoplatform.settings.cache.CacheSettingServiceImpl</type>
   </component>
 
+  <external-component-plugins>
+    <target-component>org.exoplatform.commons.file.services.NameSpaceService</target-component>
+    <component-plugin>
+      <name>SocialNameSpacePlugin</name>
+      <set-method>addNameSpacePlugin</set-method>
+      <type>org.exoplatform.commons.file.services.NameSpacePlugin</type>
+      <init-params>
+        <properties-param>
+          <name>fileNameSpace.params</name>
+          <property name="name" value="social"/>
+          <property name="description" value="social files storage"/>
+        </properties-param>
+      </init-params>
+    </component-plugin>
+  </external-component-plugins>
 
   <!-- Bind datasource -->
   <external-component-plugins>
@@ -820,7 +835,7 @@
         </value-param>
         <value-param>
           <name>workspace-name</name>
-          <value>portal-test</value>
+          <value>social</value>
         </value-param>
         <values-param>
           <name>entities</name>
@@ -902,4 +917,5 @@
     </component-plugin>
   </external-component-plugins>
 
+  <import>jar:conf/portal/files-configuration.xml</import>
 </configuration>
