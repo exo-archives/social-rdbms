@@ -20,11 +20,16 @@ package org.exoplatform.social.addons.updater;
 import java.lang.reflect.Field;
 import java.util.concurrent.CountDownLatch;
 
+import org.exoplatform.commons.chromattic.ChromatticLifeCycle;
 import org.exoplatform.commons.file.services.NameSpaceService;
 import org.exoplatform.container.xml.InitParams;
 import org.exoplatform.container.xml.ValueParam;
+import org.exoplatform.services.jcr.RepositoryService;
+import org.exoplatform.services.jcr.core.ManageableRepository;
+import org.exoplatform.services.jcr.core.WorkspaceContainerFacade;
+import org.exoplatform.services.jcr.impl.core.SessionRegistry;
 import org.exoplatform.social.addons.storage.RDBMSIdentityStorageImpl;
-import org.exoplatform.social.core.manager.IdentityManager;
+import org.exoplatform.social.common.lifecycle.SocialChromatticLifeCycle;
 import org.exoplatform.social.core.manager.IdentityManagerImpl;
 import org.exoplatform.social.core.storage.api.IdentityStorage;
 import org.exoplatform.social.core.storage.impl.IdentityStorageImpl;
@@ -42,6 +47,8 @@ import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 import org.exoplatform.settings.impl.SettingServiceImpl;
 
+import javax.jcr.RepositoryException;
+
 public class RDBMSMigrationManager implements Startable {
   private static final Log LOG = ExoLogger.getLogger(RDBMSMigrationManager.class);
   
@@ -50,6 +57,10 @@ public class RDBMSMigrationManager implements Startable {
   private Thread migrationThread;
   
   private final CountDownLatch migrater;
+
+  private final RepositoryService repositoryService;
+
+  private final ChromatticManager chromatticManager;
 
   private RelationshipMigrationService relationshipMigration;
 
@@ -72,9 +83,10 @@ public class RDBMSMigrationManager implements Startable {
 //    migrater = new CountDownLatch(1);
 //    //
 //  }
-  
-  public RDBMSMigrationManager(InitParams initParams, NameSpaceService nameSpaceService) {
+  public RDBMSMigrationManager(InitParams initParams, NameSpaceService nameSpaceService, RepositoryService repoService, ChromatticManager chromatticManager) {
     CommonsUtils.getService(DataInitializer.class);
+    this.repositoryService = repoService;
+    this.chromatticManager = chromatticManager;
     migrater = new CountDownLatch(1);
     //
     if (initParams != null) {
@@ -268,9 +280,32 @@ public class RDBMSMigrationManager implements Startable {
                 timeToCleanupSpaces = System.currentTimeMillis() - t;
               }
 
-              if (MigrationContext.isIdentityCleanupDone()&& MigrationContext.isSpaceCleanupDone()) {
-                updateSettingValue(MigrationContext.SOC_RDBMS_MIGRATION_STATUS_KEY, Boolean.TRUE);
-                MigrationContext.setDone(true);
+              if (MigrationContext.isIdentityCleanupDone()&& MigrationContext.isSpaceCleanupDone() || forceRemoveJCR) {
+                try {
+                  ManageableRepository repo = repositoryService.getCurrentRepository();
+                  ChromatticLifeCycle lifeCycle = chromatticManager.getLifeCycle(SocialChromatticLifeCycle.SOCIAL_LIFECYCLE_NAME);
+                  String workspace = lifeCycle.getWorkspaceName();
+                  if (lifeCycle.getContext() != null) {
+                    lifeCycle.closeContext(true);
+                  }
+
+                  // Close other session
+                  WorkspaceContainerFacade wc = repo.getWorkspaceContainer(workspace);
+                  SessionRegistry sessionRegistry = (SessionRegistry)wc.getComponent(SessionRegistry.class);
+                  sessionRegistry.closeSessions(workspace);
+
+                  //repo.getWorkspaceContainer(workspace).setState(ManageableRepository.OFFLINE);
+                  if (repo.canRemoveWorkspace(workspace)) {
+                    repo.removeWorkspace(workspace);
+                    updateSettingValue(MigrationContext.SOC_RDBMS_MIGRATION_STATUS_KEY, Boolean.TRUE);
+                    MigrationContext.setDone(true);
+                  } else {
+                    LOG.warn("Social workspace is not removeable, so it is not removed.");
+                  }
+
+                } catch (RepositoryException ex) {
+                  LOG.error("Can not remove social workspace", ex);
+                }
               }
             }
             

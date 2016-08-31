@@ -835,7 +835,7 @@
         </value-param>
         <value-param>
           <name>workspace-name</name>
-          <value>portal-test</value>
+          <value>social</value>
         </value-param>
         <values-param>
           <name>entities</name>

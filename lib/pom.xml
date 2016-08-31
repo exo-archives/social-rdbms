@@ -286,7 +286,8 @@
             <configuration>
               <includes>
                 <include>**/InitContainerTestSuite.java</include>
-                <include>**/AsynMigrationTest.java</include>
+                <include>**/AsynMigrateEmptyDataTest.java</include>
+                <include>**/AsynMigrateActivitiesTest.java</include>
                 <include>**/MigrationTest.java</include>
               </includes>
               <excludes>
