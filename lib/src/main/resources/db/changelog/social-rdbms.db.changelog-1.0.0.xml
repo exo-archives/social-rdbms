@@ -401,4 +401,28 @@
   <changeSet author="social" id="1.0.0-38" dbms="oracle,postgresql">
     <createSequence sequenceName="SEQ_SOC_SPACE_MEMBER_ID" startValue="1"/>
   </changeSet>
+
+  <changeSet author="social" id="1.0.0-39">
+    <createIndex tableName="SOC_STREAM_ITEMS" indexName="IDX_SOC_STREAM_ITEMS_03">
+      <column name="OWNER_ID" />
+    </createIndex>
+  </changeSet>
+
+  <changeSet author="social" id="1.0.0-40">
+    <createIndex tableName="SOC_CONNECTIONS" indexName="IDX_SOC_CONNECTIONS_05">
+      <column name="RECEIVER_ID"/>
+      <column name="STATUS"/>
+    </createIndex>
+    <createIndex tableName="SOC_CONNECTIONS" indexName="IDX_SOC_CONNECTIONS_06">
+      <column name="SENDER_ID"/>
+      <column name="STATUS"/>
+    </createIndex>
+  </changeSet>
+
+  <changeSet author="social" id="1.0.0-41">
+    <createIndex tableName="SOC_ACTIVITIES" indexName="IDX_SOC_ACTIVITIES_05">
+      <column name="PROVIDER_ID" />
+    </createIndex>
+  </changeSet>
+
 </databaseChangeLog>

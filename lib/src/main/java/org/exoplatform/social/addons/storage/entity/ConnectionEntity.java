@@ -37,6 +37,8 @@ import java.util.Date;
                 query = "DELETE FROM SocConnection c WHERE c.sender.id = :identityId OR c.receiver.id = :identityId"),
         @NamedQuery(name = "SocConnection.getReceiverBySenderAndStatus", query = "SELECT c.receiver.id FROM SocConnection c WHERE c.sender.id = :senderId AND c.status in (:status)"),
         @NamedQuery(name = "SocConnection.getSenderByReceiverAndStatus", query = "SELECT c.sender.id FROM SocConnection c WHERE c.receiver.id = :receiverId AND c.status in (:status)"),
+        @NamedQuery(name = "SocConnection.countReceiverBySenderAndStatus", query = "SELECT count(c.receiver.id) FROM SocConnection c WHERE c.sender.id = :senderId AND c.status in (:status)"),
+        @NamedQuery(name = "SocConnection.countSenderByReceiverAndStatus", query = "SELECT count(c.sender.id) FROM SocConnection c WHERE c.receiver.id = :receiverId AND c.status in (:status)"),
         @NamedQuery(name = "SocConnection.migrateSenderId", query = "UPDATE SocConnection c SET c.sender.id = :newId WHERE c.sender.id = :oldId"),
         @NamedQuery(name = "SocConnection.migrateReceiverId", query = "UPDATE SocConnection c SET c.receiver.id = :newId WHERE c.receiver.id = :oldId")
 })

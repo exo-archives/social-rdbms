@@ -106,12 +106,20 @@ public class ConnectionDAOImpl extends GenericDAOJPAImpl<ConnectionEntity, Long>
 
   @Override
   public int getConnectionsCount(Identity identity, Type type) {
-    return RelationshipQueryBuilder.builder()
-                                   .owner(identity)
-                                   .status(type)
-                                   .buildCount()
-                                   .getSingleResult()
-                                   .intValue();
+
+    Long id = Long.parseLong(identity.getId());
+    long numberSender = 0;
+    long numberReceiver = 0;
+    if (type == Type.INCOMING) {
+      numberSender = countSenderId(id, Type.PENDING);
+    } else if (type == Type.OUTGOING) {
+      numberReceiver = countReceiverId(id, Type.PENDING);
+    } else {
+      numberSender = countSenderId(id, type);
+      numberReceiver = countReceiverId(id, type);
+    }
+
+    return (int)(numberSender + numberReceiver);
   }
 
   @Override
@@ -181,5 +189,25 @@ public class ConnectionDAOImpl extends GenericDAOJPAImpl<ConnectionEntity, Long>
     }
 
     return query.getResultList();
+  }
+
+  private Long countSenderId(long receiverId, Type status) {
+    EntityManager em = getEntityManager();
+    TypedQuery<Long> query = em.createNamedQuery("SocConnection.countSenderByReceiverAndStatus", Long.class);
+    query.setParameter("receiverId", receiverId);
+    List<Type> st = Arrays.asList(status == Type.ALL || status == null ? Type.values() : new Type[] {status});
+    query.setParameter("status", st);
+
+    return query.getSingleResult();
+  }
+
+  private Long countReceiverId(long sender, Type status) {
+    EntityManager em = getEntityManager();
+    TypedQuery<Long> query = em.createNamedQuery("SocConnection.countReceiverBySenderAndStatus", Long.class);
+    query.setParameter("senderId", sender);
+    List<Type> st = Arrays.asList(status == Type.ALL || status == null ? Type.values() : new Type[] {status});
+    query.setParameter("status", st);
+
+    return query.getSingleResult();
   }
 }
