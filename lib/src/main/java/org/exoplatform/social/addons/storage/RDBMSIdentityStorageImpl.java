@@ -20,7 +20,6 @@ import javax.persistence.EntityManager;
 import javax.persistence.Query;
 
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -32,7 +31,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.StringTokenizer;
 
-import org.exoplatform.commons.api.persistence.DataInitializer;
 import org.exoplatform.commons.api.persistence.ExoTransactional;
 import org.exoplatform.commons.file.model.FileItem;
 import org.exoplatform.commons.file.services.FileService;
@@ -728,7 +726,7 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
                                                  long offset,
                                                  long limit,
                                                  boolean forceLoadOrReloadProfile) throws IdentityStorageException {
-    return getIdentitiesByProfileFilter(providerId, profileFilter, offset, limit, forceLoadOrReloadProfile);
+    return profileSearchConnector.search(null, profileFilter, null, offset, limit);
   }
 
   @Override
