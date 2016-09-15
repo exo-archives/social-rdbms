@@ -17,6 +17,13 @@
 
 package org.exoplatform.social.addons.storage;
 
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+
+import org.exoplatform.addons.es.index.IndexingOperationProcessor;
+import org.exoplatform.addons.es.index.IndexingService;
 import org.exoplatform.services.organization.Group;
 import org.exoplatform.services.organization.GroupHandler;
 import org.exoplatform.services.organization.Membership;
@@ -26,6 +33,7 @@ import org.exoplatform.services.organization.MembershipTypeHandler;
 import org.exoplatform.services.organization.OrganizationService;
 import org.exoplatform.services.organization.User;
 import org.exoplatform.social.addons.rest.IdentityAvatarRestService;
+import org.exoplatform.social.addons.search.ProfileIndexingServiceConnector;
 import org.exoplatform.social.addons.test.AbstractCoreTest;
 import org.exoplatform.social.addons.test.MaxQueryNumber;
 import org.exoplatform.social.addons.test.QueryNumberTest;
@@ -33,19 +41,15 @@ import org.exoplatform.social.core.identity.SpaceMemberFilterListAccess.Type;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.identity.model.Profile;
 import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvider;
+import org.exoplatform.social.core.manager.IdentityManager;
 import org.exoplatform.social.core.model.AvatarAttachment;
 import org.exoplatform.social.core.profile.ProfileFilter;
-import org.exoplatform.social.core.service.LinkProvider;
 import org.exoplatform.social.core.space.SpaceUtils;
 import org.exoplatform.social.core.space.impl.DefaultSpaceApplicationHandler;
 import org.exoplatform.social.core.space.model.Space;
 import org.exoplatform.social.core.storage.api.IdentityStorage;
 import org.exoplatform.social.core.storage.api.SpaceStorage;
-import org.exoplatform.social.core.storage.impl.StorageUtils;
 
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Created by IntelliJ IDEA.
@@ -57,26 +61,68 @@ import java.util.List;
 public class IdentityStorageTest extends AbstractCoreTest {
   private IdentityStorage identityStorage;
   private SpaceStorage spaceStorage;
+
+  private OrganizationService        organizationService;
+
+  private IndexingService indexingService;
+
+  private IndexingOperationProcessor                indexingProcessor;
+
   private List<Identity> tearDownIdentityList;
   private List<Space> tearDownSpaceList;
+  private List<User> tearDownUserList;
 
   public void setUp() throws Exception {
     //super.setUp();
     identityStorage = getService(IdentityStorage.class);
     spaceStorage = getService(SpaceStorage.class);
+    identityManager = getService(IdentityManager.class);
+    organizationService = getService(OrganizationService.class);
+    indexingService = getService(IndexingService.class);
+    indexingProcessor = getService(IndexingOperationProcessor.class);
     assertNotNull("identityStorage must not be null", identityStorage);
     tearDownIdentityList = new ArrayList<Identity>();
     tearDownSpaceList = new ArrayList<Space>();
+    tearDownUserList = new ArrayList<User>();
     begin();
   }
 
   public void tearDown() throws Exception {
+    for (User user : tearDownUserList) {
+      organizationService.getUserHandler().removeUser(user.getUserName(), true);
+    }
     for (Space space : tearDownSpaceList) {
       spaceStorage.deleteSpace(space.getId());
     }
     for (Identity identity : tearDownIdentityList) {
-      identityStorage.deleteIdentity(identity);
+      if (identityStorage.findIdentity(identity.getProviderId(), identity.getRemoteId()) != null) {
+        identityManager.deleteIdentity(identity);
+      }
     }
+
+    indexingService.unindexAll(ProfileIndexingServiceConnector.TYPE);
+    indexingProcessor.process();
+
+    indexingService.init(ProfileIndexingServiceConnector.TYPE);
+    indexingProcessor.process();
+
+    // FIXME workaround for COMMONS-501, indexingService.reindexAll should be sufficient
+    ProfileFilter profileFilter = new ProfileFilter();
+    List<Identity> result = identityStorage.getIdentitiesForMentions(OrganizationIdentityProvider.NAME, profileFilter, 0, 100, false);
+    do {
+      for (Identity identity : result) {
+        indexingService.unindex(ProfileIndexingServiceConnector.TYPE, identity.getId());
+        indexingProcessor.process();
+      }
+      result = identityStorage.getIdentitiesForMentions(OrganizationIdentityProvider.NAME, profileFilter, 0, 100, false);
+    } while (result.size() > 0);
+
+    for (Identity identity : result) {
+      indexingService.unindex(ProfileIndexingServiceConnector.TYPE, identity.getId());
+      indexingProcessor.process();
+    }
+    // End of workaround for COMMONS-501
+
     //super.tearDown();
     end();
   }
@@ -300,7 +346,7 @@ public class IdentityStorageTest extends AbstractCoreTest {
 
   @MaxQueryNumber(99)
   public void testLoadProfileByReloadCreatedProfileNode() throws Exception {
-    String providerId = "organization";
+    String providerId = OrganizationIdentityProvider.NAME;
     String remoteId = "username";
     Identity identity = new Identity(providerId, remoteId);
 
@@ -330,7 +376,7 @@ public class IdentityStorageTest extends AbstractCoreTest {
 
   @MaxQueryNumber(108)
   public void testFindIdentityByExistName() throws Exception {
-    String providerId = "organization";
+    String providerId = OrganizationIdentityProvider.NAME;
     String remoteId = "username";
 
     Identity identity = new Identity(providerId, remoteId);
@@ -351,7 +397,7 @@ public class IdentityStorageTest extends AbstractCoreTest {
 
   @MaxQueryNumber(1080)
   public void testFindManyIdentitiesByExistName() throws Exception {
-    final String providerId = "organization";
+    final String providerId = OrganizationIdentityProvider.NAME;
 
     final int total = 10;
     for (int i = 0; i <  total; i++) {
@@ -376,7 +422,7 @@ public class IdentityStorageTest extends AbstractCoreTest {
 
   @MaxQueryNumber(99)
   public void testFindIdentityByNotExistName() throws Exception {
-    String providerId = "organization";
+    String providerId = OrganizationIdentityProvider.NAME;
     String remoteId = "username";
 
     Identity identity = new Identity(providerId, remoteId);
@@ -441,6 +487,268 @@ public class IdentityStorageTest extends AbstractCoreTest {
     identityStorage.deleteIdentity(test2Identity);
     foundIdentities = identityStorage.getIdentitiesByProfileFilter(providerId, profileFilter2, 0, 10, false);
     assertEquals("foundIdentities.size() must be 0", 0, foundIdentities.size());
+  }
+
+  @MaxQueryNumber(108)
+  public void testFindIdentityByExistNameFromIndex() throws Exception {
+    String providerId = OrganizationIdentityProvider.NAME;
+    String remoteId = "username";
+
+    User user = organizationService.getUserHandler().createUserInstance(remoteId);
+    user.setFirstName("FirstName");
+    user.setLastName("LastName");
+    user.setEmail("user@exemple.com");
+    user.setPassword("testuser");
+    user.setCreatedDate(new Date());
+    organizationService.getUserHandler().createUser(user, true);
+    tearDownUserList.add(user);
+
+    Identity identity = identityManager.getOrCreateIdentity(providerId, remoteId, true);
+
+    Profile profile = identity.getProfile();
+
+    profile.setProperty(Profile.FIRST_NAME, "FirstName");
+    profile.setProperty(Profile.LAST_NAME, "LastName");
+    profile.setProperty(Profile.FULL_NAME, "FirstName" + " " + "LastName");
+    identityStorage.updateProfile(profile);
+    identity.setProfile(profile);
+    tearDownIdentityList.add(identity);
+
+    reindex(identity.getId());
+
+    final ProfileFilter filter = new ProfileFilter();
+    filter.setName("First");
+    int i = 0;
+    List<Identity> result = null;
+    do {
+      // Wait for the index operation to finishes
+      Thread.sleep(1000);
+      result = identityStorage.getIdentitiesForMentions(providerId, filter, 0, 10, false);
+    } while (result.size() == 0 && ++i < 3);
+    assertEquals("identityStorage.getIdentitiesForMentions doesn't return the exact result", 1, result.size());
+    result = identityStorage.getIdentitiesForUnifiedSearch(providerId, filter, 0, 1);
+    assertEquals("identityStorage.getIdentitiesForUnifiedSearch doesn't return the exact result", 1, result.size());
+  }
+
+  @MaxQueryNumber(1080)
+  public void testFindManyIdentitiesByExistNameFromIndex() throws Exception {
+    final String providerId = OrganizationIdentityProvider.NAME;
+
+    final int total = 10;
+    for (int i = 0; i <  total; i++) {
+      String remoteId = "username" + i;
+      User user = organizationService.getUserHandler().createUserInstance(remoteId);
+      user.setFirstName("FirstName" + i);
+      user.setLastName("LastName" + i);
+      user.setEmail("user" + i + "@exemple.com");
+      user.setPassword("testuser");
+      user.setCreatedDate(new Date());
+      organizationService.getUserHandler().createUser(user, true);
+      tearDownUserList.add(user);
+
+      Identity identity = identityManager.getOrCreateIdentity(providerId, remoteId, true);
+
+      Profile profile = identity.getProfile();
+      profile.setProperty(Profile.FIRST_NAME, "FirstName" + i);
+      profile.setProperty(Profile.LAST_NAME, "LastName" + i);
+      profile.setProperty(Profile.FULL_NAME, "FirstName" + i + " " + "LastName" + i);
+      identityManager.updateProfile(profile);
+
+      reindex(identity.getId());
+
+      tearDownIdentityList.add(identity);
+    }
+
+    final ProfileFilter filter = new ProfileFilter();
+    filter.setName("FirstName");
+    int i = 0;
+    List<Identity> result = null;
+    do {
+      // Wait for the index operation to finishes
+      Thread.sleep(1000);
+      result = identityStorage.getIdentitiesForMentions(providerId, filter, 0, total, false);
+    } while (result.size() == 0 && ++i < 3);
+    assertEquals("identityStorage.getIdentitiesForMentions doesn't return the exact result", total, result.size());
+    result = identityStorage.getIdentitiesForUnifiedSearch(providerId, filter, 0, total);
+    assertEquals("identityStorage.getIdentitiesForUnifiedSearch doesn't return the exact result", total, result.size());
+  }
+
+  @MaxQueryNumber(99)
+  public void testFindIdentityByNotExistNameFromIndex() throws Exception {
+    String providerId = OrganizationIdentityProvider.NAME;
+    String remoteId = "username";
+
+    User user = organizationService.getUserHandler().createUserInstance(remoteId);
+
+    user.setFirstName("FirstName");
+    user.setLastName("LastName");
+    user.setDisplayName("FirstName LastName");
+    user.setEmail("user@exemple.com");
+    user.setPassword("testuser");
+    user.setCreatedDate(new Date());
+    organizationService.getUserHandler().createUser(user, true);
+    tearDownUserList.add(user);
+
+    Identity identity = identityManager.getOrCreateIdentity(providerId, remoteId, true);
+
+    Profile profile = identity.getProfile();
+    profile.setProperty(Profile.FIRST_NAME, "FirstName");
+    profile.setProperty(Profile.LAST_NAME, "LastName");
+    profile.setProperty(Profile.FULL_NAME, "FirstName" + " " + "LastName");
+    identityManager.updateProfile(profile);
+
+    reindex(identity.getId());
+
+    tearDownIdentityList.add(identity);
+
+    final ProfileFilter filter = new ProfileFilter();
+    filter.setName("notfound");
+    List<Identity> result = identityStorage.getIdentitiesForMentions(providerId, filter, 0, 1, false);
+    assertEquals(0, result.size());
+    result = identityStorage.getIdentitiesForUnifiedSearch(providerId, filter, 0, 1);
+    assertEquals(0, result.size());
+  }
+
+  /**
+   * Tests
+   * {@link IdenityStorage#getIdentitiesForMentions(String, ProfileFilter, int, int, boolean)}
+   */
+  @MaxQueryNumber(582)
+  public void testFindIdentityForMentions() throws Exception {
+    String providerId = OrganizationIdentityProvider.NAME;
+    String remoteId = "username";
+
+    User user = organizationService.getUserHandler().createUserInstance(remoteId);
+    user.setFirstName("Prénom");
+    user.setLastName("Nom");
+    user.setEmail("user@exemple.com");
+    user.setPassword("testuser");
+    user.setCreatedDate(new Date());
+    organizationService.getUserHandler().createUser(user, true);
+    tearDownUserList.add(user);
+
+    Identity identity = identityManager.getOrCreateIdentity(providerId, remoteId, true);
+
+    Profile profile = identity.getProfile();
+    profile.setProperty(Profile.FIRST_NAME, "Prénom");
+    profile.setProperty(Profile.LAST_NAME, "LastName");
+    profile.setProperty(Profile.FULL_NAME, "Prénom" + " " + "LastName");
+    profile.setProperty("position", "developer");
+    profile.setProperty("gender", "male");
+
+    identityManager.updateProfile(profile);
+    tearDownIdentityList.add(identity);
+
+    String id = identity.getId();
+    
+    reindex(id);
+
+    final ProfileFilter filter = new ProfileFilter();
+    filter.setPosition("developer");
+    filter.setName("prenom");
+
+    int i = 0;
+    List<Identity> result = null;
+    do {
+      // Wait for the index operation to finishes
+      Thread.sleep(1000);
+
+      result = identityStorage.getIdentitiesForMentions(providerId, filter, 0, 10, false);
+    } while (result.size() == 0 && ++i < 3);
+    assertEquals(1, result.size());
+
+    // create a new identity
+    Identity test2Identity = populateIdentity("test2", false);
+
+    // check when new identity is not deleted
+    final ProfileFilter profileFilter2 = new ProfileFilter();
+    i = 0;
+    List<Identity> foundIdentities = null;
+    do {
+      // Wait for the index operation to finishes
+      Thread.sleep(1000);
+      foundIdentities = identityStorage.getIdentitiesForMentions(providerId, profileFilter2, 0, 10, false);
+    } while (foundIdentities.size() == 0 && ++i < 3);
+    assertEquals("getIdentitiesForMentions must return 2 identities", 2, foundIdentities.size());
+
+    foundIdentities = identityStorage.getIdentitiesForUnifiedSearch(providerId, profileFilter2, 0, 10);
+    assertEquals("getIdentitiesForUnifiedSearch must return 2 identities", 2, foundIdentities.size());
+
+    // finds the second one
+    profileFilter2.setName("g");
+    foundIdentities = identityStorage.getIdentitiesForMentions(providerId, profileFilter2, 0, 10, false);
+    assertEquals("getIdentitiesForMentions must return 1 identity", 1, foundIdentities.size());
+
+    foundIdentities = identityStorage.getIdentitiesForUnifiedSearch(providerId, profileFilter2, 0, 10);
+    assertEquals("getIdentitiesForUnifiedSearch must return 1 identity", 1, foundIdentities.size());
+
+    // check when new identity is deleted
+    identityStorage.deleteIdentity(test2Identity);
+
+    indexingService.unindex(ProfileIndexingServiceConnector.TYPE, test2Identity.getId());
+    indexingProcessor.process();
+
+    i = 0;
+    foundIdentities = null;
+    do {
+      // Wait for the index operation to finishes
+      Thread.sleep(1000);
+      foundIdentities = identityStorage.getIdentitiesForMentions(providerId, profileFilter2, 0, 10, false);
+    } while (foundIdentities.size() > 0 && ++i < 3);
+    assertEquals("getIdentitiesForUnifiedSearch must not return an identity", 0, foundIdentities.size());
+
+    foundIdentities = identityStorage.getIdentitiesForUnifiedSearch(providerId, profileFilter2, 0, 10);
+    assertEquals("foundIdentities.size() must not return an identity", 0, foundIdentities.size());
+  }
+
+  /**
+   * Tests
+   * {@link IdenityStorage#getIdentitiesForMentions(String, ProfileFilter, int, int, boolean)}
+   */
+  @MaxQueryNumber(1140)
+  public void testFindManyIdentitiesForMentions() throws Exception {
+
+    String providerId = OrganizationIdentityProvider.NAME;
+
+    int total = 10;
+    for (int i = 0; i < total; i++) {
+      String remoteId = "username" + i;
+      User user = organizationService.getUserHandler().createUserInstance(remoteId);
+      user.setFirstName("Prénom" + i);
+      user.setLastName("Nom" + i);
+      user.setEmail("user" + i + "@exemple.com");
+      user.setPassword("testuser");
+      user.setCreatedDate(new Date());
+      organizationService.getUserHandler().createUser(user, true);
+      tearDownUserList.add(user);
+
+      Identity identity = identityManager.getOrCreateIdentity(providerId, remoteId, true);
+
+      Profile profile = identity.getProfile();
+      profile.setProperty(Profile.FIRST_NAME, "Prénom" + i);
+
+      profile.setProperty(Profile.LAST_NAME, "LastName");
+      profile.setProperty(Profile.FULL_NAME, "Prénom" + i + " " + "LastName" + i);
+      profile.setProperty(Profile.POSITION, "developer");
+      profile.setProperty(Profile.GENDER, "male");
+      tearDownIdentityList.add(identity);
+      identityManager.updateProfile(profile);
+
+      reindex(identity.getId());
+    }
+
+    final ProfileFilter filter = new ProfileFilter();
+    filter.setPosition("developer");
+    filter.setName("prenom");
+
+    int i = 0;
+    List<Identity> result = null;
+    do {
+      // Wait for the index operation to finishes
+      Thread.sleep(1000);
+      result = identityStorage.getIdentitiesForMentions(providerId, filter, 0, total, false);
+    } while (result.size() == 0 && ++i < 3);
+    assertEquals(total, result.size());
   }
 
   /**
@@ -711,6 +1019,9 @@ public class IdentityStorageTest extends AbstractCoreTest {
     if (addedToTearDown) {
       tearDownIdentityList.add(identity);
     }
+
+    reindex(identity.getId());
+
     return identity;
   }
   
@@ -743,6 +1054,7 @@ public class IdentityStorageTest extends AbstractCoreTest {
     
     try {
       os.getUserHandler().createUser(user, false);
+      tearDownUserList.add(user);
     } catch (Exception e) {
       return null;
     }
@@ -766,5 +1078,12 @@ public class IdentityStorageTest extends AbstractCoreTest {
     } catch (Exception e) {
       return;
     }
+  }
+
+  private void reindex(String id) {
+    indexingService.unindex(ProfileIndexingServiceConnector.TYPE, id);
+    indexingProcessor.process();
+    indexingService.index(ProfileIndexingServiceConnector.TYPE, id);
+    indexingProcessor.process();
   }
 }

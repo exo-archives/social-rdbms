@@ -21,6 +21,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.lang.StringUtils;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -274,7 +275,7 @@ public class ProfileSearchConnector {
       return esExp.toString();
     }
     //
-    String inputName = filter.getName().replace(StorageUtils.ASTERISK_STR, StorageUtils.EMPTY_STR);
+    String inputName = StringUtils.isEmpty(filter.getName()) ? null : filter.getName().replace(StorageUtils.ASTERISK_STR, StorageUtils.EMPTY_STR);
     if (inputName != null && inputName.length() > 0) {
       esExp.append("name:").append(StorageUtils.ASTERISK_STR).append(inputName).append(StorageUtils.ASTERISK_STR);
     }
