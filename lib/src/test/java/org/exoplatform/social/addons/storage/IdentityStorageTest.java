@@ -116,11 +116,6 @@ public class IdentityStorageTest extends AbstractCoreTest {
       }
       result = identityStorage.getIdentitiesForMentions(OrganizationIdentityProvider.NAME, profileFilter, 0, 100, false);
     } while (result.size() > 0);
-
-    for (Identity identity : result) {
-      indexingService.unindex(ProfileIndexingServiceConnector.TYPE, identity.getId());
-      indexingProcessor.process();
-    }
     // End of workaround for COMMONS-501
 
     //super.tearDown();
