@@ -42,6 +42,7 @@ import org.exoplatform.management.annotations.ManagedDescription;
 import org.exoplatform.management.jmx.annotations.NameTemplate;
 import org.exoplatform.management.jmx.annotations.Property;
 import org.exoplatform.services.jcr.impl.core.NodeImpl;
+import org.exoplatform.social.addons.storage.RDBMSActivityStorageImpl;
 import org.exoplatform.social.addons.storage.RDBMSIdentityStorageImpl;
 import org.exoplatform.social.addons.storage.dao.ActivityDAO;
 import org.exoplatform.social.addons.updater.utils.MigrationCounter;
@@ -92,7 +93,7 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
   
   public ActivityMigrationService(InitParams initParams,
                                   ActivityDAO activityDAO,
-                                  ActivityStorage activityStorage,
+                                  RDBMSActivityStorageImpl activityStorage,
                                   ActivityStorageImpl activityJCRStorage,
                                   IdentityStorageImpl identityStorage,
                                   RDBMSIdentityStorageImpl rdbmsIdentityStorage,

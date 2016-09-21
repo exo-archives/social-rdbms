@@ -56,25 +56,41 @@
     <key>org.exoplatform.social.addons.storage.dao.SpaceMemberDAO</key>
     <type>org.exoplatform.social.addons.storage.dao.jpa.SpaceMemberDAOImpl</type>
   </component>
-  
+
   <component>
-    <key>org.exoplatform.social.core.storage.api.IdentityStorage</key>
     <type>org.exoplatform.social.addons.storage.RDBMSIdentityStorageImpl</type>
   </component>
-  
+
   <component>
-    <key>org.exoplatform.social.core.storage.api.RelationshipStorage</key>
+    <key>org.exoplatform.social.core.storage.api.IdentityStorage</key>
+    <type>org.exoplatform.social.addons.cache.RDBMSCachedIdentityStorage</type>
+  </component>
+
+  <component>
     <type>org.exoplatform.social.addons.storage.RDBMSRelationshipStorageImpl</type>
   </component>
-  
+
   <component>
-    <key>org.exoplatform.social.core.storage.api.ActivityStorage</key>
-    <type>org.exoplatform.social.addons.storage.RDBMSActivityStorageImpl</type>
+    <key>org.exoplatform.social.core.storage.api.RelationshipStorage</key>
+    <type>org.exoplatform.social.addons.cache.RDBMSCachedRelationshipStorage</type>
   </component>
   
   <component>
-    <key>org.exoplatform.social.core.storage.api.SpaceStorage</key>
+    <type>org.exoplatform.social.addons.storage.RDBMSActivityStorageImpl</type>
+  </component>
+
+  <component>
+    <key>org.exoplatform.social.core.storage.api.ActivityStorage</key>
+    <type>org.exoplatform.social.addons.cache.RDBMSCachedActivityStorage</type>
+  </component>
+
+  <component>
     <type>org.exoplatform.social.addons.storage.RDBMSSpaceStorageImpl</type>
+  </component>
+
+  <component>
+    <key>org.exoplatform.social.core.storage.api.SpaceStorage</key>
+    <type>org.exoplatform.social.addons.cache.RDBMSCachedSpaceStorage</type>
   </component>
   
   <component>

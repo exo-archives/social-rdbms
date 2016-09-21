@@ -49,8 +49,9 @@ import org.exoplatform.social.core.storage.api.IdentityStorage;
 import org.exoplatform.social.core.storage.api.SpaceStorage;
 import org.exoplatform.social.core.storage.exception.NodeNotFoundException;
 import org.exoplatform.social.core.storage.impl.AbstractStorage;
+import org.exoplatform.social.core.storage.impl.SpaceStorageImpl;
 
-public class RDBMSSpaceStorageImpl extends AbstractStorage implements SpaceStorage {
+public class RDBMSSpaceStorageImpl extends SpaceStorageImpl implements SpaceStorage {
 
   /** Logger */
   private static final Log     LOG = ExoLogger.getLogger(RDBMSSpaceStorageImpl.class);
@@ -63,7 +64,8 @@ public class RDBMSSpaceStorageImpl extends AbstractStorage implements SpaceStora
 
   public RDBMSSpaceStorageImpl(SpaceDAO spaceDAO,
                                SpaceMemberDAO spaceMemberDAO,
-                               IdentityStorage identityStorage) {
+                               RDBMSIdentityStorageImpl identityStorage) {
+    super(identityStorage, null);
     this.spaceDAO = spaceDAO;
     this.identityStorage = identityStorage;
     this.spaceMemberDAO = spaceMemberDAO;
