@@ -46,7 +46,6 @@
     <elasticsearch.version>2.3.2</elasticsearch.version>
     <es.port.range.min>9215</es.port.range.min>
     <es.port.range.max>9299</es.port.range.max>
-    <exo-es-search-service.version>1.0.x-SNAPSHOT</exo-es-search-service.version>
     <!-- **************************************** -->
     <!-- Jenkins Settings -->
     <!-- **************************************** -->
