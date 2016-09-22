@@ -40,7 +40,7 @@
 
   <properties>
     <!-- Platform Project Dependencies -->
-    <exoplatform.version>4.4.x-SNAPSHOT</exoplatform.version>
+    <org.exoplatform.platform.version>4.4.x-SNAPSHOT</org.exoplatform.platform.version>
      <!-- Issue with the PLF pom parent that trigger lucene 3.6.2 (Only working with elastic version < 0.20.6) -->
     <lucene.version>4.10.4</lucene.version>
     <elasticsearch.version>2.3.2</elasticsearch.version>
@@ -78,7 +78,7 @@
       <dependency>
         <groupId>org.exoplatform.platform</groupId>
         <artifactId>platform</artifactId>
-        <version>${exoplatform.version}</version>
+        <version>${org.exoplatform.platform.version}</version>
         <type>pom</type>
         <scope>import</scope>
       </dependency>
@@ -86,13 +86,13 @@
       <dependency>
         <groupId>org.exoplatform.commons</groupId>
         <artifactId>commons-search</artifactId>
-        <version>${exoplatform.version}</version>
+        <version>${org.exoplatform.platform.version}</version>
       </dependency>
 
       <dependency>
         <groupId>org.exoplatform.commons</groupId>
         <artifactId>commons-file-storage</artifactId>
-        <version>${exoplatform.version}</version>
+        <version>${org.exoplatform.platform.version}</version>
       </dependency>
     
       <dependency>
