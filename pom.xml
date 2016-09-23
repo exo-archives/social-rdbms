@@ -129,6 +129,7 @@
               <java.naming.factory.initial>org.exoplatform.services.naming.SimpleContextFactory</java.naming.factory.initial>
               <java.util.logging.config.class>org.exoplatform.component.test.logging.LogConfigurator</java.util.logging.config.class>
               <exo.profiles>hsqldb</exo.profiles>
+              <exo.data.dir>target/exo-files</exo.data.dir>
             </systemPropertyVariables>
           </configuration>
         </plugin>
