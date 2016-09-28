@@ -254,10 +254,10 @@ public class ProfileSearchConnector {
         result = "connections";
         break;
       case INCOMING:
-        result = "incomings";
+        result = "outgoings";
         break;
       case OUTGOING:
-        result = "outgoings";
+        result = "incomings";
         break;
       default:
         throw new IllegalArgumentException("Type ["+type+"] not supported");

@@ -260,33 +260,38 @@ public class RDBMSRelationshipStorageImpl extends RelationshipStorageImpl {
 
   @Override
   public List<Identity> getConnectionsByFilter(Identity existingIdentity, ProfileFilter profileFilter, long offset, long limit) throws RelationshipStorageException {
-    //return profileESConnector.search(existingIdentity, profileFilter, Relationship.Type.CONFIRMED, offset, limit);
-    return searchConnectionByFilter(existingIdentity, Type.CONFIRMED, profileFilter, offset, limit);
+    return profileESConnector.search(existingIdentity, profileFilter, Relationship.Type.CONFIRMED, offset, limit);
+    //return searchConnectionByFilter(existingIdentity, Type.CONFIRMED, profileFilter, offset, limit);
   }
 
   @Override
   public List<Identity> getIncomingByFilter(Identity existingIdentity, ProfileFilter profileFilter, long offset, long limit) throws RelationshipStorageException {
-    return searchConnectionByFilter(existingIdentity, Type.INCOMING, profileFilter, offset, limit);
+    return profileESConnector.search(existingIdentity, profileFilter, Type.INCOMING, offset, limit);
+    //return searchConnectionByFilter(existingIdentity, Type.INCOMING, profileFilter, offset, limit);
   }
 
   @Override
   public List<Identity> getOutgoingByFilter(Identity existingIdentity, ProfileFilter profileFilter, long offset, long limit) throws RelationshipStorageException {
-    return searchConnectionByFilter(existingIdentity, Type.OUTGOING, profileFilter, offset, limit);
+    return profileESConnector.search(existingIdentity, profileFilter, Type.OUTGOING, offset, limit);
+    //return searchConnectionByFilter(existingIdentity, Type.OUTGOING, profileFilter, offset, limit);
   }
 
   @Override
   public int getConnectionsCountByFilter(Identity existingIdentity, ProfileFilter profileFilter) throws RelationshipStorageException {
-    return countConnectionByFilter(existingIdentity, Type.CONFIRMED, profileFilter);
+    return profileESConnector.count(existingIdentity, profileFilter, Type.CONFIRMED);
+    //return countConnectionByFilter(existingIdentity, Type.CONFIRMED, profileFilter);
   }
 
   @Override
   public int getIncomingCountByFilter(Identity existingIdentity, ProfileFilter profileFilter) throws RelationshipStorageException {
-    return countConnectionByFilter(existingIdentity, Type.INCOMING, profileFilter);
+    return profileESConnector.count(existingIdentity, profileFilter, Type.INCOMING);
+    //return countConnectionByFilter(existingIdentity, Type.INCOMING, profileFilter);
   }
 
   @Override
   public int getOutgoingCountByFilter(Identity existingIdentity, ProfileFilter profileFilter) throws RelationshipStorageException {
-    return countConnectionByFilter(existingIdentity, Type.OUTGOING, profileFilter);
+    return profileESConnector.count(existingIdentity, profileFilter, Type.OUTGOING);
+    //return countConnectionByFilter(existingIdentity, Type.OUTGOING, profileFilter);
   }
 
   @Override
