@@ -76,7 +76,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
   private final SortedSet<ActivityProcessor> activityProcessors;
   private static final Pattern MENTION_PATTERN = Pattern.compile("@([^\\s]+)|@([^\\s]+)$");
   public final static String COMMENT_PREFIX = "comment";
-  private final static int TITLE_MAX_LENGTH = 1000;
+
   public RDBMSActivityStorageImpl(RelationshipStorage relationshipStorage, 
                                       IdentityStorage identityStorage, 
                                       SpaceStorage spaceStorage,
@@ -183,11 +183,7 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
     if (activity.getId() != null) {
       activityEntity = activityDAO.find(Long.valueOf(activity.getId()));
     }
-    if (needTruncated(activity.getTitle())) {
-      activityEntity.setTitle(activity.getTitle().substring(0, TITLE_MAX_LENGTH));
-    } else {
-      activityEntity.setTitle(activity.getTitle());
-    }
+    activityEntity.setTitle(activity.getTitle());
     activityEntity.setTitleId(activity.getTitleId());
     activityEntity.setType(activity.getType());
     activityEntity.setBody(activity.getBody());
@@ -202,10 +198,6 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
       for (Entry<String, String> param : params.entrySet()) {
         String key = param.getKey();
         String value = param.getValue();
-        if (needTruncated(value)) {
-          value = value.substring(0, TITLE_MAX_LENGTH);
-          params.put(key, value);
-        }
       }
       
       activityEntity.setTemplateParams(params);
@@ -222,14 +214,6 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
     activityEntity.setMentionerIds(new HashSet<String>(Arrays.asList(processMentions(activity.getTitle()))));
     //
     return activityEntity;
-  }
-
-  private boolean needTruncated(String value) {
-    if (value != null && value.length() > TITLE_MAX_LENGTH) {
-      LOG.warn("Input value too long - the length is greater than 1000 charaters- so it will be truncated.");
-      return true;
-    }
-    return false;
   }
   
   private ExoSocialActivity convertCommentEntityToComment(ActivityEntity comment) {
