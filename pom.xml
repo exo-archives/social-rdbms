@@ -28,7 +28,7 @@
   </parent>
   <groupId>org.exoplatform.addons.social</groupId>
   <artifactId>social-rdbms-addons</artifactId>
-  <version>1.0.x-SNAPSHOT</version>
+  <version>1.0.0-RC02</version>
   <packaging>pom</packaging>
   <name>Social RDBMS Addon</name>
   <description>Social RDBMS Addon</description>
@@ -172,4 +172,8 @@
       </pluginRepositories>
     </profile>
   </profiles>
+
+  <scm>
+    <tag>1.0.0-RC02</tag>
+  </scm>
 </project>
