@@ -15,20 +15,8 @@
 * along with this program; if not, see<http://www.gnu.org/licenses/>.
  */
 package org.exoplatform.social.addons.storage;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Set;
-import java.util.SortedSet;
-import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -878,25 +866,39 @@ public class RDBMSActivityStorageImpl extends ActivityStorageImpl {
 
   @Override
   public void updateActivity(ExoSocialActivity existingActivity) throws ActivityStorageException {
-    ExoSocialActivity updatedActivity = getActivity(existingActivity.getId());
-    if (existingActivity.getTitle() == null) existingActivity.setTitle(updatedActivity.getTitle());
-    if (existingActivity.getBody() == null) existingActivity.setBody(updatedActivity.getBody());
-    if (existingActivity.getTemplateParams() == null) existingActivity.setTemplateParams(updatedActivity.getTemplateParams());
+    if(existingActivity == null) {
+      throw new IllegalArgumentException("Activity to update cannot be null");
+    }
 
-    if (existingActivity.getId().startsWith(COMMENT_PREFIX)) {
-      // update comment
-      ActivityEntity comment = convertCommentToCommentEntity(existingActivity);
-      comment.setUpdatedDate(new Date());
-      activityDAO.update(comment);
+    ActivityEntity updatedActivity = activityDAO.find(Long.valueOf(existingActivity.getId()));
+
+    if(updatedActivity != null) {
+      if (existingActivity.getId().startsWith(COMMENT_PREFIX)) {
+        // update comment
+        updatedActivity.setUpdatedDate(new Date());
+      } else {
+        //create or remove liker if exist
+        processLikerActivityInStreams(new HashSet<>(Arrays.asList(existingActivity.getLikeIdentityIds())), new HashSet<>(updatedActivity.getLikerIds()), updatedActivity);
+      }
+
+      if (existingActivity.getTitleId() != null) updatedActivity.setTitleId(existingActivity.getTitleId());
+      if (existingActivity.getTitle() != null) updatedActivity.setTitle(existingActivity.getTitle());
+      if (existingActivity.getBody() != null) updatedActivity.setBody(existingActivity.getBody());
+      if (existingActivity.getLikeIdentityIds() != null) updatedActivity.setLikerIds(new HashSet<>(Arrays.asList(existingActivity.getLikeIdentityIds())));
+      if (existingActivity.getMentionedIds() != null) updatedActivity.setMentionerIds(new HashSet<>(Arrays.asList(existingActivity.getMentionedIds())));
+      if (existingActivity.getPermaLink() != null) updatedActivity.setPermaLink(existingActivity.getPermaLink());
+      if (existingActivity.getTemplateParams() != null) updatedActivity.setTemplateParams(existingActivity.getTemplateParams());
+      updatedActivity.setHidden(existingActivity.isHidden());
+      updatedActivity.setComment(existingActivity.isComment());
+      updatedActivity.setLocked(existingActivity.isLocked());
+
+      activityDAO.update(updatedActivity);
     } else {
-      ActivityEntity activityEntity = convertActivityToActivityEntity(existingActivity, null);
-      //create or remove liker if exist
-      processLikerActivity(new HashSet<String>(Arrays.asList(existingActivity.getLikeIdentityIds())), new HashSet<String>(Arrays.asList(updatedActivity.getLikeIdentityIds())), activityEntity);
-      activityDAO.update(activityEntity);
+      throw new ActivityStorageException(Type.FAILED_TO_UPDATE_ACTIVITY, "Cannot find activity with id=" + existingActivity.getId());
     }
   }
   
-  private void processLikerActivity(Set<String> newLikerList, Set<String> oldLikerList, ActivityEntity activity) {
+  private void processLikerActivityInStreams(Set<String> newLikerList, Set<String> oldLikerList, ActivityEntity activity) {
     for (String id : newLikerList) {
       if (!oldLikerList.contains(id)) {//new like ==> create stream item
         createStreamItem(StreamType.LIKER, activity, Long.parseLong(id));
