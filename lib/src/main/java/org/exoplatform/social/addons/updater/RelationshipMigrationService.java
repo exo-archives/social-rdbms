@@ -122,35 +122,44 @@ public class RelationshipMigrationService extends AbstractMigrationService<Relat
             LOG.info(String.format("|  \\ START::user number: %s/%s (%s user)", offset, totalIdentities, identityNode.getName()));
             long t1 = System.currentTimeMillis();
 
-            Node relationshipNode = identityNode.getNode("soc:relationship");
-            if (relationshipNode != null) {
-              NodeIterator rIt = relationshipNode.getNodes();
-              long size = rIt.getSize();
-              LOG.info("|     - CONFIRMED:: size = " + size);
-              if (size > 0) {
-                relationshipNo += migrateRelationshipEntity(rIt, identityNode.getName(), false, Relationship.Type.CONFIRMED);
+            try {
+              Node relationshipNode = identityNode.getNode("soc:relationship");
+              if (relationshipNode != null) {
+                NodeIterator rIt = relationshipNode.getNodes();
+                long size = rIt.getSize();
+                LOG.info("|     - CONFIRMED:: size = " + size);
+                if (size > 0) {
+                  relationshipNo += migrateRelationshipEntity(rIt, identityNode.getName(), false, Relationship.Type.CONFIRMED);
+                }
               }
+
+              relationshipNode = identityNode.getNode("soc:sender");
+              if (relationshipNode != null) {
+                NodeIterator rIt = relationshipNode.getNodes();
+                long size = rIt.getSize();
+                LOG.info("|     - SENDER:: size = " + size);
+                if (size > 0) {
+                  relationshipNo += migrateRelationshipEntity(rIt, identityNode.getName(), false, Relationship.Type.OUTGOING);
+                }
+              }
+
+              relationshipNode = identityNode.getNode("soc:receiver");
+              if (relationshipNode != null) {
+                NodeIterator rIt = relationshipNode.getNodes();
+                long size = rIt.getSize();
+                LOG.info("|     - RECEIVER:: size = " + size);
+                if (size > 0) {
+                  relationshipNo += migrateRelationshipEntity(rIt, identityNode.getName(), true, Relationship.Type.INCOMING);
+                }
+              }
+
+              IdentityEntity identityEntity = _findById(IdentityEntity.class, identityNode.getUUID());
+              identityEntity.setProperty(MigrationContext.KEY_MIGRATE_CONNECTION, MigrationContext.TRUE_STRING);
+            } catch (Exception ex) {
+              LOG.error("Exception while migrate relationship for " + identityName, ex);
+              identitiesMigrateFailed.add(identityName);
             }
 
-            relationshipNode = identityNode.getNode("soc:sender");
-            if (relationshipNode != null) {
-              NodeIterator rIt = relationshipNode.getNodes();
-              long size = rIt.getSize();
-              LOG.info("|     - SENDER:: size = " + size);
-              if (size > 0) {
-                relationshipNo += migrateRelationshipEntity(rIt, identityNode.getName(), false, Relationship.Type.OUTGOING);
-              }
-            }
-
-            relationshipNode = identityNode.getNode("soc:receiver");
-            if (relationshipNode != null) {
-              NodeIterator rIt = relationshipNode.getNodes();
-              long size = rIt.getSize();
-              LOG.info("|     - RECEIVER:: size = " + size);
-              if (size > 0) {
-                relationshipNo += migrateRelationshipEntity(rIt, identityNode.getName(), true, Relationship.Type.INCOMING);
-              }
-            }
             //
             total += relationshipNo;
             if (offset % LIMIT_THRESHOLD == 0) {
@@ -286,6 +295,13 @@ public class RelationshipMigrationService extends AbstractMigrationService<Relat
 
         LOG.info(String.format("|  \\ START::cleanup Relationship of user number: %s/%s (%s user)", offset, totalIdentities, node.getName()));
         IdentityEntity identityEntity = _findById(IdentityEntity.class, node.getUUID());
+
+        String migrated = identityEntity.getProperty(MigrationContext.KEY_MIGRATE_CONNECTION);
+        if (!MigrationContext.TRUE_STRING.equalsIgnoreCase(migrated)) {
+          identitiesCleanupFailed.add(name);
+          LOG.warn("Can not clean connection for " + name + " due to migration was not successful");
+          continue;
+        }
         
         Collection<RelationshipEntity> entities = identityEntity.getRelationship().getRelationships().values();
         removeRelationshipEntity(entities);

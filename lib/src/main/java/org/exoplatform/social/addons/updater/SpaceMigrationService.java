@@ -249,6 +249,16 @@ public class SpaceMigrationService extends AbstractMigrationService<Space> {
           LOG.warn("Will not remove this space because the migration or cleanup identity failed");
           continue;
         }
+
+        // Validate space migrated
+        String prettyName = this.getProperty(node, "soc:name");
+        Space sp = spaceStorage.getSpaceByPrettyName(prettyName);
+        if (sp == null) {
+          LOG.warn("Will not remove this space because the migration or cleanup identity failed");
+          spaceCleanupFailed.add(name);
+          continue;
+        }
+
         transactionList.add(name);
 
         LOG.info(String.format("|  \\ START::cleanup Space number: %s/%s (%s space)", offset, totalSpace, node.getName()));

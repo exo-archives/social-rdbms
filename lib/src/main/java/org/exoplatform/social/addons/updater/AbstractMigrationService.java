@@ -157,7 +157,9 @@ public abstract class AbstractMigrationService<T>  extends AbstractStorage {
     String identityQuery = new StringBuffer().append("SELECT * FROM soc:identitydefinition WHERE ")
                                         .append(JCRProperties.path.getName()).append(" LIKE '")
                                         .append(getProviderRoot().getProviders().get(OrganizationIdentityProvider.NAME).getPath())
-                                        .append(StorageUtils.SLASH_STR).append(StorageUtils.PERCENT_STR).append("'").toString();
+                                        .append(StorageUtils.SLASH_STR).append(StorageUtils.PERCENT_STR).append("'")
+                                        .append(" ORDER BY soc:remoteId ASC")
+                                        .toString();
     
     return nodes(identityQuery);
   }
@@ -202,7 +204,9 @@ public abstract class AbstractMigrationService<T>  extends AbstractStorage {
       identityQuery = new StringBuffer().append("SELECT * FROM soc:identitydefinition WHERE ")
                                         .append(JCRProperties.path.getName()).append(" LIKE '")
                                         .append(getProviderRoot().getProviders().get(OrganizationIdentityProvider.NAME).getPath())
-                                        .append(StorageUtils.SLASH_STR).append(StorageUtils.PERCENT_STR).append("'").toString();
+                                        .append(StorageUtils.SLASH_STR).append(StorageUtils.PERCENT_STR).append("'")
+                                        .append(" ORDER BY soc:remoteId ASC")
+                                        .toString();
     }
     return nodes(identityQuery, offset, limit);
   }
@@ -232,7 +236,9 @@ public abstract class AbstractMigrationService<T>  extends AbstractStorage {
         spaceIdentityQuery = new StringBuffer().append("SELECT * FROM soc:identitydefinition WHERE ")
                                                .append(JCRProperties.path.getName()).append(" LIKE '")
                                                .append(providerEntity.getPath())
-                                               .append(StorageUtils.SLASH_STR).append(StorageUtils.PERCENT_STR).append("'").toString();
+                                               .append(StorageUtils.SLASH_STR).append(StorageUtils.PERCENT_STR).append("'")
+                                               .append(" ORDER BY soc:remoteId ASC")
+                                               .toString();
       } else {
         spaceIdentityQuery = null;
       }
@@ -263,7 +269,9 @@ public abstract class AbstractMigrationService<T>  extends AbstractStorage {
         spaceIdentityQuery = new StringBuffer().append("SELECT * FROM soc:identitydefinition WHERE ")
                                                .append(JCRProperties.path.getName()).append(" LIKE '")
                                                .append(providerEntity.getPath())
-                                               .append(StorageUtils.SLASH_STR).append(StorageUtils.PERCENT_STR).append("'").toString();
+                                               .append(StorageUtils.SLASH_STR).append(StorageUtils.PERCENT_STR).append("'")
+                                               .append(" ORDER BY soc:remoteId ASC")
+                                               .toString();
       } else {
         spaceIdentityQuery = null;
         return null;
