@@ -53,6 +53,7 @@ public class RDBMSMigrationManager implements Startable {
   private static final Log LOG = ExoLogger.getLogger(RDBMSMigrationManager.class);
   
   public static final String MIGRATION_SETTING_GLOBAL_KEY = "MIGRATION_SETTING_GLOBAL";
+  public static final String MIGRATION_RUNNING_NODE_KEY = "NODE_RUNNING_MIGRATION";
 
   private Thread migrationThread;
   
@@ -73,6 +74,8 @@ public class RDBMSMigrationManager implements Startable {
   private SettingService settingService;
 
   private boolean forceRemoveJCR = false;
+  private boolean clusterMode = false;
+  private String  nodeName = null;
 
 //  public RDBMSMigrationManager(RelationshipMigrationService relationshipMigration,
 //                               ActivityMigrationService activityMigration, 
@@ -93,6 +96,15 @@ public class RDBMSMigrationManager implements Startable {
       ValueParam param = initParams.getValueParam("forceDeleteJCRData");
       if (param != null) {
         forceRemoveJCR = "true".equalsIgnoreCase(param.getValue());
+      }
+
+      param = initParams.getValueParam("clusterMode");
+      if (param != null) {
+        clusterMode = "true".equalsIgnoreCase(param.getValue());
+      }
+      param = initParams.getValueParam("nodeName");
+      if (param != null) {
+        nodeName = param.getValue();
       }
     }
   }
@@ -128,6 +140,9 @@ public class RDBMSMigrationManager implements Startable {
       @Override
       public void run() {
 
+        boolean start = checkCanStartMigration();
+        if (!start || MigrationContext.isDone()) return;
+
         try {
           // Check JCR data is existing or not
           getRelationshipMigration().getProviderRoot();
@@ -147,6 +162,8 @@ public class RDBMSMigrationManager implements Startable {
 
           updateSettingValue(MigrationContext.SOC_RDBMS_MIGRATION_STATUS_KEY, Boolean.TRUE);
           MigrationContext.setDone(true);
+
+          removeRunningNodeIfPresent(start);
 
           return;
         }
@@ -316,6 +333,9 @@ public class RDBMSMigrationManager implements Startable {
         } catch (Exception e) {
           LOG.error("Failed to running Migration data from JCR to RDBMS", e);
         } finally {
+
+          removeRunningNodeIfPresent(start);
+
           if (field != null) {
             try {
               field.set(null, false);
@@ -438,6 +458,38 @@ public class RDBMSMigrationManager implements Startable {
     } finally {
       Scope.GLOBAL.id(null);
       settingServiceImpl.stopSynchronization(created);
+    }
+  }
+
+  private boolean checkCanStartMigration() {
+    if (!clusterMode) {
+      return true;
+    }
+    try {
+      SettingValue<String> migrationValue =  (SettingValue<String>)settingService.get(Context.GLOBAL, Scope.GLOBAL.id(MIGRATION_SETTING_GLOBAL_KEY), MIGRATION_RUNNING_NODE_KEY);
+
+      if (migrationValue == null || migrationValue.getValue() == null) {
+        settingService.set(Context.GLOBAL, Scope.GLOBAL.id(MIGRATION_SETTING_GLOBAL_KEY), MIGRATION_RUNNING_NODE_KEY, SettingValue.create(nodeName));
+        migrationValue =  (SettingValue<String>)settingService.get(Context.GLOBAL, Scope.GLOBAL.id(MIGRATION_SETTING_GLOBAL_KEY), MIGRATION_RUNNING_NODE_KEY);
+      }
+
+      if (migrationValue != null && migrationValue.getValue() != null
+              && migrationValue.getValue().equals(nodeName)) {
+        return true;
+      } else {
+        return false;
+      }
+    } finally {
+      Scope.GLOBAL.id(null);
+    }
+  }
+
+  private void removeRunningNodeIfPresent(boolean remove) {
+    if (!clusterMode || !remove) return;
+    try {
+      settingService.remove(Context.GLOBAL, Scope.GLOBAL.id(MIGRATION_SETTING_GLOBAL_KEY), MIGRATION_RUNNING_NODE_KEY);
+    } finally {
+      Scope.GLOBAL.id(null);
     }
   }
 

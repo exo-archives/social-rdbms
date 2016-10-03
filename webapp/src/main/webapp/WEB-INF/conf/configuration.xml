@@ -109,6 +109,14 @@
         <name>forceDeleteJCRData</name>
         <value>${exo.social.migration.forceJCRDeletion:false}</value>
       </value-param>
+      <value-param profiles="cluster">
+        <name>clusterMode</name>
+        <value>true</value>
+      </value-param>
+      <value-param profiles="cluster">
+        <name>nodeName</name>
+        <value>${exo.cluster.node.name}</value>
+      </value-param>
     </init-params>
   </component>
 
