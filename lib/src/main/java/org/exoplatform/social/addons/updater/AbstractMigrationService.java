@@ -25,11 +25,9 @@ import java.util.Map;
 
 import javax.jcr.NodeIterator;
 import javax.jcr.RepositoryException;
-import javax.jcr.UnsupportedRepositoryOperationException;
 import javax.persistence.EntityManager;
 
 import org.exoplatform.commons.api.event.EventManager;
-import org.exoplatform.commons.api.persistence.DataInitializer;
 import org.exoplatform.commons.persistence.impl.EntityManagerService;
 import org.exoplatform.container.PortalContainer;
 import org.exoplatform.container.component.RequestLifeCycle;
@@ -54,7 +52,7 @@ public abstract class AbstractMigrationService<T>  extends AbstractStorage {
   protected final IdentityStorage identityStorage;
   protected final EventManager<T, String> eventManager;
   protected final EntityManagerService entityManagerService;
-  protected boolean forkStop = false;
+  protected boolean forceStop = false;
   protected int LIMIT_THRESHOLD = 100;
   protected String process = "";
   protected int lastPercent = 0;
@@ -98,7 +96,7 @@ public abstract class AbstractMigrationService<T>  extends AbstractStorage {
   }
 
    public void start() {
-    forkStop = false;
+    forceStop = false;
     try {
       RequestLifeCycle.begin(PortalContainer.getInstance());
       beforeMigration();
@@ -114,7 +112,7 @@ public abstract class AbstractMigrationService<T>  extends AbstractStorage {
   }
 
   public void stop() {
-    forkStop = true;
+    forceStop = true;
   }
 
   @SuppressWarnings("unchecked")
@@ -157,7 +155,9 @@ public abstract class AbstractMigrationService<T>  extends AbstractStorage {
     String identityQuery = new StringBuffer().append("SELECT * FROM soc:identitydefinition WHERE ")
                                         .append(JCRProperties.path.getName()).append(" LIKE '")
                                         .append(getProviderRoot().getProviders().get(OrganizationIdentityProvider.NAME).getPath())
-                                        .append(StorageUtils.SLASH_STR).append(StorageUtils.PERCENT_STR).append("'").toString();
+                                        .append(StorageUtils.SLASH_STR).append(StorageUtils.PERCENT_STR).append("'")
+                                        .append(" ORDER BY soc:remoteId ASC")
+                                        .toString();
     
     return nodes(identityQuery);
   }
@@ -202,7 +202,9 @@ public abstract class AbstractMigrationService<T>  extends AbstractStorage {
       identityQuery = new StringBuffer().append("SELECT * FROM soc:identitydefinition WHERE ")
                                         .append(JCRProperties.path.getName()).append(" LIKE '")
                                         .append(getProviderRoot().getProviders().get(OrganizationIdentityProvider.NAME).getPath())
-                                        .append(StorageUtils.SLASH_STR).append(StorageUtils.PERCENT_STR).append("'").toString();
+                                        .append(StorageUtils.SLASH_STR).append(StorageUtils.PERCENT_STR).append("'")
+                                        .append(" ORDER BY soc:remoteId ASC")
+                                        .toString();
     }
     return nodes(identityQuery, offset, limit);
   }
@@ -232,7 +234,9 @@ public abstract class AbstractMigrationService<T>  extends AbstractStorage {
         spaceIdentityQuery = new StringBuffer().append("SELECT * FROM soc:identitydefinition WHERE ")
                                                .append(JCRProperties.path.getName()).append(" LIKE '")
                                                .append(providerEntity.getPath())
-                                               .append(StorageUtils.SLASH_STR).append(StorageUtils.PERCENT_STR).append("'").toString();
+                                               .append(StorageUtils.SLASH_STR).append(StorageUtils.PERCENT_STR).append("'")
+                                               .append(" ORDER BY soc:remoteId ASC")
+                                               .toString();
       } else {
         spaceIdentityQuery = null;
       }
@@ -263,7 +267,9 @@ public abstract class AbstractMigrationService<T>  extends AbstractStorage {
         spaceIdentityQuery = new StringBuffer().append("SELECT * FROM soc:identitydefinition WHERE ")
                                                .append(JCRProperties.path.getName()).append(" LIKE '")
                                                .append(providerEntity.getPath())
-                                               .append(StorageUtils.SLASH_STR).append(StorageUtils.PERCENT_STR).append("'").toString();
+                                               .append(StorageUtils.SLASH_STR).append(StorageUtils.PERCENT_STR).append("'")
+                                               .append(" ORDER BY soc:remoteId ASC")
+                                               .toString();
       } else {
         spaceIdentityQuery = null;
         return null;
