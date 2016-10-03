@@ -425,4 +425,8 @@
     </createIndex>
   </changeSet>
 
+  <changeSet author="social" id="1.0.0-42">
+    <modifyDataType tableName="SOC_ACTIVITY_TEMPLATE_PARAMS" columnName="TEMPLATE_PARAM_VALUE" newDataType="LONGTEXT"/>
+  </changeSet>
+
 </databaseChangeLog>
