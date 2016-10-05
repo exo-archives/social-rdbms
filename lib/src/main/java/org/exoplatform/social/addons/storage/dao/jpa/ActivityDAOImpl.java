@@ -54,8 +54,8 @@ public class ActivityDAOImpl extends GenericDAOJPAImpl<ActivityEntity, Long> imp
     } else {
       query = getEntityManager().createNamedQuery("SocActivity.getActivityByOwner", ActivityEntity.class);
     }
-    List<String> ids = new ArrayList<>();
-    ids.add(owner.getId());
+    List<Long> ids = new ArrayList<>();
+    ids.add(Long.parseLong(owner.getId()));
     query.setParameter("owner", ids);
     if (limit > 0) {
       query.setFirstResult(offset > 0 ? (int)offset : 0);
@@ -78,21 +78,19 @@ public class ActivityDAOImpl extends GenericDAOJPAImpl<ActivityEntity, Long> imp
   public List<ActivityEntity> getActivityFeed(Identity ownerIdentity, int offset, int limit, List<String> spaceIds) {
     long ownerId = Long.parseLong(ownerIdentity.getId());
 
-    List<Long> connectionsLong = getConnectionIds(ownerId);
-    List<String> connections = new ArrayList<>();
-    for (Long connectionId : connectionsLong) {
-      connections.add(connectionId + "");
-    }
+    List<Long> connections = getConnectionIds(ownerId);
 
     String queryName = "SocActivity.getActivityFeed";
     if (connections.isEmpty()) {
       queryName += "NoConnections";
     }
 
-    List<String> owners = new ArrayList<>();
-    owners.add(ownerIdentity.getId());
+    List<Long> owners = new ArrayList<>();
+    owners.add(Long.parseLong(ownerIdentity.getId()));
     if (spaceIds != null && !spaceIds.isEmpty()) {
-      owners.addAll(spaceIds);
+      for (String spaceId : spaceIds) {
+        owners.add(Long.parseLong(spaceId));
+      }
     }
 
     TypedQuery<ActivityEntity> typedQuery = getEntityManager().createNamedQuery(queryName, ActivityEntity.class);
@@ -150,17 +148,15 @@ public class ActivityDAOImpl extends GenericDAOJPAImpl<ActivityEntity, Long> imp
   @Override
   public List<ActivityEntity> getNewerOnActivityFeed(Identity ownerIdentity, long sinceTime, int limit, List<String> spaceIds) {
     long ownerId = Long.parseLong(ownerIdentity.getId());
-    List<String> owners = new ArrayList<>();
-    owners.add(ownerIdentity.getId());
+    List<Long> owners = new ArrayList<>();
+    owners.add(Long.parseLong(ownerIdentity.getId()));
     if (spaceIds != null && !spaceIds.isEmpty()) {
-      owners.addAll(spaceIds);
+      for (String spaceId : spaceIds) {
+        owners.add(Long.parseLong(spaceId));
+      }
     }
 
-    List<Long> connectionsLong = getConnectionIds(ownerId);
-    List<String> connections = new ArrayList<>();
-    for (Long connectionId : connectionsLong) {
-      connections.add(connectionId + "");
-    }
+    List<Long> connections = getConnectionIds(ownerId);
 
     String queryName = "SocActivity.getNewerActivityFeed";
     if (connections.isEmpty()) {
@@ -199,17 +195,15 @@ public class ActivityDAOImpl extends GenericDAOJPAImpl<ActivityEntity, Long> imp
   @Override
   public List<ActivityEntity> getOlderOnActivityFeed(Identity ownerIdentity, long sinceTime,int limit, List<String> spaceIds) {
     long ownerId = Long.parseLong(ownerIdentity.getId());
-    List<String> owners = new ArrayList<>();
-    owners.add(ownerIdentity.getId());
+    List<Long> owners = new ArrayList<>();
+    owners.add(Long.parseLong(ownerIdentity.getId()));
     if (spaceIds != null && !spaceIds.isEmpty()) {
-      owners.addAll(spaceIds);
+      for (String spaceId : spaceIds) {
+        owners.add(Long.parseLong(spaceId));
+      }
     }
 
-    List<Long> connectionsLong = getConnectionIds(ownerId);
-    List<String> connections = new ArrayList<>();
-    for (Long connectionId : connectionsLong) {
-      connections.add(connectionId + "");
-    }
+    List<Long> connections = getConnectionIds(ownerId);
 
     String queryName = "SocActivity.getOlderActivityFeed";
     if (connections.isEmpty()) {
@@ -435,11 +429,7 @@ public class ActivityDAOImpl extends GenericDAOJPAImpl<ActivityEntity, Long> imp
   public List<ActivityEntity> getActivitiesOfConnections(Identity ownerIdentity, int offset, int limit) {
     long ownerId = Long.parseLong(ownerIdentity.getId());
 
-    List<Long> connectionsLong = getConnectionIds(ownerId);
-    List<String> connections = new ArrayList<>();
-    for (Long connectionId : connectionsLong) {
-      connections.add(connectionId + "");
-    }
+    List<Long> connections = getConnectionIds(ownerId);
 
     if (connections.isEmpty()) {
       return Collections.emptyList();
@@ -488,11 +478,7 @@ public class ActivityDAOImpl extends GenericDAOJPAImpl<ActivityEntity, Long> imp
   public List<ActivityEntity> getNewerOnActivitiesOfConnections(Identity ownerIdentity, long sinceTime, long limit) {
     long ownerId = Long.parseLong(ownerIdentity.getId());
 
-    List<Long> connectionsLong = getConnectionIds(ownerId);
-    List<String> connections = new ArrayList<>();
-    for (Long connectionId : connectionsLong) {
-      connections.add(connectionId + "");
-    }
+    List<Long> connections = getConnectionIds(ownerId);
 
     if (connections.isEmpty()) {
       return Collections.emptyList();
@@ -525,11 +511,7 @@ public class ActivityDAOImpl extends GenericDAOJPAImpl<ActivityEntity, Long> imp
   public List<ActivityEntity> getOlderOnActivitiesOfConnections(Identity ownerIdentity, long sinceTime, int limit) {
     long ownerId = Long.parseLong(ownerIdentity.getId());
 
-    List<Long> connectionsLong = getConnectionIds(ownerId);
-    List<String> connections = new ArrayList<>();
-    for (Long connectionId : connectionsLong) {
-      connections.add(connectionId + "");
-    }
+    List<Long> connections = getConnectionIds(ownerId);
 
     if (connections.isEmpty()) {
       return Collections.emptyList();
@@ -669,7 +651,12 @@ public class ActivityDAOImpl extends GenericDAOJPAImpl<ActivityEntity, Long> imp
       query = getEntityManager().createNamedQuery("SocActivity.getActivityByOwner", ActivityEntity.class);
     }
 
-    query.setParameter("owner", owners);
+    List<Long> ownersLongs = new ArrayList<Long>();
+    for (String owner : owners) {
+      ownersLongs.add(Long.parseLong(owner));
+    }
+    
+    query.setParameter("owner", ownersLongs);
     if (limit > 0) {
       query.setFirstResult(offset > 0 ? (int)offset : 0);
       query.setMaxResults((int)limit);
