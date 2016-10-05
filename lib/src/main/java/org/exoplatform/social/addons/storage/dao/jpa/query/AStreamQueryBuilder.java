@@ -68,6 +68,7 @@ public final class AStreamQueryBuilder {
   //order by
   private boolean descOrder = true;
   String[] activityTypes;
+  private List<Long> connections;
 
   public static AStreamQueryBuilder builder() {
     return new AStreamQueryBuilder();
@@ -302,12 +303,16 @@ public final class AStreamQueryBuilder {
     Predicate predicate = null;
     // owner
     if (this.owner != null) {
-      predicate = cb.equal(stream.get(StreamItemEntity_.ownerId), owner.getId());
-
       // view user's stream
       if (this.viewer != null && !this.viewer.getId().equals(this.owner.getId())) {
+        predicate = cb.equal(stream.get(StreamItemEntity_.ownerId), owner.getId());
         predicate = cb.and(predicate,
                            cb.equal(stream.get(StreamItemEntity_.streamType), StreamType.POSTER));
+      } else if (this.memberOfSpaceIds != null && memberOfSpaceIds.size() > 0) {
+        memberOfSpaceIds = new ArrayList<String>(memberOfSpaceIds);
+        memberOfSpaceIds.add(this.owner.getId());
+      } else {
+        predicate = cb.equal(stream.get(StreamItemEntity_.ownerId), owner.getId());
       }
     }
     
@@ -321,39 +326,11 @@ public final class AStreamQueryBuilder {
       predicates.add(addInClause(cb, stream.get(StreamItemEntity_.ownerId), ids));
     }
 
-    if (this.myIdentity != null) {
-
-      long identityId = Long.valueOf(this.myIdentity.getId());
-      Path ownerId = stream.get(StreamItemEntity_.ownerId);
-      Path streamType = stream.get(StreamItemEntity_.streamType);
-
-      Subquery sub;
-      Root<ConnectionEntity> conn;
-      Path sender, receiver, status;
-
-      //
-      sub = criteria.subquery(Long.class);
-      conn = sub.from(ConnectionEntity.class);
-      receiver = conn.get(ConnectionEntity_.receiver);
-      sender = conn.get(ConnectionEntity_.sender);
-      status = conn.get(ConnectionEntity_.status);
-
-      sub.select(conn.get(ConnectionEntity_.id));
-      sub.where(cb.equal(receiver, ownerId), cb.equal(sender, identityId), cb.equal(status, Relationship.Type.CONFIRMED), cb.equal(streamType, StreamType.POSTER));
-
-      predicates.add(cb.exists(sub));
-
-      //
-      sub = criteria.subquery(Long.class);
-      conn = sub.from(ConnectionEntity.class);
-      receiver = conn.get(ConnectionEntity_.receiver);
-      sender = conn.get(ConnectionEntity_.sender);
-      status = conn.get(ConnectionEntity_.status);
-
-      sub.select(conn.get(ConnectionEntity_.id));
-      sub.where(cb.equal(sender, ownerId), cb.equal(receiver, identityId), cb.equal(status, Relationship.Type.CONFIRMED), cb.equal(streamType, StreamType.POSTER));
-
-      predicates.add(cb.exists(sub));
+    if (this.myIdentity != null && connections != null && !connections.isEmpty()) {
+      Predicate streamTypePredicate = cb.equal(stream.get(StreamItemEntity_.streamType), StreamType.POSTER);
+      Predicate existPredicates = addInClause(cb, stream.get(StreamItemEntity_.ownerId), connections);
+      Predicate subqueryPredicate = cb.and(streamTypePredicate, existPredicates);
+      predicates.add(subqueryPredicate);
     }
     // newer or older
     if (this.sinceTime > 0) {
@@ -435,5 +412,10 @@ public final class AStreamQueryBuilder {
     select.where(predicate);
 
     return em.createQuery(select);
+  }
+
+  public AStreamQueryBuilder connections(List<Long> connections) {
+    this.connections = connections;
+    return this;
   }
 }
