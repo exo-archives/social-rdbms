@@ -74,7 +74,7 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
   public static final String EVENT_LISTENER_KEY = "SOC_ACTIVITY_MIGRATION";
   private static final Pattern MENTION_PATTERN = Pattern.compile("@([^\\s]+)|@([^\\s]+)$");
   public static final Pattern USER_NAME_VALIDATOR_REGEX = Pattern.compile("^[\\p{L}][\\p{L}._\\-\\d]+$");
-  public final static String COMMENT_PREFIX = "comment";
+  public final static String COMMENT_PREFIX = "comment";  
   
   private final ActivityStorage activityStorage;
   private final ActivityStorageImpl activityJCRStorage;
@@ -82,6 +82,11 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
   protected final RDBMSIdentityStorageImpl identityJPAStorage;
 
   private final ActivityDAO activityDAO;
+
+  private String previousActivityId = null;
+  private ActivityEntity lastActivity = null;
+  private String lastUserProcess = null;
+  private boolean forceStop = false;
 
   private Set<String> identitiesMigrateFailed = new HashSet<>();
   private Set<String> identitiesCleanupFailed = new HashSet<>();
@@ -190,6 +195,8 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
     long t = System.currentTimeMillis();
     long totalSpaces = getNumberSpaceIdentities();
 
+    boolean isSkip = (lastUserProcess != null);
+
     boolean cont = true;
     long offset = 0;
     long numberSpaceFailed = 0;
@@ -208,13 +215,22 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
           Node node = null;
 
           while(it.hasNext()) {
-            if (forkStop) {
+            if (forceStop) {
               break;
             }
 
             node = (Node) it.next();
             offset++;
             owner = identityStorage.findIdentityById(node.getUUID());
+
+            if (isSkip) {
+              if (lastUserProcess.equals(owner.getRemoteId())) {
+                lastUserProcess = null;
+                isSkip = false;
+              } else {
+                continue;
+              }
+            }
 
             long t1 = System.currentTimeMillis();
             //
@@ -259,6 +275,14 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
     identitiesMigrateFailed = new HashSet<>();
 
     LOG.info("Stating to migration activities from JCR to RDBMS........");
+    NodeIterator iterator = nodes("SELECT * FROM soc:activityUpdater");
+    if (iterator.hasNext()) {
+      String currentUUID = iterator.nextNode().getUUID();
+      lastActivity = _findById(ActivityEntity.class, currentUUID);
+      if (lastActivity != null) {
+        lastUserProcess = lastActivity.getPosterIdentity().getRemoteId();
+      }
+    }
   }
 
   private void migrationByIdentity(String userName, IdentityEntity identityEntity) throws Exception {
@@ -281,17 +305,6 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
 
     providerId = identityEntity.getProviderId();
     remoteId = identityEntity.getRemoteId();
-
-    try {
-      String migrated = identityEntity.getProperty(MigrationContext.KEY_MIGRATE_ACTIVITIES);
-      if (MigrationContext.TRUE_STRING.equalsIgnoreCase(migrated)) {
-        LOG.info("All activity for identity: " + providerId + "/" + remoteId + " was successful");
-        return;
-      }
-    } catch (Exception ex) {
-      LOG.warn("Exception when checking activity migrated or not", ex);
-    }
-
     Identity jpaIdentity = identityJPAStorage.findIdentity(identityEntity.getProviderId(), identityEntity.getRemoteId());
 
     String type = (OrganizationIdentityProvider.NAME.equals(providerId)) ? "user" : "space";
@@ -300,19 +313,17 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
     ActivityListEntity activityListEntity = identityEntity.getActivityList();
     ActivityIterator activityIterator = new ActivityIterator(activityListEntity);
     //
+    if (lastActivity != null) {
+      activityIterator.moveTo(lastActivity);
+      //Only goto last on first users
+      lastActivity = null;
+    }
 
-    while (activityIterator.hasNext() && !forkStop) {
+    while (activityIterator.hasNext()) {
       String activityId = activityIterator.next().getId();
       //
       try {
         begunTx = startTx();
-
-        ActivityEntity activityEntity = getSession().findById(ActivityEntity.class, activityId);
-        ActivityUpdaterEntity updater = _getMixin(activityEntity, ActivityUpdaterEntity.class, false);
-        if (updater != null) {
-          LOG.info("Activity with ID=" + activityId + " was migrated before");
-          continue;
-        }
 
         ExoSocialActivity activity = activityJCRStorage.getActivity(activityId);
         Map<String, String> params = activity.getTemplateParams();
@@ -352,6 +363,21 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
         activity = activityStorage.saveActivity(jpaIdentity, activity);
         //
         doBroadcastListener(activity, activityId);
+
+        //
+        ActivityEntity activityEntity = getSession().findById(ActivityEntity.class, activityId);
+        _getMixin(activityEntity, ActivityUpdaterEntity.class, true);
+        //
+        if (previousActivityId != null) {
+          try {
+            ActivityEntity previousActivity = getSession().findById(ActivityEntity.class, previousActivityId);
+            if (previousActivity != null) {
+              _removeMixin(previousActivity, ActivityUpdaterEntity.class);
+            }
+          } catch (Exception e) {
+            LOG.error("Failed to remove mixin type," + e.getMessage(), e);
+          }
+        }
 
         endTx(begunTx);
         begunTx = startTx();
@@ -402,10 +428,8 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
           }
         }
 
-        //previousActivityId = activityId;
+        previousActivityId = activityId;
         ++count;
-        _getMixin(activityEntity, ActivityUpdaterEntity.class, true);
-        getSession().save();
 
       } catch (Exception e) {
         LOG.error("Failed to migrate activity id : " + activityId, e);
@@ -424,13 +448,6 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
     if (numberActivitiesFailed > 0) {
       LOG.error(String.format("    Failed migration for %s activitie(s)", numberActivitiesFailed));
       throw new Exception("Migration is failed for " + numberActivitiesFailed + " activities of identity " + providerId + "/" + remoteId);
-    } else if (!forkStop){
-      try {
-        identityEntity.setProperty(MigrationContext.KEY_MIGRATE_ACTIVITIES, MigrationContext.TRUE_STRING);
-        getSession().save();
-      } catch (Exception ex) {
-        LOG.warn("Exception while update migrated for identity " + providerId + "/" + remoteId);
-      }
     }
   }
 
@@ -444,11 +461,22 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
   protected void afterMigration() throws Exception {
     MigrationContext.setIdentitiesMigrateActivityFailed(identitiesMigrateFailed);
 
-    if (!forkStop && identitiesMigrateFailed.isEmpty()) {
+    if (!forceStop && identitiesMigrateFailed.isEmpty()) {
       MigrationContext.setActivityDone(true);
     }
 
     LOG.info("Done to migration activities from JCR to RDBMS");
+
+    if (previousActivityId != null) {
+      try {
+        ActivityEntity previousActivity = getSession().findById(ActivityEntity.class, previousActivityId);
+        if (previousActivity != null) {
+          _removeMixin(previousActivity, ActivityUpdaterEntity.class);
+        }
+      } catch (Exception e) {
+        LOG.error("Failed to remove mixin type," + e.getMessage(), e);
+      }
+    }
   }
 
   public void doRemove() throws Exception {
@@ -603,14 +631,6 @@ public class ActivityMigrationService extends AbstractMigrationService<ExoSocial
       identityName = identityNode.getName();
       Node activitiesNode = identityNode.getNode("soc:activities");
       size = activitiesNode.getProperty("soc:number").getLong();
-
-      IdentityEntity identityEntity = _findById(IdentityEntity.class, identityNode.getUUID());
-      String migrated = identityEntity.getProperty(MigrationContext.KEY_MIGRATE_ACTIVITIES);
-      if (!MigrationContext.TRUE_STRING.equalsIgnoreCase(migrated)) {
-        LOG.warn("Can not remove activities for identity " + identityName + " due to migration was not successful");
-        return false;
-      }
-
 
       StringBuffer sb = new StringBuffer().append("SELECT * FROM soc:activity WHERE ");
       try {

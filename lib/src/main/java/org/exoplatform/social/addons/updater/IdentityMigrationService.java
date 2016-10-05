@@ -32,6 +32,7 @@ import org.exoplatform.management.annotations.Managed;
 import org.exoplatform.management.annotations.ManagedDescription;
 import org.exoplatform.management.jmx.annotations.NameTemplate;
 import org.exoplatform.management.jmx.annotations.Property;
+import org.exoplatform.services.jcr.impl.core.NodeImpl;
 import org.exoplatform.social.addons.search.ProfileIndexingServiceConnector;
 import org.exoplatform.social.addons.storage.RDBMSIdentityStorageImpl;
 import org.exoplatform.social.core.chromattic.entity.DisabledEntity;
@@ -39,7 +40,6 @@ import org.exoplatform.social.core.chromattic.entity.IdentityEntity;
 import org.exoplatform.social.core.chromattic.entity.ProfileEntity;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.identity.model.Profile;
-import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvider;
 import org.exoplatform.social.core.model.AvatarAttachment;
 import org.exoplatform.social.core.storage.exception.NodeNotFoundException;
 import org.exoplatform.social.core.storage.impl.IdentityStorageImpl;
@@ -226,16 +226,8 @@ public class IdentityMigrationService extends AbstractMigrationService<Identity>
 
           } else {
 
-            if (nodeIter.getSize() < REMOVE_LIMIT_THRESHOLD) {
-              cont = false;
-            }
             while (nodeIter.hasNext()) {
               offset++;
-
-              if (offset > totalIdentities) {
-                cont = false;
-              }
-
               Node node = nodeIter.nextNode();
               timePerIdentity = System.currentTimeMillis();
               LOG.info(String.format("|  \\ START::cleanup Identity number: %s/%s (%s identity)", offset, totalIdentities, node.getName()));
@@ -245,17 +237,6 @@ public class IdentityMigrationService extends AbstractMigrationService<Identity>
                       || MigrationContext.getIdentitiesCleanupActivityFailed().contains(name))) {
                 identitiesCleanupFailed.add(name);
                 LOG.warn("Will not remove this identity because the cleanup connection or activities were failed for it");
-                continue;
-              }
-
-              IdentityEntity identityEntity = _findById(IdentityEntity.class, node.getUUID());
-              String provider = identityEntity.getProviderId();
-              String activityMigrated = identityEntity.getProperty(MigrationContext.KEY_MIGRATE_ACTIVITIES);
-              String connectionMigrated = identityEntity.getProperty(MigrationContext.KEY_MIGRATE_CONNECTION);
-              if (!MigrationContext.TRUE_STRING.equalsIgnoreCase(activityMigrated)
-                      || (OrganizationIdentityProvider.NAME.equals(provider) && !MigrationContext.TRUE_STRING.equalsIgnoreCase(connectionMigrated))) {
-                LOG.warn("Can not remove identity " + name + " due to migration was not successful for activities and connections");
-                identitiesCleanupFailed.add(name);
                 continue;
               }
 

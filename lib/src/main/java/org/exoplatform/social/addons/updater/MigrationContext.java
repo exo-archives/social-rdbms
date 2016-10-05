@@ -35,11 +35,6 @@ public final class MigrationContext {
   public static final String SOC_RDBMS_SPACE_CLEANUP_KEY = "SOC_RDBMS_SPACE_CLEANUP_DONE";
   public static final String SOC_RDBMS_IDENTITY_MIGRATION_KEY = "SOC_RDBMS_IDENTITY_MIGRATION_DONE";
   public static final String SOC_RDBMS_IDENTITY_CLEANUP_KEY = "SOC_RDBMS_IDENTITY_CLEANUP_DONE";
-
-  public static final String KEY_MIGRATE_CONNECTION = "connection_migrated";
-  public static final String KEY_MIGRATE_ACTIVITIES = "activity_migrated";
-  public static final String TRUE_STRING = "true";
-
   
   //
   private static boolean isDone = false;
