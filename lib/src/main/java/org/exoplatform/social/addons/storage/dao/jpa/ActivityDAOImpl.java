@@ -86,26 +86,26 @@ public class ActivityDAOImpl extends GenericDAOJPAImpl<ActivityEntity, Long> imp
     }
 
     List<Long> owners = new ArrayList<>();
-    owners.add(Long.parseLong(ownerIdentity.getId()));
+    owners.add(ownerId);
     if (spaceIds != null && !spaceIds.isEmpty()) {
-      for (String spaceId : spaceIds) {
-        owners.add(Long.parseLong(spaceId));
+      for (String id : spaceIds) {
+        owners.add(Long.parseLong(id));
       }
     }
 
-    TypedQuery<ActivityEntity> typedQuery = getEntityManager().createNamedQuery(queryName, ActivityEntity.class);
+    TypedQuery<ActivityEntity> query = getEntityManager().createNamedQuery(queryName, ActivityEntity.class);
     if (!connections.isEmpty()) {
-      typedQuery.setParameter("connections", connections);
-      typedQuery.setParameter("connStreamType", StreamType.POSTER);
+      query.setParameter("connections", connections);
+      query.setParameter("connStreamType", StreamType.POSTER);
     }
-    typedQuery.setParameter("owners", owners);
+    query.setParameter("owners", owners);
 
     if (limit > 0) {
-      typedQuery.setFirstResult(offset > 0 ? offset : 0);
-      typedQuery.setMaxResults(limit);
+      query.setFirstResult(offset > 0 ? offset : 0);
+      query.setMaxResults(limit);
     }
 
-    return typedQuery.getResultList();
+    return query.getResultList();
   }
   
   @Override
@@ -149,10 +149,10 @@ public class ActivityDAOImpl extends GenericDAOJPAImpl<ActivityEntity, Long> imp
   public List<ActivityEntity> getNewerOnActivityFeed(Identity ownerIdentity, long sinceTime, int limit, List<String> spaceIds) {
     long ownerId = Long.parseLong(ownerIdentity.getId());
     List<Long> owners = new ArrayList<>();
-    owners.add(Long.parseLong(ownerIdentity.getId()));
+    owners.add(ownerId);
     if (spaceIds != null && !spaceIds.isEmpty()) {
-      for (String spaceId : spaceIds) {
-        owners.add(Long.parseLong(spaceId));
+      for (String id : spaceIds) {
+        owners.add(Long.parseLong(id));
       }
     }
 
@@ -196,10 +196,10 @@ public class ActivityDAOImpl extends GenericDAOJPAImpl<ActivityEntity, Long> imp
   public List<ActivityEntity> getOlderOnActivityFeed(Identity ownerIdentity, long sinceTime,int limit, List<String> spaceIds) {
     long ownerId = Long.parseLong(ownerIdentity.getId());
     List<Long> owners = new ArrayList<>();
-    owners.add(Long.parseLong(ownerIdentity.getId()));
+    owners.add(ownerId);
     if (spaceIds != null && !spaceIds.isEmpty()) {
-      for (String spaceId : spaceIds) {
-        owners.add(Long.parseLong(spaceId));
+      for (String id : spaceIds) {
+        owners.add(Long.parseLong(id));
       }
     }
 
@@ -651,12 +651,12 @@ public class ActivityDAOImpl extends GenericDAOJPAImpl<ActivityEntity, Long> imp
       query = getEntityManager().createNamedQuery("SocActivity.getActivityByOwner", ActivityEntity.class);
     }
 
-    List<Long> ownersLongs = new ArrayList<Long>();
-    for (String owner : owners) {
-      ownersLongs.add(Long.parseLong(owner));
+    List<Long> ids = new ArrayList<>();
+    for (String id : owners) {
+      ids.add(Long.parseLong(id));
     }
-    
-    query.setParameter("owner", ownersLongs);
+
+    query.setParameter("owner", ids);
     if (limit > 0) {
       query.setFirstResult(offset > 0 ? (int)offset : 0);
       query.setMaxResults((int)limit);
