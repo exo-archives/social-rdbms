@@ -40,7 +40,7 @@
 
   <properties>
     <!-- Platform Project Dependencies -->
-    <org.exoplatform.platform.version>4.4.x-SNAPSHOT</org.exoplatform.platform.version>
+    <org.exoplatform.platform.version>4.4.0-M18</org.exoplatform.platform.version>
      <!-- Issue with the PLF pom parent that trigger lucene 3.6.2 (Only working with elastic version < 0.20.6) -->
     <lucene.version>4.10.4</lucene.version>
     <elasticsearch.version>2.3.2</elasticsearch.version>
