@@ -77,6 +77,14 @@ public class ActivityDAOImpl extends GenericDAOJPAImpl<ActivityEntity, Long> imp
 
   public List<ActivityEntity> getActivityFeed(Identity ownerIdentity, int offset, int limit, List<String> spaceIds) {
     long ownerId = Long.parseLong(ownerIdentity.getId());
+
+    List<Long> connections = getConnectionIds(ownerId);
+
+    String queryName = "SocActivity.getActivityFeed";
+    if (connections.isEmpty()) {
+      queryName += "NoConnections";
+    }
+
     List<Long> owners = new ArrayList<>();
     owners.add(ownerId);
     if (spaceIds != null && !spaceIds.isEmpty()) {
@@ -85,11 +93,12 @@ public class ActivityDAOImpl extends GenericDAOJPAImpl<ActivityEntity, Long> imp
       }
     }
 
-    TypedQuery<ActivityEntity> query = getEntityManager().createNamedQuery("SocActivity.getActivityFeed", ActivityEntity.class);
+    TypedQuery<ActivityEntity> query = getEntityManager().createNamedQuery(queryName, ActivityEntity.class);
+    if (!connections.isEmpty()) {
+      query.setParameter("connections", connections);
+      query.setParameter("connStreamType", StreamType.POSTER);
+    }
     query.setParameter("owners", owners);
-    query.setParameter("ownerid", ownerId);
-    query.setParameter("connStatus", Relationship.Type.CONFIRMED);
-    query.setParameter("connStreamType", StreamType.POSTER);
 
     if (limit > 0) {
       query.setFirstResult(offset > 0 ? offset : 0);
@@ -104,15 +113,27 @@ public class ActivityDAOImpl extends GenericDAOJPAImpl<ActivityEntity, Long> imp
                                            int offset,
                                            int limit,
                                            List<String> spaceIds) {
-
-    return convertActivityEntitiesToIds(AStreamQueryBuilder.builder()
-                              .owner(ownerIdentity)
-                              .myIdentity(ownerIdentity)
-                              .memberOfSpaceIds(spaceIds)
-                              .offset(offset)
-                              .limit(limit)
-                              .buildId()
-                              .getResultList());
+    long ownerId = Long.parseLong(ownerIdentity.getId());
+    List<Long> connections = getConnectionIds(ownerId);
+    if (connections.isEmpty()) {
+      return convertActivityEntitiesToIds(AStreamQueryBuilder.builder()
+                                          .owner(ownerIdentity)
+                                          .memberOfSpaceIds(spaceIds)
+                                          .offset(offset)
+                                          .limit(limit)
+                                          .buildId()
+                                          .getResultList());
+    } else {
+      return convertActivityEntitiesToIds(AStreamQueryBuilder.builder()
+                                          .connections(connections)
+                                          .owner(ownerIdentity)
+                                          .myIdentity(ownerIdentity)
+                                          .memberOfSpaceIds(spaceIds)
+                                          .offset(offset)
+                                          .limit(limit)
+                                          .buildId()
+                                          .getResultList());
+    }
   }
 
   public int getNumberOfActivitesOnActivityFeed(Identity ownerIdentity, List<String> spaceIds) {
@@ -135,12 +156,20 @@ public class ActivityDAOImpl extends GenericDAOJPAImpl<ActivityEntity, Long> imp
       }
     }
 
-    TypedQuery<ActivityEntity> query = getEntityManager().createNamedQuery("SocActivity.getNewerActivityFeed", ActivityEntity.class);
+    List<Long> connections = getConnectionIds(ownerId);
+
+    String queryName = "SocActivity.getNewerActivityFeed";
+    if (connections.isEmpty()) {
+      queryName += "NoConnections";
+    }
+
+    TypedQuery<ActivityEntity> query = getEntityManager().createNamedQuery(queryName, ActivityEntity.class);
+    if (!connections.isEmpty()) {
+      query.setParameter("connections", connections);
+      query.setParameter("connStreamType", StreamType.POSTER);
+    }
     query.setParameter("sinceTime", sinceTime);
     query.setParameter("owners", owners);
-    query.setParameter("ownerid", ownerId);
-    query.setParameter("connStatus", Relationship.Type.CONFIRMED);
-    query.setParameter("connStreamType", StreamType.POSTER);
 
     if (limit > 0) {
       query.setFirstResult(0);
@@ -174,12 +203,20 @@ public class ActivityDAOImpl extends GenericDAOJPAImpl<ActivityEntity, Long> imp
       }
     }
 
-    TypedQuery<ActivityEntity> query = getEntityManager().createNamedQuery("SocActivity.getOlderActivityFeed", ActivityEntity.class);
+    List<Long> connections = getConnectionIds(ownerId);
+
+    String queryName = "SocActivity.getOlderActivityFeed";
+    if (connections.isEmpty()) {
+      queryName += "NoConnections";
+    }
+
+    TypedQuery<ActivityEntity> query = getEntityManager().createNamedQuery(queryName, ActivityEntity.class);
+    if (!connections.isEmpty()) {
+      query.setParameter("connections", connections);
+      query.setParameter("connStreamType", StreamType.POSTER);
+    }
     query.setParameter("sinceTime", sinceTime);
     query.setParameter("owners", owners);
-    query.setParameter("ownerid", ownerId);
-    query.setParameter("connStatus", Relationship.Type.CONFIRMED);
-    query.setParameter("connStreamType", StreamType.POSTER);
 
     if (limit > 0) {
       query.setFirstResult(0);
@@ -390,9 +427,16 @@ public class ActivityDAOImpl extends GenericDAOJPAImpl<ActivityEntity, Long> imp
 
   @Override
   public List<ActivityEntity> getActivitiesOfConnections(Identity ownerIdentity, int offset, int limit) {
+    long ownerId = Long.parseLong(ownerIdentity.getId());
+
+    List<Long> connections = getConnectionIds(ownerId);
+
+    if (connections.isEmpty()) {
+      return Collections.emptyList();
+    }
+
     TypedQuery<ActivityEntity> query = getEntityManager().createNamedQuery("SocActivity.getActivityOfConnection", ActivityEntity.class);
-    query.setParameter("ownerid", Long.parseLong(ownerIdentity.getId()));
-    query.setParameter("connStatus", Relationship.Type.CONFIRMED);
+    query.setParameter("connections", connections);
     query.setParameter("connStreamType", StreamType.POSTER);
 
     if (limit > 0) {
@@ -405,7 +449,15 @@ public class ActivityDAOImpl extends GenericDAOJPAImpl<ActivityEntity, Long> imp
   
   @Override
   public List<String> getActivityIdsOfConnections(Identity ownerIdentity, int offset, int limit) {
+    long ownerId = Long.parseLong(ownerIdentity.getId());
+
+    List<Long> connections = getConnectionIds(ownerId);
+
+    if(connections.isEmpty()) {
+      return Collections.emptyList();
+    }
     return convertActivityEntitiesToIds(AStreamQueryBuilder.builder()
+                                                           .connections(connections)
                                                            .myIdentity(ownerIdentity)
                                                            .offset(offset)
                                                            .limit(limit)
@@ -424,11 +476,18 @@ public class ActivityDAOImpl extends GenericDAOJPAImpl<ActivityEntity, Long> imp
 
   @Override
   public List<ActivityEntity> getNewerOnActivitiesOfConnections(Identity ownerIdentity, long sinceTime, long limit) {
+    long ownerId = Long.parseLong(ownerIdentity.getId());
+
+    List<Long> connections = getConnectionIds(ownerId);
+
+    if (connections.isEmpty()) {
+      return Collections.emptyList();
+    }
+
     TypedQuery<ActivityEntity> query = getEntityManager().createNamedQuery("SocActivity.getNewerActivityOfConnection", ActivityEntity.class);
-    query.setParameter("sinceTime", sinceTime);
-    query.setParameter("ownerid", Long.parseLong(ownerIdentity.getId()));
-    query.setParameter("connStatus", Relationship.Type.CONFIRMED);
+    query.setParameter("connections", connections);
     query.setParameter("connStreamType", StreamType.POSTER);
+    query.setParameter("sinceTime", sinceTime);
 
     if (limit > 0) {
       query.setFirstResult(0);
@@ -450,11 +509,18 @@ public class ActivityDAOImpl extends GenericDAOJPAImpl<ActivityEntity, Long> imp
 
   @Override
   public List<ActivityEntity> getOlderOnActivitiesOfConnections(Identity ownerIdentity, long sinceTime, int limit) {
+    long ownerId = Long.parseLong(ownerIdentity.getId());
+
+    List<Long> connections = getConnectionIds(ownerId);
+
+    if (connections.isEmpty()) {
+      return Collections.emptyList();
+    }
+
     TypedQuery<ActivityEntity> query = getEntityManager().createNamedQuery("SocActivity.getOlderActivityOfConnection", ActivityEntity.class);
-    query.setParameter("sinceTime", sinceTime);
-    query.setParameter("ownerid", Long.parseLong(ownerIdentity.getId()));
-    query.setParameter("connStatus", Relationship.Type.CONFIRMED);
+    query.setParameter("connections", connections);
     query.setParameter("connStreamType", StreamType.POSTER);
+    query.setParameter("sinceTime", sinceTime);
 
     if (limit > 0) {
       query.setFirstResult(0);
@@ -597,5 +663,27 @@ public class ActivityDAOImpl extends GenericDAOJPAImpl<ActivityEntity, Long> imp
     }
 
     return query.getResultList();
+  }
+
+  private List<Long> getConnectionIds(long ownerId) {
+    TypedQuery<Tuple> searchConnectionsQuery = getEntityManager().createNamedQuery("SocConnection.getConnections", Tuple.class);
+    searchConnectionsQuery.setParameter("identityId", ownerId);
+    searchConnectionsQuery.setParameter("connStatus", Relationship.Type.CONFIRMED);
+    List<Tuple> connectionsTuple = searchConnectionsQuery.getResultList();
+    List<Long> connections = new ArrayList<Long>();
+    if (!connectionsTuple.isEmpty()) {
+      for (Tuple tuple : connectionsTuple) {
+        Long receiver = tuple.get("receiver", Long.class);
+        Long sender = tuple.get("sender", Long.class);
+        if (sender == ownerId && receiver == ownerId) {
+          continue;
+        } else if (sender == ownerId) {
+          connections.add(receiver);
+        } else {
+          connections.add(sender);
+        }
+      }
+    }
+    return connections;
   }
 }

@@ -147,13 +147,13 @@
               <property name="db-structure-type" value="isolated"/>
               <property name="update-storage" value="true"/>
               <property name="max-buffer-size" value="204800"/>
-              <property name="swap-directory" value="${gatein.test.tmp.dir}/jcr/swap/portal-test"/>
+              <property name="swap-directory" value="${gatein.test.tmp.dir}/jcr/swap/social"/>
             </properties>
             <value-storages>
-              <value-storage id="portal-test"
+              <value-storage id="social"
                              class="org.exoplatform.services.jcr.impl.storage.value.fs.TreeFileValueStorage">
                 <properties>
-                  <property name="path" value="${gatein.test.tmp.dir}/jcr/values/portal-test"/>
+                  <property name="path" value="${gatein.test.tmp.dir}/jcr/values/social"/>
                 </properties>
                 <filters>
                   <filter property-type="Binary"/>
@@ -175,7 +175,7 @@
           </cache>
           <query-handler class="org.exoplatform.services.jcr.impl.core.query.lucene.SearchIndex">
             <properties>
-              <property name="index-dir" value="${gatein.test.tmp.dir}/jcr/jcrlucenedb/portal-test"/>
+              <property name="index-dir" value="${gatein.test.tmp.dir}/jcr/jcrlucenedb/social"/>
             </properties>
           </query-handler>
           <lock-manager class="org.exoplatform.services.jcr.impl.core.lock.infinispan.ISPNCacheableLockManagerImpl">
