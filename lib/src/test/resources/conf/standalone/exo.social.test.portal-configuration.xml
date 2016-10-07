@@ -184,7 +184,7 @@
                 </value>
                 <value>
                   <object type="org.exoplatform.services.organization.OrganizationConfig$User">
-                    <field  name="userName"><string>john</string></field>
+                    <field  name="userName"><string>john.test</string></field>
                     <field  name="password"><string>gtn</string></field>
                     <field  name="firstName"><string>John</string></field>
                     <field  name="lastName"><string>Anthony</string></field>

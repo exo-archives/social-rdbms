@@ -341,7 +341,7 @@ public class StreamItemDAOTest extends BaseCoreTest {
     activity.setBody("Body of " + activity.getTitle());
     activity.setBodyId("BodyId of " + activity.getTitle());
     activity.setLikeIdentityIds(new String[] { "demo", "mary" });
-    activity.setMentionedIds(new String[] { "demo", "john" });
+    activity.setMentionedIds(new String[] { "demo", "john.test" });
     activity.setCommentedIds(new String[] {});
     activity.setReplyToId(new String[] {});
     activity.setAppId("AppID");

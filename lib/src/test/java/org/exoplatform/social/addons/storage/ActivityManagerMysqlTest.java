@@ -1318,7 +1318,7 @@ public class ActivityManagerMysqlTest extends AbstractCoreTest {
     assertEquals(0, demoActivityFeed.load(0, 10).length);
     
     ExoSocialActivity comment = new ExoSocialActivityImpl();
-    comment.setTitle("mary mention @demo @john");
+    comment.setTitle("mary mention @demo @john.test");
     comment.setUserId(maryIdentity.getId());
     activityManager.saveComment(activity, comment);
     
@@ -1439,8 +1439,8 @@ public class ActivityManagerMysqlTest extends AbstractCoreTest {
       space.setPriority(Space.INTERMEDIATE_PRIORITY);
       space.setGroupId(SpaceUtils.SPACE_GROUP + "/" + space.getPrettyName());
       space.setUrl(space.getPrettyName());
-      String[] managers = new String[] { "demo", "john" };
-      String[] members = new String[] { "raul", "ghost", "demo", "john" };
+      String[] managers = new String[] { "demo", "john.test" };
+      String[] members = new String[] { "raul", "ghost", "demo", "john.test" };
       String[] invitedUsers = new String[] { "mary", "paul"};
       String[] pendingUsers = new String[] { "jame"};
       space.setInvitedUsers(invitedUsers);

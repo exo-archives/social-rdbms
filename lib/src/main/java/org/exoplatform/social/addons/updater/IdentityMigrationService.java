@@ -35,6 +35,7 @@ import org.exoplatform.management.jmx.annotations.Property;
 import org.exoplatform.services.jcr.impl.core.NodeImpl;
 import org.exoplatform.social.addons.search.ProfileIndexingServiceConnector;
 import org.exoplatform.social.addons.storage.RDBMSIdentityStorageImpl;
+import org.exoplatform.social.addons.updater.utils.IdentityUtil;
 import org.exoplatform.social.core.chromattic.entity.DisabledEntity;
 import org.exoplatform.social.core.chromattic.entity.IdentityEntity;
 import org.exoplatform.social.core.chromattic.entity.ProfileEntity;
@@ -284,15 +285,17 @@ public class IdentityMigrationService extends AbstractMigrationService<Identity>
 
   private Identity migrateIdentity(Node node, String jcrId) throws Exception {
     String providerId = node.getProperty("soc:providerId").getString();
-    String remoteId = node.getProperty("soc:remoteId").getString();
+    // The node name is the identity id.
+    // Node name is soc:<name>, only the <name> is relevant
+    String name = IdentityUtil.getIdentityName(node.getName());
 
-    Identity identity = identityStorage.findIdentity(providerId, remoteId);
+    Identity identity = identityStorage.findIdentity(providerId, name);
     if (identity != null) {
       LOG.info("Identity with providerId = " + identity.getProviderId() + " and remoteId=" + identity.getRemoteId() + " has already been migrated.");
       return identity;
     }
 
-    identity = new Identity(providerId, remoteId);
+    identity = new Identity(providerId, name);
     identity.setDeleted(node.getProperty("soc:isDeleted").getBoolean());
 
     if (node.isNodeType("soc:isDisabled")) {
