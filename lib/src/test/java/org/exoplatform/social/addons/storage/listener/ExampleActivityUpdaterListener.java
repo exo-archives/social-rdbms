@@ -30,9 +30,9 @@ public class ExampleActivityUpdaterListener extends Listener<ExoSocialActivity, 
   public void onEvent(Event<ExoSocialActivity, String> event) throws Exception {
     ExoSocialActivity activity = event.getSource();
     if (activity.isComment()) {
-      LOG.info(String.format("Migration the comment '%s' with old id's %s and new id's %s", activity.getTitle(), activity.getId(), event.getData()));
+      LOG.info("Migration of comment title='{}' old_id={} new_id={}", activity.getTitle(), activity.getId(), event.getData());
     } else {
-      LOG.info(String.format("Migration the activity '%s' with old id's %s and new id's %s", activity.getTitle(), activity.getId(), event.getData()));
+      LOG.info("Migration of activity title='{}' old_id={} new_id={}", activity.getTitle(), activity.getId(), event.getData());
     }
   }
 }

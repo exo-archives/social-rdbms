@@ -445,7 +445,7 @@ public class RDBMSSpaceStorageImpl extends SpaceStorageImpl implements SpaceStor
       }
 
       //
-      LOG.debug(String.format("Space %s (%s) saved", space.getPrettyName(), space.getId()));
+      LOG.debug("Space  id={} name={} saved", space.getId(), space.getPrettyName());
 
     } catch (NodeNotFoundException e) {
       throw new SpaceStorageException(SpaceStorageException.Type.FAILED_TO_RENAME_SPACE, e.getMessage(), e);
@@ -475,7 +475,7 @@ public class RDBMSSpaceStorageImpl extends SpaceStorageImpl implements SpaceStor
       }
     }
 
-    LOG.debug("Space {} ({}) saved", space.getPrettyName(), space.getId());
+    LOG.debug("Space id={} name={} saved", space.getId(), space.getPrettyName());
   }
 
   @Override

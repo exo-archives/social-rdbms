@@ -107,7 +107,7 @@ public abstract class AbstractMigrationService<T>  extends AbstractStorage {
       //
       afterMigration();
     } catch (Exception e) {
-      LOG.error("Failed to run migration data from JCR to Mysql.", e);
+      LOG.error("Failed to run data migration from JCR to RDBMS.", e);
     } finally {
       RequestLifeCycle.end();
     }
@@ -298,7 +298,7 @@ public abstract class AbstractMigrationService<T>  extends AbstractStorage {
     EntityManager em = entityManagerService.getEntityManager();
     if (!em.getTransaction().isActive()) {
       em.getTransaction().begin();
-      LOG.debug("started new transaction");
+      LOG.debug("new transaction started");
       return true;
     }
     return false;
