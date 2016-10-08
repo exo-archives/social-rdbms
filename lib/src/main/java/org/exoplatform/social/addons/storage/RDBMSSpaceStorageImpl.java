@@ -48,7 +48,6 @@ import org.exoplatform.social.core.storage.SpaceStorageException;
 import org.exoplatform.social.core.storage.api.IdentityStorage;
 import org.exoplatform.social.core.storage.api.SpaceStorage;
 import org.exoplatform.social.core.storage.exception.NodeNotFoundException;
-import org.exoplatform.social.core.storage.impl.AbstractStorage;
 import org.exoplatform.social.core.storage.impl.SpaceStorageImpl;
 
 public class RDBMSSpaceStorageImpl extends SpaceStorageImpl implements SpaceStorage {
@@ -195,14 +194,11 @@ public class RDBMSSpaceStorageImpl extends SpaceStorageImpl implements SpaceStor
   @Override
   public List<String> getMemberSpaceIds(String identityId, int offset, int limit) throws SpaceStorageException {
     Identity identity = identityStorage.findIdentityById(identityId);
-    List<Space> spaces = getMemberSpaces(identity.getRemoteId(), offset, limit);
+    List<Long> spaceIds = spaceMemberDAO.getSpacesIdsByUserName(identity.getRemoteId(), offset, limit);
 
     List<String> ids = new LinkedList<>();
-    for (Space space : spaces) {
-      Identity spaceIdentity = identityStorage.findIdentity(SpaceIdentityProvider.NAME, space.getPrettyName());
-      if (spaceIdentity != null) {
-        ids.add(spaceIdentity.getId());
-      }
+    for (Long spaceId : spaceIds) {
+      ids.add("" + spaceId);
     }
     return ids;
   }
