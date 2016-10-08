@@ -41,6 +41,13 @@ import org.exoplatform.commons.api.persistence.ExoEntity;
 @Table(name = "SOC_SPACES_MEMBERS")
 @NamedQueries({
     @NamedQuery(name = "SpaceMember.deleteBySpace", query = "DELETE FROM SocSpaceMember mem WHERE mem.space.id = :spaceId"),
+    @NamedQuery(name = "SpaceMember.getSpaceIdentitiesIdByMemberId",
+      query = "SELECT DISTINCT identity.id FROM SocIdentityEntity AS identity WHERE "
+          + " identity.remoteId IN "
+          + "   (SELECT DISTINCT spaceMember.space.prettyName FROM SocSpaceMember AS spaceMember where "
+          + "     spaceMember.userId = :userId AND "
+          + "     spaceMember.status = :status "
+          + "   ) "),
     @NamedQuery(name = "SpaceMember.getMember", query = "SELECT mem FROM SocSpaceMember mem WHERE mem.userId = :userId AND mem.space.id = :spaceId AND mem.status = :status"),
     @NamedQuery(name = "SpaceMember.deleteByUsername", query = "DELETE FROM SocSpaceMember sm WHERE sm.userId = :username")})
 public class SpaceMemberEntity implements Serializable {
