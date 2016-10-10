@@ -197,8 +197,10 @@ public class RDBMSSpaceStorageImpl extends SpaceStorageImpl implements SpaceStor
     List<Long> spaceIds = spaceMemberDAO.getSpacesIdsByUserName(identity.getRemoteId(), offset, limit);
 
     List<String> ids = new LinkedList<>();
-    for (Long spaceId : spaceIds) {
-      ids.add("" + spaceId);
+    if (spaceIds != null && !spaceIds.isEmpty()) {
+      for (Long spaceId : spaceIds) {
+        ids.add("" + spaceId);
+      }
     }
     return ids;
   }
