@@ -81,27 +81,28 @@ public class ProfileQueryBuilder {
     List<Predicate> predicates = new ArrayList<>();
 
     if (filter != null) {
-      if (filter.isForceLoadProfile()) {
-        //TODO: profile is now always EAGER load
-//        Fetch<IdentityEntity,ProfileEntity> fetch = identity.fetch(IdentityEntity_.profile, JoinType.INNER);
-      }
 
+      // Exclude the deleted Identities from result
       if (filter.isExcludeDeleted()) {
         predicates.add(cb.isFalse(identity.get(IdentityEntity_.deleted)));
       }
 
+      // Exclude the disabled identities
       if (filter.isExcludeDisabled()) {
         predicates.add(cb.isTrue(identity.get(IdentityEntity_.enabled)));
       }
 
+      // Search in list of Identities ID
       if (filter.getIdentityIds() != null && filter.getIdentityIds().size() > 0) {
         predicates.add(identity.get(IdentityEntity_.id).in(filter.getIdentityIds()));
       }
 
+      // Search with PROVIDER condition
       if (filter.getProviderId() != null && !filter.getProviderId().isEmpty()) {
         predicates.add(cb.equal(identity.get(IdentityEntity_.providerId), filter.getProviderId()));
       }
 
+      // Exclude some specific identities from result
       List<Identity> excludes = filter.getExcludedIdentityList();
       if (excludes != null && excludes.size() > 0) {
         List<Long> ids = new ArrayList<>(excludes.size());
@@ -111,6 +112,7 @@ public class ProfileQueryBuilder {
         predicates.add(cb.not(identity.get(IdentityEntity_.id).in(ids)));
       }
 
+      // Search in connections
       if (filter.getConnection() != null) {
         Identity owner = filter.getConnection();
         Long ownerId = Long.valueOf(owner.getId());
@@ -152,6 +154,7 @@ public class ProfileQueryBuilder {
         }
       }
 
+      // Search by firstName, lastName or fullName
       String name = filter.getName();
       if (name != null && !name.isEmpty()) {
         name = processLikeString(name);
@@ -166,7 +169,10 @@ public class ProfileQueryBuilder {
       boolean needExperienceJoin = (position != null && !position.isEmpty()) || (skill != null && !skill.isEmpty())
                                   || (company != null && !company.isEmpty()) || (all != null && !all.isEmpty());
       if (needExperienceJoin) {
+        // Only join with experience table when we need to search with position, company or skill
         ListJoin<IdentityEntity, ProfileExperienceEntity> experience = identity.join(IdentityEntity_.experiences, JoinType.LEFT);
+
+        // Search by position
         String val = filter.getPosition();
         if (val != null && !val.isEmpty()) {
           val = processLikeString(val);
@@ -178,18 +184,21 @@ public class ProfileQueryBuilder {
           predicates.add(cb.or(p));
         }
 
+        // Search by skills
         val = filter.getSkills();
         if (val != null && !val.isEmpty()) {
           val = processLikeString(val);
           predicates.add(cb.like(cb.lower(experience.get(ProfileExperienceEntity_.skills)), val));
         }
 
+        // Search by company
         val = filter.getCompany();
         if (val != null && !val.isEmpty()) {
           val = processLikeString(val);
           predicates.add(cb.like(cb.lower(experience.get(ProfileExperienceEntity_.company)), val));
         }
 
+        // Search by all fields
         if (all != null && !all.trim().isEmpty()) {
           all = processLikeString(all).toLowerCase();
           Predicate[] p = new Predicate[5];
@@ -205,6 +214,7 @@ public class ProfileQueryBuilder {
         }
       }
 
+      // Search by first character of lastName
       char c = filter.getFirstCharacterOfName();
       if (c != '\u0000') {
         String val = Character.toLowerCase(c) + "%";
