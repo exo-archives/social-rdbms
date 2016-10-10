@@ -35,6 +35,7 @@ import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
 import org.exoplatform.commons.api.persistence.ExoEntity;
+import org.exoplatform.social.core.identity.provider.SpaceIdentityProvider;
 
 @Entity(name = "SocSpaceMember")
 @ExoEntity
@@ -43,6 +44,7 @@ import org.exoplatform.commons.api.persistence.ExoEntity;
     @NamedQuery(name = "SpaceMember.deleteBySpace", query = "DELETE FROM SocSpaceMember mem WHERE mem.space.id = :spaceId"),
     @NamedQuery(name = "SpaceMember.getSpaceIdentitiesIdByMemberId",
       query = "SELECT DISTINCT identity.id FROM SocIdentityEntity AS identity WHERE "
+          + " identity.providerId = '" + SpaceIdentityProvider.NAME + "' AND "
           + " identity.remoteId IN "
           + "   (SELECT DISTINCT spaceMember.space.prettyName FROM SocSpaceMember AS spaceMember where "
           + "     spaceMember.userId = :userId AND "
