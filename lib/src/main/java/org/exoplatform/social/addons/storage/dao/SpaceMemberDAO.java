@@ -16,6 +16,8 @@
  */
 package org.exoplatform.social.addons.storage.dao;
 
+import java.util.List;
+
 import org.exoplatform.commons.api.persistence.GenericDAO;
 import org.exoplatform.social.addons.storage.entity.SpaceEntity;
 import org.exoplatform.social.addons.storage.entity.SpaceMemberEntity;
@@ -24,4 +26,6 @@ public interface SpaceMemberDAO extends GenericDAO<SpaceMemberEntity, Long> {
     void deleteBySpace(SpaceEntity entity);
 
     SpaceMemberEntity getMember(String remoteId, Long spaceId);
+
+    List<Long> getSpacesIdsByUserName(String userId, int offset, int limit);
 }
