@@ -29,6 +29,7 @@ import org.exoplatform.social.addons.storage.RDBMSActivityStorageImplTest;
 import org.exoplatform.social.addons.storage.RDBMSRelationshipManagerTest;
 import org.exoplatform.social.addons.storage.RDBMSSpaceStorageTest;
 import org.exoplatform.social.addons.storage.SpaceActivityMySqlPublisherTest;
+import org.exoplatform.social.addons.storage.dao.ActivityDAOTest;
 import org.exoplatform.social.addons.storage.dao.IdentityDAOTest;
 import org.exoplatform.social.addons.storage.dao.SpaceMemberDAOTest;
 import org.exoplatform.social.addons.storage.dao.StreamItemDAOTest;
