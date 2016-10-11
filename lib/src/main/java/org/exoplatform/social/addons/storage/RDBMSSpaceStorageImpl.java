@@ -199,7 +199,7 @@ public class RDBMSSpaceStorageImpl extends SpaceStorageImpl implements SpaceStor
     List<String> ids = new LinkedList<>();
     if (spaceIds != null && !spaceIds.isEmpty()) {
       for (Long spaceId : spaceIds) {
-        ids.add("" + spaceId);
+        ids.add(String.valueOf(spaceId));
       }
     }
     return ids;
