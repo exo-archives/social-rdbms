@@ -24,6 +24,7 @@ import org.exoplatform.services.log.Log;
 import org.exoplatform.social.addons.storage.entity.IdentityEntity;
 import org.exoplatform.social.addons.test.BaseCoreTest;
 import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvider;
+import org.exoplatform.social.core.identity.provider.SpaceIdentityProvider;
 import org.junit.Test;
 
 import javax.persistence.EntityExistsException;
@@ -55,6 +56,51 @@ public class IdentityDAOTest extends BaseCoreTest {
     }
 
     super.tearDown();
+  }
+
+  public void testGetAllIds() {
+    // Given
+    IdentityEntity identityUser1 = identityDAO.create(createIdentity(OrganizationIdentityProvider.NAME, "user1"));
+    IdentityEntity identityUser2 = identityDAO.create(createIdentity(OrganizationIdentityProvider.NAME, "user2"));
+    IdentityEntity identitySpace1 = identityDAO.create(createIdentity(SpaceIdentityProvider.NAME, "space1"));
+
+    // When
+    List<Long> allIds = identityDAO.getAllIds(0, 0);
+
+    // Then
+    assertNotNull(allIds);
+    assertEquals(3, allIds.size());
+    assertTrue(allIds.contains(identityUser1.getId()));
+    assertTrue(allIds.contains(identityUser2.getId()));
+    assertTrue(allIds.contains(identitySpace1.getId()));
+
+    deleteIdentities.add(identityUser1);
+    deleteIdentities.add(identityUser2);
+    deleteIdentities.add(identitySpace1);
+  }
+
+  public void testGetAllIdsByProvider() {
+    // Given
+    IdentityEntity identityUser1 = identityDAO.create(createIdentity(OrganizationIdentityProvider.NAME, "user1"));
+    IdentityEntity identityUser2 = identityDAO.create(createIdentity(OrganizationIdentityProvider.NAME, "user2"));
+    IdentityEntity identitySpace1 = identityDAO.create(createIdentity(SpaceIdentityProvider.NAME, "space1"));
+
+    // When
+    List<Long> allOrganizationIds = identityDAO.getAllIdsByProvider(OrganizationIdentityProvider.NAME, 0, 0);
+    List<Long> allSpaceIds = identityDAO.getAllIdsByProvider(SpaceIdentityProvider.NAME, 0, 0);
+
+    // Then
+    assertNotNull(allOrganizationIds);
+    assertEquals(2, allOrganizationIds.size());
+    assertTrue(allOrganizationIds.contains(identityUser1.getId()));
+    assertTrue(allOrganizationIds.contains(identityUser2.getId()));
+    assertNotNull(allSpaceIds);
+    assertEquals(1, allSpaceIds.size());
+    assertTrue(allSpaceIds.contains(identitySpace1.getId()));
+
+    deleteIdentities.add(identityUser1);
+    deleteIdentities.add(identityUser2);
+    deleteIdentities.add(identitySpace1);
   }
 
   public void testSaveNewIdentity() {
@@ -120,9 +166,13 @@ public class IdentityDAOTest extends BaseCoreTest {
   }
 
   private IdentityEntity createIdentity() {
+    return createIdentity(OrganizationIdentityProvider.NAME, "usera");
+  }
+
+  private IdentityEntity createIdentity(String providerId, String remoteId) {
     IdentityEntity entity = new IdentityEntity();
-    entity.setProviderId(OrganizationIdentityProvider.NAME);
-    entity.setRemoteId("usera");
+    entity.setProviderId(providerId);
+    entity.setRemoteId(remoteId);
     entity.setEnabled(true);
     entity.setDeleted(false);
     return entity;

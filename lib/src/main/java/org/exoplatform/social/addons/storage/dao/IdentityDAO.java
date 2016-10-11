@@ -36,4 +36,6 @@ public interface IdentityDAO extends GenericDAO<IdentityEntity, Long> {
   ListAccess<IdentityEntity> findIdentities(ExtendProfileFilter filter);
 
   List<Long> getAllIds(int offset, int limit);  
+
+  List<Long> getAllIdsByProvider(String providerId, int offset, int limit);
 }

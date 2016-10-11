@@ -26,6 +26,7 @@ import java.util.Set;
 import org.apache.commons.lang.StringUtils;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
+import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvider;
 import org.json.simple.JSONObject;
 
 import org.exoplatform.addons.es.domain.Document;
@@ -134,7 +135,7 @@ import org.exoplatform.social.core.relationship.model.Relationship;
 
   @Override
   public List<String> getAllIds(int offset, int limit) {
-    List<Long> ids = identityDAO.getAllIds(offset, limit);
+    List<Long> ids = identityDAO.getAllIdsByProvider(OrganizationIdentityProvider.NAME, offset, limit);
 
     if (ids == null || ids.isEmpty()) {
       return new ArrayList<>();

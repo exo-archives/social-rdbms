@@ -66,6 +66,10 @@ import org.exoplatform.commons.api.persistence.ExoEntity;
         @NamedQuery(
                 name = "SocIdentity.getAllIds",
                 query = "SELECT i.id FROM SocIdentityEntity i WHERE i.deleted = FALSE AND i.enabled = TRUE"
+        ),
+        @NamedQuery(
+                name = "SocIdentity.getAllIdsByProvider",
+                query = "SELECT i.id FROM SocIdentityEntity i WHERE i.deleted = FALSE AND i.enabled = TRUE AND i.providerId = :providerId"
         )
 })
 public class IdentityEntity {

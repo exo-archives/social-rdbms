@@ -78,6 +78,17 @@ public class IdentityDAOImpl extends GenericDAOJPAImpl<IdentityEntity, Long> imp
   }
 
   @Override
+  public List<Long> getAllIdsByProvider(String providerId, int offset, int limit) {
+    TypedQuery<Long> query = getEntityManager().createNamedQuery("SocIdentity.getAllIdsByProvider", Long.class);
+    query.setParameter("providerId", providerId);
+    if (limit > 0) {
+      query.setFirstResult(offset);
+      query.setMaxResults(limit);
+    }
+    return query.getResultList();
+  }
+
+  @Override
   public ListAccess<IdentityEntity> findIdentities(ExtendProfileFilter filter) {
     ProfileQueryBuilder qb = ProfileQueryBuilder.builder()
             .withFilter(filter);
