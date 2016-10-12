@@ -20,13 +20,17 @@ import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.DefaultHttpClient;
+import org.exoplatform.social.core.storage.api.RelationshipStorage;
 import org.mockito.Mockito;
 
 import org.exoplatform.addons.es.index.IndexingOperationProcessor;
@@ -78,13 +82,16 @@ public class SearchTestIT extends AbstractCoreTest {
 
   private IdentityStorageImpl                       identityStorageImpl;
 
-  private RelationshipStorageImpl                   relationshipStorageImpl;
+  private RelationshipStorage                       relationshipStorage;
 
   private RelationshipMigrationService              relationshipMigration;
 
   private IdentityProvider<User>                    identityProvider;
   
   private SearchContext searchContext = Mockito.mock(SearchContext.class);
+
+  private List<Identity> tearDownIdentityList;
+  private List<Relationship> tearDownRelationshipList;
 
   @Override
   protected void setUp() throws Exception {
@@ -116,16 +123,28 @@ public class SearchTestIT extends AbstractCoreTest {
     //
     identityProvider = getService(IdentityProvider.class);
     identityStorageImpl = getService(IdentityStorageImpl.class);
-    relationshipStorageImpl = getService(RelationshipStorageImpl.class);
+    relationshipStorage = getService(RelationshipStorage.class);
     relationshipMigration = getService(RelationshipMigrationService.class);
+
+    tearDownIdentityList = new ArrayList<>();
+    tearDownRelationshipList = new ArrayList<>();
   }
 
   @Override
   public void tearDown() throws Exception {
+    for (Relationship relationship : tearDownRelationshipList) {
+      relationshipStorage.removeRelationship(relationship);
+    }
+
     List<Space> spaces = spaceStorage.getAllSpaces();
     for (Space space : spaces) {
       spaceStorage.deleteSpace(space.getId());
     }
+
+    for (Identity identity : tearDownIdentityList) {
+      identityStorage.deleteIdentity(identity);
+    }
+
     deleteAllSpaceInES();
     super.tearDown();
   }
@@ -148,20 +167,21 @@ public class SearchTestIT extends AbstractCoreTest {
     // Given
     relationshipManager.inviteToConnect(johnIdentity, maryIdentity);
 
-    indexingService.index(ProfileIndexingServiceConnector.TYPE, johnIdentity.getId());
-    indexingService.index(ProfileIndexingServiceConnector.TYPE, maryIdentity.getId());
+    indexingService.reindexAll(ProfileIndexingServiceConnector.TYPE);
+    //indexingService.index(ProfileIndexingServiceConnector.TYPE, maryIdentity.getId());
+    indexingProcessor.process();
     indexingProcessor.process();
     refreshIndices();
     ProfileFilter filter = new ProfileFilter();
     // When
     // All the users that have an incoming request from John
-    List<Identity> resultsOutJohn = searchConnector.search(johnIdentity, filter, Relationship.Type.INCOMING, 0, 10);
+    List<Identity> resultsOutJohn = searchConnector.search(johnIdentity, filter, Relationship.Type.OUTGOING, 0, 10);
     // All the users that have sent an outgoing request to John
-    List<Identity> resultsInJohn = searchConnector.search(johnIdentity, filter, Relationship.Type.OUTGOING, 0, 10);
+    List<Identity> resultsInJohn = searchConnector.search(johnIdentity, filter, Relationship.Type.INCOMING, 0, 10);
     // All the users that have an incoming request from Mary
-    List<Identity> resultsOutMary = searchConnector.search(maryIdentity, filter, Relationship.Type.INCOMING, 0, 10);
+    List<Identity> resultsOutMary = searchConnector.search(maryIdentity, filter, Relationship.Type.OUTGOING, 0, 10);
     // All the users that have sent an outgoing request to Mary
-    List<Identity> resultsInMary = searchConnector.search(maryIdentity, filter, Relationship.Type.OUTGOING, 0, 10);
+    List<Identity> resultsInMary = searchConnector.search(maryIdentity, filter, Relationship.Type.INCOMING, 0, 10);
     // Then
     assertThat(resultsOutJohn.size(), is(1));
     assertThat(resultsInJohn.size(), is(0));
@@ -212,6 +232,263 @@ public class SearchTestIT extends AbstractCoreTest {
     assertEquals(1, spaceSearchConnector.search(searchContext, "*56*", null, 0, 10, null, null).size());
   }
 
+  //
+  /**
+   * Test {@link org.exoplatform.social.core.storage.api.RelationshipStorage#getConnectionsByFilter(providerId, Identity, ProfileFilter)}
+   * in case Identity had no connection yet
+   * @throws Exception
+   */
+  public void testGetConnectionsByFilterEmpty() throws Exception {
+    populateData();
+    ProfileFilter pf = new ProfileFilter();
+    pf = buildProfileFilterWithExcludeIdentities(pf);
+    List<Identity> identities = relationshipStorage.getConnectionsByFilter(tearDownIdentityList.get(0), pf, 0, 20);
+    assertEquals("Number of identities must be " + identities.size(), 0, identities.size());
+  }
+
+  /**
+   * Test {@link org.exoplatform.social.core.storage.api.RelationshipStorage#getConnectionsByFilter(providerId, Identity, ProfileFilter)}
+   *
+   * @throws Exception
+   * @since 1.2.3
+   */
+  public void testGetConnectionsByFilter() throws Exception {
+    populateData();
+    populateRelationshipData(Relationship.Type.CONFIRMED);
+
+    indexingService.reindexAll(ProfileIndexingServiceConnector.TYPE);
+    indexingProcessor.process();
+    indexingProcessor.process();
+    refreshIndices();
+
+    ProfileFilter pf = new ProfileFilter();
+    pf = buildProfileFilterWithExcludeIdentities(pf);
+    List<Identity> identities = relationshipStorage.getConnectionsByFilter(tearDownIdentityList.get(0), pf, 0, 20);
+    assertEquals("Number of identities must be " + 8, 8, identities.size());
+
+    pf.setPosition("developer");
+    pf.setName("FirstName9");
+    identities = relationshipStorage.getConnectionsByFilter(tearDownIdentityList.get(0), pf, 0, 20);
+    assertEquals("Number of identities must be " + identities.size(), 1, identities.size());
+  }
+
+  /**
+   * Test {@link org.exoplatform.social.core.storage.api.RelationshipStorage#getIncomingByFilter(providerId, Identity, ProfileFilter)}
+   *
+   *
+   * @throws Exception
+   * @since 1.2.3
+   */
+  public void testGetIncomingByFilter() throws Exception {
+    populateData();
+    populateRelationshipIncommingData();
+
+    indexingService.reindexAll(ProfileIndexingServiceConnector.TYPE);
+    indexingProcessor.process();
+    indexingProcessor.process();
+    refreshIndices();
+
+    ProfileFilter pf = new ProfileFilter();
+    pf = buildProfileFilterWithExcludeIdentities(pf);
+    List<Identity> identities = relationshipStorage.getIncomingByFilter(tearDownIdentityList.get(0), pf, 0, 20);
+    assertEquals("Number of identities must be " + identities.size(), 8, identities.size());
+
+    pf.setPosition("developer");
+    pf.setName("FirstName6");
+    identities = relationshipStorage.getIncomingByFilter(tearDownIdentityList.get(0), pf, 0, 20);
+    assertEquals("Number of identities must be " + identities.size(), 1, identities.size());
+  }
+
+  /**
+   * Test {@link org.exoplatform.social.core.storage.api.RelationshipStorage#getOutgoingByFilter(providerId, Identity, ProfileFilter)}
+   *
+   * @throws Exception
+   * @since 1.2.3
+   */
+  public void testGetOutgoingByFilter() throws Exception {
+    populateData();
+    populateRelationshipData(Relationship.Type.PENDING);
+
+    indexingService.reindexAll(ProfileIndexingServiceConnector.TYPE);
+    indexingProcessor.process();
+    indexingProcessor.process();
+    refreshIndices();
+
+    ProfileFilter pf = new ProfileFilter();
+    pf = buildProfileFilterWithExcludeIdentities(pf);
+    List<Identity> identities = relationshipStorage.getOutgoingByFilter(tearDownIdentityList.get(0), pf, 0, 20);
+    assertEquals("Number of identities must be 8", 8, identities.size());
+
+    pf.setPosition("developer");
+    pf.setName("FirstName8");
+    identities = relationshipStorage.getOutgoingByFilter(tearDownIdentityList.get(0), pf, 0, 20);
+    assertEquals("Number of identities must be 1", 1, identities.size());
+  }
+
+  /**
+   * Test {@link org.exoplatform.social.core.storage.api.RelationshipStorage#getIncomingCountByFilter(providerId, Identity, ProfileFilter)}
+   *
+   * @throws Exception
+   * @since 1.2.3
+   */
+  public void testGetIncomingCountByFilter() throws Exception {
+    populateData();
+    populateRelationshipIncommingData();
+
+    indexingService.reindexAll(ProfileIndexingServiceConnector.TYPE);
+    indexingProcessor.process();
+    indexingProcessor.process();
+    refreshIndices();
+
+    ProfileFilter pf = new ProfileFilter();
+    pf = buildProfileFilterWithExcludeIdentities(pf);
+    int countIdentities = relationshipStorage.getIncomingCountByFilter(tearDownIdentityList.get(0), pf);
+    assertEquals("Number of identities must be 8", 8, countIdentities);
+
+    pf.setPosition("developer");
+    pf.setName("FirstName6");
+    countIdentities = relationshipStorage.getIncomingCountByFilter(tearDownIdentityList.get(0), pf);
+    assertEquals("Number of identities must be 1", 1, countIdentities);
+  }
+
+  /**
+   * Test {@link org.exoplatform.social.core.storage.api.RelationshipStorage#getConnectionsCountByFilter(providerId, Identity, ProfileFilter)}
+   *
+   * @throws Exception
+   * @since 1.2.2
+   */
+  public void testGetConnectionsCountByFilter() throws Exception {
+    populateData();
+    populateRelationshipData(Relationship.Type.CONFIRMED);
+
+    indexingService.reindexAll(ProfileIndexingServiceConnector.TYPE);
+    indexingProcessor.process();
+    indexingProcessor.process();
+    refreshIndices();
+
+    ProfileFilter pf = new ProfileFilter();
+    pf = buildProfileFilterWithExcludeIdentities(pf);
+    int countIdentities = relationshipStorage.getConnectionsCountByFilter(tearDownIdentityList.get(0), pf);
+    assertEquals("Number of identities must be 8", 8, countIdentities);
+
+    pf.setPosition("developer");
+    pf.setName("FirstName6");
+    countIdentities = relationshipStorage.getConnectionsCountByFilter(tearDownIdentityList.get(0), pf);
+    assertEquals("Number of identities must be 1", 1, countIdentities);
+  }
+
+  /**
+   * Test {@link org.exoplatform.social.core.storage.api.RelationshipStorage#getOutgoingCountByFilter(providerId, Identity, ProfileFilter)}
+   *
+   * @throws Exception
+   * @since 1.2.3
+   */
+  public void testGetOutgoingCountByFilter() throws Exception {
+    populateData();
+    populateRelationshipData(Relationship.Type.PENDING);
+
+    indexingService.reindexAll(ProfileIndexingServiceConnector.TYPE);
+    indexingProcessor.process();
+    indexingProcessor.process();
+    refreshIndices();
+
+    ProfileFilter pf = new ProfileFilter();
+    pf = buildProfileFilterWithExcludeIdentities(pf);
+    int countIdentities = relationshipStorage.getOutgoingCountByFilter(tearDownIdentityList.get(0), pf);
+    assertEquals("Number of identities must be 8", 8, countIdentities);
+
+    pf.setPosition("developer");
+    pf.setName("FirstName8");
+    countIdentities = relationshipStorage.getOutgoingCountByFilter(tearDownIdentityList.get(0), pf);
+    assertEquals("Number of identities must be 1", 1, countIdentities);
+  }
+
+  /**
+   * Creates the identity data index in range [0,9]
+   */
+  private void populateData() {
+    String providerId = "organization";
+    int total = 10;
+    Map<String, String> xp = new HashMap<String, String>();
+    List<Map<String, String>> xps = new ArrayList<Map<String, String>>();
+    xp.put(Profile.EXPERIENCES_COMPANY, "exo");
+    xps.add(xp);
+    for (int i = 0; i < total; i++) {
+      String remoteId = "username" + i;
+      Identity identity = new Identity(providerId, remoteId);
+      identityStorage.saveIdentity(identity);
+
+      Profile profile = new Profile(identity);
+      profile.setProperty(Profile.FIRST_NAME, "FirstName" + i);
+      profile.setProperty(Profile.LAST_NAME, "LastName" + i);
+      profile.setProperty(Profile.FULL_NAME, "FirstName" + i + " " +  "LastName" + i);
+      profile.setProperty("position", "developer");
+      profile.setProperty("gender", "male");
+      if (i == 3 || i==4) {
+        profile.setProperty(Profile.EXPERIENCES, xps);
+      }
+      identity.setProfile(profile);
+      tearDownIdentityList.add(identity);
+      identityStorage.saveProfile(profile);
+    }
+  }
+
+  /**
+   * Builds the ProfileFilter and exclude the Identity.
+   * @param filter
+   * @return
+   */
+  private ProfileFilter buildProfileFilterWithExcludeIdentities(ProfileFilter filter) {
+
+    ProfileFilter result = filter;
+    if (result == null) {
+      result = new ProfileFilter();
+    }
+
+    List<Identity> excludeIdentities = new ArrayList<Identity>();
+    if (tearDownIdentityList.size() > 1) {
+      Identity identity0 = tearDownIdentityList.get(0);
+      excludeIdentities.add(identity0);
+      result.setExcludedIdentityList(excludeIdentities);
+    }
+
+    return result;
+
+  }
+
+  /**
+   * Creates the relationship to connect from 0 to [2, 9].
+   * @param type
+   */
+  private void populateRelationshipData(Relationship.Type type) {
+    if (tearDownIdentityList.size() > 1) {
+      Identity identity0 = tearDownIdentityList.get(0);
+
+      Relationship firstToSecondRelationship = null;
+      for (int i = 2; i< tearDownIdentityList.size(); i++) {
+        firstToSecondRelationship = new Relationship(identity0, tearDownIdentityList.get(i), type);
+        tearDownRelationshipList.add(firstToSecondRelationship);
+        relationshipStorage.saveRelationship(firstToSecondRelationship);
+      }
+    }
+  }
+
+  /**
+   * Creates the relationship to connect from 0 to [2, 9].
+   */
+  private void populateRelationshipIncommingData() {
+    if (tearDownIdentityList.size() > 1) {
+      Identity identity0 = tearDownIdentityList.get(0);
+
+      Relationship firstToSecondRelationship = null;
+      for (int i = 2; i< tearDownIdentityList.size(); i++) {
+        firstToSecondRelationship = new Relationship(tearDownIdentityList.get(i), identity0, Relationship.Type.PENDING);
+        tearDownRelationshipList.add(firstToSecondRelationship);
+        relationshipStorage.saveRelationship(firstToSecondRelationship);
+      }
+    }
+  }
+
   private Space createSpace(String prettyName, String displayName, String description) throws Exception {
     Space space = new Space();
     space.setPrettyName(prettyName);
@@ -220,6 +497,8 @@ public class SearchTestIT extends AbstractCoreTest {
     space.setDescription(description);
     space.setManagers(new String[] { "root" });
     space.setGroupId("/platform/users");
+    space.setRegistration(Space.OPEN);
+    space.setVisibility(Space.PUBLIC);
     spaceStorage.saveSpace(space, true);
     space = spaceStorage.getAllSpaces().get(0);
 
