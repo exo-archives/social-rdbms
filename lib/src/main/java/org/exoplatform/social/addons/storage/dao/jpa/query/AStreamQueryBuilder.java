@@ -19,8 +19,8 @@ package org.exoplatform.social.addons.storage.dao.jpa.query;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Date;
 import java.util.List;
+import java.util.Set;
 
 import javax.persistence.EntityManager;
 import javax.persistence.Tuple;
@@ -39,7 +39,6 @@ import org.exoplatform.social.addons.storage.entity.ActivityEntity;
 import org.exoplatform.social.addons.storage.entity.ActivityEntity_;
 import org.exoplatform.social.addons.storage.entity.ConnectionEntity;
 import org.exoplatform.social.addons.storage.entity.ConnectionEntity_;
-import org.exoplatform.social.addons.storage.entity.IdentityEntity_;
 import org.exoplatform.social.addons.storage.entity.StreamItemEntity;
 import org.exoplatform.social.addons.storage.entity.StreamItemEntity_;
 import org.exoplatform.social.addons.storage.entity.StreamType;
@@ -68,7 +67,7 @@ public final class AStreamQueryBuilder {
   //order by
   private boolean descOrder = true;
   String[] activityTypes;
-  private List<Long> connections;
+  private Set<Long> connections;
 
   public static AStreamQueryBuilder builder() {
     return new AStreamQueryBuilder();
@@ -414,7 +413,7 @@ public final class AStreamQueryBuilder {
     return em.createQuery(select);
   }
 
-  public AStreamQueryBuilder connections(List<Long> connections) {
+  public AStreamQueryBuilder connections(Set<Long> connections) {
     this.connections = connections;
     return this;
   }
