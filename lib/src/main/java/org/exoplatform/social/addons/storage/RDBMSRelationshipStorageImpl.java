@@ -36,7 +36,6 @@ import org.exoplatform.commons.utils.ListAccess;
 import org.exoplatform.services.log.ExoLogger;
 import org.exoplatform.services.log.Log;
 import org.exoplatform.social.addons.search.ExtendProfileFilter;
-import org.exoplatform.social.addons.search.ProfileSearchConnector;
 import org.exoplatform.social.addons.storage.dao.ConnectionDAO;
 import org.exoplatform.social.addons.storage.dao.IdentityDAO;
 import org.exoplatform.social.addons.storage.entity.ConnectionEntity;
@@ -61,14 +60,12 @@ public class RDBMSRelationshipStorageImpl extends RelationshipStorageImpl {
   private final ConnectionDAO connectionDAO;
   private final IdentityDAO identityDAO;
   private final RDBMSIdentityStorageImpl identityStorage;
-  private final ProfileSearchConnector profileESConnector;
 
-  public RDBMSRelationshipStorageImpl(RDBMSIdentityStorageImpl identityStorage, ConnectionDAO connectionDAO, IdentityDAO identityDAO, ProfileSearchConnector profileESConnector) {
+  public RDBMSRelationshipStorageImpl(RDBMSIdentityStorageImpl identityStorage, ConnectionDAO connectionDAO, IdentityDAO identityDAO) {
     super(identityStorage);
     this.connectionDAO = connectionDAO;
     this.identityDAO = identityDAO;
     this.identityStorage = identityStorage;
-    this.profileESConnector = profileESConnector;
   }
 
   @Override
