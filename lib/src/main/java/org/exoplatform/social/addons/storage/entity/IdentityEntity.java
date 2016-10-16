@@ -19,13 +19,12 @@
 
 package org.exoplatform.social.addons.storage.entity;
 
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.List;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
-import javax.persistence.Basic;
 import javax.persistence.CascadeType;
 import javax.persistence.CollectionTable;
 import javax.persistence.Column;
@@ -36,7 +35,6 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
-import javax.persistence.Lob;
 import javax.persistence.MapKeyColumn;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
@@ -55,6 +53,24 @@ import org.exoplatform.commons.api.persistence.ExoEntity;
 @ExoEntity
 @Table(name = "SOC_IDENTITIES")
 @NamedQueries({
+        @NamedQuery(
+                name = "SocIdentity.findAllUserIdentities",
+                query = "SELECT distinct identity " +
+                " FROM SocIdentityEntity identity "  +
+                " WHERE   identity.deleted = FALSE " +
+                "     AND identity.enabled = TRUE " +
+                "     AND identity.id != :identityId " +
+                "     AND identity.providerId= :providerId "
+        ),
+        @NamedQuery(
+                name = "SocIdentity.countAllUserIdentities",
+                query = "SELECT count(distinct identity) " +
+                " FROM SocIdentityEntity identity "  +
+                " WHERE   identity.deleted = FALSE " +
+                "     AND identity.enabled = TRUE " +
+                "     AND identity.id != :identityId " +
+                "     AND identity.providerId= :providerId "
+          ),
         @NamedQuery(
                 name = "SocIdentity.findByProviderAndRemoteId",
                 query = "SELECT id FROM SocIdentityEntity id WHERE id.providerId = :providerId AND id.remoteId = :remoteId"
@@ -103,7 +119,7 @@ public class IdentityEntity {
 
   @ElementCollection(fetch = FetchType.LAZY)
   @CollectionTable(name = "SOC_IDENTITY_EXPERIENCES", joinColumns = {@JoinColumn(name = "IDENTITY_ID")})
-  private List<ProfileExperienceEntity> experiences = new ArrayList<>();
+  private Set<ProfileExperienceEntity> experiences = new HashSet<>();
   //END_OF_PROFILE
 
   @Temporal(TemporalType.TIMESTAMP)
@@ -111,10 +127,10 @@ public class IdentityEntity {
   private Date createdDate = new Date();
 
   @OneToMany(mappedBy = "receiver", fetch = FetchType.LAZY, cascade = {CascadeType.REMOVE}, orphanRemoval = true)
-  private List<ConnectionEntity> incomingConnections;
+  private Set<ConnectionEntity> incomingConnections;
 
   @OneToMany(mappedBy = "sender", fetch = FetchType.LAZY, cascade = {CascadeType.REMOVE}, orphanRemoval = true)
-  private List<ConnectionEntity> outgoingConnections;
+  private Set<ConnectionEntity> outgoingConnections;
 
   public long getId() {
     return id;
@@ -176,11 +192,11 @@ public class IdentityEntity {
     this.properties = properties;
   }
 
-  public List<ProfileExperienceEntity> getExperiences() {
+  public Set<ProfileExperienceEntity> getExperiences() {
     return experiences;
   }
 
-  public void setExperiences(List<ProfileExperienceEntity> experiences) {
+  public void setExperiences(Set<ProfileExperienceEntity> experiences) {
     this.experiences = experiences;
   }
 

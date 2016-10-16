@@ -23,6 +23,7 @@ import org.exoplatform.social.addons.storage.RDBMSIdentityStorageImpl;
 import org.exoplatform.social.core.identity.SpaceMemberFilterListAccess;
 import org.exoplatform.social.core.identity.model.ActiveIdentityFilter;
 import org.exoplatform.social.core.identity.model.Identity;
+import org.exoplatform.social.core.identity.model.IdentityWithRelationship;
 import org.exoplatform.social.core.identity.model.Profile;
 import org.exoplatform.social.core.profile.ProfileFilter;
 import org.exoplatform.social.core.space.model.Space;
@@ -185,5 +186,15 @@ public class MigrationIdentityStorage implements IdentityStorage {
   @Override
   public void processEnabledIdentity(Identity identity, boolean isEnable) {
     jpaStorage.processEnabledIdentity(identity, isEnable);
+  }
+
+  @Override
+  public List<IdentityWithRelationship> getIdentitiesWithRelationships(String identityId, int offset, int limit) {
+    return jpaStorage.getIdentitiesWithRelationships(identityId, offset, limit);
+  }
+
+  @Override
+  public int countIdentitiesWithRelationships(String identityId) throws Exception {
+    return jpaStorage.countIdentitiesWithRelationships(identityId);
   }
 }

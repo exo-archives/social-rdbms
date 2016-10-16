@@ -40,11 +40,13 @@ import org.exoplatform.social.addons.search.ProfileSearchConnector;
 import org.exoplatform.social.addons.storage.dao.ConnectionDAO;
 import org.exoplatform.social.addons.storage.dao.IdentityDAO;
 import org.exoplatform.social.addons.storage.entity.ConnectionEntity;
+import org.exoplatform.social.addons.storage.entity.IdentityEntity;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.identity.model.Profile;
 import org.exoplatform.social.core.profile.ProfileFilter;
 import org.exoplatform.social.core.relationship.model.Relationship;
 import org.exoplatform.social.core.relationship.model.Relationship.Type;
+import org.exoplatform.social.core.search.Sorting;
 import org.exoplatform.social.core.storage.RelationshipStorageException;
 import org.exoplatform.social.core.storage.impl.RelationshipStorageImpl;
 
@@ -121,12 +123,12 @@ public class RDBMSRelationshipStorageImpl extends RelationshipStorageImpl {
     if (item == null) {
       item = connectionDAO.getConnection(identity2, identity1);
     }
-    return convertRelationshipItemToRelationship(item);
+    return Utils.convertRelationshipItemToRelationship(item);
   }
   
   @Override
   public Relationship getRelationship(String relationshipId) throws RelationshipStorageException {
-    return convertRelationshipItemToRelationship(connectionDAO.find(Long.valueOf(relationshipId)));
+    return Utils.convertRelationshipItemToRelationship(connectionDAO.find(Long.valueOf(relationshipId)));
   }
   
   @Override
@@ -211,7 +213,7 @@ public class RDBMSRelationshipStorageImpl extends RelationshipStorageImpl {
     List<Relationship> relationships = new ArrayList<Relationship>();
     if (connections == null) return relationships;
     for (ConnectionEntity item : connections) {
-      relationships.add(convertRelationshipItemToRelationship(item));
+      relationships.add(Utils.convertRelationshipItemToRelationship(item));
     }
     return relationships;
   }
@@ -228,17 +230,6 @@ public class RDBMSRelationshipStorageImpl extends RelationshipStorageImpl {
     Profile profile = identityStorage.loadProfile(identity.getProfile());
     identity.setProfile(profile);
     return identity;
-  }
-  
-  private Relationship convertRelationshipItemToRelationship(ConnectionEntity item) {
-    if (item == null) return null;
-    //
-    Relationship relationship = new Relationship(Long.toString(item.getId()));
-    relationship.setId(String.valueOf(item.getId()));
-    relationship.setSender(identityStorage.findIdentityById(item.getSender().getStringId()));
-    relationship.setReceiver(identityStorage.findIdentityById(item.getReceiver().getStringId()));
-    relationship.setStatus(item.getStatus());
-    return relationship;
   }
 
   @Override
@@ -385,6 +376,9 @@ public class RDBMSRelationshipStorageImpl extends RelationshipStorageImpl {
 
   private List<Identity> searchConnectionByFilter(Identity owner, Relationship.Type status, ProfileFilter profileFilter, long offset, long limit) {
     ExtendProfileFilter xFilter = new ExtendProfileFilter(profileFilter);
+    if(xFilter.isEmpty()) {
+      return searchConnections(owner, status, offset, limit, xFilter.getSorting());
+    }
     xFilter.setConnection(owner);
     xFilter.setConnectionStatus(status);
 
@@ -395,6 +389,31 @@ public class RDBMSRelationshipStorageImpl extends RelationshipStorageImpl {
       LOG.error(ex.getMessage(), ex);
       return Collections.emptyList();
     }
+  }
+
+  private List<Identity> searchConnections(Identity owner, Type status, long offset, long limit, Sorting sorting) {
+    // FIXME: Sorting is not applied, 
+    // wait for redesign of Model to make it easy to do
+
+    long ownerId = Long.valueOf(owner.getId());
+
+    List<ConnectionEntity> connections = connectionDAO.getConnections(owner, status, offset, limit);
+    List<Identity> identities = new ArrayList<Identity>();
+
+    for (ConnectionEntity connectionEntity : connections) {
+      IdentityEntity receiver = connectionEntity.getReceiver();
+      IdentityEntity sender = connectionEntity.getSender();
+      if (ownerId == sender.getId()) {
+        Identity identity = Utils.convertToIdentity(receiver);
+        identities.add(identity);
+      } else if (ownerId == receiver.getId()) {
+        Identity identity = Utils.convertToIdentity(sender);
+        identities.add(identity);
+      } else {
+        LOG.warn("Incompatible returned connection entity, the ownerId {} is not receiver, neither sender", ownerId);
+      }
+    }
+    return identities;
   }
 
   private int countConnectionByFilter(Identity owner, Relationship.Type status, ProfileFilter profileFilter) {
