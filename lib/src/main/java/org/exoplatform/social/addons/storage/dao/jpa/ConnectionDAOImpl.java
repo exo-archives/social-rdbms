@@ -16,7 +16,6 @@
  */
 package org.exoplatform.social.addons.storage.dao.jpa;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import javax.persistence.EntityManager;
@@ -180,15 +179,25 @@ public class ConnectionDAOImpl extends GenericDAOJPAImpl<ConnectionEntity, Long>
 
   @Override
   public List<Long> getSenderIds(long receiverId, Type status, int offset, int limit) {
-    List<ConnectionEntity> connectionsList = getSenders(receiverId, status, offset, limit);
-    List<Long> senderIds = new ArrayList<Long>();
-    for (ConnectionEntity connectionEntity : connectionsList) {
-      long senderId = connectionEntity.getSender().getId();
-      if(!senderIds.contains(senderId)) {
-        senderIds.add(senderId);
-      }
+    EntityManager em = getEntityManager();
+    String queryName = null;
+    if (status == null || status == Type.ALL) {
+      queryName = "SocConnection.getSenderIdsByReceiverWithoutStatus";
+    } else {
+      queryName = "SocConnection.getSenderIdsByReceiverWithStatus";
     }
-    return senderIds;
+    TypedQuery<Long> query = em.createNamedQuery(queryName, Long.class);
+    query.setParameter("identityId", receiverId);
+    if (status != null && status != Type.ALL) {
+      query.setParameter("status", status);
+    }
+    if (offset > 0) {
+      query.setFirstResult(offset);
+    }
+    if (limit > 0) {
+      query.setMaxResults(limit);
+    }
+    return query.getResultList();
   }
 
   private List<ConnectionEntity> getSenders(long receiverId, Type status, int offset, int limit) {
@@ -210,21 +219,30 @@ public class ConnectionDAOImpl extends GenericDAOJPAImpl<ConnectionEntity, Long>
     if (limit > 0) {
       query.setMaxResults(limit);
     }
-    List<ConnectionEntity> connectionsList = query.getResultList();
-    return connectionsList;
+    return query.getResultList();
   }
 
   @Override
   public List<Long> getReceiverIds(long senderId, Type status, int offset, int limit) {
-    List<ConnectionEntity> connectionsList = getReceivers(senderId, status, offset, limit);
-    List<Long> receiverIds = new ArrayList<Long>();
-    for (ConnectionEntity connectionEntity : connectionsList) {
-      long receiverId = connectionEntity.getReceiver().getId();
-      if(!receiverIds.contains(receiverId)) {
-        receiverIds.add(receiverId);
-      }
+    EntityManager em = getEntityManager();
+    String queryName = null;
+    if (status == null || status == Type.ALL) {
+      queryName = "SocConnection.getReceiverIdsBySenderWithoutStatus";
+    } else {
+      queryName = "SocConnection.getReceiverIdsBySenderWithStatus";
     }
-    return receiverIds;
+    TypedQuery<Long> query = em.createNamedQuery(queryName, Long.class);
+    query.setParameter("identityId", senderId);
+    if (status != null && status != Type.ALL) {
+      query.setParameter("status", status);
+    }
+    if (offset > 0) {
+      query.setFirstResult(offset);
+    }
+    if (limit > 0) {
+      query.setMaxResults(limit);
+    }
+    return query.getResultList();
   }
 
   private List<ConnectionEntity> getReceivers(long receiverId, Type status, int offset, int limit) {
