@@ -19,33 +19,27 @@
 
 package org.exoplatform.social.addons.storage.dao.jpa.query;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
-import javax.persistence.criteria.Join;
 import javax.persistence.criteria.JoinType;
-import javax.persistence.criteria.ListJoin;
 import javax.persistence.criteria.MapJoin;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 import javax.persistence.criteria.SetJoin;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
 import org.exoplatform.social.addons.search.ExtendProfileFilter;
-import org.exoplatform.social.addons.storage.entity.ConnectionEntity;
-import org.exoplatform.social.addons.storage.entity.ConnectionEntity_;
 import org.exoplatform.social.addons.storage.entity.IdentityEntity;
 import org.exoplatform.social.addons.storage.entity.IdentityEntity_;
 import org.exoplatform.social.addons.storage.entity.ProfileExperienceEntity;
 import org.exoplatform.social.addons.storage.entity.ProfileExperienceEntity_;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.identity.model.Profile;
-import org.exoplatform.social.core.relationship.model.Relationship;
-import org.exoplatform.social.core.relationship.model.Relationship.Type;
 
 /**
  * @author <a href="mailto:tuyennt@exoplatform.com">Tuyen Nguyen The</a>.
@@ -114,23 +108,7 @@ public class ProfileQueryBuilder {
       }
 
       String all = filter.getAll();
-      if (all != null && !all.trim().isEmpty()) {
-        String name = filter.getName();
-        all = processLikeString(all).toLowerCase();
-        Predicate[] p = new Predicate[5];
-        MapJoin<IdentityEntity, String, String> properties = identity.join(IdentityEntity_.properties, JoinType.LEFT);
-        p[0] = cb.and(cb.like(cb.lower(properties.value()), name), properties.key().in(Arrays.asList(Profile.FIRST_NAME, Profile.LAST_NAME, Profile.FULL_NAME)));
-
-        if(experience == null) {
-          experience = identity.join(IdentityEntity_.experiences, JoinType.LEFT);
-        }
-        p[1] = cb.like(cb.lower(experience.get(ProfileExperienceEntity_.position)), all);
-        p[2] = cb.like(cb.lower(experience.get(ProfileExperienceEntity_.skills)), all);
-        p[3] = cb.like(cb.lower(experience.get(ProfileExperienceEntity_.company)), all);
-        p[4] = cb.like(cb.lower(experience.get(ProfileExperienceEntity_.description)), all);
-
-        predicates.add(cb.or(p));
-      } else {
+      if (all == null || all.trim().isEmpty()) {
         String name = filter.getName();
         if (name != null && !name.isEmpty()) {
           name = processLikeString(name);
@@ -169,6 +147,23 @@ public class ProfileQueryBuilder {
           }
           predicates.add(cb.like(cb.lower(experience.get(ProfileExperienceEntity_.company)), val));
         }
+      } else {
+
+        String name = filter.getName();
+        all = processLikeString(all).toLowerCase();
+        Predicate[] p = new Predicate[5];
+        MapJoin<IdentityEntity, String, String> properties = identity.join(IdentityEntity_.properties, JoinType.LEFT);
+        p[0] = cb.and(cb.like(cb.lower(properties.value()), name), properties.key().in(Arrays.asList(Profile.FIRST_NAME, Profile.LAST_NAME, Profile.FULL_NAME)));
+
+        if(experience == null) {
+          experience = identity.join(IdentityEntity_.experiences, JoinType.LEFT);
+        }
+        p[1] = cb.like(cb.lower(experience.get(ProfileExperienceEntity_.position)), all);
+        p[2] = cb.like(cb.lower(experience.get(ProfileExperienceEntity_.skills)), all);
+        p[3] = cb.like(cb.lower(experience.get(ProfileExperienceEntity_.company)), all);
+        p[4] = cb.like(cb.lower(experience.get(ProfileExperienceEntity_.description)), all);
+
+        predicates.add(cb.or(p));
       }
 
       char c = filter.getFirstCharacterOfName();

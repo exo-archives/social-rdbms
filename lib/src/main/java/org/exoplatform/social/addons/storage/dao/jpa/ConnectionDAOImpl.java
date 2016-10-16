@@ -200,28 +200,6 @@ public class ConnectionDAOImpl extends GenericDAOJPAImpl<ConnectionEntity, Long>
     return query.getResultList();
   }
 
-  private List<ConnectionEntity> getSenders(long receiverId, Type status, int offset, int limit) {
-    EntityManager em = getEntityManager();
-    String queryName = null;
-    if(status ==  null || status == Type.ALL) {
-      queryName = "SocConnection.getSenderByReceiverWithoutStatus";
-    } else {
-      queryName = "SocConnection.getSenderByReceiverWithStatus";
-    }
-    TypedQuery<ConnectionEntity> query = em.createNamedQuery(queryName, ConnectionEntity.class);
-    query.setParameter("identityId", receiverId);
-    if(status !=  null && status != Type.ALL) {
-      query.setParameter("status", status);
-    }
-    if (offset > 0) {
-      query.setFirstResult(offset);
-    }
-    if (limit > 0) {
-      query.setMaxResults(limit);
-    }
-    return query.getResultList();
-  }
-
   @Override
   public List<Long> getReceiverIds(long senderId, Type status, int offset, int limit) {
     EntityManager em = getEntityManager();
@@ -243,29 +221,6 @@ public class ConnectionDAOImpl extends GenericDAOJPAImpl<ConnectionEntity, Long>
       query.setMaxResults(limit);
     }
     return query.getResultList();
-  }
-
-  private List<ConnectionEntity> getReceivers(long receiverId, Type status, int offset, int limit) {
-    EntityManager em = getEntityManager();
-    String queryName = null;
-    if (status == null || status == Type.ALL) {
-      queryName = "SocConnection.getReceiverBySenderWithoutStatus";
-    } else {
-      queryName = "SocConnection.getReceiverBySenderWithStatus";
-    }
-    TypedQuery<ConnectionEntity> query = em.createNamedQuery(queryName, ConnectionEntity.class);
-    query.setParameter("identityId", receiverId);
-    if (status != null && status != Type.ALL) {
-      query.setParameter("status", status);
-    }
-    if (offset > 0) {
-      query.setFirstResult(offset);
-    }
-    if (limit > 0) {
-      query.setMaxResults(limit);
-    }
-    List<ConnectionEntity> receiversList = query.getResultList();
-    return receiversList;
   }
 
   private Long countSenderId(long receiverId, Type status) {
@@ -299,4 +254,50 @@ public class ConnectionDAOImpl extends GenericDAOJPAImpl<ConnectionEntity, Long>
     }
     return query.getSingleResult();
   }
+
+  private List<ConnectionEntity> getReceivers(long receiverId, Type status, int offset, int limit) {
+    EntityManager em = getEntityManager();
+    String queryName = null;
+    if (status == null || status == Type.ALL) {
+      queryName = "SocConnection.getReceiverBySenderWithoutStatus";
+    } else {
+      queryName = "SocConnection.getReceiverBySenderWithStatus";
+    }
+    TypedQuery<ConnectionEntity> query = em.createNamedQuery(queryName, ConnectionEntity.class);
+    query.setParameter("identityId", receiverId);
+    if (status != null && status != Type.ALL) {
+      query.setParameter("status", status);
+    }
+    if (offset > 0) {
+      query.setFirstResult(offset);
+    }
+    if (limit > 0) {
+      query.setMaxResults(limit);
+    }
+    List<ConnectionEntity> receiversList = query.getResultList();
+    return receiversList;
+  }
+
+  private List<ConnectionEntity> getSenders(long receiverId, Type status, int offset, int limit) {
+    EntityManager em = getEntityManager();
+    String queryName = null;
+    if(status ==  null || status == Type.ALL) {
+      queryName = "SocConnection.getSenderByReceiverWithoutStatus";
+    } else {
+      queryName = "SocConnection.getSenderByReceiverWithStatus";
+    }
+    TypedQuery<ConnectionEntity> query = em.createNamedQuery(queryName, ConnectionEntity.class);
+    query.setParameter("identityId", receiverId);
+    if(status !=  null && status != Type.ALL) {
+      query.setParameter("status", status);
+    }
+    if (offset > 0) {
+      query.setFirstResult(offset);
+    }
+    if (limit > 0) {
+      query.setMaxResults(limit);
+    }
+    return query.getResultList();
+  }
+
 }
