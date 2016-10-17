@@ -54,7 +54,7 @@ import org.exoplatform.commons.api.persistence.ExoEntity;
 @Table(name = "SOC_IDENTITIES")
 @NamedQueries({
         @NamedQuery(
-                name = "SocIdentity.findAllUserIdentities",
+                name = "SocIdentity.findIdentitiesByProviderWithExcludedIdentity",
                 query = "SELECT distinct identity " +
                 " FROM SocIdentityEntity identity "  +
                 " WHERE   identity.deleted = FALSE " +
@@ -63,7 +63,7 @@ import org.exoplatform.commons.api.persistence.ExoEntity;
                 "     AND identity.providerId= :providerId "
         ),
         @NamedQuery(
-                name = "SocIdentity.countAllUserIdentities",
+                name = "SocIdentity.countIdentitiesByProviderWithExcludedIdentity",
                 query = "SELECT count(distinct identity) " +
                 " FROM SocIdentityEntity identity "  +
                 " WHERE   identity.deleted = FALSE " +

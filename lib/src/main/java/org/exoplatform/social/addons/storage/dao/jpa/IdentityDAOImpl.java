@@ -102,13 +102,13 @@ public class IdentityDAOImpl extends GenericDAOJPAImpl<IdentityEntity, Long> imp
 
   @Override
   public ListAccess<Map.Entry<IdentityEntity, ConnectionEntity>> findAllIdentitiesWithConnections(long identityId) {
-    TypedQuery<IdentityEntity> query = getEntityManager().createNamedQuery("SocIdentity.findAllUserIdentities", IdentityEntity.class);
+    TypedQuery<IdentityEntity> query = getEntityManager().createNamedQuery("SocIdentity.findIdentitiesByProviderWithExcludedIdentity", IdentityEntity.class);
     query.setParameter("identityId", identityId);
     query.setParameter("providerId", OrganizationIdentityProvider.NAME);
 
     TypedQuery<ConnectionEntity> connectionsQuery = getEntityManager().createNamedQuery("SocConnection.findConnectionsByIdentityIds", ConnectionEntity.class);
 
-    TypedQuery<Long> countQuery = getEntityManager().createNamedQuery("SocIdentity.countAllUserIdentities", Long.class);
+    TypedQuery<Long> countQuery = getEntityManager().createNamedQuery("SocIdentity.countIdentitiesByProviderWithExcludedIdentity", Long.class);
     countQuery.setParameter("identityId", identityId);
     countQuery.setParameter("providerId", OrganizationIdentityProvider.NAME);
 

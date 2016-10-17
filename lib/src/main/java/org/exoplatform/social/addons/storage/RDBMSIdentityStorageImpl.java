@@ -228,7 +228,7 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
    * @throws IdentityStorageException if has any error
    */
   public void saveIdentity(final Identity identity) throws IdentityStorageException {
-    long id = Utils.parseId(identity.getId());
+    long id = EntityConverterUtils.parseId(identity.getId());
 
     IdentityEntity entity = null;
     if (id > 0) {
@@ -240,7 +240,7 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
     if (entity == null) {
       entity = new IdentityEntity();
     }
-    Utils.mapToEntity(identity, entity);
+    EntityConverterUtils.mapToEntity(identity, entity);
 
     if (entity.getId() > 0) {
       getIdentityDAO().update(entity);
@@ -250,7 +250,7 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
       }
       entity = getIdentityDAO().create(entity);
     }
-    Profile profile = Utils.convertToProfile(entity, identity);
+    Profile profile = EntityConverterUtils.convertToProfile(entity, identity);
     if (id <= 0) {
       profile.setId(null);      
     }
@@ -267,7 +267,7 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
    * @since  1.2.0-GA
    */
   public Identity updateIdentity(final Identity identity) throws IdentityStorageException {
-    long id = Utils.parseId(identity.getId());
+    long id = EntityConverterUtils.parseId(identity.getId());
 
     IdentityEntity entity = null;
     if (id > 0) {
@@ -278,10 +278,10 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
       throw new IdentityStorageException(IdentityStorageException.Type.FAIL_TO_UPDATE_IDENTITY, "The identity does not exist on DB");
     }
 
-    Utils.mapToEntity(identity, entity);
+    EntityConverterUtils.mapToEntity(identity, entity);
     entity = getIdentityDAO().update(entity);
 
-    return Utils.convertToIdentity(entity, true);
+    return EntityConverterUtils.convertToIdentity(entity, true);
   }
 
   /**
@@ -305,11 +305,11 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
    */
   @ExoTransactional
   public Identity findIdentityById(final String nodeId) throws IdentityStorageException {
-    long id = Utils.parseId(nodeId);
+    long id = EntityConverterUtils.parseId(nodeId);
     IdentityEntity entity = getIdentityDAO().find(id);
 
     if (entity != null) {
-      return Utils.convertToIdentity(entity);
+      return EntityConverterUtils.convertToIdentity(entity);
     } else {
       return null;
     }
@@ -333,7 +333,7 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
    */
   @ExoTransactional
   public void hardDeleteIdentity(final Identity identity) throws IdentityStorageException {
-    long id = Utils.parseId(identity.getId());
+    long id = EntityConverterUtils.parseId(identity.getId());
     String username = identity.getRemoteId();
     String provider = identity.getProviderId();
 
@@ -371,14 +371,14 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
    */
   @ExoTransactional
   public Profile loadProfile(Profile profile) throws IdentityStorageException {
-    long identityId = Utils.parseId(profile.getIdentity().getId());    
+    long identityId = EntityConverterUtils.parseId(profile.getIdentity().getId());    
     IdentityEntity entity = identityDAO.find(identityId);
 
     if (entity == null) {
       return null;
     } else {
       profile.setId(String.valueOf(entity.getId()));
-      Utils.mapToProfile(entity, profile);
+      EntityConverterUtils.mapToProfile(entity, profile);
       profile.clearHasChanged();
       return profile;
     }
@@ -401,7 +401,7 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
         return null;
       }
 
-      return Utils.convertToIdentity(entity);
+      return EntityConverterUtils.convertToIdentity(entity);
 
     } catch (Exception ex) {
 
@@ -416,7 +416,7 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
    * @throws IdentityStorageException if has any error
    */
   public void saveProfile(final Profile profile) throws IdentityStorageException {
-    long id = Utils.parseId(profile.getIdentity().getId());
+    long id = EntityConverterUtils.parseId(profile.getIdentity().getId());
     IdentityEntity entity = (id == 0 ? null : identityDAO.find(id));
     if (entity == null) {
       throw new IdentityStorageException(IdentityStorageException.Type.FAIL_TO_UPDATE_PROFILE, "Profile does not exist on RDBMS");
@@ -436,7 +436,7 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
    * @since 1.2.0-GA
    */
   public void updateProfile(final Profile profile) throws IdentityStorageException {
-    long id = Utils.parseId(profile.getIdentity().getId());
+    long id = EntityConverterUtils.parseId(profile.getIdentity().getId());
     IdentityEntity entity = identityDAO.find(id);
     if (entity == null) {
       throw new IdentityStorageException(IdentityStorageException.Type.FAIL_TO_UPDATE_PROFILE, "Profile does not exist on RDBMS");
@@ -573,7 +573,7 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
    * @since 4.2.x
    */
   public void processEnabledIdentity(Identity identity, boolean isEnable) {
-    long id = Utils.parseId(identity.getId());
+    long id = EntityConverterUtils.parseId(identity.getId());
     IdentityEntity entity = getIdentityDAO().find(id);
     if (entity == null) {
       throw new IllegalArgumentException("Identity does not exists");
@@ -653,7 +653,7 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
             for (String remoteId : wildcardUsers) {
               Identity id = findIdentity(OrganizationIdentityProvider.NAME, remoteId);
               if (id != null) {
-                relations.add(Utils.parseId(id.getId()));
+                relations.add(EntityConverterUtils.parseId(id.getId()));
               }
             }
             break;
@@ -662,7 +662,7 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
         for (int i = 0; i < members.length; i++) {
           Identity identity = findIdentity(OrganizationIdentityProvider.NAME, members[i]);
           if (identity != null) {
-            relations.add(Utils.parseId(identity.getId()));
+            relations.add(EntityConverterUtils.parseId(identity.getId()));
           }
         }
       } catch (IdentityStorageException e) {
@@ -676,7 +676,7 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
     ExtendProfileFilter xFilter = new ExtendProfileFilter(profileFilter);
     xFilter.setIdentityIds(relations);
     ListAccess<IdentityEntity> list = getIdentityDAO().findIdentities(xFilter);
-    return Utils.convertToIdentities(list, offset, limit);
+    return EntityConverterUtils.convertToIdentities(list, offset, limit);
   }
 
   public List<Identity> getIdentitiesByProfileFilter(final String providerId,
@@ -688,13 +688,13 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
 
     ListAccess<IdentityEntity> list = getIdentityDAO().findIdentities(xFilter);
 
-    return Utils.convertToIdentities(list, offset, limit);
+    return EntityConverterUtils.convertToIdentities(list, offset, limit);
   }
 
   @Override
   public List<IdentityWithRelationship> getIdentitiesWithRelationships(final String identityId, int offset, int limit)  throws IdentityStorageException {
     ListAccess<Entry<IdentityEntity, ConnectionEntity>> list = getIdentityDAO().findAllIdentitiesWithConnections(Long.valueOf(identityId));
-    return Utils.convertToIdentitiesWithRelationship(list, offset, limit);
+    return EntityConverterUtils.convertToIdentitiesWithRelationship(list, offset, limit);
   }
 
   @Override
@@ -715,7 +715,7 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
         } else {
           Identity[] identities = new Identity[entities.length];
           for (int i = 0; i < entities.length; i++) {
-            identities[i] = Utils.convertToIdentity(entities[i]);
+            identities[i] = EntityConverterUtils.convertToIdentity(entities[i]);
           }
           return identities;
         }
@@ -735,7 +735,7 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
    */
   @ExoTransactional
   public void removeIdentity(Identity identity) {
-    long id = Utils.parseId(identity.getId());
+    long id = EntityConverterUtils.parseId(identity.getId());
     String username = identity.getRemoteId();
     String provider = identity.getProviderId();
 

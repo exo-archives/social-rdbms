@@ -123,12 +123,12 @@ public class RDBMSRelationshipStorageImpl extends RelationshipStorageImpl {
     if (item == null) {
       item = connectionDAO.getConnection(identity2, identity1);
     }
-    return Utils.convertRelationshipItemToRelationship(item);
+    return EntityConverterUtils.convertRelationshipItemToRelationship(item);
   }
   
   @Override
   public Relationship getRelationship(String relationshipId) throws RelationshipStorageException {
-    return Utils.convertRelationshipItemToRelationship(connectionDAO.find(Long.valueOf(relationshipId)));
+    return EntityConverterUtils.convertRelationshipItemToRelationship(connectionDAO.find(Long.valueOf(relationshipId)));
   }
   
   @Override
@@ -213,7 +213,7 @@ public class RDBMSRelationshipStorageImpl extends RelationshipStorageImpl {
     List<Relationship> relationships = new ArrayList<Relationship>();
     if (connections == null) return relationships;
     for (ConnectionEntity item : connections) {
-      relationships.add(Utils.convertRelationshipItemToRelationship(item));
+      relationships.add(EntityConverterUtils.convertRelationshipItemToRelationship(item));
     }
     return relationships;
   }
@@ -401,10 +401,10 @@ public class RDBMSRelationshipStorageImpl extends RelationshipStorageImpl {
       IdentityEntity receiver = connectionEntity.getReceiver();
       IdentityEntity sender = connectionEntity.getSender();
       if (ownerId == sender.getId()) {
-        Identity identity = Utils.convertToIdentity(receiver);
+        Identity identity = EntityConverterUtils.convertToIdentity(receiver);
         identities.add(identity);
       } else if (ownerId == receiver.getId()) {
-        Identity identity = Utils.convertToIdentity(sender);
+        Identity identity = EntityConverterUtils.convertToIdentity(sender);
         identities.add(identity);
       } else {
         LOG.warn("Incompatible returned connection entity, the ownerId {} is not receiver, neither sender", ownerId);

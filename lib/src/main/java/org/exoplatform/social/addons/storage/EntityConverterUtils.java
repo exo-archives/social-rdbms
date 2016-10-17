@@ -31,7 +31,7 @@ import org.exoplatform.social.core.model.AvatarAttachment;
 import org.exoplatform.social.core.relationship.model.Relationship;
 import org.exoplatform.social.core.service.LinkProvider;
 
-public class Utils {
+public class EntityConverterUtils {
 
   public static Identity convertToIdentity(IdentityEntity entity) {
     return convertToIdentity(entity, true);
