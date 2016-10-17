@@ -392,9 +392,6 @@ public class RDBMSRelationshipStorageImpl extends RelationshipStorageImpl {
   }
 
   private List<Identity> searchConnections(Identity owner, Type status, long offset, long limit, Sorting sorting) {
-    // FIXME: Sorting is not applied, 
-    // wait for redesign of Model to make it easy to do
-
     long ownerId = Long.valueOf(owner.getId());
 
     List<ConnectionEntity> connections = connectionDAO.getConnections(owner, status, offset, limit);
