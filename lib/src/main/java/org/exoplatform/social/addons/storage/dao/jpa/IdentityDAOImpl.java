@@ -112,7 +112,7 @@ public class IdentityDAOImpl extends GenericDAOJPAImpl<IdentityEntity, Long> imp
     countQuery.setParameter("identityId", identityId);
     countQuery.setParameter("providerId", OrganizationIdentityProvider.NAME);
 
-    return new IdentityWithMembershipListAccess(query, connectionsQuery, countQuery);
+    return new IdentityWithRelationshipListAccess(query, connectionsQuery, countQuery);
   }
 
   @Override
@@ -228,12 +228,12 @@ public class IdentityDAOImpl extends GenericDAOJPAImpl<IdentityEntity, Long> imp
     }
   }
 
-  public static class IdentityWithMembershipListAccess implements ListAccess<Map.Entry<IdentityEntity, ConnectionEntity>> {
+  public static class IdentityWithRelationshipListAccess implements ListAccess<Map.Entry<IdentityEntity, ConnectionEntity>> {
     private final TypedQuery<IdentityEntity> identityQuery;
     private final TypedQuery<ConnectionEntity> connectionsQuery;
     private final TypedQuery<Long> countQuery;
 
-    public IdentityWithMembershipListAccess(TypedQuery<IdentityEntity> identityQuery, TypedQuery<ConnectionEntity> connctionsQuery, TypedQuery<Long> countQuery) {
+    public IdentityWithRelationshipListAccess(TypedQuery<IdentityEntity> identityQuery, TypedQuery<ConnectionEntity> connctionsQuery, TypedQuery<Long> countQuery) {
       this.identityQuery = identityQuery;
       this.connectionsQuery = connctionsQuery;
       this.countQuery = countQuery;

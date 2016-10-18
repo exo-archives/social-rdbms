@@ -188,7 +188,7 @@ public class EntityConverterUtils {
         mapToIdentity(identityEntity, identityWithRelationship);
 
         Relationship relationship = convertRelationshipItemToRelationship(connectionEntity);
-        identityWithRelationship.setRelationshipWithCurrentIdentity(relationship);
+        identityWithRelationship.setRelationship(relationship);
 
         result.add(identityWithRelationship);
       }
