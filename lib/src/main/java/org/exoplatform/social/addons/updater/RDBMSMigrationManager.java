@@ -346,15 +346,15 @@ public class RDBMSMigrationManager implements Startable {
             }
           }
 
-          LOG.info(String.format("Migration job has done, total time is %s (ms)", (System.currentTimeMillis() - startTime)));
-          LOG.info(String.format("Migration space in %s (ms)", timeToMigrateSpaces));
-          LOG.info(String.format("- Number space failed: %s", MigrationContext.getSpaceMigrateFailed().size()));
+          LOG.info("Migration job done, total time is duration_ms={}", (System.currentTimeMillis() - startTime));
+          LOG.info("Migration - Space in duration_ms={}", timeToMigrateSpaces);
+          LOG.info("- Number space failed: {}", MigrationContext.getSpaceMigrateFailed().size());
           if (!MigrationContext.getSpaceMigrateFailed().isEmpty()) {
             LOG.warn("- space failed: " + MigrationContext.getSpaceMigrateFailed());
           }
 
-          LOG.info(String.format("Migration identities in %s (ms)", timeToMigrateIdentities));
-          LOG.info(String.format("- Number identities failed: %s", MigrationContext.getIdentitiesMigrateFailed().size()));
+          LOG.info("Migration - Identities duration_ms={}", timeToMigrateIdentities);
+          LOG.info("- Number identities failed: {}", MigrationContext.getIdentitiesMigrateFailed().size());
           if (!MigrationContext.getIdentitiesMigrateFailed().isEmpty()) {
             LOG.warn("- identities failed: " + MigrationContext.getIdentitiesMigrateFailed());
           }
@@ -362,39 +362,39 @@ public class RDBMSMigrationManager implements Startable {
           if (!MigrationContext.getIdentitiesMigrateFailed().isEmpty()) {
             LOG.info("We could not continue migration job because the identities migration was failed");
           } else {
-            LOG.info(String.format("Migration relationships in %s (ms)", timeToMigrateConnections));
-            LOG.info(String.format("- migrate failed for %s user(s)", MigrationContext.getIdentitiesMigrateConnectionFailed().size()));
+            LOG.info("Migration - Relationships duration_ms={}", timeToMigrateConnections);
+            LOG.info("- migration failed for {} user(s)", MigrationContext.getIdentitiesMigrateConnectionFailed().size());
             if (!MigrationContext.getIdentitiesMigrateConnectionFailed().isEmpty()) {
               LOG.warn("- identities failed: " + MigrationContext.getIdentitiesMigrateConnectionFailed());
             }
 
-            LOG.info(String.format("Migration activities in %s (ms)", timeToMigrateActivities));
-            LOG.info(String.format("- migrate failed for %s user(s)", MigrationContext.getIdentitiesMigrateActivityFailed().size()));
+            LOG.info("Migration - Activities duration_ms={}", timeToMigrateActivities);
+            LOG.info("- migration failed for {} user(s)", MigrationContext.getIdentitiesMigrateActivityFailed().size());
             if (!MigrationContext.getIdentitiesMigrateActivityFailed().isEmpty()) {
               LOG.warn("- identities failed: " + MigrationContext.getIdentitiesMigrateActivityFailed());
             }
 
             // Cleanup
-            LOG.info(String.format("Cleanup relationship in %s (ms)", timeToCleanupConnections));
-            LOG.info(String.format("- cleanup connection failed for %s user(s)", MigrationContext.getIdentitiesCleanupConnectionFailed().size()));
+            LOG.info("Cleanup - Relationships duration_ms={}", timeToCleanupConnections);
+            LOG.info("- connection cleanup failed for {} user(s)", MigrationContext.getIdentitiesCleanupConnectionFailed().size());
             if (!MigrationContext.getIdentitiesCleanupConnectionFailed().isEmpty()) {
               LOG.warn("- identities cleanup failed: " + MigrationContext.getIdentitiesCleanupConnectionFailed());
             }
 
-            LOG.info(String.format("Cleanup activities in %s (ms)", timeToCleanupActivities));
-            LOG.info(String.format("- cleanup activities failed for %s identity(s)", MigrationContext.getIdentitiesCleanupActivityFailed().size()));
+            LOG.info("Cleanup - Activities duration_ms={}", timeToCleanupActivities);
+            LOG.info("- activities cleanup failed for {} identity(s)", MigrationContext.getIdentitiesCleanupActivityFailed().size());
             if (!MigrationContext.getIdentitiesCleanupActivityFailed().isEmpty()) {
               LOG.warn("- identities cleanup failed: " + MigrationContext.getIdentitiesCleanupActivityFailed());
             }
 
-            LOG.info(String.format("Cleanup identities in %s (ms)", timeToCleanupIdentities));
-            LOG.info(String.format("- cleanup failed for %s identity(s)", MigrationContext.getIdentitiesCleanupFailed().size()));
+            LOG.info("Cleanup - Identities duration_ms={}", timeToCleanupIdentities);
+            LOG.info("- cleanup failed for {} identity(s)", MigrationContext.getIdentitiesCleanupFailed().size());
             if (!MigrationContext.getIdentitiesCleanupFailed().isEmpty()) {
               LOG.warn("- identities cleanup failed: " + MigrationContext.getIdentitiesCleanupFailed());
             }
 
-            LOG.info(String.format("Cleanup spaces in %s (ms)", timeToCleanupSpaces));
-            LOG.info(String.format("- cleanup failed for %s space(s)", MigrationContext.getSpaceCleanupFailed().size()));
+            LOG.info("Cleanup - Spaces in duration_ms={}", timeToCleanupSpaces);
+            LOG.info("- cleanup failed for {} space(s)", MigrationContext.getSpaceCleanupFailed().size());
             if (!MigrationContext.getSpaceCleanupFailed().isEmpty()) {
               LOG.warn("- space cleanup failed: " + MigrationContext.getSpaceCleanupFailed());
             }

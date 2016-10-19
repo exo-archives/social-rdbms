@@ -47,7 +47,7 @@ public class SpaceActivityUpdaterListener extends Listener<ExoSocialActivity, St
     if (SPACE_ACTIVITY_TYPE.equals(activity.getType())) {
       Identity spaceIdentity = identityStorage.findIdentity(SpaceIdentityProvider.NAME, activity.getStreamOwner());
       identityStorage.updateProfileActivityId(spaceIdentity, newActivityId, Profile.AttachedActivityType.SPACE);
-      LOG.info(String.format("Migration the space activity '%s' with old id's %s and new id's %s", activity.getTitle(), activity.getId(), newActivityId));
+      LOG.info("Migrate the space activity title='{}' old_id={} new_id={}", activity.getTitle(), activity.getId(), newActivityId);
     }
   }
 }

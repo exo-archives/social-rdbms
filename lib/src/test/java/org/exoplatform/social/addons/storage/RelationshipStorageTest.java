@@ -71,7 +71,7 @@ public class RelationshipStorageTest extends AbstractCoreTest {
     identityStorage = (IdentityStorage) getContainer().getComponentInstanceOfType(IdentityStorage.class);
     assertNotNull("identityManger must not be null", identityStorage);
     rootIdentity = new Identity(OrganizationIdentityProvider.NAME, "root");
-    johnIdentity = new Identity(OrganizationIdentityProvider.NAME, "john");
+    johnIdentity = new Identity(OrganizationIdentityProvider.NAME, "john.test");
     maryIdentity = new Identity(OrganizationIdentityProvider.NAME, "mary");
     demoIdentity = new Identity(OrganizationIdentityProvider.NAME, "demo");
     identityStorage.saveIdentity(rootIdentity);
@@ -193,8 +193,8 @@ public class RelationshipStorageTest extends AbstractCoreTest {
     assertEquals("listIdentities.size() must return: 2", 2, listIdentities.size());
 
     // Check john has avatar
-    assertNotNull(getInList(listIdentities, "john").getProfile());
-    assertNotNull(getInList(listIdentities, "john").getProfile().getAvatarUrl());
+    assertNotNull(getInList(listIdentities, "john.test").getProfile());
+    assertNotNull(getInList(listIdentities, "john.test").getProfile().getAvatarUrl());
 
     // Check mary hasn't avatar but empty profile
     assertNotNull(getInList(listIdentities, "mary").getProfile());
@@ -540,8 +540,8 @@ public class RelationshipStorageTest extends AbstractCoreTest {
     demoIdentity = identityStorage.findIdentity(OrganizationIdentityProvider.NAME, demoIdentity.getRemoteId());
 
     // Check john has avatar
-    assertNotNull(getInList(listIdentities, "john").getProfile());
-    assertNotNull(getInList(listIdentities, "john").getProfile().getAvatarUrl());
+    assertNotNull(getInList(listIdentities, "john.test").getProfile());
+    assertNotNull(getInList(listIdentities, "john.test").getProfile().getAvatarUrl());
 
     // Check mary hasn't avatar but empty profile
     assertNotNull(getInList(listIdentities, "mary").getProfile());

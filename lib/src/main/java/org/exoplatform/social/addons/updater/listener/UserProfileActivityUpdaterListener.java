@@ -47,7 +47,7 @@ public class UserProfileActivityUpdaterListener extends Listener<ExoSocialActivi
     if (PROFILE_ACTIVITY_TYPE.equals(activity.getType())) {
       Identity identity = identityStorage.findIdentity(OrganizationIdentityProvider.NAME, activity.getStreamOwner());
       identityStorage.updateProfileActivityId(identity, newActivityId, Profile.AttachedActivityType.USER);
-      LOG.info(String.format("Migration the profile activity '%s' with old id's %s and new id's %s", activity.getTitle(), activity.getId(), newActivityId));
+      LOG.info("Migrate the profile activity title='{}' old_id={} new_id={}", activity.getTitle(), activity.getId(), newActivityId);
     }
     
   }

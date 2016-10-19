@@ -1100,7 +1100,7 @@ public class RDBMSRelationshipManagerTest extends AbstractCoreTest {
   public void testGetManyRelationshipsByIdentityId() throws Exception {
     String providerId = OrganizationIdentityProvider.NAME;
 
-    Identity sender = identityManager.getOrCreateIdentity(providerId,"john");
+    Identity sender = identityManager.getOrCreateIdentity(providerId,"john.test");
     identityManager.saveIdentity(sender);
     assertNotNull(sender.getId());
 

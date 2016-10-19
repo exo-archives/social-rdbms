@@ -54,7 +54,7 @@ public class IdentityDAOImpl extends GenericDAOJPAImpl<IdentityEntity, Long> imp
   public IdentityEntity create(IdentityEntity entity) {
     IdentityEntity exists = findByProviderAndRemoteId(entity.getProviderId(), entity.getRemoteId());
     if (exists != null) {
-      throw new EntityExistsException("Identity is existed with ProviderID=" + entity.getProviderId() + " and RemoteId=" + entity.getRemoteId());
+      throw new EntityExistsException("Identity already exists provider_id=" + entity.getProviderId() + " remote_id=" + entity.getRemoteId());
     }
     return super.create(entity);
   }

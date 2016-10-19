@@ -568,7 +568,7 @@ public class RDBMSActivityStorageImplTest extends AbstractCoreTest {
   @MaxQueryNumber(1281)
   public void testMentionersAndCommenters() throws Exception {
     ExoSocialActivity activity = createActivity(1);
-    activity.setTitle("hello @demo @john");
+    activity.setTitle("hello @demo @john.test");
     activityStorage.saveActivity(rootIdentity, activity);
     tearDownActivityList.add(activity);
     
@@ -649,7 +649,7 @@ public class RDBMSActivityStorageImplTest extends AbstractCoreTest {
     activity.setBody("Body of "+ activity.getTitle());
     activity.setBodyId("BodyId of "+ activity.getTitle());
     activity.setLikeIdentityIds(new String[]{"demo", "mary"});
-    activity.setMentionedIds(new String[]{"demo", "john"});
+    activity.setMentionedIds(new String[]{"demo", "john.test"});
     activity.setCommentedIds(new String[]{});
     activity.setReplyToId(new String[]{});
     activity.setAppId("AppID");

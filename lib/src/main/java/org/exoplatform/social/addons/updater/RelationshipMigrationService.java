@@ -119,7 +119,7 @@ public class RelationshipMigrationService extends AbstractMigrationService<Relat
             String identityName = identityNode.getName();
             transactionList.add(identityName);
 
-            LOG.info(String.format("|  \\ START::user number: %s/%s (%s user)", offset, totalIdentities, identityNode.getName()));
+            LOG.info("|  \\ START::user number: {}/{} name={}", offset, totalIdentities, identityNode.getName());
             long t1 = System.currentTimeMillis();
 
             Node relationshipNode = identityNode.getNode("soc:relationship");
@@ -166,7 +166,7 @@ public class RelationshipMigrationService extends AbstractMigrationService<Relat
               nodeIter = getIdentityNodes(offset, LIMIT_THRESHOLD);
             }
 
-            LOG.info(String.format("|  / END::user number %s (%s user) with %s relationship(s) user consumed %s(ms)", relationshipNo, identityNode.getName(), relationshipNo, System.currentTimeMillis() - t1));
+            LOG.info("|  / END::user number {} name={} with {} relationship(s) duration_ms={}", relationshipNo, identityNode.getName(), relationshipNo, System.currentTimeMillis() - t1);
           }
         }
 
@@ -181,7 +181,7 @@ public class RelationshipMigrationService extends AbstractMigrationService<Relat
       }
     }
 
-    LOG.info(String.format("| / END::Relationships migration for (%s) user(s) with %s relationship(s) consumed %s(ms)", offset, total, System.currentTimeMillis() - t));
+    LOG.info("| / END::Relationships migration for ({}) user(s) with {} relationship(s) duration_ms={}", offset, total, System.currentTimeMillis() - t);
     RequestLifeCycle.begin(PortalContainer.getInstance());
 
     LOG.info("| \\ START::Re-indexing identity(s) ---------------------------------");
@@ -234,7 +234,7 @@ public class RelationshipMigrationService extends AbstractMigrationService<Relat
       }
       
       if(doneConnectionNo % LIMIT_THRESHOLD == 0) {
-        LOG.info(String.format("|     - BATCH MIGRATION::relationship number: %s (%s user)", doneConnectionNo,  userName));
+        LOG.info("|     - BATCH MIGRATION::relationship number: {} user_name={}", doneConnectionNo,  userName);
         endTx(true);
         entityManagerService.endRequest(PortalContainer.getInstance());
         entityManagerService.startRequest(PortalContainer.getInstance());
@@ -284,7 +284,7 @@ public class RelationshipMigrationService extends AbstractMigrationService<Relat
         transactionList.add(node.getName());
         offset++;
 
-        LOG.info(String.format("|  \\ START::cleanup Relationship of user number: %s/%s (%s user)", offset, totalIdentities, node.getName()));
+        LOG.info("|  \\ START::cleanup User Relationship number: {}/{} user_name={}", offset, totalIdentities, node.getName());
         IdentityEntity identityEntity = _findById(IdentityEntity.class, node.getUUID());
         
         Collection<RelationshipEntity> entities = identityEntity.getRelationship().getRelationships().values();
@@ -296,7 +296,7 @@ public class RelationshipMigrationService extends AbstractMigrationService<Relat
         entities = identityEntity.getReceiver().getRelationships().values();
         removeRelationshipEntity(entities);
         
-        LOG.info(String.format("|  / END::cleanup (%s user) consumed time %s(ms)", node.getName(), System.currentTimeMillis() - timePerUser));
+        LOG.info("|  / END::cleanup User Relationship user_name={} duration_ms={}", node.getName(), System.currentTimeMillis() - timePerUser);
         
         timePerUser = System.currentTimeMillis();
         if(offset % LIMIT_THRESHOLD == 0) {
@@ -312,7 +312,7 @@ public class RelationshipMigrationService extends AbstractMigrationService<Relat
           transactionList = new ArrayList<>();
         }
       }
-      LOG.info(String.format("| / END::cleanup Relationships migration for (%s) user consumed %s(ms)", offset, System.currentTimeMillis() - t));
+      LOG.info("| / END::cleanup User Relationships for {} users duration_ms={}", offset, System.currentTimeMillis() - t);
     } finally {
       try {
         getSession().save();
@@ -335,7 +335,7 @@ public class RelationshipMigrationService extends AbstractMigrationService<Relat
         getSession().remove(relationshipEntity);
         ++offset;
         if (offset % LIMIT_REMOVED_THRESHOLD == 0) {
-          LOG.info(String.format("|     - BATCH CLEANUP::relationship number: %s", offset));
+          LOG.info("|     - BATCH CLEANUP::relationship number: {}", offset);
           getSession().save();
         }
       }
