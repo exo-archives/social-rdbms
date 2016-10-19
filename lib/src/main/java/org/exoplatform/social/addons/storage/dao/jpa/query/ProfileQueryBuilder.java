@@ -19,31 +19,27 @@
 
 package org.exoplatform.social.addons.storage.dao.jpa.query;
 
-import javax.persistence.EntityManager;
-import javax.persistence.TypedQuery;
-import javax.persistence.criteria.CriteriaBuilder;
-import javax.persistence.criteria.CriteriaQuery;
-import javax.persistence.criteria.Join;
-import javax.persistence.criteria.JoinType;
-import javax.persistence.criteria.ListJoin;
-import javax.persistence.criteria.MapJoin;
-import javax.persistence.criteria.Predicate;
-import javax.persistence.criteria.Root;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import javax.persistence.EntityManager;
+import javax.persistence.TypedQuery;
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.JoinType;
+import javax.persistence.criteria.MapJoin;
+import javax.persistence.criteria.Predicate;
+import javax.persistence.criteria.Root;
+import javax.persistence.criteria.SetJoin;
+
 import org.exoplatform.social.addons.search.ExtendProfileFilter;
-import org.exoplatform.social.addons.storage.entity.ConnectionEntity;
-import org.exoplatform.social.addons.storage.entity.ConnectionEntity_;
 import org.exoplatform.social.addons.storage.entity.IdentityEntity;
 import org.exoplatform.social.addons.storage.entity.IdentityEntity_;
 import org.exoplatform.social.addons.storage.entity.ProfileExperienceEntity;
 import org.exoplatform.social.addons.storage.entity.ProfileExperienceEntity_;
 import org.exoplatform.social.core.identity.model.Identity;
 import org.exoplatform.social.core.identity.model.Profile;
-import org.exoplatform.social.core.relationship.model.Relationship;
 
 /**
  * @author <a href="mailto:tuyennt@exoplatform.com">Tuyen Nguyen The</a>.
@@ -100,38 +96,7 @@ public class ProfileQueryBuilder {
         predicates.add(cb.equal(identity.get(IdentityEntity_.providerId), filter.getProviderId()));
       }
 
-      if (filter.getConnection() != null) {
-        Identity owner = filter.getConnection();
-        Long ownerId = Long.valueOf(owner.getId());
-        Relationship.Type status = filter.getConnectionStatus();
-
-        if (status == Relationship.Type.INCOMING) {
-          Join<IdentityEntity, ConnectionEntity> outgoing = identity.join(IdentityEntity_.outgoingConnections, JoinType.INNER);
-          predicates.add(cb.and(cb.equal(outgoing.get(ConnectionEntity_.receiver), ownerId), cb.equal(outgoing.get(ConnectionEntity_.status), Relationship.Type.PENDING)));
-
-        } else if (status == Relationship.Type.OUTGOING) {
-          Join<IdentityEntity, ConnectionEntity> incoming = identity.join(IdentityEntity_.incomingConnections, JoinType.INNER);
-          predicates.add(cb.and(cb.equal(incoming.get(ConnectionEntity_.sender), ownerId), cb.equal(incoming.get(ConnectionEntity_.status), Relationship.Type.PENDING)));
-
-        } else {
-          Join<IdentityEntity, ConnectionEntity> incoming = identity.join(IdentityEntity_.incomingConnections, JoinType.LEFT);
-          Join<IdentityEntity, ConnectionEntity> outgoing = identity.join(IdentityEntity_.outgoingConnections, JoinType.LEFT);
-
-          Predicate out = cb.equal(outgoing.get(ConnectionEntity_.receiver), ownerId);
-          if (status != null) {
-            out = cb.and(out, cb.equal(outgoing.get(ConnectionEntity_.status), status));
-          }
-
-          Predicate in = cb.equal(incoming.get(ConnectionEntity_.sender), ownerId);
-          if (status != null) {
-            in = cb.and(in, cb.equal(incoming.get(ConnectionEntity_.status), status));
-          }
-
-          predicates.add(cb.or(in, out));
-        }
-      }
-
-      ListJoin<IdentityEntity, ProfileExperienceEntity> experience = identity.join(IdentityEntity_.experiences, JoinType.LEFT);
+      SetJoin<IdentityEntity, ProfileExperienceEntity> experience = null;
 
       List<Identity> excludes = filter.getExcludedIdentityList();
       if (excludes != null && excludes.size() > 0) {
@@ -142,56 +107,70 @@ public class ProfileQueryBuilder {
         predicates.add(cb.not(identity.get(IdentityEntity_.id).in(ids)));
       }
 
-      String name = filter.getName();
-      if (name != null && !name.isEmpty()) {
-        name = processLikeString(name);
-        MapJoin<IdentityEntity, String, String> properties = identity.join(IdentityEntity_.properties, JoinType.LEFT);
-        predicates.add(cb.and(cb.like(cb.lower(properties.value()), name), properties.key().in(Arrays.asList(Profile.FIRST_NAME, Profile.LAST_NAME, Profile.FULL_NAME))));
-      }
-
-      String val = filter.getPosition();
-      if (val != null && !val.isEmpty()) {
-        val = processLikeString(val);
-        Predicate[] p = new Predicate[2];
-        MapJoin<IdentityEntity, String, String> properties = identity.join(IdentityEntity_.properties, JoinType.LEFT);
-        p[1] = cb.and(cb.like(cb.lower(properties.value()), val), cb.equal(properties.key(), Profile.POSITION));
-        p[0] = cb.like(cb.lower(experience.get(ProfileExperienceEntity_.position)), val);
-
-        predicates.add(cb.or(p));
-      }
-
-      val = filter.getSkills();
-      if (val != null && !val.isEmpty()) {
-        val = processLikeString(val);
-        predicates.add(cb.like(cb.lower(experience.get(ProfileExperienceEntity_.skills)), val));
-      }
-
-      val = filter.getCompany();
-      if (val != null && !val.isEmpty()) {
-        val = processLikeString(val);
-        predicates.add(cb.like(cb.lower(experience.get(ProfileExperienceEntity_.company)), val));
-      }
-
-      char c = filter.getFirstCharacterOfName();
-      if (c != '\u0000') {
-        val = Character.toLowerCase(c) + "%";
-        MapJoin<IdentityEntity, String, String> properties = identity.join(IdentityEntity_.properties, JoinType.LEFT);
-        predicates.add(cb.and(cb.equal(properties.key(), Profile.LAST_NAME), cb.like(cb.lower(properties.value()), val)));
-      }
-
       String all = filter.getAll();
-      if (all != null && !all.trim().isEmpty()) {
+      if (all == null || all.trim().isEmpty()) {
+        String name = filter.getName();
+        if (name != null && !name.isEmpty()) {
+          name = processLikeString(name);
+          MapJoin<IdentityEntity, String, String> properties = identity.join(IdentityEntity_.properties, JoinType.LEFT);
+          predicates.add(cb.and(cb.like(cb.lower(properties.value()), name), properties.key().in(Arrays.asList(Profile.FIRST_NAME, Profile.LAST_NAME, Profile.FULL_NAME))));
+        }
+
+        String val = filter.getPosition();
+        if (val != null && !val.isEmpty()) {
+          val = processLikeString(val);
+          Predicate[] p = new Predicate[2];
+          MapJoin<IdentityEntity, String, String> properties = identity.join(IdentityEntity_.properties, JoinType.LEFT);
+          p[1] = cb.and(cb.like(cb.lower(properties.value()), val), cb.equal(properties.key(), Profile.POSITION));
+          if(experience == null) {
+            experience = identity.join(IdentityEntity_.experiences, JoinType.LEFT);
+          }
+          p[0] = cb.like(cb.lower(experience.get(ProfileExperienceEntity_.position)), val);
+
+          predicates.add(cb.or(p));
+        }
+
+        val = filter.getSkills();
+        if (val != null && !val.isEmpty()) {
+          val = processLikeString(val);
+          if(experience == null) {
+            experience = identity.join(IdentityEntity_.experiences, JoinType.LEFT);
+          }
+          predicates.add(cb.like(cb.lower(experience.get(ProfileExperienceEntity_.skills)), val));
+        }
+
+        val = filter.getCompany();
+        if (val != null && !val.isEmpty()) {
+          val = processLikeString(val);
+          if(experience == null) {
+            experience = identity.join(IdentityEntity_.experiences, JoinType.LEFT);
+          }
+          predicates.add(cb.like(cb.lower(experience.get(ProfileExperienceEntity_.company)), val));
+        }
+      } else {
+
+        String name = filter.getName();
         all = processLikeString(all).toLowerCase();
         Predicate[] p = new Predicate[5];
         MapJoin<IdentityEntity, String, String> properties = identity.join(IdentityEntity_.properties, JoinType.LEFT);
         p[0] = cb.and(cb.like(cb.lower(properties.value()), name), properties.key().in(Arrays.asList(Profile.FIRST_NAME, Profile.LAST_NAME, Profile.FULL_NAME)));
 
+        if(experience == null) {
+          experience = identity.join(IdentityEntity_.experiences, JoinType.LEFT);
+        }
         p[1] = cb.like(cb.lower(experience.get(ProfileExperienceEntity_.position)), all);
         p[2] = cb.like(cb.lower(experience.get(ProfileExperienceEntity_.skills)), all);
         p[3] = cb.like(cb.lower(experience.get(ProfileExperienceEntity_.company)), all);
         p[4] = cb.like(cb.lower(experience.get(ProfileExperienceEntity_.description)), all);
 
         predicates.add(cb.or(p));
+      }
+
+      char c = filter.getFirstCharacterOfName();
+      if (c != '\u0000') {
+        String val = Character.toLowerCase(c) + "%";
+        MapJoin<IdentityEntity, String, String> properties = identity.join(IdentityEntity_.properties, JoinType.LEFT);
+        predicates.add(cb.and(cb.equal(properties.key(), Profile.LAST_NAME), cb.like(cb.lower(properties.value()), val)));
       }
     }
 

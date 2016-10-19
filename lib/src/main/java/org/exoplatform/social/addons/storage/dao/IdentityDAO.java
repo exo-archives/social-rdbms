@@ -20,10 +20,12 @@
 package org.exoplatform.social.addons.storage.dao;
 
 import java.util.List;
+import java.util.Map;
 
 import org.exoplatform.commons.api.persistence.GenericDAO;
 import org.exoplatform.commons.utils.ListAccess;
 import org.exoplatform.social.addons.search.ExtendProfileFilter;
+import org.exoplatform.social.addons.storage.entity.ConnectionEntity;
 import org.exoplatform.social.addons.storage.entity.IdentityEntity;
 
 /**
@@ -38,4 +40,5 @@ public interface IdentityDAO extends GenericDAO<IdentityEntity, Long> {
   List<Long> getAllIds(int offset, int limit);  
 
   List<Long> getAllIdsByProvider(String providerId, int offset, int limit);
+  ListAccess<Map.Entry<IdentityEntity, ConnectionEntity>> findAllIdentitiesWithConnections(long identityId);
 }

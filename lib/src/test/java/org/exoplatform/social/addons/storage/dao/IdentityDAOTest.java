@@ -19,31 +19,37 @@
 
 package org.exoplatform.social.addons.storage.dao;
 
-import org.exoplatform.services.log.ExoLogger;
-import org.exoplatform.services.log.Log;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Map.Entry;
+
+import javax.persistence.EntityExistsException;
+
+import org.exoplatform.commons.utils.ListAccess;
+import org.exoplatform.social.addons.storage.entity.ConnectionEntity;
 import org.exoplatform.social.addons.storage.entity.IdentityEntity;
 import org.exoplatform.social.addons.test.BaseCoreTest;
 import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvider;
 import org.exoplatform.social.core.identity.provider.SpaceIdentityProvider;
-import org.junit.Test;
-
-import javax.persistence.EntityExistsException;
-import java.util.ArrayList;
-import java.util.List;
+import org.exoplatform.social.core.relationship.model.Relationship.Type;
 
 /**
  * @author <a href="mailto:tuyennt@exoplatform.com">Tuyen Nguyen The</a>.
  */
 public class IdentityDAOTest extends BaseCoreTest {
-  private final Log LOG = ExoLogger.getLogger(IdentityDAOTest.class);
 
   private IdentityDAO identityDAO;
 
+  private ConnectionDAO connectionDAO;
+
   private List<IdentityEntity> deleteIdentities = new ArrayList<IdentityEntity>();
+  private List<ConnectionEntity> connectionIdentities = new ArrayList<ConnectionEntity>();
 
   public void setUp() throws Exception {
     super.setUp();
     identityDAO = getService(IdentityDAO.class);
+    connectionDAO = getService(ConnectionDAO.class);
 
     assertNotNull("IdentityDAO must not be null", identityDAO);
     deleteIdentities = new ArrayList<IdentityEntity>();
@@ -51,6 +57,9 @@ public class IdentityDAOTest extends BaseCoreTest {
 
   @Override
   public void tearDown() throws Exception {
+    for (ConnectionEntity connectionEntity : connectionIdentities) {
+      connectionDAO.delete(connectionEntity);
+    }
     for (IdentityEntity e : deleteIdentities) {
       identityDAO.delete(e);
     }
@@ -77,6 +86,78 @@ public class IdentityDAOTest extends BaseCoreTest {
     deleteIdentities.add(identityUser1);
     deleteIdentities.add(identityUser2);
     deleteIdentities.add(identitySpace1);
+  }
+
+  public void testFindAllIdentitiesWithConnections() {
+
+    IdentityEntity identityUser0 = identityDAO.create(createIdentity(OrganizationIdentityProvider.NAME, "userWithConn0"));
+    deleteIdentities.add(identityUser0);
+    // Given
+    for (int i = 1; i < 21; i++) {
+      IdentityEntity identityUser = identityDAO.create(createIdentity(OrganizationIdentityProvider.NAME, "userWithConn" + i));
+      deleteIdentities.add(identityUser);
+      if (i % 2 == 0) {
+        ConnectionEntity connectionEntity = new ConnectionEntity(identityUser0, identityUser);
+        connectionEntity.setUpdatedDate(new Date());
+        if (i % 3 == 0) {
+          connectionEntity.setStatus(Type.CONFIRMED);
+        } else {
+          connectionEntity.setStatus(Type.PENDING);
+        }
+        connectionDAO.create(connectionEntity);
+        connectionIdentities.add(connectionEntity);
+      }
+    }
+
+    IdentityEntity space0 = identityDAO.create(createIdentity(SpaceIdentityProvider.NAME, "spaceAB"));
+    deleteIdentities.add(space0);
+    IdentityEntity space1 = identityDAO.create(createIdentity(SpaceIdentityProvider.NAME, "spaceABC"));
+    deleteIdentities.add(space1);
+
+    ListAccess<Entry<IdentityEntity, ConnectionEntity>> identities = identityDAO.findAllIdentitiesWithConnections(identityUser0.getId());
+    try {
+      assertTrue("The identities count is incoherent", identities.getSize() >= 20L);
+    } catch (Exception e) {
+      fail("Can't get the identities count", e);
+    }
+
+    Entry<IdentityEntity, ConnectionEntity>[] identitiesArray = null;
+    try {
+      identitiesArray = identities.load(0, identities.getSize());
+    } catch (Exception e) {
+      fail("An error occured while getting identities from result query", e);
+    }
+    assertNotNull("Returned identities list is empty", identitiesArray);
+    assertTrue("The identities count is incoherent", identitiesArray.length >= 20L);
+
+    int count = 0;
+    for (Entry<IdentityEntity, ConnectionEntity> tuple : identitiesArray) {
+      assertNotNull("First element returnd in tuple is null", tuple.getKey());
+
+      IdentityEntity identityEntity = (IdentityEntity) tuple.getKey();
+      ConnectionEntity connectionEntity = (ConnectionEntity) tuple.getValue();
+
+      String userId = identityEntity.getRemoteId();
+      assertEquals("", identityEntity.getProviderId(), OrganizationIdentityProvider.NAME);
+
+      if (!userId.startsWith("userWithConn")) {
+        continue;
+      }
+      count++;
+      int index = Integer.parseInt(userId.replace("userWithConn", ""));
+
+      if (index % 2 == 0) {
+        assertNotNull("The connection with user " + userId + " should exist", connectionEntity);
+        if (index % 3 == 0) {
+          assertEquals("The connection status is incoherent with user " + userId, connectionEntity.getStatus(), Type.CONFIRMED);
+        } else {
+          assertEquals("The connection status is incoherent with user " + userId, connectionEntity.getStatus(), Type.PENDING);
+        }
+      } else {
+        assertNull("The connection with user " + userId + " shouldn't exist", connectionEntity);
+      }
+    }
+    assertEquals("The returned number of users with prefix 'userWithConn' is incoherent", count, 20);
   }
 
   public void testGetAllIdsByProvider() {

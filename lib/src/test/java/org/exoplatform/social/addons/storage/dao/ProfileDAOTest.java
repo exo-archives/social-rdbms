@@ -22,8 +22,10 @@ package org.exoplatform.social.addons.storage.dao;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.exoplatform.social.addons.storage.entity.IdentityEntity;
 import org.exoplatform.social.addons.storage.entity.ProfileExperienceEntity;
@@ -79,7 +81,7 @@ public class ProfileDAOTest extends BaseCoreTest {
     assertEquals("/profile/root", profile.getProperties().get(Profile.URL));
     
     profile.getProperties().put(Profile.URL, "/profile/root_updated");
-    profile.setExperiences(new ArrayList<ProfileExperienceEntity>());
+    profile.setExperiences(new HashSet<ProfileExperienceEntity>());
 
     identityDAO.update(identity);
 
@@ -99,7 +101,7 @@ public class ProfileDAOTest extends BaseCoreTest {
     exp.setPosition("Developer");
     exp.setSkills("Java, Unit test");
     exp.setStartDate("2015-01-01");
-    List<ProfileExperienceEntity> exps = new ArrayList<>();
+    Set<ProfileExperienceEntity> exps = new HashSet<>();
     exps.add(exp);
     profile.setExperiences(exps);
     

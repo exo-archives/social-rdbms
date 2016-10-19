@@ -668,7 +668,7 @@ public class ActivityDAOImpl extends GenericDAOJPAImpl<ActivityEntity, Long> imp
   private List<Long> getConnectionIds(long ownerId) {
     TypedQuery<Tuple> searchConnectionsQuery = getEntityManager().createNamedQuery("SocConnection.getConnections", Tuple.class);
     searchConnectionsQuery.setParameter("identityId", ownerId);
-    searchConnectionsQuery.setParameter("connStatus", Relationship.Type.CONFIRMED);
+    searchConnectionsQuery.setParameter("status", Relationship.Type.CONFIRMED);
     List<Tuple> connectionsTuple = searchConnectionsQuery.getResultList();
     List<Long> connections = new ArrayList<Long>();
     if (!connectionsTuple.isEmpty()) {

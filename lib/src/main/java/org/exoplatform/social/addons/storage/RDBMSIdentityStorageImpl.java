@@ -16,11 +16,7 @@
  */
 package org.exoplatform.social.addons.storage;
 
-import javax.persistence.EntityManager;
-import javax.persistence.Query;
-
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -29,10 +25,18 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.StringTokenizer;
 
-import org.exoplatform.commons.api.persistence.DataInitializer;
+import javax.persistence.EntityManager;
+import javax.persistence.Query;
+import javax.persistence.Tuple;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import org.exoplatform.commons.api.persistence.ExoTransactional;
 import org.exoplatform.commons.file.model.FileItem;
 import org.exoplatform.commons.file.services.FileService;
@@ -53,26 +57,26 @@ import org.exoplatform.social.addons.storage.dao.ActivityDAO;
 import org.exoplatform.social.addons.storage.dao.IdentityDAO;
 import org.exoplatform.social.addons.storage.dao.SpaceDAO;
 import org.exoplatform.social.addons.storage.entity.ActivityEntity;
+import org.exoplatform.social.addons.storage.entity.ConnectionEntity;
 import org.exoplatform.social.addons.storage.entity.IdentityEntity;
 import org.exoplatform.social.addons.storage.entity.ProfileExperienceEntity;
 import org.exoplatform.social.addons.storage.entity.SpaceEntity;
 import org.exoplatform.social.core.identity.SpaceMemberFilterListAccess;
 import org.exoplatform.social.core.identity.model.ActiveIdentityFilter;
 import org.exoplatform.social.core.identity.model.Identity;
+import org.exoplatform.social.core.identity.model.IdentityWithRelationship;
 import org.exoplatform.social.core.identity.model.Profile;
 import org.exoplatform.social.core.identity.provider.OrganizationIdentityProvider;
 import org.exoplatform.social.core.identity.provider.SpaceIdentityProvider;
 import org.exoplatform.social.core.model.AvatarAttachment;
 import org.exoplatform.social.core.profile.ProfileFilter;
+import org.exoplatform.social.core.relationship.model.Relationship;
 import org.exoplatform.social.core.service.LinkProvider;
 import org.exoplatform.social.core.space.SpaceUtils;
 import org.exoplatform.social.core.space.model.Space;
 import org.exoplatform.social.core.storage.IdentityStorageException;
 import org.exoplatform.social.core.storage.impl.IdentityStorageImpl;
 import org.exoplatform.social.core.storage.impl.StorageUtils;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
 
 /**
  * Created by The eXo Platform SAS
@@ -116,133 +120,7 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
     this.profileSearchConnector = profileSearchConnector;
   }
 
-  private Identity convertToIdentity(IdentityEntity entity) {
-    return convertToIdentity(entity, true);
-  }
-  private Identity convertToIdentity(IdentityEntity entity, boolean mapDeleted) {
-    if (entity.isDeleted() && !mapDeleted) {
-      return null;
-    }
 
-    Identity identity = new Identity(entity.getStringId());
-    mapToIdentity(entity, identity);
-    return identity;
-  }
-  private void mapToIdentity(IdentityEntity entity, Identity identity) {
-    identity.setProviderId(entity.getProviderId());
-    identity.setRemoteId(entity.getRemoteId());
-    identity.setProfile(convertToProfile(entity, identity));
-    identity.setEnable(entity.isEnabled());
-    identity.setDeleted(entity.isDeleted());
-  }
-  private Profile convertToProfile(IdentityEntity entity, Identity identity) {
-    Profile p = new Profile(identity);
-    p.setId(String.valueOf(identity.getId()));
-    mapToProfile(entity, p);
-    if (OrganizationIdentityProvider.NAME.equals(identity.getProviderId()) && p.getProperty(Profile.USERNAME) == null) {
-      p.getProperties().put(Profile.USERNAME, identity.getRemoteId());
-    }
-    return p;
-  }
-  private void mapToProfile(IdentityEntity entity, Profile p) {
-    Map<String, String> properties = entity.getProperties();
-    
-    Map<String, Object> props = p.getProperties();
-    String providerId = entity.getProviderId();
-    if (!OrganizationIdentityProvider.NAME.equals(providerId) && !SpaceIdentityProvider.NAME.equals(providerId)) {
-      p.setUrl(properties.get(Profile.URL));
-      p.setAvatarUrl(properties.get(Profile.AVATAR_URL));
-    } else {
-      String remoteId = entity.getRemoteId();
-      if (OrganizationIdentityProvider.NAME.equals(providerId)) {
-        p.setUrl(LinkProvider.getUserProfileUri(remoteId));
-
-      } else if (SpaceIdentityProvider.NAME.equals(providerId)) {
-        if (spaceDAO.getSpaceByPrettyName(remoteId) != null) {
-          p.setUrl(LinkProvider.getSpaceUri(remoteId));
-        }
-      }
-
-      if (entity.getAvatarFileId() != null && entity.getAvatarFileId() > 0) {
-        Identity identity = p.getIdentity();
-        p.setAvatarUrl(IdentityAvatarRestService.buildAvatarURL(identity.getProviderId(), identity.getRemoteId()));
-      }
-    }
-
-    StringBuilder skills = new StringBuilder();
-    StringBuilder positions = new StringBuilder();
-    List<ProfileExperienceEntity> experiences = entity.getExperiences();
-    if (experiences != null && experiences.size() > 0) {
-      List<Map<String, Object>> xpData = new ArrayList<>();
-      for (ProfileExperienceEntity exp : experiences){
-        Map<String, Object> xpMap = new HashMap<String, Object>();
-        if (exp.getSkills() != null && !exp.getSkills().isEmpty()) {
-          skills.append(exp.getSkills()).append(",");
-        }
-        if (exp.getPosition() != null && !exp.getPosition().isEmpty()) {
-          positions.append(exp.getPosition()).append(",");
-        }
-        xpMap.put(Profile.EXPERIENCES_SKILLS, exp.getSkills());
-        xpMap.put(Profile.EXPERIENCES_POSITION, exp.getPosition());
-        xpMap.put(Profile.EXPERIENCES_START_DATE, exp.getStartDate());
-        xpMap.put(Profile.EXPERIENCES_END_DATE, exp.getEndDate());
-        xpMap.put(Profile.EXPERIENCES_COMPANY, exp.getCompany());
-        xpMap.put(Profile.EXPERIENCES_DESCRIPTION, exp.getDescription());
-        xpMap.put(Profile.EXPERIENCES_IS_CURRENT, exp.isCurrent());
-        xpData.add(xpMap);
-      }
-      props.put(Profile.EXPERIENCES, xpData);
-    }
-    if (skills.length() > 0) {
-      skills.deleteCharAt(skills.length() - 1);
-      props.put(Profile.EXPERIENCES_SKILLS, skills.toString());
-    }
-    if (positions.length() > 0) {
-      positions.deleteCharAt(positions.length() - 1);
-      props.put(Profile.POSITION, positions.toString());
-    }
-    
-    if (properties != null && properties.size() > 0) {
-      for (Map.Entry<String, String> entry : properties.entrySet()) {
-        String key = entry.getKey();
-        String value = entry.getValue();
-
-        if (Profile.CONTACT_IMS.equals(key) || Profile.CONTACT_PHONES.equals(key) || Profile.CONTACT_URLS.equals(key)) {
-          List<Map<String, String>> list = new ArrayList<>();
-          try {
-            JSONArray arr = new JSONArray(value);
-            for (int i = 0 ; i < arr.length(); i++) {
-              Map<String, String> map = new HashMap<>();
-              JSONObject json = arr.getJSONObject(i);
-              Iterator<String> keys = json.keys();
-              while (keys.hasNext()) {
-                String k = keys.next();
-                map.put(k, json.optString(k));
-              }
-              list.add(map);
-            }
-          } catch (JSONException ex) {
-            // Ignore this exception
-          }
-
-          props.put(key, list);
-
-        } else if (!Profile.URL.equals(key)) {
-          props.put(key, value);
-        }
-      }
-    }
-
-    p.setCreatedTime(entity.getCreatedDate().getTime());
-    p.setLastLoaded(System.currentTimeMillis());
-  }
-
-  private void mapToEntity(Identity identity, IdentityEntity entity) {
-    entity.setProviderId(identity.getProviderId());
-    entity.setRemoteId(identity.getRemoteId());
-    entity.setEnabled(identity.isEnable());
-    entity.setDeleted(identity.isDeleted());
-  }
 
   private void mapToProfileEntity(Profile profile, IdentityEntity entity) {
     Map<String, String> entityProperties = entity.getProperties();
@@ -301,7 +179,7 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
       } else if (Profile.EXPERIENCES.equalsIgnoreCase(e.getKey())){
 
         List<Map<String, String>> exps = (List<Map<String, String>>)e.getValue();
-        List<ProfileExperienceEntity> list = new ArrayList<>();
+        Set<ProfileExperienceEntity> experiences = new HashSet<>();
 
         for (Map<String, String> exp : exps) {
           ProfileExperienceEntity ex = new ProfileExperienceEntity();
@@ -312,10 +190,10 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
           ex.setSkills(exp.get(Profile.EXPERIENCES_SKILLS));
           ex.setDescription(exp.get(Profile.EXPERIENCES_DESCRIPTION));
 
-          list.add(ex);
+          experiences.add(ex);
         }
 
-        entity.setExperiences(list);
+        entity.setExperiences(experiences);
 
       } else if (Profile.CONTACT_IMS.equals(e.getKey())
               || Profile.CONTACT_PHONES.equals(e.getKey())
@@ -343,15 +221,6 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
     Date created = profile.getCreatedTime() <= 0 ? new Date() : new Date(profile.getCreatedTime());
     entity.setCreatedDate(created);
   }
-
-  private long parseId(String id) {
-    try {
-      return Long.parseLong(id);
-    } catch (NumberFormatException ex) {
-      return 0;
-    }
-  }
-
   /**
    * Saves identity.
    *
@@ -359,7 +228,7 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
    * @throws IdentityStorageException if has any error
    */
   public void saveIdentity(final Identity identity) throws IdentityStorageException {
-    long id = parseId(identity.getId());
+    long id = EntityConverterUtils.parseId(identity.getId());
 
     IdentityEntity entity = null;
     if (id > 0) {
@@ -371,7 +240,7 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
     if (entity == null) {
       entity = new IdentityEntity();
     }
-    mapToEntity(identity, entity);
+    EntityConverterUtils.mapToEntity(identity, entity);
 
     if (entity.getId() > 0) {
       getIdentityDAO().update(entity);
@@ -381,7 +250,7 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
       }
       entity = getIdentityDAO().create(entity);
     }
-    Profile profile = convertToProfile(entity, identity);
+    Profile profile = EntityConverterUtils.convertToProfile(entity, identity);
     if (id <= 0) {
       profile.setId(null);      
     }
@@ -398,7 +267,7 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
    * @since  1.2.0-GA
    */
   public Identity updateIdentity(final Identity identity) throws IdentityStorageException {
-    long id = parseId(identity.getId());
+    long id = EntityConverterUtils.parseId(identity.getId());
 
     IdentityEntity entity = null;
     if (id > 0) {
@@ -409,10 +278,10 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
       throw new IdentityStorageException(IdentityStorageException.Type.FAIL_TO_UPDATE_IDENTITY, "The identity does not exist on DB");
     }
 
-    mapToEntity(identity, entity);
+    EntityConverterUtils.mapToEntity(identity, entity);
     entity = getIdentityDAO().update(entity);
 
-    return convertToIdentity(entity, true);
+    return EntityConverterUtils.convertToIdentity(entity, true);
   }
 
   /**
@@ -436,11 +305,11 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
    */
   @ExoTransactional
   public Identity findIdentityById(final String nodeId) throws IdentityStorageException {
-    long id = parseId(nodeId);
+    long id = EntityConverterUtils.parseId(nodeId);
     IdentityEntity entity = getIdentityDAO().find(id);
 
     if (entity != null) {
-      return convertToIdentity(entity);
+      return EntityConverterUtils.convertToIdentity(entity);
     } else {
       return null;
     }
@@ -464,7 +333,7 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
    */
   @ExoTransactional
   public void hardDeleteIdentity(final Identity identity) throws IdentityStorageException {
-    long id = parseId(identity.getId());
+    long id = EntityConverterUtils.parseId(identity.getId());
     String username = identity.getRemoteId();
     String provider = identity.getProviderId();
 
@@ -502,14 +371,14 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
    */
   @ExoTransactional
   public Profile loadProfile(Profile profile) throws IdentityStorageException {
-    long identityId = parseId(profile.getIdentity().getId());    
+    long identityId = EntityConverterUtils.parseId(profile.getIdentity().getId());    
     IdentityEntity entity = identityDAO.find(identityId);
 
     if (entity == null) {
       return null;
     } else {
       profile.setId(String.valueOf(entity.getId()));
-      mapToProfile(entity, profile);
+      EntityConverterUtils.mapToProfile(entity, profile);
       profile.clearHasChanged();
       return profile;
     }
@@ -532,7 +401,7 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
         return null;
       }
 
-      return convertToIdentity(entity);
+      return EntityConverterUtils.convertToIdentity(entity);
 
     } catch (Exception ex) {
 
@@ -547,7 +416,7 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
    * @throws IdentityStorageException if has any error
    */
   public void saveProfile(final Profile profile) throws IdentityStorageException {
-    long id = parseId(profile.getIdentity().getId());
+    long id = EntityConverterUtils.parseId(profile.getIdentity().getId());
     IdentityEntity entity = (id == 0 ? null : identityDAO.find(id));
     if (entity == null) {
       throw new IdentityStorageException(IdentityStorageException.Type.FAIL_TO_UPDATE_PROFILE, "Profile does not exist on RDBMS");
@@ -567,7 +436,7 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
    * @since 1.2.0-GA
    */
   public void updateProfile(final Profile profile) throws IdentityStorageException {
-    long id = parseId(profile.getIdentity().getId());
+    long id = EntityConverterUtils.parseId(profile.getIdentity().getId());
     IdentityEntity entity = identityDAO.find(id);
     if (entity == null) {
       throw new IdentityStorageException(IdentityStorageException.Type.FAIL_TO_UPDATE_PROFILE, "Profile does not exist on RDBMS");
@@ -704,7 +573,7 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
    * @since 4.2.x
    */
   public void processEnabledIdentity(Identity identity, boolean isEnable) {
-    long id = parseId(identity.getId());
+    long id = EntityConverterUtils.parseId(identity.getId());
     IdentityEntity entity = getIdentityDAO().find(id);
     if (entity == null) {
       throw new IllegalArgumentException("Identity does not exists");
@@ -784,7 +653,7 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
             for (String remoteId : wildcardUsers) {
               Identity id = findIdentity(OrganizationIdentityProvider.NAME, remoteId);
               if (id != null) {
-                relations.add(parseId(id.getId()));
+                relations.add(EntityConverterUtils.parseId(id.getId()));
               }
             }
             break;
@@ -793,7 +662,7 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
         for (int i = 0; i < members.length; i++) {
           Identity identity = findIdentity(OrganizationIdentityProvider.NAME, members[i]);
           if (identity != null) {
-            relations.add(parseId(identity.getId()));
+            relations.add(EntityConverterUtils.parseId(identity.getId()));
           }
         }
       } catch (IdentityStorageException e) {
@@ -807,7 +676,7 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
     ExtendProfileFilter xFilter = new ExtendProfileFilter(profileFilter);
     xFilter.setIdentityIds(relations);
     ListAccess<IdentityEntity> list = getIdentityDAO().findIdentities(xFilter);
-    return convertToIdentities(list, offset, limit);
+    return EntityConverterUtils.convertToIdentities(list, offset, limit);
   }
 
   public List<Identity> getIdentitiesByProfileFilter(final String providerId,
@@ -819,7 +688,19 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
 
     ListAccess<IdentityEntity> list = getIdentityDAO().findIdentities(xFilter);
 
-    return convertToIdentities(list, offset, limit);
+    return EntityConverterUtils.convertToIdentities(list, offset, limit);
+  }
+
+  @Override
+  public List<IdentityWithRelationship> getIdentitiesWithRelationships(final String identityId, int offset, int limit)  throws IdentityStorageException {
+    ListAccess<Entry<IdentityEntity, ConnectionEntity>> list = getIdentityDAO().findAllIdentitiesWithConnections(Long.valueOf(identityId));
+    return EntityConverterUtils.convertToIdentitiesWithRelationship(list, offset, limit);
+  }
+
+  @Override
+  public int countIdentitiesWithRelationships(String identityId) throws Exception {
+    ListAccess<Entry<IdentityEntity, ConnectionEntity>> list = getIdentityDAO().findAllIdentitiesWithConnections(Long.valueOf(identityId));
+    return list.getSize();
   }
 
   public ListAccess<Identity> findByFilter(ExtendProfileFilter filter) {
@@ -834,7 +715,7 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
         } else {
           Identity[] identities = new Identity[entities.length];
           for (int i = 0; i < entities.length; i++) {
-            identities[i] = convertToIdentity(entities[i]);
+            identities[i] = EntityConverterUtils.convertToIdentity(entities[i]);
           }
           return identities;
         }
@@ -854,7 +735,7 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
    */
   @ExoTransactional
   public void removeIdentity(Identity identity) {
-    long id = parseId(identity.getId());
+    long id = EntityConverterUtils.parseId(identity.getId());
     String username = identity.getRemoteId();
     String provider = identity.getProviderId();
 
@@ -880,26 +761,4 @@ public class RDBMSIdentityStorageImpl extends IdentityStorageImpl {
     }
   }
 
-  private List<Identity> convertToIdentities(ListAccess<IdentityEntity> list, long offset, long limit) {
-    try {
-      return convertToIdentities(list.load((int)offset, (int)limit));
-    } catch (Exception ex) {
-      return Collections.emptyList();
-    }
-  }
-
-  private List<Identity> convertToIdentities(IdentityEntity[] entities) {
-    if (entities == null || entities.length == 0) {
-      return Collections.emptyList();
-    }
-
-    List<Identity> result = new ArrayList<>(entities.length);
-    for (IdentityEntity entity : entities) {
-      Identity idt = convertToIdentity(entity);
-      if (idt != null) {
-        result.add(idt);
-      }
-    }
-    return result;
-  }
 }
